@@ -51,6 +51,8 @@ def chinese_count(s: str) -> int:
 
 def clean_name(name: str) -> str:
     name = (name or '').strip().replace(' ', '')
+    # TXT playlist uses comma as delimiter; keep channel names delimiter-safe.
+    name = name.replace(',', '\uFF0C')
     # CCTV1/CCTV1??/CCTV-1 -> CCTV-1/CCTV-1??
     name = re.sub(r'^CCTV[-_ ]?(\d+)(\+?)', r'CCTV-\1\2', name, flags=re.I)
     return name[:80]

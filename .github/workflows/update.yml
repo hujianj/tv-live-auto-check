@@ -76,6 +76,30 @@ jobs:
               assert marker in text, f"missing category: {marker}"
           assert "影视娱乐,#genre#" not in text
           assert "其他频道,#genre#" not in text
+          bad_lines = []
+          bad_name_tokens = ["group-title=", "tvg-logo=", "user-agent", "likeGecko", "w_400", "h_500", "#EXTINF"]
+          current_group = ""
+          for lineno, raw in enumerate(text.splitlines(), 1):
+              line = raw.strip()
+              if not line:
+                  continue
+              if line.endswith(",#genre#"):
+                  current_group = line.split(",", 1)[0]
+                  continue
+              if "," not in line:
+                  bad_lines.append((lineno, "missing comma", line[:200]))
+                  continue
+              name, url = line.split(",", 1)
+              if not name.strip() or not url.startswith(("http://", "https://")):
+                  bad_lines.append((lineno, "bad url", line[:240]))
+              low_name = name.lower()
+              if any(tok.lower() in low_name for tok in bad_name_tokens):
+                  bad_lines.append((lineno, "polluted name", line[:240]))
+              if current_group == "央视频道" and any(tok in name.upper() for tok in ["RTHK", "TVB", "VIUTV"]):
+                  bad_lines.append((lineno, "pseudo CCTV alias", line[:240]))
+              if "NOT24/7" in name.upper() or "NOT 24/7" in name.upper():
+                  bad_lines.append((lineno, "unstable Not24/7", line[:240]))
+          assert not bad_lines, "invalid live-curated rows: " + repr(bad_lines[:20])
           all_data = Path("live-all-playable.txt").read_bytes()
           assert len(all_data) >= len(data), (len(all_data), len(data))
           print("Generated full-check playlist smoke OK", len(data), "bytes", summary)
@@ -130,6 +154,30 @@ jobs:
                   assert "综合娱乐,#genre#" in text
                   assert "影视娱乐,#genre#" not in text
                   assert "其他频道,#genre#" not in text
+                  bad_lines = []
+                  bad_name_tokens = ["group-title=", "tvg-logo=", "user-agent", "likeGecko", "w_400", "h_500", "#EXTINF"]
+                  current_group = ""
+                  for lineno, raw in enumerate(text.splitlines(), 1):
+                      line = raw.strip()
+                      if not line:
+                          continue
+                      if line.endswith(",#genre#"):
+                          current_group = line.split(",", 1)[0]
+                          continue
+                      if "," not in line:
+                          bad_lines.append((lineno, "missing comma", line[:200]))
+                          continue
+                      name, url = line.split(",", 1)
+                      if not name.strip() or not url.startswith(("http://", "https://")):
+                          bad_lines.append((lineno, "bad url", line[:240]))
+                      low_name = name.lower()
+                      if any(tok.lower() in low_name for tok in bad_name_tokens):
+                          bad_lines.append((lineno, "polluted name", line[:240]))
+                      if current_group == "央视频道" and any(tok in name.upper() for tok in ["RTHK", "TVB", "VIUTV"]):
+                          bad_lines.append((lineno, "pseudo CCTV alias", line[:240]))
+                      if "NOT24/7" in name.upper() or "NOT 24/7" in name.upper():
+                          bad_lines.append((lineno, "unstable Not24/7", line[:240]))
+                  assert not bad_lines, "invalid live-curated rows: " + repr(bad_lines[:20])
                   print("GitHub Raw freshness smoke OK", last_size, last_hash)
                   break
               except Exception as e:

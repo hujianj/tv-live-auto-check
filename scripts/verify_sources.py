@@ -135,6 +135,8 @@ def fetch_url(url: str, timeout: int = FETCH_TIMEOUT, max_bytes: int = 12_000_00
 def normalize_name(name: str) -> str:
     name = html.unescape(name or "").strip().strip('"').strip("'")
     name = re.sub(r"\s+", "", name)
+    # TXT playlist uses comma as delimiter; keep channel names delimiter-safe.
+    name = name.replace(",", "\uFF0C")
     if name.startswith("\u4e2d\u592e"):
         name = name.replace("\u4e2d\u592e", "CCTV", 1)
     return name[:80] or "\u672a\u547d\u540d\u9891\u9053"
@@ -160,18 +162,49 @@ def infer_group(name: str, group: str = "") -> str:
         return G_LOOP
     return g or G_OTHER
 
+def split_unquoted_last_comma(line: str) -> tuple[str, str]:
+    """Split an EXTINF line at the last comma that is not inside quotes.
+
+    IPTV lists often place URLs, HTTP headers, logo paths, or UA strings in
+    quoted attributes, and those values may contain commas. Splitting at the
+    first comma corrupts the channel name and can produce invalid TXT rows such
+    as ``w_400,h_500,...,real-name,url``. The channel display name is the tail
+    after the final unquoted comma.
+    """
+    in_quote = False
+    escape = False
+    split_at = -1
+    for i, ch in enumerate(line):
+        if escape:
+            escape = False
+            continue
+        if ch == "\\":
+            escape = True
+            continue
+        if ch == '"':
+            in_quote = not in_quote
+            continue
+        if ch == "," and not in_quote:
+            split_at = i
+    if split_at < 0:
+        return line, ""
+    return line[:split_at], line[split_at + 1:].strip()
+
+
 def parse_m3u(text: str, source: str) -> list[Candidate]:
     out: list[Candidate] = []
     last_name = ""
     last_group = ""
     for raw in text.splitlines():
-        line = raw.strip().lstrip("\ufeff")
+        line = raw.strip().lstrip("﻿")
         if not line:
             continue
         if line.startswith("#EXTINF"):
-            attrs = dict(re.findall(r'([\w-]+)="([^"]*)"', line))
-            tail = line.split(",", 1)[1].strip() if "," in line else ""
-            last_name = normalize_name(attrs.get("tvg-name") or tail or attrs.get("title") or "")
+            head, tail = split_unquoted_last_comma(line)
+            attrs = dict(re.findall(r'([\w-]+)="([^"]*)"', head))
+            # Prefer explicit tvg-name/title only when present. Otherwise use
+            # the final unquoted comma tail, which is the M3U display name.
+            last_name = normalize_name(attrs.get("tvg-name") or attrs.get("title") or tail or "")
             last_group = attrs.get("group-title") or ""
         elif line.startswith("#"):
             continue
@@ -183,7 +216,6 @@ def parse_m3u(text: str, source: str) -> list[Candidate]:
             last_name = ""
             last_group = ""
     return out
-
 
 def parse_txt(text: str, source: str) -> list[Candidate]:
     out: list[Candidate] = []
