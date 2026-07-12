@@ -1,0 +1,33 @@
+{
+  "generated": "2026-07-12 13:40:55",
+  "sources_total": 37,
+  "sources_fetched_ok": 30,
+  "parsed_candidates": 35617,
+  "unique_candidates": 30346,
+  "unique_name_url_candidates": 31267,
+  "checked_candidates": 30346,
+  "checked_all_unique": true,
+  "playable_channel_names": 10746,
+  "playable_urls_found": 13541,
+  "all_playable_lines": 13541,
+  "pre_curated_published_lines": 12636,
+  "primary_published_lines": 3105,
+  "curated_generated": true,
+  "curated_published_lines": 3105,
+  "curated_channel_names": 2127,
+  "curated_groups": {
+    "央视频道": 128,
+    "卫视频道": 188,
+    "地方频道": 531,
+    "影视剧场": 171,
+    "少儿动漫": 35,
+    "体育纪实": 95,
+    "音乐综艺": 59,
+    "生活休闲": 265,
+    "综合娱乐": 1180,
+    "港澳台频道": 122,
+    "海外华语频道": 331
+  },
+  "final_primary_file": "live-curated.txt",
+  "final_primary_published_lines": 3105
+}

@@ -1,0 +1,8 @@
+﻿__pycache__/
+*.pyc
+.env
+.DS_Store
+Thumbs.db
+stream_check_results.csv
+live-all-playable.txt
+all-playable.m3u

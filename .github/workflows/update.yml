@@ -1,0 +1,199 @@
+name: Verify and publish IPTV auto-check playlist
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Daily, Beijing time 04:20. Full stream verification probes every distinct URL.
+    - cron: "20 20 * * *"
+  push:
+    paths:
+      - "scripts/verify_sources.py"
+      - "scripts/curate_ku9.py"
+      - ".github/workflows/update.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: iptv-autocheck-update-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Verify every unique IPTV stream URL
+        env:
+          IPTV_CHECK_WORKERS: "192"
+          IPTV_CHECK_TIMEOUT: "6"
+          IPTV_FETCH_WORKERS: "64"
+          IPTV_FETCH_TIMEOUT: "20"
+          IPTV_HLS_VARIANT_CHECKS: "2"
+          IPTV_HLS_SEGMENT_CHECKS: "2"
+        run: python scripts/verify_sources.py
+      - name: Curate Ku9 channel order
+        run: python scripts/curate_ku9.py
+
+      - name: Smoke test generated playlist
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          summary = json.loads(Path("full-check-summary.json").read_text(encoding="utf-8"))
+          assert summary["checked_all_unique"] is True, summary
+          assert summary["checked_candidates"] == summary["unique_candidates"], summary
+          assert summary["unique_name_url_candidates"] >= summary["unique_candidates"], summary
+          assert summary["playable_urls_found"] >= summary["primary_published_lines"], summary
+          assert summary["all_playable_lines"] == summary["playable_urls_found"], summary
+          assert summary["curated_generated"] is True, summary
+          assert summary["curated_published_lines"] == summary["primary_published_lines"], summary
+          assert summary["final_primary_published_lines"] == summary["curated_published_lines"], summary
+          assert summary["playable_urls_found"] > 100, summary
+          assert summary["curated_published_lines"] > 100, summary
+          data = Path("live-curated.txt").read_bytes()
+          text = data.decode("utf-8", "replace")
+          assert len(data) > 10_000, f"playlist too small: {len(data)} bytes"
+          for marker in [
+              "央视频道,#genre#",
+              "卫视频道,#genre#",
+              "地方频道,#genre#",
+              "影视剧场,#genre#",
+              "少儿动漫,#genre#",
+              "体育纪实,#genre#",
+              "音乐综艺,#genre#",
+              "生活休闲,#genre#",
+              "综合娱乐,#genre#",
+              "港澳台频道,#genre#",
+              "海外华语频道,#genre#",
+          ]:
+              assert marker in text, f"missing category: {marker}"
+          assert "影视娱乐,#genre#" not in text
+          assert "其他频道,#genre#" not in text
+          all_data = Path("live-all-playable.txt").read_bytes()
+          assert len(all_data) >= len(data), (len(all_data), len(data))
+          print("Generated full-check playlist smoke OK", len(data), "bytes", summary)
+          PY
+      - name: Upload full diagnostic artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-iptv-check-${{ github.run_id }}
+          retention-days: 30
+          path: |
+            stream_check_results.csv
+            live-all-playable.txt
+            all-playable.m3u
+
+      - name: Commit verified playlist
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: verify and publish playable IPTV playlist"
+          file_pattern: live.txt live-verified.txt live-curated.txt ku9-live.txt live.m3u source-report.md check-report.md curated-report.md sources_status.csv full-check-summary.json
+      - name: Purge jsDelivr CDN
+        if: always()
+        run: |
+          set -e
+          for file in live-curated.txt live.txt ku9-live.txt live-verified.txt live.m3u full-check-summary.json curated-report.md source-report.md check-report.md; do
+            echo "Purging $file"
+            curl -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}/$file" || true
+            curl -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/$file" || true
+          done
+      - name: Smoke test GitHub Raw publication freshness
+        run: |
+          python - <<'PY'
+          import hashlib, time, urllib.request
+          from pathlib import Path
+          expected = Path("live-curated.txt").read_bytes()
+          expected_hash = hashlib.sha256(expected).hexdigest()
+          expected_size = len(expected)
+          raw_url = "https://raw.githubusercontent.com/${{ github.repository }}/main/live-curated.txt"
+          def fetch(url):
+              with urllib.request.urlopen(url + f"?smoke={int(time.time())}", timeout=30) as r:
+                  return r.read()
+          last_hash = ""
+          last_size = 0
+          for i in range(30):
+              try:
+                  data = fetch(raw_url)
+                  last_hash = hashlib.sha256(data).hexdigest()
+                  last_size = len(data)
+                  text = data.decode("utf-8", "replace")
+                  assert last_hash == expected_hash, f"Raw hash {last_hash} != local hash {expected_hash}"
+                  assert "央视频道,#genre#" in text
+                  assert "影视剧场,#genre#" in text
+                  assert "综合娱乐,#genre#" in text
+                  assert "影视娱乐,#genre#" not in text
+                  assert "其他频道,#genre#" not in text
+                  print("GitHub Raw freshness smoke OK", last_size, last_hash)
+                  break
+              except Exception as e:
+                  print("GitHub Raw freshness smoke retry", i + 1, repr(e), "last_size", last_size, "last_hash", last_hash, "expected_size", expected_size, "expected_hash", expected_hash)
+                  time.sleep(10)
+          else:
+              raise SystemExit(f"GitHub Raw freshness smoke failed: last_size={last_size} last_hash={last_hash} expected_size={expected_size} expected_hash={expected_hash}")
+          PY
+      - name: Check Pages and jsDelivr cache state
+        if: always()
+        run: |
+          python - <<'PY'
+          import hashlib, time, urllib.request
+          from pathlib import Path
+          expected = Path("live-curated.txt").read_bytes()
+          expected_hash = hashlib.sha256(expected).hexdigest()
+          expected_size = len(expected)
+          # jsDelivr can remain stale even after purge, so do not spend many
+          # minutes waiting for it. Raw proxy is the fast-fresh fallback; jsDelivr
+          # is kept as the stable TV URL.
+          urls = [
+              ("pages", "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/live-curated.txt", 6),
+              ("ghproxy_raw", "https://gh-proxy.com/raw.githubusercontent.com/${{ github.repository }}/main/live-curated.txt", 6),
+              ("jsdelivr_main", "https://cdn.jsdelivr.net/gh/${{ github.repository }}@main/live-curated.txt", 3),
+              ("jsdelivr_unversioned", "https://cdn.jsdelivr.net/gh/${{ github.repository }}/live-curated.txt", 3),
+          ]
+          def fetch(url):
+              with urllib.request.urlopen(url + f"?cachecheck={int(time.time())}", timeout=30) as r:
+                  return r.read()
+          for name, url, retries in urls:
+              ok = False
+              last_size = 0
+              last_hash = ""
+              for i in range(retries):
+                  try:
+                      data = fetch(url)
+                      last_size = len(data)
+                      last_hash = hashlib.sha256(data).hexdigest()
+                      text = data.decode("utf-8", "replace")
+                      structure_ok = (
+                          "央视频道,#genre#" in text
+                          and "影视剧场,#genre#" in text
+                          and "综合娱乐,#genre#" in text
+                          and "影视娱乐,#genre#" not in text
+                          and "其他频道,#genre#" not in text
+                      )
+                      if last_hash == expected_hash and structure_ok:
+                          print(f"{name} cache OK", last_size, last_hash)
+                          ok = True
+                          break
+                      print(f"{name} cache retry {i + 1}: size={last_size} hash={last_hash} expected_size={expected_size} expected_hash={expected_hash} structure_ok={structure_ok}")
+                  except Exception as e:
+                      print(f"{name} cache retry {i + 1}: {e!r}")
+                  time.sleep(10)
+              if not ok:
+                  print(f"WARNING: {name} is still stale or unreachable; generated playlist and GitHub Raw are already verified. url={url} last_size={last_size} last_hash={last_hash} expected_size={expected_size} expected_hash={expected_hash}")
+          PY
+
+
+
+
+
+
+
+
+
+
