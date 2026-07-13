@@ -43,6 +43,15 @@ FOREIGN_NAME_TOKENS = [
 FOREIGN_CN_TOKENS = ["阿里郎", "环球电视", "朝鲜", "韩国", "日本", "俄罗斯", "非洲", "欧洲", "美洲"]
 UNSTABLE_NAME_TOKENS = ["NOT24/7", "NOT 24/7", "[NOT24/7]", "\u6d4b\u8bd5", "\u505c\u64ad", "\u7ef4\u62a4", "OFFLINE"]
 CCTV_ALIAS_BLOCK_TOKENS = ["RTHK", "TVB", "VIUTV", "\u6e2f\u53f0", "\u9999\u6e2f", "\u6fb3\u95e8", "\u6fb3\u9580", "\u53f0\u6e7e", "\u53f0\u7063", "\u51e4\u51f0", "\u9cf3\u51f0", "\u7fe1\u7fe0", "\u660e\u73e0"]
+HK_CN_KEYS = ["\u9999\u6e2f", "\u6fb3\u95e8", "\u6fb3\u9580", "\u53f0\u6e7e", "\u53f0\u7063", "\u6e2f\u53f0", "\u51e4\u51f0", "\u9cf3\u51f0", "\u7fe1\u7fe0", "\u660e\u73e0", "\u6c11\u89c6", "\u4e2d\u89c6", "\u534e\u89c6", "\u53f0\u89c6", "\u4e1c\u68ee", "\u4e09\u7acb", "\u4e2d\u5929"]
+HK_LATIN_PREFIXES = ("RTHK", "VIUTV", "TVB", "TVBS", "PHOENIX")
+DROP_LATIN_TOKENS = [
+    "PLUTOTV", "REDBULL", "BUDAPEST", "BOGOTA", "BRASIL", "BRAZIL",
+    "BULGARIA", "BANGLA", "BRESCIA", "BREMEN", "BODENSEE", "BANDUNG",
+    "BOJONEGORO", "BARILOCHE", "ASUNCION", "LIONSGATE", "WEDOTV",
+    "EBONYTV", "CITYTV", "PEACETV", "PENIEL", "STASHTV", "SUPERTV",
+    "CONECTV", "CREATV", "DELTATV", "RTVBN", "RADIO", "MTV",
+]
 
 
 def chinese_count(s: str) -> int:
@@ -65,6 +74,35 @@ def cctv_num(name: str):
     return (int(m.group(1)), 1 if m.group(2) else 0)
 
 
+def is_hk_mo_tw_channel(name: str, group: str = '') -> bool:
+    n = name.strip()
+    upper = n.upper()
+    g = group or ''
+    if any(k in n or k in g for k in HK_CN_KEYS):
+        return True
+    # Latin abbreviations must appear as a clear brand prefix, not as an
+    # accidental substring such as ABTVBariloche or StaraTVBandung.
+    if upper.startswith(HK_LATIN_PREFIXES):
+        return True
+    if re.search(r'(^|[^A-Z0-9])(RTHK|VIUTV|TVB|TVBS|PHOENIX)([^A-Z0-9]|$)', upper):
+        return True
+    return False
+
+
+def is_unwanted_overseas_english(name: str, group: str, source: str) -> bool:
+    n = name.strip()
+    upper = n.upper()
+    if is_hk_mo_tw_channel(n, group):
+        return False
+    if any(tok in upper for tok in DROP_LATIN_TOKENS):
+        return True
+    # Pure Latin/number names are not useful in the home-facing mainland list
+    # unless they are explicitly recognized HK/MO/TW brands.
+    if chinese_count(n) == 0 and re.search(r'[A-Z]{3,}', upper):
+        return True
+    return False
+
+
 def is_foreign_channel(name: str, group: str, source: str) -> bool:
     n = name.strip()
     lower = n.lower()
@@ -85,7 +123,7 @@ def is_foreign_channel(name: str, group: str, source: str) -> bool:
     if chinese_count(n) == 0:
         if cctv_num(n):
             return False
-        if any(k.lower() in lower for k in HK_KEYS):
+        if is_hk_mo_tw_channel(n, group):
             return False
         return True
     return False
@@ -186,6 +224,8 @@ def main():
                 continue
             if is_unstable_or_wrong_alias(name, group, source):
                 continue
+            if is_unwanted_overseas_english(name, group, source):
+                continue
             if is_foreign_channel(name, group, source):
                 continue
             g = classify(name, group, source)
@@ -228,6 +268,8 @@ def main():
     (ROOT / 'live.m3u').write_text('\n'.join(m) + '\n', encoding='utf-8', newline='\n')
 
     cnt = Counter(g for g, _, _, _ in pub)
+    source_cnt = Counter(src for _, _, _, src in pub)
+    group_source_cnt = Counter((g, src) for g, _, _, src in pub)
     summary_path = ROOT / 'full-check-summary.json'
     if summary_path.exists():
         try:
@@ -241,6 +283,7 @@ def main():
         'curated_published_lines': len(pub),
         'curated_channel_names': len(by),
         'curated_groups': dict(cnt),
+        'curated_sources': dict(source_cnt),
         'final_primary_file': 'live-curated.txt',
         'final_primary_published_lines': len(pub),
         # Keep this legacy field aligned with the final TV-facing playlist after curation.
@@ -252,7 +295,19 @@ def main():
     for g in GROUP_ORDER:
         if cnt[g]:
             report.append(f'- {g}: {cnt[g]}')
-    report += ['', '## Rules', '- CCTV sorted as CCTV-1, CCTV-2, CCTV-3...', '- Mainland CCTV/satellite/local channels first', '- Hong Kong/Macau/Taiwan and overseas Chinese channels moved later', '- English/foreign-language channels removed', '- English category names removed', '- Not24/7 and obvious unstable entries removed from TV-facing playlist', '- Pseudo-CCTV aliases containing RTHK/TVB/ViuTV/HK/TW markers removed from CCTV']
+    report += ['', '## Final published lines by source', '', '| Source | Lines |', '|---|---:|']
+    for src, n in source_cnt.most_common():
+        report.append(f'| {src} | {n} |')
+    report += ['', '## Top sources per group', '']
+    for g in GROUP_ORDER:
+        top = [(src, n) for (gg, src), n in group_source_cnt.items() if gg == g]
+        if not top:
+            continue
+        report.append(f'### {g}')
+        for src, n in sorted(top, key=lambda x: (-x[1], x[0]))[:8]:
+            report.append(f'- {src}: {n}')
+        report.append('')
+    report += ['', '## Rules', '- CCTV sorted as CCTV-1, CCTV-2, CCTV-3...', '- Mainland CCTV/satellite/local channels first', '- Hong Kong/Macau/Taiwan and overseas Chinese channels moved later', '- Pure English/overseas entertainment channels removed from TV-facing playlist unless explicitly HK/MO/TW/Chinese', '- English/foreign-language channels removed', '- English category names removed', '- Not24/7 and obvious unstable entries removed from TV-facing playlist', '- Pseudo-CCTV aliases containing RTHK/TVB/ViuTV/HK/TW markers removed from CCTV']
     (ROOT / 'curated-report.md').write_text('\n'.join(report) + '\n', encoding='utf-8', newline='\n')
     print('published', len(pub), 'names', len(by), 'bytes', len(text.encode('utf-8')))
     for g in GROUP_ORDER:

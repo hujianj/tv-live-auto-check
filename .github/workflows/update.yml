@@ -78,6 +78,7 @@ jobs:
           assert "其他频道,#genre#" not in text
           bad_lines = []
           bad_name_tokens = ["group-title=", "tvg-logo=", "user-agent", "likeGecko", "w_400", "h_500", "#EXTINF"]
+          unwanted_overseas_tokens = ["PLUTOTV", "REDBULL", "BUDAPEST", "BOGOTA", "BRASIL", "BRESCIA", "BULGARIA", "BANGLA", "LIONSGATE", "WEDOTV", "EBONYTV", "PEACETV", "PENIEL", "STASHTV"]
           current_group = ""
           for lineno, raw in enumerate(text.splitlines(), 1):
               line = raw.strip()
@@ -99,6 +100,9 @@ jobs:
                   bad_lines.append((lineno, "pseudo CCTV alias", line[:240]))
               if "NOT24/7" in name.upper() or "NOT 24/7" in name.upper():
                   bad_lines.append((lineno, "unstable Not24/7", line[:240]))
+              upper_name = name.upper()
+              if any(tok in upper_name for tok in unwanted_overseas_tokens):
+                  bad_lines.append((lineno, "unwanted overseas/English channel", line[:240]))
           assert not bad_lines, "invalid live-curated rows: " + repr(bad_lines[:20])
           all_data = Path("live-all-playable.txt").read_bytes()
           assert len(all_data) >= len(data), (len(all_data), len(data))
