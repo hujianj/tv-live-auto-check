@@ -11,15 +11,15 @@
   "playable_urls_found": 14879,
   "all_playable_lines": 14879,
   "pre_curated_published_lines": 13552,
-  "primary_published_lines": 3821,
+  "primary_published_lines": 3820,
   "curated_generated": true,
-  "curated_published_lines": 3821,
-  "curated_channel_names": 2876,
+  "curated_published_lines": 3820,
+  "curated_channel_names": 2875,
   "curated_groups": {
     "央视频道": 128,
     "卫视频道": 198,
     "地方频道": 491,
-    "影视剧场": 314,
+    "影视剧场": 313,
     "少儿动漫": 50,
     "体育纪实": 103,
     "音乐综艺": 71,
@@ -44,7 +44,7 @@
     "freetv_huya": 931,
     "kimentanm_aptv": 6,
     "fanmingming_ipv6_mirror": 2,
-    "mursor_yy": 436,
+    "mursor_yy": 435,
     "vamoschuck_m3u": 11,
     "epg_tw": 78,
     "epg_hk": 32,
@@ -54,5 +54,5 @@
     "iptv_org_tw": 3
   },
   "final_primary_file": "live-curated.txt",
-  "final_primary_published_lines": 3821
+  "final_primary_published_lines": 3820
 }

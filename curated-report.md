@@ -1,13 +1,13 @@
 # Curated Ku9 playlist report
 
-Published lines: 3821
-Channel names: 2876
+Published lines: 3820
+Channel names: 2875
 
 ## Groups
 - 央视频道: 128
 - 卫视频道: 198
 - 地方频道: 491
-- 影视剧场: 314
+- 影视剧场: 313
 - 少儿动漫: 50
 - 体育纪实: 103
 - 音乐综艺: 71
@@ -23,7 +23,7 @@ Channel names: 2876
 | freetv_huya | 931 |
 | bigbiggrandg_gather | 556 |
 | epg_cn | 542 |
-| mursor_yy | 436 |
+| mursor_yy | 435 |
 | iyouhun_zb | 306 |
 | guovin_ipv4 | 197 |
 | suxuang_ipv4 | 180 |
@@ -77,7 +77,7 @@ Channel names: 2876
 
 ### 影视剧场
 - freetv_huya: 126
-- mursor_yy: 79
+- mursor_yy: 78
 - suxuang_ipv4: 31
 - guovin_ipv4: 22
 - guovin_all: 20

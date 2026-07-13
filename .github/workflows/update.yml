@@ -94,8 +94,8 @@ jobs:
               if not name.strip() or not url.startswith(("http://", "https://")):
                   bad_lines.append((lineno, "bad url", line[:240]))
               low_name = name.lower()
-              if any(tok.lower() in low_name for tok in bad_name_tokens):
-                  bad_lines.append((lineno, "polluted name", line[:240]))
+              if any(tok.lower() in low_name for tok in bad_name_tokens) or "\ufffd" in name:
+                  bad_lines.append((lineno, "polluted/abnormal name", line[:240]))
               if current_group == "央视频道" and any(tok in name.upper() for tok in ["RTHK", "TVB", "VIUTV"]):
                   bad_lines.append((lineno, "pseudo CCTV alias", line[:240]))
               if "NOT24/7" in name.upper() or "NOT 24/7" in name.upper():
@@ -176,8 +176,8 @@ jobs:
                       if not name.strip() or not url.startswith(("http://", "https://")):
                           bad_lines.append((lineno, "bad url", line[:240]))
                       low_name = name.lower()
-                      if any(tok.lower() in low_name for tok in bad_name_tokens):
-                          bad_lines.append((lineno, "polluted name", line[:240]))
+                      if any(tok.lower() in low_name for tok in bad_name_tokens) or "\ufffd" in name:
+                          bad_lines.append((lineno, "polluted/abnormal name", line[:240]))
                       if current_group == "央视频道" and any(tok in name.upper() for tok in ["RTHK", "TVB", "VIUTV"]):
                           bad_lines.append((lineno, "pseudo CCTV alias", line[:240]))
                       if "NOT24/7" in name.upper() or "NOT 24/7" in name.upper():

@@ -216,6 +216,32 @@ UNWANTED_FINAL_TOKENS = DROP_LATIN_TOKENS + [
 ]
 
 
+def has_abnormal_channel_name(name: str) -> bool:
+    """Reject names that can corrupt Ku9 TXT rows or indicate bad decoding."""
+    n = name or ''
+    low = n.lower()
+    if not n.strip():
+        return True
+    # Unicode replacement character means the upstream name was decoded badly.
+    # Do not publish it as a channel name; it is confusing on TV and shows that
+    # the row is not cleanly generated.
+    if '\ufffd' in n:
+        return True
+    if any(ch in n for ch in ['\r', '\n', '\t']):
+        return True
+    if any(ord(ch) < 32 for ch in n):
+        return True
+    if ',' in n:
+        return True
+    if re.search(r'https?://', n, re.I):
+        return True
+    if n.endswith('#genre#'):
+        return True
+    if any(tok.lower() in low for tok in BAD_NAME_TOKENS):
+        return True
+    return False
+
+
 def validate_final_rows(text: str) -> None:
     bad = []
     current_group = ''
@@ -233,8 +259,8 @@ def validate_final_rows(text: str) -> None:
         upper_name = name.upper()
         if not name.strip() or not url.startswith(('http://', 'https://')):
             bad.append((lineno, 'bad url', line[:240]))
-        if any(tok.lower() in name.lower() for tok in BAD_NAME_TOKENS):
-            bad.append((lineno, 'polluted name', line[:240]))
+        if has_abnormal_channel_name(name):
+            bad.append((lineno, 'abnormal/polluted name', line[:240]))
         if current_group == G_CCTV and any(tok in upper_name for tok in ['RTHK', 'TVB', 'VIUTV']):
             bad.append((lineno, 'pseudo CCTV alias', line[:240]))
         if 'NOT24/7' in upper_name or 'NOT 24/7' in upper_name:
@@ -272,6 +298,8 @@ def main():
             group = r.get('group', '') or ''
             source = r.get('source', '') or ''
             if not name or not url.startswith(('http://', 'https://')):
+                continue
+            if has_abnormal_channel_name(name):
                 continue
             if 'cgtn' in url.lower():
                 continue
