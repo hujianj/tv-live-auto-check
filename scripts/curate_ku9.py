@@ -52,7 +52,7 @@ DROP_LATIN_TOKENS = [
     "BOJONEGORO", "BARILOCHE", "ASUNCION", "LIONSGATE", "WEDOTV",
     "EBONYTV", "CITYTV", "PEACETV", "PENIEL", "STASHTV", "SUPERTV",
     "CONECTV", "CREATV", "DELTATV", "RTVBN", "RADIO", "MTV",
-    "NICKELODEON", "NICKJR", "NICKTOONS", "CIN?", "CINE",
+    "NICKELODEON", "NICKJR", "NICKTOONS", "CIN\u00c9", "CINE",
 ]
 
 
@@ -67,6 +67,19 @@ def clean_name(name: str) -> str:
     # CCTV1/CCTV1??/CCTV-1 -> CCTV-1/CCTV-1??
     name = re.sub(r'^CCTV[-_ ]?(\d+)(\+?)', r'CCTV-\1\2', name, flags=re.I)
     return name[:80]
+
+
+def has_invalid_channel_name(name: str) -> bool:
+    if not name:
+        return True
+    # Reject mojibake/replacement characters that make Ku9 show broken names
+    # and indicate upstream decoding corruption.
+    if '\ufffd' in name:
+        return True
+    # Reject control characters; tabs/newlines can corrupt TXT row structure.
+    if any((ord(ch) < 32 or ord(ch) == 127) for ch in name):
+        return True
+    return False
 
 
 def cctv_num(name: str):
@@ -229,7 +242,7 @@ def has_abnormal_channel_name(name: str) -> bool:
         return True
     if any(ch in n for ch in ['\r', '\n', '\t']):
         return True
-    if any(ord(ch) < 32 for ch in n):
+    if any((ord(ch) < 32 or ord(ch) == 127) for ch in n):
         return True
     if ',' in n:
         return True
@@ -257,6 +270,8 @@ def validate_final_rows(text: str) -> None:
             continue
         name, url = line.split(',', 1)
         upper_name = name.upper()
+        if has_invalid_channel_name(name):
+            bad.append((lineno, 'invalid channel name', line[:240]))
         if not name.strip() or not url.startswith(('http://', 'https://')):
             bad.append((lineno, 'bad url', line[:240]))
         if has_abnormal_channel_name(name):
@@ -297,7 +312,7 @@ def main():
             url = (r.get('url', '') or '').strip()
             group = r.get('group', '') or ''
             source = r.get('source', '') or ''
-            if not name or not url.startswith(('http://', 'https://')):
+            if has_invalid_channel_name(name) or not url.startswith(('http://', 'https://')):
                 continue
             if has_abnormal_channel_name(name):
                 continue
