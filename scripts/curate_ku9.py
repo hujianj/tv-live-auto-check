@@ -80,7 +80,13 @@ def is_hk_mo_tw_channel(name: str, group: str = '') -> bool:
     n = name.strip()
     upper = n.upper()
     g = group or ''
-    if any(k in n or k in g for k in HK_CN_KEYS):
+    # Name-level Chinese markers are reliable.
+    if any(k in n for k in HK_CN_KEYS):
+        return True
+    # Group-level HK/MO/TW markers are only trusted for Chinese channel names.
+    # Some overseas collections put unrelated pure-English channels under a
+    # broad HK/TW/overseas group; do not let that bypass the home-list filter.
+    if chinese_count(n) > 0 and any(k in g for k in HK_CN_KEYS):
         return True
     # Latin abbreviations must appear as a clear brand prefix, not as an
     # accidental substring such as ABTVBariloche or StaraTVBandung.

@@ -109,6 +109,7 @@ jobs:
           print("Generated full-check playlist smoke OK", len(data), "bytes", summary)
           PY
       - name: Upload full diagnostic artifacts
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: full-iptv-check-${{ github.run_id }}
