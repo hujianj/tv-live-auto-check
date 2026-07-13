@@ -46,11 +46,13 @@ CCTV_ALIAS_BLOCK_TOKENS = ["RTHK", "TVB", "VIUTV", "\u6e2f\u53f0", "\u9999\u6e2f
 HK_CN_KEYS = ["\u9999\u6e2f", "\u6fb3\u95e8", "\u6fb3\u9580", "\u53f0\u6e7e", "\u53f0\u7063", "\u6e2f\u53f0", "\u51e4\u51f0", "\u9cf3\u51f0", "\u7fe1\u7fe0", "\u660e\u73e0", "\u6c11\u89c6", "\u4e2d\u89c6", "\u534e\u89c6", "\u53f0\u89c6", "\u4e1c\u68ee", "\u4e09\u7acb", "\u4e2d\u5929"]
 HK_LATIN_PREFIXES = ("RTHK", "VIUTV", "TVB", "TVBS", "PHOENIX")
 DROP_LATIN_TOKENS = [
-    "PLUTOTV", "REDBULL", "BUDAPEST", "BOGOTA", "BRASIL", "BRAZIL",
-    "BULGARIA", "BANGLA", "BRESCIA", "BREMEN", "BODENSEE", "BANDUNG",
+    "PLUTOTV", "PLUTO", "REDBULL", "BUDAPEST", "BOGOTA", "BRASIL", "BRAZIL",
+    "BULGARIA", "BULGARIAONAIR", "BANGLA", "MOVIEBANGLA", "NEWS18BANGLA",
+    "NEWS21BANGLA", "BRESCIA", "BREMEN", "BODENSEE", "BANDUNG",
     "BOJONEGORO", "BARILOCHE", "ASUNCION", "LIONSGATE", "WEDOTV",
     "EBONYTV", "CITYTV", "PEACETV", "PENIEL", "STASHTV", "SUPERTV",
     "CONECTV", "CREATV", "DELTATV", "RTVBN", "RADIO", "MTV",
+    "NICKELODEON", "NICKJR", "NICKTOONS", "CIN?", "CINE",
 ]
 
 
@@ -92,6 +94,10 @@ def is_hk_mo_tw_channel(name: str, group: str = '') -> bool:
 def is_unwanted_overseas_english(name: str, group: str, source: str) -> bool:
     n = name.strip()
     upper = n.upper()
+    # Keep real CCTV numeric channels before applying the pure-Latin home-list
+    # filter; otherwise CCTV-1/CCTV-5 are incorrectly treated as English names.
+    if cctv_num(n):
+        return False
     if is_hk_mo_tw_channel(n, group):
         return False
     if any(tok in upper for tok in DROP_LATIN_TOKENS):
@@ -195,6 +201,45 @@ def url_score(url: str, source: str):
     return (s, len(url), source)
 
 
+BAD_NAME_TOKENS = ["group-title=", "tvg-logo=", "user-agent", "likeGecko", "w_400", "h_500", "#EXTINF"]
+UNWANTED_FINAL_TOKENS = DROP_LATIN_TOKENS + [
+    "BUDAPEST", "BOGOTA", "BRASIL", "BRESCIA", "LIONSGATE", "WEDOTV",
+    "EBONYTV", "PEACETV", "PENIEL", "STASHTV",
+]
+
+
+def validate_final_rows(text: str) -> None:
+    bad = []
+    current_group = ''
+    for lineno, raw in enumerate(text.splitlines(), 1):
+        line = raw.strip()
+        if not line:
+            continue
+        if line.endswith(',#genre#'):
+            current_group = line.split(',', 1)[0]
+            continue
+        if ',' not in line:
+            bad.append((lineno, 'missing comma', line[:200]))
+            continue
+        name, url = line.split(',', 1)
+        upper_name = name.upper()
+        if not name.strip() or not url.startswith(('http://', 'https://')):
+            bad.append((lineno, 'bad url', line[:240]))
+        if any(tok.lower() in name.lower() for tok in BAD_NAME_TOKENS):
+            bad.append((lineno, 'polluted name', line[:240]))
+        if current_group == G_CCTV and any(tok in upper_name for tok in ['RTHK', 'TVB', 'VIUTV']):
+            bad.append((lineno, 'pseudo CCTV alias', line[:240]))
+        if 'NOT24/7' in upper_name or 'NOT 24/7' in upper_name:
+            bad.append((lineno, 'unstable Not24/7', line[:240]))
+        if not cctv_num(name) and not is_hk_mo_tw_channel(name, current_group):
+            if any(tok in upper_name for tok in UNWANTED_FINAL_TOKENS):
+                bad.append((lineno, 'unwanted overseas/English channel', line[:240]))
+            if chinese_count(name) == 0 and re.search(r'[A-Z]{3,}', upper_name):
+                bad.append((lineno, 'pure Latin overseas/English channel', line[:240]))
+    if bad:
+        raise SystemExit('invalid live-curated rows: ' + repr(bad[:30]))
+
+
 def sort_key(item):
     group, name, url, source = item
     gi = GROUP_ORDER.index(group) if group in GROUP_ORDER else 99
@@ -258,6 +303,7 @@ def main():
         for _, n, u, s in part:
             lines.append(f'{n},{u}')
     text = '\n'.join(lines).strip() + '\n'
+    validate_final_rows(text)
     for fn in ['live-curated.txt', 'live-verified.txt', 'live.txt', 'ku9-live.txt']:
         (ROOT / fn).write_bytes(text.encode('utf-8'))
 
