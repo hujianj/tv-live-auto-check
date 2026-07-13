@@ -44,7 +44,7 @@ FOREIGN_CN_TOKENS = ["阿里郎", "环球电视", "朝鲜", "韩国", "日本", 
 UNSTABLE_NAME_TOKENS = ["NOT24/7", "NOT 24/7", "[NOT24/7]", "\u6d4b\u8bd5", "\u505c\u64ad", "\u7ef4\u62a4", "OFFLINE"]
 CCTV_ALIAS_BLOCK_TOKENS = ["RTHK", "TVB", "VIUTV", "\u6e2f\u53f0", "\u9999\u6e2f", "\u6fb3\u95e8", "\u6fb3\u9580", "\u53f0\u6e7e", "\u53f0\u7063", "\u51e4\u51f0", "\u9cf3\u51f0", "\u7fe1\u7fe0", "\u660e\u73e0"]
 HK_CN_KEYS = ["\u9999\u6e2f", "\u6fb3\u95e8", "\u6fb3\u9580", "\u53f0\u6e7e", "\u53f0\u7063", "\u6e2f\u53f0", "\u51e4\u51f0", "\u9cf3\u51f0", "\u7fe1\u7fe0", "\u660e\u73e0", "\u6c11\u89c6", "\u4e2d\u89c6", "\u534e\u89c6", "\u53f0\u89c6", "\u4e1c\u68ee", "\u4e09\u7acb", "\u4e2d\u5929"]
-HK_LATIN_PREFIXES = ("RTHK", "VIUTV", "TVB", "TVBS", "PHOENIX")
+HK_LATIN_PREFIXES = ("RTHK", "VIUTV", "TVBS", "PHOENIX")
 DROP_LATIN_TOKENS = [
     "PLUTOTV", "PLUTO", "REDBULL", "BUDAPEST", "BOGOTA", "BRASIL", "BRAZIL",
     "BULGARIA", "BULGARIAONAIR", "BANGLA", "MOVIEBANGLA", "NEWS18BANGLA",
@@ -89,8 +89,10 @@ def is_hk_mo_tw_channel(name: str, group: str = '') -> bool:
     if chinese_count(n) > 0 and any(k in g for k in HK_CN_KEYS):
         return True
     # Latin abbreviations must appear as a clear brand prefix, not as an
-    # accidental substring such as ABTVBariloche or StaraTVBandung.
+    # accidental substring such as ABTVBariloche, StaraTVBandung or TVBrasil.
     if upper.startswith(HK_LATIN_PREFIXES):
+        return True
+    if upper.startswith(("TVBJADE", "TVBPEARL", "TVBNEWS", "TVBFINANCE", "TVBENTERTAINMENT", "TVBCLASSIC", "TVBPLUS", "TVBSPORTS")):
         return True
     if re.search(r'(^|[^A-Z0-9])(RTHK|VIUTV|TVB|TVBS|PHOENIX)([^A-Z0-9]|$)', upper):
         return True
