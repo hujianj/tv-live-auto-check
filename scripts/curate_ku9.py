@@ -4,6 +4,7 @@ from __future__ import annotations
 import csv, json, re
 from pathlib import Path
 from collections import defaultdict, Counter
+from validate_playlist import validate_text
 
 ROOT = Path(__file__).resolve().parents[1]
 IN = ROOT / "stream_check_results.csv"
@@ -68,6 +69,13 @@ def clean_name(name: str) -> str:
     name = re.sub(r'^CCTV[-_ ]?(\d+)(\+?)', r'CCTV-\1\2', name, flags=re.I)
     return name[:80]
 
+
+
+def clean_url(url: str) -> str:
+    url = (url or '').strip().strip('"').strip("'").lstrip('\ufeff')
+    url = re.split(r'[;#](?=https?://)', url, maxsplit=1, flags=re.I)[0]
+    url = url.rstrip(',')
+    return url.strip()
 
 def has_invalid_channel_name(name: str) -> bool:
     if not name:
@@ -256,37 +264,7 @@ def has_abnormal_channel_name(name: str) -> bool:
 
 
 def validate_final_rows(text: str) -> None:
-    bad = []
-    current_group = ''
-    for lineno, raw in enumerate(text.splitlines(), 1):
-        line = raw.strip()
-        if not line:
-            continue
-        if line.endswith(',#genre#'):
-            current_group = line.split(',', 1)[0]
-            continue
-        if ',' not in line:
-            bad.append((lineno, 'missing comma', line[:200]))
-            continue
-        name, url = line.split(',', 1)
-        upper_name = name.upper()
-        if has_invalid_channel_name(name):
-            bad.append((lineno, 'invalid channel name', line[:240]))
-        if not name.strip() or not url.startswith(('http://', 'https://')):
-            bad.append((lineno, 'bad url', line[:240]))
-        if has_abnormal_channel_name(name):
-            bad.append((lineno, 'abnormal/polluted name', line[:240]))
-        if current_group == G_CCTV and any(tok in upper_name for tok in ['RTHK', 'TVB', 'VIUTV']):
-            bad.append((lineno, 'pseudo CCTV alias', line[:240]))
-        if 'NOT24/7' in upper_name or 'NOT 24/7' in upper_name:
-            bad.append((lineno, 'unstable Not24/7', line[:240]))
-        if not cctv_num(name) and not is_hk_mo_tw_channel(name, current_group):
-            if any(tok in upper_name for tok in UNWANTED_FINAL_TOKENS):
-                bad.append((lineno, 'unwanted overseas/English channel', line[:240]))
-            if chinese_count(name) == 0 and re.search(r'[A-Z]{3,}', upper_name):
-                bad.append((lineno, 'pure Latin overseas/English channel', line[:240]))
-    if bad:
-        raise SystemExit('invalid live-curated rows: ' + repr(bad[:30]))
+    validate_text(text, require_categories=True)
 
 
 def sort_key(item):
@@ -309,7 +287,7 @@ def main():
             if r.get('ok') != 'True':
                 continue
             name = clean_name(r.get('name', ''))
-            url = (r.get('url', '') or '').strip()
+            url = clean_url(r.get('url', '') or '')
             group = r.get('group', '') or ''
             source = r.get('source', '') or ''
             if has_invalid_channel_name(name) or not url.startswith(('http://', 'https://')):

@@ -15,6 +15,7 @@ import ssl
 import sys
 import time
 from dataclasses import dataclass
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Iterable
 from urllib.parse import urljoin, urlparse
@@ -136,6 +137,40 @@ def normalize_name(name: str) -> str:
     return name[:80] or "\u672a\u547d\u540d\u9891\u9053"
 
 
+
+
+def split_stream_urls(url: str) -> list[str]:
+    """Return clean candidate URLs from one messy upstream URL field.
+
+    Some public TXT/M3U rows concatenate backup URLs in a single field, for
+    example ``url1;http://url2`` or ``url1#https://url2``. Ku9 treats the whole
+    field as one URL and fails. Do not merely keep the first URL here: split the
+    field into independently checked candidates so a good backup URL is not
+    lost. Delimiters are only recognized when immediately followed by another
+    HTTP(S) URL, so normal query-string semicolons/fragments are preserved.
+    """
+    raw = html.unescape(url or "").strip().strip('"').strip("'").lstrip("\ufeff")
+    if not raw:
+        return []
+    parts: list[str] = []
+    for piece in re.split(r"[;#](?=https?://)", raw, flags=re.I):
+        parts.extend(re.split(r",(?=https?://)", piece, flags=re.I))
+    out: list[str] = []
+    seen: set[str] = set()
+    for piece in parts:
+        clean = piece.strip().strip('"').strip("'").lstrip("\ufeff").rstrip(",").strip()
+        if not clean or clean in seen:
+            continue
+        seen.add(clean)
+        out.append(clean)
+    return out
+
+
+def normalize_stream_url(url: str) -> str:
+    """Compatibility helper: return the first clean URL from a field."""
+    urls = split_stream_urls(url)
+    return urls[0] if urls else ""
+
 def infer_group(name: str, group: str = "") -> str:
     G_CCTV = "\u592e\u89c6\u9891\u9053"
     G_SAT = "\u536b\u89c6\u9891\u9053"
@@ -203,10 +238,11 @@ def parse_m3u(text: str, source: str) -> list[Candidate]:
         elif line.startswith("#"):
             continue
         elif re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", line):
-            if line.startswith(("http://", "https://", "rtmp://")):
-                name = normalize_name(last_name or urlparse(line).path.rsplit("/", 1)[-1])
-                group = infer_group(name, last_group)
-                out.append(Candidate(source, group, name, line))
+            for url in split_stream_urls(line):
+                if url.startswith(("http://", "https://", "rtmp://")):
+                    name = normalize_name(last_name or urlparse(url).path.rsplit("/", 1)[-1])
+                    group = infer_group(name, last_group)
+                    out.append(Candidate(source, group, name, url))
             last_name = ""
             last_group = ""
     return out
@@ -228,9 +264,9 @@ def parse_txt(text: str, source: str) -> list[Candidate]:
         else:
             continue
         name = normalize_name(name)
-        url = url.strip()
-        if url.startswith(("http://", "https://", "rtmp://")):
-            out.append(Candidate(source, infer_group(name, group), name, url))
+        for clean_url in split_stream_urls(url):
+            if clean_url.startswith(("http://", "https://", "rtmp://")):
+                out.append(Candidate(source, infer_group(name, group), name, clean_url))
     return out
 
 
@@ -246,7 +282,8 @@ def fetch_source(item: tuple[str, str]) -> tuple[SourceStatus, list[Candidate]]:
         code, ctype, data, final = fetch_url(url)
         text = decode_bytes(data, ctype)
         cands = parse_playlist(text, name)
-        st = SourceStatus(name, url, True, len(data), len(cands), "")
+        warn = "" if cands else "WARN fetched but no supported HTTP/HTTPS/RTMP stream candidates"
+        st = SourceStatus(name, url, True, len(data), len(cands), warn)
         return st, cands
     except Exception as e:
         return SourceStatus(name, url, False, 0, 0, repr(e)[:240]), []
@@ -444,7 +481,7 @@ def main() -> None:
     dedup: dict[tuple[str, str], Candidate] = {}
     for c in all_cands:
         name = normalize_name(c.name)
-        url = c.url.strip()
+        url = normalize_stream_url(c.url)
         if not name or len(url) > 1000:
             continue
         dedup.setdefault((name, url), Candidate(c.source, infer_group(name, c.group), name, url))
@@ -533,8 +570,12 @@ def main() -> None:
         all_m3u.append(c.url)
     (ROOT / "all-playable.m3u").write_text("\n".join(all_m3u) + "\n", encoding="utf-8", newline="\n")
 
+    generated_utc = datetime.now(timezone.utc).replace(microsecond=0)
+    generated_beijing = generated_utc.astimezone(timezone(timedelta(hours=8)))
     summary = {
         "generated": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "generated_utc": generated_utc.isoformat().replace("+00:00", "Z"),
+        "generated_beijing": generated_beijing.strftime("%Y-%m-%d %H:%M:%S Asia/Shanghai"),
         "sources_total": len(SOURCES),
         "sources_fetched_ok": sum(1 for s in statuses if s.ok),
         "parsed_candidates": len(all_cands),
@@ -543,6 +584,9 @@ def main() -> None:
         "checked_candidates": len(to_check),
         "checked_all_unique": len(to_check) == len(url_to_candidates),
         "playable_channel_names": len(valid_by_name),
+        "playable_unique_urls": ok_count,
+        "playable_name_url_lines": len(all_valid),
+        # Legacy name retained for compatibility; this is line count, not unique URL count.
         "playable_urls_found": len(all_valid),
         "all_playable_lines": len(all_valid),
         "pre_curated_published_lines": len(valid),
@@ -569,6 +613,8 @@ def main() -> None:
         "# IPTV source verification report",
         "",
         f"Generated: {time.strftime('%Y-%m-%d %H:%M:%S')}",
+        f"Generated UTC: {generated_utc.isoformat().replace('+00:00', 'Z')}",
+        f"Generated Beijing: {generated_beijing.strftime('%Y-%m-%d %H:%M:%S Asia/Shanghai')}",
         f"Elapsed: {time.time()-start:.1f}s",
         f"Sources total: {len(SOURCES)}",
         f"Sources fetched OK: {sum(1 for s in statuses if s.ok)}",
@@ -578,7 +624,9 @@ def main() -> None:
         f"Checked unique stream URLs: {len(to_check)}",
         f"Checked all unique URLs: {len(to_check) == len(url_to_candidates)}",
         f"Playable channel names: {len(valid_by_name)}",
-        f"Playable URLs found: {len(all_valid)}",
+        f"Playable unique URLs: {ok_count}",
+        f"Playable name+URL lines: {len(all_valid)}",
+        f"Playable URLs found (legacy line count): {len(all_valid)}",
         f"Pre-curated published playable lines: {len(valid)}",
         "",
         "## Source fetch status",
@@ -602,4 +650,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

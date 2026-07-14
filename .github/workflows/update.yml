@@ -7,8 +7,7 @@ on:
     - cron: "20 20 * * *"
   push:
     paths:
-      - "scripts/verify_sources.py"
-      - "scripts/curate_ku9.py"
+      - "scripts/*.py"
       - ".github/workflows/update.yml"
 
 permissions:
@@ -29,6 +28,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: Unit test parser, URL splitting, and playlist validator
+        run: python scripts/test_playlist_logic.py
       - name: Verify every unique IPTV stream URL
         env:
           IPTV_CHECK_WORKERS: "192"
@@ -40,74 +41,34 @@ jobs:
         run: python scripts/verify_sources.py
       - name: Curate Ku9 channel order
         run: python scripts/curate_ku9.py
-
       - name: Smoke test generated playlist
         run: |
+          python scripts/validate_playlist.py live-curated.txt live.txt live-verified.txt ku9-live.txt
           python - <<'PY'
-          import json
+          import hashlib, json
           from pathlib import Path
           summary = json.loads(Path("full-check-summary.json").read_text(encoding="utf-8"))
           assert summary["checked_all_unique"] is True, summary
           assert summary["checked_candidates"] == summary["unique_candidates"], summary
           assert summary["unique_name_url_candidates"] >= summary["unique_candidates"], summary
+          assert summary["playable_unique_urls"] > 100, summary
+          assert summary["playable_name_url_lines"] == summary["all_playable_lines"], summary
+          assert summary["playable_urls_found"] == summary["all_playable_lines"], summary
           assert summary["playable_urls_found"] >= summary["primary_published_lines"], summary
-          assert summary["all_playable_lines"] == summary["playable_urls_found"], summary
           assert summary["curated_generated"] is True, summary
           assert summary["curated_published_lines"] == summary["primary_published_lines"], summary
           assert summary["final_primary_published_lines"] == summary["curated_published_lines"], summary
-          assert summary["playable_urls_found"] > 100, summary
           assert summary["curated_published_lines"] > 100, summary
-          data = Path("live-curated.txt").read_bytes()
-          text = data.decode("utf-8", "replace")
-          assert len(data) > 10_000, f"playlist too small: {len(data)} bytes"
-          for marker in [
-              "央视频道,#genre#",
-              "卫视频道,#genre#",
-              "地方频道,#genre#",
-              "影视剧场,#genre#",
-              "少儿动漫,#genre#",
-              "体育纪实,#genre#",
-              "音乐综艺,#genre#",
-              "生活休闲,#genre#",
-              "综合娱乐,#genre#",
-              "港澳台频道,#genre#",
-              "海外华语频道,#genre#",
-          ]:
-              assert marker in text, f"missing category: {marker}"
-          assert "影视娱乐,#genre#" not in text
-          assert "其他频道,#genre#" not in text
-          bad_lines = []
-          bad_name_tokens = ["group-title=", "tvg-logo=", "user-agent", "likeGecko", "w_400", "h_500", "#EXTINF"]
-          unwanted_overseas_tokens = ["PLUTOTV", "REDBULL", "BUDAPEST", "BOGOTA", "BRASIL", "BRESCIA", "BULGARIA", "BANGLA", "LIONSGATE", "WEDOTV", "EBONYTV", "PEACETV", "PENIEL", "STASHTV"]
-          current_group = ""
-          for lineno, raw in enumerate(text.splitlines(), 1):
-              line = raw.strip()
-              if not line:
-                  continue
-              if line.endswith(",#genre#"):
-                  current_group = line.split(",", 1)[0]
-                  continue
-              if "," not in line:
-                  bad_lines.append((lineno, "missing comma", line[:200]))
-                  continue
-              name, url = line.split(",", 1)
-              if not name.strip() or not url.startswith(("http://", "https://")):
-                  bad_lines.append((lineno, "bad url", line[:240]))
-              low_name = name.lower()
-              if any(tok.lower() in low_name for tok in bad_name_tokens) or "\ufffd" in name:
-                  bad_lines.append((lineno, "polluted/abnormal name", line[:240]))
-              if current_group == "央视频道" and any(tok in name.upper() for tok in ["RTHK", "TVB", "VIUTV"]):
-                  bad_lines.append((lineno, "pseudo CCTV alias", line[:240]))
-              if "NOT24/7" in name.upper() or "NOT 24/7" in name.upper():
-                  bad_lines.append((lineno, "unstable Not24/7", line[:240]))
-              upper_name = name.upper()
-              if any(tok in upper_name for tok in unwanted_overseas_tokens):
-                  bad_lines.append((lineno, "unwanted overseas/English channel", line[:240]))
-          assert not bad_lines, "invalid live-curated rows: " + repr(bad_lines[:20])
+          files = ["live-curated.txt", "live.txt", "live-verified.txt", "ku9-live.txt"]
+          payloads = [Path(f).read_bytes() for f in files]
+          assert len({hashlib.sha256(x).hexdigest() for x in payloads}) == 1, "TV TXT outputs differ"
+          assert len(payloads[0]) > 10_000, f"playlist too small: {len(payloads[0])} bytes"
           all_data = Path("live-all-playable.txt").read_bytes()
-          assert len(all_data) >= len(data), (len(all_data), len(data))
-          print("Generated full-check playlist smoke OK", len(data), "bytes", summary)
+          assert len(all_data) >= len(payloads[0]), (len(all_data), len(payloads[0]))
+          print("Generated full-check playlist smoke OK", len(payloads[0]), "bytes", summary)
           PY
+      - name: Guard against shrunken or unsafe publish
+        run: python scripts/guard_publish.py
       - name: Upload full diagnostic artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -118,7 +79,6 @@ jobs:
             stream_check_results.csv
             live-all-playable.txt
             all-playable.m3u
-
       - name: Commit verified playlist
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
@@ -136,8 +96,10 @@ jobs:
       - name: Smoke test GitHub Raw publication freshness
         run: |
           python - <<'PY'
-          import hashlib, time, urllib.request
+          import hashlib, sys, time, urllib.request
           from pathlib import Path
+          sys.path.insert(0, "scripts")
+          from validate_playlist import validate_text
           expected = Path("live-curated.txt").read_bytes()
           expected_hash = hashlib.sha256(expected).hexdigest()
           expected_size = len(expected)
@@ -154,35 +116,7 @@ jobs:
                   last_size = len(data)
                   text = data.decode("utf-8", "replace")
                   assert last_hash == expected_hash, f"Raw hash {last_hash} != local hash {expected_hash}"
-                  assert "央视频道,#genre#" in text
-                  assert "影视剧场,#genre#" in text
-                  assert "综合娱乐,#genre#" in text
-                  assert "影视娱乐,#genre#" not in text
-                  assert "其他频道,#genre#" not in text
-                  bad_lines = []
-                  bad_name_tokens = ["group-title=", "tvg-logo=", "user-agent", "likeGecko", "w_400", "h_500", "#EXTINF"]
-                  current_group = ""
-                  for lineno, raw in enumerate(text.splitlines(), 1):
-                      line = raw.strip()
-                      if not line:
-                          continue
-                      if line.endswith(",#genre#"):
-                          current_group = line.split(",", 1)[0]
-                          continue
-                      if "," not in line:
-                          bad_lines.append((lineno, "missing comma", line[:200]))
-                          continue
-                      name, url = line.split(",", 1)
-                      if not name.strip() or not url.startswith(("http://", "https://")):
-                          bad_lines.append((lineno, "bad url", line[:240]))
-                      low_name = name.lower()
-                      if any(tok.lower() in low_name for tok in bad_name_tokens) or "\ufffd" in name:
-                          bad_lines.append((lineno, "polluted/abnormal name", line[:240]))
-                      if current_group == "央视频道" and any(tok in name.upper() for tok in ["RTHK", "TVB", "VIUTV"]):
-                          bad_lines.append((lineno, "pseudo CCTV alias", line[:240]))
-                      if "NOT24/7" in name.upper() or "NOT 24/7" in name.upper():
-                          bad_lines.append((lineno, "unstable Not24/7", line[:240]))
-                  assert not bad_lines, "invalid live-curated rows: " + repr(bad_lines[:20])
+                  validate_text(text, require_categories=True)
                   print("GitHub Raw freshness smoke OK", last_size, last_hash)
                   break
               except Exception as e:
@@ -195,18 +129,18 @@ jobs:
         if: always()
         run: |
           python - <<'PY'
-          import hashlib, time, urllib.request
+          import hashlib, sys, time, urllib.request
           from pathlib import Path
+          sys.path.insert(0, "scripts")
+          from validate_playlist import validate_text
           expected = Path("live-curated.txt").read_bytes()
           expected_hash = hashlib.sha256(expected).hexdigest()
           expected_size = len(expected)
-          # jsDelivr can remain stale even after purge, so do not spend many
-          # minutes waiting for it. Raw proxy is the fast-fresh fallback; jsDelivr
-          # is kept as the stable TV URL.
           urls = [
               ("pages", "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/live-curated.txt", 6),
               ("ghproxy_raw", "https://gh-proxy.com/raw.githubusercontent.com/${{ github.repository }}/main/live-curated.txt", 6),
               ("jsdelivr_main", "https://cdn.jsdelivr.net/gh/${{ github.repository }}@main/live-curated.txt", 3),
+              ("jsdelivr_live_txt", "https://cdn.jsdelivr.net/gh/${{ github.repository }}@main/live.txt", 3),
               ("jsdelivr_unversioned", "https://cdn.jsdelivr.net/gh/${{ github.repository }}/live-curated.txt", 3),
           ]
           def fetch(url):
@@ -222,31 +156,15 @@ jobs:
                       last_size = len(data)
                       last_hash = hashlib.sha256(data).hexdigest()
                       text = data.decode("utf-8", "replace")
-                      structure_ok = (
-                          "央视频道,#genre#" in text
-                          and "影视剧场,#genre#" in text
-                          and "综合娱乐,#genre#" in text
-                          and "影视娱乐,#genre#" not in text
-                          and "其他频道,#genre#" not in text
-                      )
-                      if last_hash == expected_hash and structure_ok:
+                      validate_text(text, require_categories=True)
+                      if last_hash == expected_hash:
                           print(f"{name} cache OK", last_size, last_hash)
                           ok = True
                           break
-                      print(f"{name} cache retry {i + 1}: size={last_size} hash={last_hash} expected_size={expected_size} expected_hash={expected_hash} structure_ok={structure_ok}")
+                      print(f"{name} cache retry {i + 1}: size={last_size} hash={last_hash} expected_size={expected_size} expected_hash={expected_hash}")
                   except Exception as e:
                       print(f"{name} cache retry {i + 1}: {e!r}")
                   time.sleep(10)
               if not ok:
                   print(f"WARNING: {name} is still stale or unreachable; generated playlist and GitHub Raw are already verified. url={url} last_size={last_size} last_hash={last_hash} expected_size={expected_size} expected_hash={expected_hash}")
           PY
-
-
-
-
-
-
-
-
-
-
