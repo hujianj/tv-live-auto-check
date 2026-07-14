@@ -38,12 +38,12 @@ https://raw.githubusercontent.com/hujianj/tv-live-auto-check/main/live-curated.t
 ## 自动维护逻辑
 
 - 每天北京时间 04:20 自动运行，也可在 GitHub Actions 手动 `Run workflow`。
-- 抓取 `scripts/verify_sources.py` 中配置的所有上游公开源。
+- 抓取 `config/sources.json` 中启用的所有上游公开源。
 - 对所有去重后的真实流 URL 做全量检测；同一个 URL 被多个频道名引用时只检测一次，再复用检测结果。
 - HLS 检测会打开播放列表，并继续检测下一级媒体分片；默认最多检测 2 个 variant、每个媒体列表最多 2 个分片。
 - 生成电视端主订阅 `live-curated.txt`、同内容别名 `live.txt` / `live-verified.txt` / `ku9-live.txt`，以及 `live.m3u`。
 - 全量明细 `stream_check_results.csv`、`live-all-playable.txt`、`all-playable.m3u` 不再提交到 Git 仓库，只作为 GitHub Actions artifact 保存 30 天。
-- 发布前会运行统一校验 `scripts/validate_playlist.py`，防止异常频道名、异常 URL、错误分类或不可解析 TXT 行进入正式列表。
+- 发布前会先运行 `scripts/test_playlist_logic.py` 单元测试，再运行统一校验 `scripts/validate_playlist.py`，同时检查 TXT 和 M3U，防止异常频道名、异常 URL、错误分类或不可解析行进入正式列表。
 - 发布前会运行 `scripts/guard_publish.py`，如果本次结果比上一版明显缩水，或核心分类数量低于阈值，会拒绝发布，保留上一版可用列表。
 - 发布后自动 purge jsDelivr，并检查 Raw / Pages / jsDelivr 缓存状态。jsDelivr 偶发短时滞后只记录告警，不代表仓库文件错误。
 
@@ -86,30 +86,26 @@ zbds_iptv4_txt
 修改：
 
 ```text
-scripts/verify_sources.py
+config/sources.json
 ```
 
-找到：
+按同样格式新增一个对象：
 
-```python
-SOURCES = [
-    ("zbds_iptv4_txt", "https://live.zbds.top/tv/iptv4.txt"),
-    ...
-]
-```
-
-按同样格式新增一行：
-
-```python
-("your_source_name", "https://example.com/your_playlist.m3u"),
+```json
+{
+  "name": "your_source_name",
+  "url": "https://example.com/your_playlist.m3u",
+  "enabled": true
+}
 ```
 
 规则：
 
-- `your_source_name` 建议只用英文、数字、下划线。
-- 第二个字段填写 TXT / M3U / M3U8 聚合源地址。
+- `name` 建议只用英文、数字、下划线，后续报告和优先级规则都依赖这个稳定标识。
+- `url` 填写 TXT / M3U / M3U8 聚合源地址。
+- 临时不用的源不要删除，可把 `enabled` 改成 `false` 并写明 `note`。
 - 新增后可手动运行 GitHub Actions，或等待每天自动维护。
-- 如果想调整新源优先级，修改同文件里的 `source_priority()`。
+- 如果想调整新源优先级，修改 `scripts/verify_sources.py` 和 `scripts/curate_ku9.py` 里的 `source_priority()`。
 
 ## CDN 说明
 

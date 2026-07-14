@@ -76,14 +76,86 @@ def warn(msg: str) -> None:
     print("GUARD WARN:", msg)
 
 
+def ratio(base: int, current: int) -> float | None:
+    if base <= 0:
+        return None
+    return (base - current) / base
+
+
+def write_guard_outputs(current: dict, baseline: dict, failures: list[str], warnings: list[str], statuses: list[dict[str, str]]) -> None:
+    groups = current.get("curated_groups") or {}
+    base_groups = baseline.get("curated_groups") or {}
+    cur_lines = int(current.get("curated_published_lines") or current.get("primary_published_lines") or 0)
+    base_lines = int(baseline.get("curated_published_lines") or baseline.get("primary_published_lines") or 0)
+    group_deltas: dict[str, dict[str, int | float | None]] = {}
+    for group in MIN_GROUPS:
+        cur = int(groups.get(group, 0))
+        base = int(base_groups.get(group, 0)) if base_groups else 0
+        group_deltas[group] = {
+            "baseline": base,
+            "current": cur,
+            "delta": cur - base,
+            "drop_ratio": ratio(base, cur),
+        }
+    failed_sources = [r["name"] for r in statuses if r.get("fetch_ok") != "True"]
+    zero_parsed = [r["name"] for r in statuses if r.get("fetch_ok") == "True" and int(r.get("parsed") or 0) == 0]
+    guard = {
+        "status": "rejected" if failures else "ok",
+        "baseline_lines": base_lines,
+        "current_lines": cur_lines,
+        "total_drop_ratio": ratio(base_lines, cur_lines),
+        "min_lines": int(os.getenv("IPTV_GUARD_MIN_CURATED_LINES", "1800")),
+        "max_total_drop_ratio": float(os.getenv("IPTV_GUARD_MAX_TOTAL_DROP_RATIO", "0.20")),
+        "group_deltas": group_deltas,
+        "failed_sources": failed_sources,
+        "zero_parsed_sources": zero_parsed,
+        "failures": failures,
+        "warnings": warnings,
+    }
+    current["publish_guard"] = guard
+    (ROOT / "full-check-summary.json").write_text(json.dumps(current, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
+
+    lines = [
+        "# Publish guard report",
+        "",
+        f"Status: {guard['status']}",
+        f"Baseline lines: {base_lines}",
+        f"Current lines: {cur_lines}",
+        f"Total drop ratio: {guard['total_drop_ratio']:.1%}" if guard["total_drop_ratio"] is not None else "Total drop ratio: n/a",
+        "",
+        "## Group deltas",
+        "",
+        "| Group | Baseline | Current | Delta | Drop | Minimum |",
+        "|---|---:|---:|---:|---:|---:|",
+    ]
+    for group, minimum in MIN_GROUPS.items():
+        item = group_deltas[group]
+        drop = item["drop_ratio"]
+        drop_text = f"{drop:.1%}" if drop is not None else "n/a"
+        lines.append(f"| {group} | {item['baseline']} | {item['current']} | {item['delta']} | {drop_text} | {minimum} |")
+    lines += ["", "## Source health", "", f"- Failed sources: {', '.join(failed_sources) if failed_sources else 'none'}", f"- Fetched but zero parsed: {', '.join(zero_parsed) if zero_parsed else 'none'}"]
+    if failures:
+        lines += ["", "## Failures", ""]
+        lines += [f"- {x}" for x in failures]
+    if warnings:
+        lines += ["", "## Warnings", ""]
+        lines += [f"- {x}" for x in warnings]
+    (ROOT / "publish-guard-report.md").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+
+
 def main() -> int:
     current = load_json(ROOT / "full-check-summary.json")
     baseline = git_show_json("HEAD:full-check-summary.json") or {}
     failures: list[str] = []
+    warnings: list[str] = []
     cur_lines = int(current.get("curated_published_lines") or current.get("primary_published_lines") or 0)
     base_lines = int(baseline.get("curated_published_lines") or baseline.get("primary_published_lines") or 0)
     min_lines = int(os.getenv("IPTV_GUARD_MIN_CURATED_LINES", "1800"))
     max_drop_ratio = float(os.getenv("IPTV_GUARD_MAX_TOTAL_DROP_RATIO", "0.20"))
+    def add_warn(msg: str) -> None:
+        warnings.append(msg)
+        warn(msg)
+
     if cur_lines < min_lines:
         fail(f"curated lines {cur_lines} < minimum {min_lines}", failures)
     if base_lines > 0:
@@ -93,7 +165,7 @@ def main() -> int:
         else:
             print(f"GUARD OK total lines baseline={base_lines} current={cur_lines} drop={drop:.1%}")
     else:
-        warn("no baseline full-check-summary.json found; total drop guard skipped")
+        add_warn("no baseline full-check-summary.json found; total drop guard skipped")
     groups = current.get("curated_groups") or {}
     base_groups = baseline.get("curated_groups") or {}
     for group, minimum in MIN_GROUPS.items():
@@ -116,12 +188,13 @@ def main() -> int:
         if len(core_failed) >= 2:
             fail(f"multiple core sources failed: {core_failed}", failures)
         elif core_failed:
-            warn(f"one core source failed: {core_failed}")
+            add_warn(f"one core source failed: {core_failed}")
         if len(failed_sources) > 5:
             fail(f"too many upstream fetch failures: {len(failed_sources)} {failed_sources[:10]}", failures)
         zero_parsed = [r["name"] for r in statuses if r.get("fetch_ok") == "True" and int(r.get("parsed") or 0) == 0]
         if zero_parsed:
-            warn(f"fetched but parsed no supported streams: {zero_parsed}")
+            add_warn(f"fetched but parsed no supported streams: {zero_parsed}")
+    write_guard_outputs(current, baseline, failures, warnings, statuses)
     if failures:
         print("Publish guard rejected this run; keeping previous published playlist unchanged.")
         return 1

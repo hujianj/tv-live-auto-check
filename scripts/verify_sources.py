@@ -36,42 +36,31 @@ MAX_VALID_PER_NAME = int(os.getenv("IPTV_MAX_VALID_PER_NAME", "5"))
 HLS_SEGMENT_CHECKS = int(os.getenv("IPTV_HLS_SEGMENT_CHECKS", "2"))
 HLS_VARIANT_CHECKS = int(os.getenv("IPTV_HLS_VARIANT_CHECKS", "2"))
 UA = "Player"
+SOURCE_CONFIG = ROOT / "config" / "sources.json"
 
-SOURCES = [
-    # Add or remove upstream playlists here. Format: (stable_source_name, playlist_url)
-    # Stable source names are used by sorting rules, reports, and priority logic.
-    ("iyouhun_zb", "https://www.iyouhun.com/tv/zb"),
-    ("zbds_iptv4_txt", "https://live.zbds.top/tv/iptv4.txt"),
-    ("migu_interface", "https://develop202.github.io/migu_video/interface.txt"),
-    ("guovin_all", "https://raw.githubusercontent.com/Guovin/iptv-api/gd/output/result.m3u"),
-    ("guovin_ipv4", "https://raw.githubusercontent.com/Guovin/iptv-api/gd/output/ipv4/result.m3u"),
-    ("guovin_ipv6", "https://raw.githubusercontent.com/Guovin/iptv-api/gd/output/ipv6/result.m3u"),
-    ("suxuang_ipv4", "https://raw.githubusercontent.com/suxuang/myIPTV/refs/heads/main/ipv4.m3u"),
-    ("suxuang_ipv6", "https://raw.githubusercontent.com/suxuang/myIPTV/refs/heads/main/ipv6.m3u"),
-    ("zbds_iptv4_m3u", "https://live.zbds.top/tv/iptv4.m3u"),
-    ("burningc4_ipv4", "https://raw.githubusercontent.com/BurningC4/Chinese-IPTV/master/TV-IPV4.m3u"),
-    ("vamoschuck_m3u", "https://raw.githubusercontent.com/vamoschuck/TV/main/M3U"),
-    ("zbds_iptv6_txt", "https://live.zbds.top/tv/iptv6.txt"),
-    ("zbds_iptv6_m3u", "https://live.zbds.top/tv/iptv6.m3u"),
-    ("fanmingming_ipv6_raw", "https://raw.githubusercontent.com/fanmingming/live/main/tv/m3u/ipv6.m3u"),
-    ("fanmingming_ipv6_mirror", "https://live.fanmingming.cn/tv/m3u/ipv6.m3u"),
-    ("yuechan_live", "https://raw.githubusercontent.com/YueChan/Live/main/IPTV.m3u"),
-    ("kimentanm_aptv", "https://raw.githubusercontent.com/Kimentanm/aptv/master/m3u/iptv.m3u"),
-    ("bigbiggrandg_gather", "https://raw.githubusercontent.com/BigBigGrandG/IPTV-URL/release/Gather.m3u"),
-    ("yang_gather", "https://raw.githubusercontent.com/YanG-1989/m3u/main/Gather.m3u"),
-    ("iptv_org_all", "https://iptv-org.github.io/iptv/index.m3u"),
-    ("epg_cn", "https://epg.pw/test_channels.m3u"),
-    ("epg_hk", "https://epg.pw/test_channels_hong_kong.m3u"),
-    ("epg_mo", "https://epg.pw/test_channels_macau.m3u"),
-    ("epg_tw", "https://epg.pw/test_channels_taiwan.m3u"),
-    ("iptv_org_tw", "https://iptv-org.github.io/iptv/countries/tw.m3u"),
-    ("epg_sg", "https://epg.pw/test_channels_singapore.m3u"),
-    ("epg_my", "https://epg.pw/test_channels_malaysia.m3u"),
-    ("free_tv_world", "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8"),
-    ("freetv_huya", "https://live.freetv.top/huyayqk.m3u"),
-    ("mursor_yy", "https://gongdian.top/tv/Mursor/yylunbo.m3u"),
-    ("mursor_bililive", "https://gongdian.top/tv/Mursor/bililive.m3u"),
-]
+
+def load_sources(path: Path = SOURCE_CONFIG) -> list[tuple[str, str]]:
+    """Load enabled upstream playlist sources from config/sources.json."""
+    data = json.loads(path.read_text(encoding="utf-8-sig"))
+    out: list[tuple[str, str]] = []
+    seen: set[str] = set()
+    for item in data:
+        if item.get("enabled") is False:
+            continue
+        name = str(item.get("name") or "").strip()
+        url = str(item.get("url") or "").strip()
+        if not name or not url:
+            raise ValueError(f"invalid source config item: {item!r}")
+        if name in seen:
+            raise ValueError(f"duplicate source name in {path}: {name}")
+        seen.add(name)
+        out.append((name, url))
+    if not out:
+        raise ValueError(f"no enabled source in {path}")
+    return out
+
+
+SOURCES = load_sources()
 
 BAD_MARKERS = ("nosignal", "no-signal", "no_signal", "notfound", "404", "offline")
 BAD_HTML = (b"<html", b"<!doctype html", b"<head", b"<body")

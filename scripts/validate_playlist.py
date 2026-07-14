@@ -97,6 +97,53 @@ def has_invalid_url(url: str) -> bool:
     return False
 
 
+def split_unquoted_last_comma(line: str) -> tuple[str, str]:
+    in_quote = False
+    escape = False
+    split_at = -1
+    for i, ch in enumerate(line):
+        if escape:
+            escape = False
+            continue
+        if ch == "\\":
+            escape = True
+            continue
+        if ch == '"':
+            in_quote = not in_quote
+            continue
+        if ch == "," and not in_quote:
+            split_at = i
+    if split_at < 0:
+        return line, ""
+    return line[:split_at], line[split_at + 1:].strip()
+
+
+def validate_channel_semantics(group: str, name: str, url: str, lineno: int, line: str, bad: list[tuple[int, str, str]]) -> None:
+    upper_name = name.upper()
+    if has_invalid_channel_name(name):
+        bad.append((lineno, "invalid/polluted channel name", line[:240]))
+    if has_invalid_url(url):
+        bad.append((lineno, "invalid/suspicious url", line[:240]))
+    if group == G_CCTV and any(tok in upper_name for tok in ["RTHK", "TVB", "VIUTV"]):
+        bad.append((lineno, "pseudo CCTV alias", line[:240]))
+    if "NOT24/7" in upper_name or "NOT 24/7" in upper_name:
+        bad.append((lineno, "unstable Not24/7", line[:240]))
+    if not cctv_num(name) and not is_hk_mo_tw_channel(name, group):
+        if any(tok in upper_name for tok in UNWANTED_OVERSEAS_TOKENS):
+            bad.append((lineno, "unwanted overseas/English channel", line[:240]))
+        if chinese_count(name) == 0 and re.search(r"[A-Z]{3,}", upper_name):
+            bad.append((lineno, "pure Latin overseas/English channel", line[:240]))
+
+
+def validate_categories(groups: list[str], bad: list[tuple[int, str, str]]) -> None:
+    missing = [g for g in GROUP_ORDER if g not in groups]
+    for g in missing:
+        bad.append((0, "missing category", f"{g},#genre#"))
+    for old in ["\u5f71\u89c6\u5a31\u4e50", "\u5176\u4ed6\u9891\u9053"]:
+        if old in groups:
+            bad.append((0, "obsolete category", f"{old},#genre#"))
+
+
 def validate_text(text: str, require_categories: bool = True) -> dict:
     bad: list[tuple[int, str, str]] = []
     groups: list[str] = []
@@ -117,27 +164,9 @@ def validate_text(text: str, require_categories: bool = True) -> dict:
             continue
         name, url = line.split(",", 1)
         rows.append((current_group, name, url))
-        upper_name = name.upper()
-        if has_invalid_channel_name(name):
-            bad.append((lineno, "invalid/polluted channel name", line[:240]))
-        if has_invalid_url(url):
-            bad.append((lineno, "invalid/suspicious url", line[:240]))
-        if current_group == G_CCTV and any(tok in upper_name for tok in ["RTHK", "TVB", "VIUTV"]):
-            bad.append((lineno, "pseudo CCTV alias", line[:240]))
-        if "NOT24/7" in upper_name or "NOT 24/7" in upper_name:
-            bad.append((lineno, "unstable Not24/7", line[:240]))
-        if not cctv_num(name) and not is_hk_mo_tw_channel(name, current_group):
-            if any(tok in upper_name for tok in UNWANTED_OVERSEAS_TOKENS):
-                bad.append((lineno, "unwanted overseas/English channel", line[:240]))
-            if chinese_count(name) == 0 and re.search(r"[A-Z]{3,}", upper_name):
-                bad.append((lineno, "pure Latin overseas/English channel", line[:240]))
+        validate_channel_semantics(current_group, name, url, lineno, line, bad)
     if require_categories:
-        missing = [g for g in GROUP_ORDER if g not in groups]
-        for g in missing:
-            bad.append((0, "missing category", f"{g},#genre#"))
-        for old in ["\u5f71\u89c6\u5a31\u4e50", "\u5176\u4ed6\u9891\u9053"]:
-            if old in groups:
-                bad.append((0, "obsolete category", f"{old},#genre#"))
+        validate_categories(groups, bad)
     if bad:
         raise ValueError("invalid playlist rows: " + repr(bad[:40]))
     group_counts = Counter(g for g, _, _ in rows)
@@ -149,8 +178,70 @@ def validate_text(text: str, require_categories: bool = True) -> dict:
     }
 
 
+def validate_m3u_text(text: str, require_categories: bool = True) -> dict:
+    bad: list[tuple[int, str, str]] = []
+    groups: list[str] = []
+    rows: list[tuple[str, str, str]] = []
+    lines = [(lineno, raw.strip()) for lineno, raw in enumerate(text.splitlines(), 1) if raw.strip()]
+    if not lines or lines[0][1] != "#EXTM3U":
+        bad.append((1, "missing #EXTM3U header", (lines[0][1] if lines else "")[:240]))
+    i = 1
+    while i < len(lines):
+        lineno, line = lines[i]
+        if line.startswith("#EXTINF"):
+            head, display_name = split_unquoted_last_comma(line)
+            attrs = dict(re.findall(r'([\w-]+)="([^"]*)"', head))
+            group = (attrs.get("group-title") or "").strip()
+            tvg_name = (attrs.get("tvg-name") or "").strip()
+            name = display_name or tvg_name
+            if group:
+                groups.append(group)
+                if group not in GROUP_ORDER:
+                    bad.append((lineno, "unexpected category", line[:240]))
+            else:
+                bad.append((lineno, "missing group-title", line[:240]))
+            if not name:
+                bad.append((lineno, "missing channel name", line[:240]))
+            if tvg_name and display_name and tvg_name != display_name:
+                # Mismatched names confuse diagnostics and make future TXT/M3U
+                # parity checks harder. Keep both fields aligned in generated M3U.
+                bad.append((lineno, "tvg-name/display-name mismatch", line[:240]))
+            if i + 1 >= len(lines):
+                bad.append((lineno, "missing URL after EXTINF", line[:240]))
+                break
+            url_lineno, url = lines[i + 1]
+            if url.startswith("#"):
+                bad.append((url_lineno, "missing URL after EXTINF", url[:240]))
+                i += 1
+                continue
+            rows.append((group, name, url))
+            validate_channel_semantics(group, name, url, url_lineno, f"{name},{url}", bad)
+            i += 2
+            continue
+        if line.startswith("#"):
+            i += 1
+            continue
+        bad.append((lineno, "orphan URL without EXTINF", line[:240]))
+        i += 1
+    if require_categories:
+        validate_categories(groups, bad)
+    if bad:
+        raise ValueError("invalid m3u rows: " + repr(bad[:40]))
+    group_counts = Counter(g for g, _, _ in rows)
+    return {
+        "format": "m3u",
+        "groups": dict(group_counts),
+        "rows": len(rows),
+        "unique_names": len({n for _, n, _ in rows}),
+        "unique_urls": len({u for _, _, u in rows}),
+    }
+
+
 def validate_file(path: Path, require_categories: bool = True) -> dict:
-    return validate_text(path.read_text(encoding="utf-8"), require_categories=require_categories)
+    text = path.read_text(encoding="utf-8")
+    if path.suffix.lower() in {".m3u", ".m3u8"} or text.lstrip().startswith("#EXTM3U"):
+        return validate_m3u_text(text, require_categories=require_categories)
+    return validate_text(text, require_categories=require_categories)
 
 
 def main(argv: list[str]) -> int:

@@ -8,8 +8,16 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
-from validate_playlist import validate_text
-from verify_sources import parse_m3u, parse_txt, split_stream_urls, split_unquoted_last_comma
+from validate_playlist import validate_m3u_text, validate_text
+from verify_sources import SOURCES, parse_m3u, parse_txt, split_stream_urls, split_unquoted_last_comma
+
+
+def test_source_config_omits_disabled_unstable_sources() -> None:
+    names = [name for name, _ in SOURCES]
+    assert len(names) == len(set(names))
+    assert "zbds_iptv4_txt" in names
+    assert "yuechan_live" not in names
+    assert "freetv_huya" not in names
 
 
 def test_split_unquoted_last_comma() -> None:
@@ -86,13 +94,59 @@ CCTV-1,http://a/live.m3u8;http://b/live.m3u8
         raise AssertionError("malformed URL was not rejected")
 
 
+def test_validate_m3u_accepts_generated_shape() -> None:
+    m3u = """#EXTM3U
+#EXTINF:-1 tvg-name="CCTV-1" group-title="央视频道",CCTV-1
+http://a/cctv1.m3u8
+#EXTINF:-1 tvg-name="辽宁卫视" group-title="卫视频道",辽宁卫视
+http://a/ln.m3u8
+#EXTINF:-1 tvg-name="沈阳新闻" group-title="地方频道",沈阳新闻
+http://a/sy.m3u8
+#EXTINF:-1 tvg-name="电影频道" group-title="影视剧场",电影频道
+http://a/movie.m3u8
+#EXTINF:-1 tvg-name="动画频道" group-title="少儿动漫",动画频道
+http://a/kids.m3u8
+#EXTINF:-1 tvg-name="体育频道" group-title="体育纪实",体育频道
+http://a/sport.m3u8
+#EXTINF:-1 tvg-name="音乐频道" group-title="音乐综艺",音乐频道
+http://a/music.m3u8
+#EXTINF:-1 tvg-name="生活频道" group-title="生活休闲",生活频道
+http://a/life.m3u8
+#EXTINF:-1 tvg-name="综合频道" group-title="综合娱乐",综合频道
+http://a/ent.m3u8
+#EXTINF:-1 tvg-name="凤凰中文" group-title="港澳台频道",凤凰中文
+http://a/hk.m3u8
+#EXTINF:-1 tvg-name="华语频道" group-title="海外华语频道",华语频道
+http://a/oversea.m3u8
+"""
+    result = validate_m3u_text(m3u, require_categories=True)
+    assert result["format"] == "m3u"
+    assert result["rows"] == 11
+
+
+def test_validate_m3u_rejects_polluted_url() -> None:
+    m3u = """#EXTM3U
+#EXTINF:-1 tvg-name="CCTV-1" group-title="央视频道",CCTV-1
+http://a/cctv1.m3u8;http://b/cctv1.m3u8
+"""
+    try:
+        validate_m3u_text(m3u, require_categories=False)
+    except ValueError as e:
+        assert "invalid/suspicious url" in str(e)
+    else:
+        raise AssertionError("malformed M3U URL was not rejected")
+
+
 def main() -> int:
     for test in [
+        test_source_config_omits_disabled_unstable_sources,
         test_split_unquoted_last_comma,
         test_split_stream_urls,
         test_parse_m3u_name_and_split_urls,
         test_parse_txt_split_urls,
         test_validate_rejects_malformed_url,
+        test_validate_m3u_accepts_generated_shape,
+        test_validate_m3u_rejects_polluted_url,
     ]:
         test()
         print(f"OK {test.__name__}")

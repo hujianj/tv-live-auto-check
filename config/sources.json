@@ -1,0 +1,162 @@
+[
+  {
+    "name": "iyouhun_zb",
+    "url": "https://www.iyouhun.com/tv/zb",
+    "enabled": true,
+    "note": "游魂直播源，家用主列表重要补充。"
+  },
+  {
+    "name": "zbds_iptv4_txt",
+    "url": "https://live.zbds.top/tv/iptv4.txt",
+    "enabled": true,
+    "note": "最高优先级 IPv4 TXT 源。"
+  },
+  {
+    "name": "migu_interface",
+    "url": "https://develop202.github.io/migu_video/interface.txt",
+    "enabled": true
+  },
+  {
+    "name": "guovin_all",
+    "url": "https://raw.githubusercontent.com/Guovin/iptv-api/gd/output/result.m3u",
+    "enabled": true
+  },
+  {
+    "name": "guovin_ipv4",
+    "url": "https://raw.githubusercontent.com/Guovin/iptv-api/gd/output/ipv4/result.m3u",
+    "enabled": true
+  },
+  {
+    "name": "guovin_ipv6",
+    "url": "https://raw.githubusercontent.com/Guovin/iptv-api/gd/output/ipv6/result.m3u",
+    "enabled": true
+  },
+  {
+    "name": "suxuang_ipv4",
+    "url": "https://raw.githubusercontent.com/suxuang/myIPTV/refs/heads/main/ipv4.m3u",
+    "enabled": true
+  },
+  {
+    "name": "suxuang_ipv6",
+    "url": "https://raw.githubusercontent.com/suxuang/myIPTV/refs/heads/main/ipv6.m3u",
+    "enabled": true
+  },
+  {
+    "name": "zbds_iptv4_m3u",
+    "url": "https://live.zbds.top/tv/iptv4.m3u",
+    "enabled": true,
+    "note": "同站 M3U 源，优先级低于 zbds_iptv4_txt。"
+  },
+  {
+    "name": "burningc4_ipv4",
+    "url": "https://raw.githubusercontent.com/BurningC4/Chinese-IPTV/master/TV-IPV4.m3u",
+    "enabled": true
+  },
+  {
+    "name": "vamoschuck_m3u",
+    "url": "https://raw.githubusercontent.com/vamoschuck/TV/main/M3U",
+    "enabled": true
+  },
+  {
+    "name": "zbds_iptv6_txt",
+    "url": "https://live.zbds.top/tv/iptv6.txt",
+    "enabled": true
+  },
+  {
+    "name": "zbds_iptv6_m3u",
+    "url": "https://live.zbds.top/tv/iptv6.m3u",
+    "enabled": true
+  },
+  {
+    "name": "fanmingming_ipv6_raw",
+    "url": "https://raw.githubusercontent.com/fanmingming/live/main/tv/m3u/ipv6.m3u",
+    "enabled": true
+  },
+  {
+    "name": "fanmingming_ipv6_mirror",
+    "url": "https://live.fanmingming.cn/tv/m3u/ipv6.m3u",
+    "enabled": true
+  },
+  {
+    "name": "kimentanm_aptv",
+    "url": "https://raw.githubusercontent.com/Kimentanm/aptv/master/m3u/iptv.m3u",
+    "enabled": true
+  },
+  {
+    "name": "bigbiggrandg_gather",
+    "url": "https://raw.githubusercontent.com/BigBigGrandG/IPTV-URL/release/Gather.m3u",
+    "enabled": true
+  },
+  {
+    "name": "yang_gather",
+    "url": "https://raw.githubusercontent.com/YanG-1989/m3u/main/Gather.m3u",
+    "enabled": true
+  },
+  {
+    "name": "iptv_org_all",
+    "url": "https://iptv-org.github.io/iptv/index.m3u",
+    "enabled": true
+  },
+  {
+    "name": "epg_cn",
+    "url": "https://epg.pw/test_channels.m3u",
+    "enabled": true
+  },
+  {
+    "name": "epg_hk",
+    "url": "https://epg.pw/test_channels_hong_kong.m3u",
+    "enabled": true
+  },
+  {
+    "name": "epg_mo",
+    "url": "https://epg.pw/test_channels_macau.m3u",
+    "enabled": true
+  },
+  {
+    "name": "epg_tw",
+    "url": "https://epg.pw/test_channels_taiwan.m3u",
+    "enabled": true
+  },
+  {
+    "name": "iptv_org_tw",
+    "url": "https://iptv-org.github.io/iptv/countries/tw.m3u",
+    "enabled": true
+  },
+  {
+    "name": "epg_sg",
+    "url": "https://epg.pw/test_channels_singapore.m3u",
+    "enabled": true
+  },
+  {
+    "name": "epg_my",
+    "url": "https://epg.pw/test_channels_malaysia.m3u",
+    "enabled": true
+  },
+  {
+    "name": "free_tv_world",
+    "url": "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8",
+    "enabled": true
+  },
+  {
+    "name": "mursor_yy",
+    "url": "https://gongdian.top/tv/Mursor/yylunbo.m3u",
+    "enabled": true
+  },
+  {
+    "name": "mursor_bililive",
+    "url": "https://gongdian.top/tv/Mursor/bililive.m3u",
+    "enabled": true
+  },
+  {
+    "name": "yuechan_live",
+    "url": "https://raw.githubusercontent.com/YueChan/Live/main/IPTV.m3u",
+    "enabled": false,
+    "note": "当前主要是 rtp:// 组播地址，家庭公网/酷9不可直接播放，抓取成功但解析 HTTP 流为 0。"
+  },
+  {
+    "name": "freetv_huya",
+    "url": "https://live.freetv.top/huyayqk.m3u",
+    "enabled": false,
+    "note": "近期 GitHub Actions 上持续 timeout，且属于轮播娱乐补充源，先禁用以减少波动和耗时。"
+  }
+]
