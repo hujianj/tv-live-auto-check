@@ -47,6 +47,7 @@ https://raw.githubusercontent.com/hujianj/tv-live-auto-check/main/live-curated.t
 - 全量明细 `stream_check_results.csv`、`live-all-playable.txt`、`all-playable.m3u` 不再提交到 Git 仓库，只作为 GitHub Actions artifact 保存 30 天。
 - 发布前会先运行 `scripts/test_playlist_logic.py` 单元测试，再运行统一校验 `scripts/validate_playlist.py`，同时检查 TXT 和 M3U，防止异常频道名、异常 URL、错误分类或不可解析行进入正式列表。
 - 正式提交前会运行 `scripts/recheck_published.py`，对最终发布列表里的每个唯一 URL 再做一次全量复测；复测失败的 URL 会从本次发布中剔除。
+- 发布前会运行 `scripts/audit_coverage.py`，生成核心央视和重点卫视频道覆盖报告；如果核心 CCTV 或重点卫视缺失，会拒绝发布，避免只看总行数而漏掉家人常看的频道。
 - 发布前会运行 `scripts/guard_publish.py`，如果本次结果比上一版明显缩水，或核心分类数量低于阈值，会拒绝发布，保留上一版可用列表。
 - 发布后自动 purge jsDelivr，并检查 Raw / Pages / jsDelivr 缓存状态。jsDelivr 偶发短时滞后只记录告警，不代表仓库文件错误。
 
@@ -67,6 +68,14 @@ https://raw.githubusercontent.com/hujianj/tv-live-auto-check/main/live-curated.t
 11. 海外华语频道
 
 `CCTV` 会按 `CCTV-1, CCTV-2, CCTV-3...` 排序。外语频道、纯英文频道、伪 CCTV、`Not24/7`、PlutoTV/RedBull 等非家用频道会被过滤；RTHK/TVB/TVBS/ViuTV 等明确港澳台品牌会保留在港澳台分类。
+
+分类关键词、港台/海外过滤词、卫视排序、核心频道覆盖清单集中维护在：
+
+```text
+config/rules.json
+```
+
+修改该文件后，单元测试会检查是否误写入 `????` 或乱码替换符，防止规则配置损坏后影响自动发布。
 
 ## 优先源
 

@@ -49,6 +49,8 @@ jobs:
           IPTV_HLS_VARIANT_CHECKS: "2"
           IPTV_HLS_SEGMENT_CHECKS: "2"
         run: python scripts/recheck_published.py
+      - name: Audit core channel coverage
+        run: python scripts/audit_coverage.py
       - name: Smoke test generated playlist
         run: |
           python scripts/validate_playlist.py live-curated.txt live.txt live-verified.txt ku9-live.txt live.m3u
@@ -67,12 +69,19 @@ jobs:
           assert summary["curated_published_lines"] == summary["primary_published_lines"], summary
           assert summary["final_primary_published_lines"] == summary["curated_published_lines"], summary
           assert summary["curated_published_lines"] > 100, summary
+          assert sum(summary.get("curated_groups", {}).values()) == summary["curated_published_lines"], summary
+          assert sum(summary.get("curated_sources", {}).values()) == summary["curated_published_lines"], summary
+          assert summary.get("curated_source_map_available") is True, summary
+          coverage = summary.get("coverage") or {}
+          assert not coverage.get("missing_cctv"), coverage
+          assert not coverage.get("missing_satellite"), coverage
           files = ["live-curated.txt", "live.txt", "live-verified.txt", "ku9-live.txt"]
           payloads = [Path(f).read_bytes() for f in files]
           assert len({hashlib.sha256(x).hexdigest() for x in payloads}) == 1, "TV TXT outputs differ"
           assert len(payloads[0]) > 10_000, f"playlist too small: {len(payloads[0])} bytes"
           all_data = Path("live-all-playable.txt").read_bytes()
           assert len(all_data) >= len(payloads[0]), (len(all_data), len(payloads[0]))
+          assert Path("final-publish-report.md").exists(), "missing final publish report"
           print("Generated full-check playlist smoke OK", len(payloads[0]), "bytes", summary)
           PY
       - name: Guard against shrunken or unsafe publish
@@ -87,18 +96,21 @@ jobs:
             stream_check_results.csv
             live-all-playable.txt
             all-playable.m3u
+            curated-source-map.csv
             published_recheck_results.csv
             published-recheck-report.md
+            final-publish-report.md
+            coverage-report.md
             publish-guard-report.md
       - name: Commit verified playlist
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: verify and publish playable IPTV playlist"
-          file_pattern: live.txt live-verified.txt live-curated.txt ku9-live.txt live.m3u source-report.md check-report.md curated-report.md published-recheck-report.md publish-guard-report.md sources_status.csv full-check-summary.json
+          file_pattern: live.txt live-verified.txt live-curated.txt ku9-live.txt live.m3u source-report.md check-report.md curated-report.md published-recheck-report.md final-publish-report.md coverage-report.md publish-guard-report.md sources_status.csv full-check-summary.json
       - name: Purge jsDelivr CDN
         run: |
           set -e
-          for file in live-curated.txt live.txt ku9-live.txt live-verified.txt live.m3u full-check-summary.json curated-report.md published-recheck-report.md publish-guard-report.md source-report.md check-report.md; do
+          for file in live-curated.txt live.txt ku9-live.txt live-verified.txt live.m3u full-check-summary.json curated-report.md published-recheck-report.md final-publish-report.md coverage-report.md publish-guard-report.md source-report.md check-report.md; do
             echo "Purging $file"
             curl -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}/$file" || true
             curl -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/$file" || true

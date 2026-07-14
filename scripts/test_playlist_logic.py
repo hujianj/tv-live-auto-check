@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,6 +19,30 @@ def test_source_config_omits_disabled_unstable_sources() -> None:
     assert "zbds_iptv4_txt" in names
     assert "yuechan_live" not in names
     assert "freetv_huya" not in names
+
+
+def test_rules_config_contains_core_coverage() -> None:
+    rules = json.loads((ROOT / "config" / "rules.json").read_text(encoding="utf-8-sig"))
+    def walk_strings(obj):
+        if isinstance(obj, dict):
+            for value in obj.values():
+                yield from walk_strings(value)
+        elif isinstance(obj, list):
+            for value in obj:
+                yield from walk_strings(value)
+        elif isinstance(obj, str):
+            yield obj
+
+    bad_strings = [s for s in walk_strings(rules) if "?" in s or "\ufffd" in s]
+    assert bad_strings == []
+    assert "辽宁" in rules["provinces"]
+    assert "卫视" not in rules["category_keywords"]["movie"]
+    assert rules["group_keywords"]["hk"] == ["香港", "澳门", "台湾", "港澳台"]
+    assert "CCTV-1" in rules["coverage"]["required_cctv"]
+    assert "CCTV-5+" in rules["coverage"]["required_cctv"]
+    assert "辽宁卫视" in rules["coverage"]["important_satellite"]
+    assert rules["coverage"].get("fail_on_missing_cctv") is True
+    assert rules["coverage"].get("fail_on_missing_satellite") is True
 
 
 def test_split_unquoted_last_comma() -> None:
@@ -137,9 +162,18 @@ http://a/cctv1.m3u8;http://b/cctv1.m3u8
         raise AssertionError("malformed M3U URL was not rejected")
 
 
+def test_recheck_source_map_helper() -> None:
+    from recheck_published import Row, source_for
+
+    row = Row("央视频道", "CCTV-1", "http://example.test/live.m3u8")
+    assert source_for(row, {("CCTV-1", "http://example.test/live.m3u8"): "zbds_iptv4_txt"}) == "zbds_iptv4_txt"
+    assert source_for(row, {}) == "unknown"
+
+
 def main() -> int:
     for test in [
         test_source_config_omits_disabled_unstable_sources,
+        test_rules_config_contains_core_coverage,
         test_split_unquoted_last_comma,
         test_split_stream_urls,
         test_parse_m3u_name_and_split_urls,
@@ -147,6 +181,7 @@ def main() -> int:
         test_validate_rejects_malformed_url,
         test_validate_m3u_accepts_generated_shape,
         test_validate_m3u_rejects_polluted_url,
+        test_recheck_source_map_helper,
     ]:
         test()
         print(f"OK {test.__name__}")

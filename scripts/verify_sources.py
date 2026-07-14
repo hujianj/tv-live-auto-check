@@ -625,10 +625,10 @@ def main() -> None:
     ]
     for st in statuses:
         report.append(f"| {st.name} | {'OK' if st.ok else 'FAIL'} | {st.parsed} | {st.bytes} | {st.error.replace('|','/')} |")
-    report += ["", "## Published playable lines by source", "", "| Source | Lines |", "|---|---:|"]
+    report += ["", "## Pre-curation playable lines by source", "", "| Source | Lines |", "|---|---:|"]
     for src, n in sorted(ok_sources.items(), key=lambda x: (-x[1], x[0])):
         report.append(f"| {src} | {n} |")
-    report += ["", "## First 80 published channels", ""]
+    report += ["", "## First 80 pre-curation playable channel candidates", ""]
     for c in valid[:80]:
         report.append(f"- {c.group} / {c.name} / {c.source}")
     (ROOT / "source-report.md").write_text("\n".join(report) + "\n", encoding="utf-8", newline="\n")

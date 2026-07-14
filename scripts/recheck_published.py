@@ -25,7 +25,9 @@ TXT_FILES = ["live-curated.txt", "live.txt", "live-verified.txt", "ku9-live.txt"
 M3U_FILE = "live.m3u"
 SUMMARY_FILE = "full-check-summary.json"
 REPORT_FILE = "published-recheck-report.md"
+FINAL_REPORT_FILE = "final-publish-report.md"
 CSV_FILE = "published_recheck_results.csv"
+SOURCE_MAP_FILE = "curated-source-map.csv"
 
 MAX_WORKERS = int(os.getenv("IPTV_PUBLISHED_RECHECK_WORKERS", os.getenv("IPTV_CHECK_WORKERS", "128")))
 
@@ -88,16 +90,41 @@ def write_outputs(groups: list[str], rows: list[Row]) -> None:
     validate_file(ROOT / M3U_FILE)
 
 
-def update_summary(before_rows: list[Row], after_rows: list[Row], checked_urls: int, failed_urls: dict[str, str], elapsed: float) -> None:
+def load_source_map() -> dict[tuple[str, str], str]:
+    path = ROOT / SOURCE_MAP_FILE
+    if not path.exists():
+        return {}
+    out: dict[tuple[str, str], str] = {}
+    with path.open(encoding="utf-8", newline="") as f:
+        for row in csv.DictReader(f):
+            name = row.get("name") or ""
+            url = row.get("url") or ""
+            source = row.get("source") or ""
+            if name and url and source:
+                out.setdefault((name, url), source)
+    return out
+
+
+def source_for(row: Row, source_map: dict[tuple[str, str], str]) -> str:
+    return source_map.get((row.name, row.url), "unknown")
+
+
+def update_summary(before_rows: list[Row], after_rows: list[Row], checked_urls: int, failed_urls: dict[str, str], elapsed: float, source_map: dict[tuple[str, str], str]) -> None:
     path = ROOT / SUMMARY_FILE
     summary = json.loads(path.read_text(encoding="utf-8"))
     cnt = Counter(row.group for row in after_rows)
+    source_cnt = Counter(source_for(row, source_map) for row in after_rows)
+    group_source_cnt = Counter(f"{row.group}|{source_for(row, source_map)}" for row in after_rows)
     summary.update({
         "curated_published_lines": len(after_rows),
         "curated_channel_names": len({row.name for row in after_rows}),
         "curated_groups": dict(cnt),
+        "curated_sources": dict(source_cnt),
+        "curated_group_sources": dict(group_source_cnt),
         "final_primary_published_lines": len(after_rows),
         "primary_published_lines": len(after_rows),
+        "final_publish_report_file": FINAL_REPORT_FILE,
+        "curated_source_map_available": bool(source_map),
         "published_recheck": {
             "enabled": True,
             "checked_unique_urls": checked_urls,
@@ -138,11 +165,54 @@ def write_report(before_rows: list[Row], after_rows: list[Row], failed_urls: dic
     (ROOT / REPORT_FILE).write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
 
+def write_final_report(groups: list[str], rows: list[Row], failed_urls: dict[str, str], elapsed: float, source_map: dict[tuple[str, str], str]) -> None:
+    group_counts = Counter(row.group for row in rows)
+    source_counts = Counter(source_for(row, source_map) for row in rows)
+    group_source_counts = Counter((row.group, source_for(row, source_map)) for row in rows)
+    lines = [
+        "# Final TV-facing playlist report",
+        "",
+        "This report describes the final playlist after curation and after the second full published-URL recheck.",
+        "",
+        f"Rows: {len(rows)}",
+        f"Unique channel names: {len({row.name for row in rows})}",
+        f"Unique URLs: {len({row.url for row in rows})}",
+        f"Failed unique URLs removed during final recheck: {len(failed_urls)}",
+        f"Final recheck elapsed: {elapsed:.1f}s",
+        f"Source map available: {bool(source_map)}",
+        "",
+        "## Groups",
+        "",
+        "| Group | Rows |",
+        "|---|---:|",
+    ]
+    for group in groups:
+        if group_counts[group]:
+            lines.append(f"| {group} | {group_counts[group]} |")
+    lines += ["", "## Final published lines by source", "", "| Source | Rows |", "|---|---:|"]
+    for source, count in source_counts.most_common():
+        lines.append(f"| {source} | {count} |")
+    lines += ["", "## Top sources per group", ""]
+    for group in groups:
+        top = [(source, count) for (g, source), count in group_source_counts.items() if g == group]
+        if not top:
+            continue
+        lines.append(f"### {group}")
+        for source, count in sorted(top, key=lambda item: (-item[1], item[0]))[:8]:
+            lines.append(f"- {source}: {count}")
+        lines.append("")
+    lines += ["## First 80 final published rows", ""]
+    for row in rows[:80]:
+        lines.append(f"- {row.group} / {row.name} / {source_for(row, source_map)} / {row.url}")
+    (ROOT / FINAL_REPORT_FILE).write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8", newline="\n")
+
+
 def main() -> int:
     start = time.time()
     for filename in TXT_FILES:
         validate_file(ROOT / filename)
     groups, rows = parse_tv_txt(ROOT / "live-curated.txt")
+    source_map = load_source_map()
     by_url: dict[str, Row] = {}
     for row in rows:
         by_url.setdefault(row.url, row)
@@ -163,8 +233,9 @@ def main() -> int:
     kept_rows = [row for row in rows if row.url not in failed_urls]
     write_outputs(groups, kept_rows)
     elapsed = time.time() - start
-    update_summary(rows, kept_rows, len(by_url), failed_urls, elapsed)
+    update_summary(rows, kept_rows, len(by_url), failed_urls, elapsed, source_map)
     write_report(rows, kept_rows, failed_urls, elapsed)
+    write_final_report(groups, kept_rows, failed_urls, elapsed, source_map)
     with (ROOT / CSV_FILE).open("w", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
         w.writerow(["ok", "group", "name", "url", "detail"])
