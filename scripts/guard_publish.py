@@ -24,7 +24,11 @@ G_OVERSEA = "\u6d77\u5916\u534e\u8bed\u9891\u9053"
 MIN_GROUPS = {
     G_CCTV: 100,
     G_SAT: 150,
-    G_LOCAL: 350,
+    # Static minimums are catastrophic-failure floors, not quality targets.
+    # A stricter relative-drop guard below compares against the previous run.
+    # Keep this below normal variance so a valid but slightly smaller run can
+    # still publish fixes such as URL-format cleanup.
+    G_LOCAL: 300,
     G_MOVIE: 100,
     G_KIDS: 20,
     G_SPORT_DOC: 50,

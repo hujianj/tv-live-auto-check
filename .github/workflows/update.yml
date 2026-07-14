@@ -85,7 +85,6 @@ jobs:
           commit_message: "chore: verify and publish playable IPTV playlist"
           file_pattern: live.txt live-verified.txt live-curated.txt ku9-live.txt live.m3u source-report.md check-report.md curated-report.md sources_status.csv full-check-summary.json
       - name: Purge jsDelivr CDN
-        if: always()
         run: |
           set -e
           for file in live-curated.txt live.txt ku9-live.txt live-verified.txt live.m3u full-check-summary.json curated-report.md source-report.md check-report.md; do
@@ -126,7 +125,6 @@ jobs:
               raise SystemExit(f"GitHub Raw freshness smoke failed: last_size={last_size} last_hash={last_hash} expected_size={expected_size} expected_hash={expected_hash}")
           PY
       - name: Check Pages and jsDelivr cache state
-        if: always()
         run: |
           python - <<'PY'
           import hashlib, sys, time, urllib.request
