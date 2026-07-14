@@ -38,6 +38,23 @@ MIN_GROUPS = {
     G_HK: 40,
     G_OVERSEA: 80,
 }
+MAX_GROUP_DROP_RATIOS = {
+    # Mainland core groups should be relatively stable.
+    G_CCTV: 0.45,
+    G_SAT: 0.45,
+    G_LOCAL: 0.45,
+    # Entertainment and HK/overseas buckets are intentionally allowed to vary
+    # more because the final published recheck removes transient streams there
+    # aggressively. Static minimums above still catch catastrophic collapse.
+    G_MOVIE: 0.60,
+    G_KIDS: 0.60,
+    G_SPORT_DOC: 0.60,
+    G_MUSIC_SHOW: 0.60,
+    G_LIFE: 0.60,
+    G_ENT: 0.60,
+    G_HK: 0.65,
+    G_OVERSEA: 0.75,
+}
 CORE_SOURCES = {"zbds_iptv4_txt", "epg_cn", "iyouhun_zb", "guovin_ipv4", "suxuang_ipv4", "bigbiggrandg_gather"}
 
 
@@ -175,8 +192,9 @@ def main() -> int:
         base = int(base_groups.get(group, 0)) if base_groups else 0
         if base >= minimum:
             drop = (base - cur) / base
-            if drop > 0.45:
-                fail(f"group {group} dropped {drop:.1%}: baseline={base} current={cur}", failures)
+            max_group_drop = MAX_GROUP_DROP_RATIOS.get(group, 0.45)
+            if drop > max_group_drop:
+                fail(f"group {group} dropped {drop:.1%}: baseline={base} current={cur} max={max_group_drop:.0%}", failures)
     if current.get("checked_all_unique") is not True:
         fail("checked_all_unique is not true", failures)
     if int(current.get("checked_candidates") or -1) != int(current.get("unique_candidates") or -2):
