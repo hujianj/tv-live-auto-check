@@ -11,6 +11,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from validate_playlist import validate_m3u_text, validate_text
 from verify_sources import SOURCES, parse_m3u, parse_txt, split_stream_urls, split_unquoted_last_comma
+from playlist_config import get_group_order, load_guard, load_priority, source_priority
 
 
 def test_source_config_omits_disabled_unstable_sources() -> None:
@@ -37,12 +38,26 @@ def test_rules_config_contains_core_coverage() -> None:
     assert bad_strings == []
     assert "辽宁" in rules["provinces"]
     assert "卫视" not in rules["category_keywords"]["movie"]
+    assert get_group_order() == rules["group_order"]
+    assert rules["bad_name_tokens"]
     assert rules["group_keywords"]["hk"] == ["香港", "澳门", "台湾", "港澳台"]
     assert "CCTV-1" in rules["coverage"]["required_cctv"]
     assert "CCTV-5+" in rules["coverage"]["required_cctv"]
     assert "辽宁卫视" in rules["coverage"]["important_satellite"]
     assert rules["coverage"].get("fail_on_missing_cctv") is True
     assert rules["coverage"].get("fail_on_missing_satellite") is True
+
+
+def test_priority_and_guard_config_are_externalized() -> None:
+    priority = load_priority()
+    guard = load_guard()
+    assert source_priority("zbds_iptv4_txt", "https://live.zbds.top/tv/iptv4.txt") == -200
+    assert source_priority("zbds_iptv4_m3u", "https://live.zbds.top/tv/iptv4.m3u") == -150
+    assert source_priority("suxuang_ipv4", "https://example.test/a.m3u8") == -30
+    assert priority["score_adjustments"]["verify"]["ipv6"] > 0
+    assert guard["min_lines"] >= 1800
+    assert guard["min_groups"]["央视频道"] >= 90
+    assert "zbds_iptv4_txt" in guard["core_sources"]
 
 
 def test_split_unquoted_last_comma() -> None:
@@ -174,6 +189,7 @@ def main() -> int:
     for test in [
         test_source_config_omits_disabled_unstable_sources,
         test_rules_config_contains_core_coverage,
+        test_priority_and_guard_config_are_externalized,
         test_split_unquoted_last_comma,
         test_split_stream_urls,
         test_parse_m3u_name_and_split_urls,

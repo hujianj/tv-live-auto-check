@@ -1,4 +1,17 @@
 {
+  "group_order": [
+    "央视频道",
+    "卫视频道",
+    "地方频道",
+    "影视剧场",
+    "少儿动漫",
+    "体育纪实",
+    "音乐综艺",
+    "生活休闲",
+    "综合娱乐",
+    "港澳台频道",
+    "海外华语频道"
+  ],
   "provinces": [
     "北京",
     "天津",
@@ -316,6 +329,19 @@
     "NICKTOONS",
     "CINÉ",
     "CINE"
+  ],
+  "bad_name_tokens": [
+    "group-title=",
+    "tvg-logo=",
+    "user-agent",
+    "likeGecko",
+    "w_400",
+    "h_500",
+    "#EXTINF"
+  ],
+  "obsolete_categories": [
+    "影视娱乐",
+    "其他频道"
   ],
   "foreign_lang_regex": "\\b(CGTN|CCTV\\+|CCTVPLUS|DW|BBC|CNN|NHK|KBS|ARIRANG|FRANCE24|ALJAZEERA|TRT|VOA|BLOOMBERG|CNBC|FOX|ABC|NBC|CBS|PBS)\\b",
   "cctv_foreign_suffixes": [

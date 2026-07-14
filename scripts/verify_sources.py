@@ -22,6 +22,8 @@ from urllib.parse import urljoin, urlparse
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 
+from playlist_config import score_adjustments, source_priority as configured_source_priority
+
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 except Exception:
@@ -422,30 +424,21 @@ def check_candidate(cand: Candidate) -> CheckResult:
 
 
 def source_priority(source: str, url: str = "") -> int:
-    """Lower is better. Prefer zbds IPv4 TXT, then other zbds IPv4, then other IPv4."""
-    s = (source or "").lower()
-    u = (url or "").lower()
-    if "zbds_iptv4_txt" in s or "live.zbds.top/tv/iptv4.txt" in u:
-        return -200
-    if "zbds_iptv4_m3u" in s or "live.zbds.top/tv/iptv4.m3u" in u:
-        return -150
-    if s.startswith("zbds_") or "live.zbds.top" in u:
-        return -80
-    if "ipv4" in s:
-        return -30
-    return 0
+    """Lower is better. Kept as wrapper for tests and report code."""
+    return configured_source_priority(source, url)
 
 
 def prefer_score(c: Candidate) -> tuple[int, int, int, str]:
     u = c.url.lower()
     score = source_priority(c.source, c.url)
+    adjust = score_adjustments("verify")
     # Ku9/TV boxes usually handle plain HTTP IPv4 IPTV better than IPv6/foreign CDN streams.
     if u.startswith("http://"):
-        score -= 20
+        score += adjust.get("http_url", -20)
     if "epg.pw" in u:
-        score += 15
+        score += adjust.get("epg_pw", 15)
     if is_ipv6_url(c.url):
-        score += 30
+        score += adjust.get("ipv6", 30)
     return (score, len(c.url), len(c.source), c.source)
 
 

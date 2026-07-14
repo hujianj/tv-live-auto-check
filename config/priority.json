@@ -1,0 +1,55 @@
+{
+  "default_source_priority": 0,
+  "source_priority": [
+    {
+      "name": "zbds_iptv4_txt",
+      "score": -200,
+      "source_contains_any": [
+        "zbds_iptv4_txt"
+      ],
+      "url_contains_any": [
+        "live.zbds.top/tv/iptv4.txt"
+      ]
+    },
+    {
+      "name": "zbds_iptv4_m3u",
+      "score": -150,
+      "source_contains_any": [
+        "zbds_iptv4_m3u"
+      ],
+      "url_contains_any": [
+        "live.zbds.top/tv/iptv4.m3u"
+      ]
+    },
+    {
+      "name": "zbds_any",
+      "score": -80,
+      "source_startswith_any": [
+        "zbds_"
+      ],
+      "url_contains_any": [
+        "live.zbds.top"
+      ]
+    },
+    {
+      "name": "ipv4_source",
+      "score": -30,
+      "source_contains_any": [
+        "ipv4"
+      ]
+    }
+  ],
+  "score_adjustments": {
+    "verify": {
+      "http_url": -20,
+      "epg_pw": 15,
+      "ipv6": 30
+    },
+    "curate": {
+      "http_url": -20,
+      "epg_pw": 20,
+      "ipv6_source_or_literal": 20,
+      "migu_url": 5
+    }
+  }
+}

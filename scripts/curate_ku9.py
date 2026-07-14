@@ -5,6 +5,7 @@ import csv, json, re
 from pathlib import Path
 from collections import defaultdict, Counter
 from validate_playlist import validate_text
+from playlist_config import get_group_order, load_rules, score_adjustments, source_priority as configured_source_priority
 
 ROOT = Path(__file__).resolve().parents[1]
 IN = ROOT / "stream_check_results.csv"
@@ -22,11 +23,7 @@ G_LIFE = "\u751f\u6d3b\u4f11\u95f2"
 G_ENT = "\u7efc\u5408\u5a31\u4e50"
 G_HK = "\u6e2f\u6fb3\u53f0\u9891\u9053"
 G_OVERSEA = "\u6d77\u5916\u534e\u8bed\u9891\u9053"
-GROUP_ORDER = [G_CCTV, G_SAT, G_LOCAL, G_MOVIE, G_KIDS, G_SPORT_DOC, G_MUSIC_SHOW, G_LIFE, G_ENT, G_HK, G_OVERSEA]
-
-
-def load_rules() -> dict:
-    return json.loads(RULES_PATH.read_text(encoding='utf-8-sig'))
+GROUP_ORDER = get_group_order()
 
 
 RULES = load_rules()
@@ -196,38 +193,25 @@ def classify(name: str, group: str, source: str) -> str:
 
 
 def source_priority(source: str, url: str = '') -> int:
-    """Lower is better. Prefer zbds IPv4 TXT, then other zbds IPv4, then other IPv4."""
-    src = (source or '').lower()
-    u = (url or '').lower()
-    if 'zbds_iptv4_txt' in src or 'live.zbds.top/tv/iptv4.txt' in u:
-        return -200
-    if 'zbds_iptv4_m3u' in src or 'live.zbds.top/tv/iptv4.m3u' in u:
-        return -150
-    if src.startswith('zbds_') or 'live.zbds.top' in u:
-        return -80
-    if 'ipv4' in src:
-        return -30
-    return 0
+    """Lower is better. Kept as wrapper for tests and sorting code."""
+    return configured_source_priority(source, url)
 
 
 def url_score(url: str, source: str):
     s = source_priority(source, url)
+    adjust = score_adjustments('curate')
     if url.startswith('http://'):
-        s -= 20
+        s += adjust.get('http_url', -20)
     if 'epg.pw' in url:
-        s += 20
+        s += adjust.get('epg_pw', 20)
     if '[' in url or 'ipv6' in (source or '').lower():
-        s += 20
+        s += adjust.get('ipv6_source_or_literal', 20)
     if 'migu' in url.lower():
-        s += 5
+        s += adjust.get('migu_url', 5)
     return (s, len(url), source)
 
 
-BAD_NAME_TOKENS = ["group-title=", "tvg-logo=", "user-agent", "likeGecko", "w_400", "h_500", "#EXTINF"]
-UNWANTED_FINAL_TOKENS = DROP_LATIN_TOKENS + [
-    "BUDAPEST", "BOGOTA", "BRASIL", "BRESCIA", "LIONSGATE", "WEDOTV",
-    "EBONYTV", "PEACETV", "PENIEL", "STASHTV",
-]
+BAD_NAME_TOKENS = RULES['bad_name_tokens']
 
 
 def has_abnormal_channel_name(name: str) -> bool:

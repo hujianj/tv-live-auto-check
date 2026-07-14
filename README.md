@@ -69,13 +69,25 @@ https://raw.githubusercontent.com/hujianj/tv-live-auto-check/main/live-curated.t
 
 `CCTV` 会按 `CCTV-1, CCTV-2, CCTV-3...` 排序。外语频道、纯英文频道、伪 CCTV、`Not24/7`、PlutoTV/RedBull 等非家用频道会被过滤；RTHK/TVB/TVBS/ViuTV 等明确港澳台品牌会保留在港澳台分类。
 
-分类关键词、港台/海外过滤词、卫视排序、核心频道覆盖清单集中维护在：
+分类顺序、分类关键词、港台/海外过滤词、异常频道名拦截词、卫视排序、核心频道覆盖清单集中维护在：
 
 ```text
 config/rules.json
 ```
 
 修改该文件后，单元测试会检查是否误写入 `????` 或乱码替换符，防止规则配置损坏后影响自动发布。
+
+源排序和 URL 偏好集中维护在：
+
+```text
+config/priority.json
+```
+
+发布防缩水阈值、核心源清单、分类最低数量集中维护在：
+
+```text
+config/guard.json
+```
 
 ## 优先源
 
@@ -117,7 +129,8 @@ config/sources.json
 - `url` 填写 TXT / M3U / M3U8 聚合源地址。
 - 临时不用的源不要删除，可把 `enabled` 改成 `false` 并写明 `note`。
 - 新增后可手动运行 GitHub Actions，或等待每天自动维护。
-- 如果想调整新源优先级，修改 `scripts/verify_sources.py` 和 `scripts/curate_ku9.py` 里的 `source_priority()`。
+- 如果想调整新源优先级，修改 `config/priority.json`，不要再改脚本里的排序逻辑。
+- 如果这个新源是家人常看频道的重要保障源，把它加入 `config/guard.json` 的 `core_sources`。
 
 ## CDN 说明
 

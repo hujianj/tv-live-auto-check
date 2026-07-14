@@ -9,53 +9,29 @@ import subprocess
 import sys
 from pathlib import Path
 
+from playlist_config import load_guard
+
 ROOT = Path(__file__).resolve().parents[1]
-G_CCTV = "\u592e\u89c6\u9891\u9053"
-G_SAT = "\u536b\u89c6\u9891\u9053"
-G_LOCAL = "\u5730\u65b9\u9891\u9053"
-G_MOVIE = "\u5f71\u89c6\u5267\u573a"
-G_KIDS = "\u5c11\u513f\u52a8\u6f2b"
-G_SPORT_DOC = "\u4f53\u80b2\u7eaa\u5b9e"
-G_MUSIC_SHOW = "\u97f3\u4e50\u7efc\u827a"
-G_LIFE = "\u751f\u6d3b\u4f11\u95f2"
-G_ENT = "\u7efc\u5408\u5a31\u4e50"
-G_HK = "\u6e2f\u6fb3\u53f0\u9891\u9053"
-G_OVERSEA = "\u6d77\u5916\u534e\u8bed\u9891\u9053"
-MIN_GROUPS = {
-    # Static minimums are catastrophic-failure floors, not quality targets.
-    # A stricter relative-drop guard below compares against the previous run.
-    # Keep this below normal variance so a valid but slightly smaller run can
-    # still publish fixes such as URL-format cleanup.
-    G_CCTV: 90,
-    G_SAT: 120,
-    G_LOCAL: 250,
-    G_MOVIE: 90,
-    G_KIDS: 20,
-    G_SPORT_DOC: 40,
-    G_MUSIC_SHOW: 25,
-    G_LIFE: 100,
-    G_ENT: 500,
-    G_HK: 40,
-    G_OVERSEA: 80,
-}
-MAX_GROUP_DROP_RATIOS = {
-    # Mainland core groups should be relatively stable.
-    G_CCTV: 0.45,
-    G_SAT: 0.45,
-    G_LOCAL: 0.45,
-    # Entertainment and HK/overseas buckets are intentionally allowed to vary
-    # more because the final published recheck removes transient streams there
-    # aggressively. Static minimums above still catch catastrophic collapse.
-    G_MOVIE: 0.60,
-    G_KIDS: 0.60,
-    G_SPORT_DOC: 0.60,
-    G_MUSIC_SHOW: 0.60,
-    G_LIFE: 0.60,
-    G_ENT: 0.60,
-    G_HK: 0.65,
-    G_OVERSEA: 0.75,
-}
-CORE_SOURCES = {"zbds_iptv4_txt", "epg_cn", "iyouhun_zb", "guovin_ipv4", "suxuang_ipv4", "bigbiggrandg_gather"}
+GUARD = load_guard()
+MIN_GROUPS = {str(group): int(minimum) for group, minimum in GUARD["min_groups"].items()}
+MAX_GROUP_DROP_RATIOS = {str(group): float(ratio) for group, ratio in GUARD["max_group_drop_ratios"].items()}
+CORE_SOURCES = {str(source) for source in GUARD["core_sources"]}
+
+
+def guard_min_lines() -> int:
+    return int(os.getenv("IPTV_GUARD_MIN_CURATED_LINES", str(GUARD.get("min_lines", 1800))))
+
+
+def guard_max_total_drop_ratio() -> float:
+    return float(os.getenv("IPTV_GUARD_MAX_TOTAL_DROP_RATIO", str(GUARD.get("max_total_drop_ratio", 0.20))))
+
+
+def guard_max_failed_sources() -> int:
+    return int(os.getenv("IPTV_GUARD_MAX_FAILED_SOURCES", str(GUARD.get("max_failed_sources", 5))))
+
+
+def guard_core_failed_fail_threshold() -> int:
+    return int(os.getenv("IPTV_GUARD_CORE_FAILED_FAIL_THRESHOLD", str(GUARD.get("core_failed_fail_threshold", 2))))
 
 
 def load_json(path: Path) -> dict:
@@ -121,8 +97,11 @@ def write_guard_outputs(current: dict, baseline: dict, failures: list[str], warn
         "baseline_lines": base_lines,
         "current_lines": cur_lines,
         "total_drop_ratio": ratio(base_lines, cur_lines),
-        "min_lines": int(os.getenv("IPTV_GUARD_MIN_CURATED_LINES", "1800")),
-        "max_total_drop_ratio": float(os.getenv("IPTV_GUARD_MAX_TOTAL_DROP_RATIO", "0.20")),
+        "min_lines": guard_min_lines(),
+        "max_total_drop_ratio": guard_max_total_drop_ratio(),
+        "max_failed_sources": guard_max_failed_sources(),
+        "core_failed_fail_threshold": guard_core_failed_fail_threshold(),
+        "core_sources": sorted(CORE_SOURCES),
         "group_deltas": group_deltas,
         "failed_sources": failed_sources,
         "zero_parsed_sources": zero_parsed,
@@ -167,8 +146,8 @@ def main() -> int:
     warnings: list[str] = []
     cur_lines = int(current.get("curated_published_lines") or current.get("primary_published_lines") or 0)
     base_lines = int(baseline.get("curated_published_lines") or baseline.get("primary_published_lines") or 0)
-    min_lines = int(os.getenv("IPTV_GUARD_MIN_CURATED_LINES", "1800"))
-    max_drop_ratio = float(os.getenv("IPTV_GUARD_MAX_TOTAL_DROP_RATIO", "0.20"))
+    min_lines = guard_min_lines()
+    max_drop_ratio = guard_max_total_drop_ratio()
     def add_warn(msg: str) -> None:
         warnings.append(msg)
         warn(msg)
@@ -203,11 +182,11 @@ def main() -> int:
     if statuses:
         failed_sources = [r["name"] for r in statuses if r.get("fetch_ok") != "True"]
         core_failed = sorted(CORE_SOURCES.intersection(failed_sources))
-        if len(core_failed) >= 2:
+        if len(core_failed) >= guard_core_failed_fail_threshold():
             fail(f"multiple core sources failed: {core_failed}", failures)
         elif core_failed:
             add_warn(f"one core source failed: {core_failed}")
-        if len(failed_sources) > 5:
+        if len(failed_sources) > guard_max_failed_sources():
             fail(f"too many upstream fetch failures: {len(failed_sources)} {failed_sources[:10]}", failures)
         zero_parsed = [r["name"] for r in statuses if r.get("fetch_ok") == "True" and int(r.get("parsed") or 0) == 0]
         if zero_parsed:

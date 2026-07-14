@@ -8,6 +8,9 @@ import sys
 from collections import Counter
 from pathlib import Path
 
+from playlist_config import get_group_order, load_rules
+
+RULES = load_rules()
 G_CCTV = "\u592e\u89c6\u9891\u9053"
 G_SAT = "\u536b\u89c6\u9891\u9053"
 G_LOCAL = "\u5730\u65b9\u9891\u9053"
@@ -19,21 +22,16 @@ G_LIFE = "\u751f\u6d3b\u4f11\u95f2"
 G_ENT = "\u7efc\u5408\u5a31\u4e50"
 G_HK = "\u6e2f\u6fb3\u53f0\u9891\u9053"
 G_OVERSEA = "\u6d77\u5916\u534e\u8bed\u9891\u9053"
-GROUP_ORDER = [G_CCTV, G_SAT, G_LOCAL, G_MOVIE, G_KIDS, G_SPORT_DOC, G_MUSIC_SHOW, G_LIFE, G_ENT, G_HK, G_OVERSEA]
+GROUP_ORDER = get_group_order()
 
-BAD_NAME_TOKENS = ["group-title=", "tvg-logo=", "user-agent", "likeGecko", "w_400", "h_500", "#EXTINF"]
-UNWANTED_OVERSEAS_TOKENS = [
-    "PLUTOTV", "PLUTO", "REDBULL", "BUDAPEST", "BOGOTA", "BRASIL", "BRAZIL",
-    "BULGARIA", "BULGARIAONAIR", "BANGLA", "MOVIEBANGLA", "NEWS18BANGLA",
-    "NEWS21BANGLA", "BRESCIA", "BREMEN", "BODENSEE", "BANDUNG",
-    "BOJONEGORO", "BARILOCHE", "ASUNCION", "LIONSGATE", "WEDOTV",
-    "EBONYTV", "CITYTV", "PEACETV", "PENIEL", "STASHTV", "SUPERTV",
-    "CONECTV", "CREATV", "DELTATV", "RTVBN", "RADIO", "MTV",
-    "NICKELODEON", "NICKJR", "NICKTOONS", "CIN\u00c9", "CINE",
-]
-HK_CN_KEYS = ["\u9999\u6e2f", "\u6fb3\u95e8", "\u6fb3\u9580", "\u53f0\u6e7e", "\u53f0\u7063", "\u6e2f\u53f0", "\u51e4\u51f0", "\u9cf3\u51f0", "\u7fe1\u7fe0", "\u660e\u73e0", "\u6c11\u89c6", "\u4e2d\u89c6", "\u534e\u89c6", "\u53f0\u89c6", "\u4e1c\u68ee", "\u4e09\u7acb", "\u4e2d\u5929"]
-HK_LATIN_PREFIXES = ("RTHK", "VIUTV", "TVBS", "PHOENIX")
-TVB_PREFIXES = ("TVBJADE", "TVBPEARL", "TVBNEWS", "TVBFINANCE", "TVBENTERTAINMENT", "TVBCLASSIC", "TVBPLUS", "TVBSPORTS")
+BAD_NAME_TOKENS = RULES["bad_name_tokens"]
+UNWANTED_OVERSEAS_TOKENS = RULES["drop_latin_tokens"]
+HK_CN_KEYS = RULES["hk_cn_keys"]
+HK_LATIN_PREFIXES = tuple(RULES["hk_latin_prefixes"])
+TVB_PREFIXES = tuple(RULES["tvb_prefixes"])
+CCTV_ALIAS_BLOCK_TOKENS = [str(x).upper() for x in RULES["cctv_alias_block_tokens"]]
+UNSTABLE_NAME_TOKENS = [str(x).upper() for x in RULES["unstable_name_tokens"]]
+OBSOLETE_CATEGORIES = RULES["obsolete_categories"]
 
 
 def chinese_count(s: str) -> int:
@@ -124,9 +122,9 @@ def validate_channel_semantics(group: str, name: str, url: str, lineno: int, lin
         bad.append((lineno, "invalid/polluted channel name", line[:240]))
     if has_invalid_url(url):
         bad.append((lineno, "invalid/suspicious url", line[:240]))
-    if group == G_CCTV and any(tok in upper_name for tok in ["RTHK", "TVB", "VIUTV"]):
+    if group == G_CCTV and any(tok in upper_name for tok in CCTV_ALIAS_BLOCK_TOKENS):
         bad.append((lineno, "pseudo CCTV alias", line[:240]))
-    if "NOT24/7" in upper_name or "NOT 24/7" in upper_name:
+    if any(tok in upper_name for tok in UNSTABLE_NAME_TOKENS):
         bad.append((lineno, "unstable Not24/7", line[:240]))
     if not cctv_num(name) and not is_hk_mo_tw_channel(name, group):
         if any(tok in upper_name for tok in UNWANTED_OVERSEAS_TOKENS):
@@ -139,7 +137,7 @@ def validate_categories(groups: list[str], bad: list[tuple[int, str, str]]) -> N
     missing = [g for g in GROUP_ORDER if g not in groups]
     for g in missing:
         bad.append((0, "missing category", f"{g},#genre#"))
-    for old in ["\u5f71\u89c6\u5a31\u4e50", "\u5176\u4ed6\u9891\u9053"]:
+    for old in OBSOLETE_CATEGORIES:
         if old in groups:
             bad.append((0, "obsolete category", f"{old},#genre#"))
 
