@@ -42,6 +42,13 @@ jobs:
         run: python scripts/verify_sources.py
       - name: Curate Ku9 channel order
         run: python scripts/curate_ku9.py
+      - name: Recheck every final published stream URL
+        env:
+          IPTV_PUBLISHED_RECHECK_WORKERS: "128"
+          IPTV_CHECK_TIMEOUT: "6"
+          IPTV_HLS_VARIANT_CHECKS: "2"
+          IPTV_HLS_SEGMENT_CHECKS: "2"
+        run: python scripts/recheck_published.py
       - name: Smoke test generated playlist
         run: |
           python scripts/validate_playlist.py live-curated.txt live.txt live-verified.txt ku9-live.txt live.m3u
@@ -80,16 +87,18 @@ jobs:
             stream_check_results.csv
             live-all-playable.txt
             all-playable.m3u
+            published_recheck_results.csv
+            published-recheck-report.md
             publish-guard-report.md
       - name: Commit verified playlist
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: verify and publish playable IPTV playlist"
-          file_pattern: live.txt live-verified.txt live-curated.txt ku9-live.txt live.m3u source-report.md check-report.md curated-report.md publish-guard-report.md sources_status.csv full-check-summary.json
+          file_pattern: live.txt live-verified.txt live-curated.txt ku9-live.txt live.m3u source-report.md check-report.md curated-report.md published-recheck-report.md publish-guard-report.md sources_status.csv full-check-summary.json
       - name: Purge jsDelivr CDN
         run: |
           set -e
-          for file in live-curated.txt live.txt ku9-live.txt live-verified.txt live.m3u full-check-summary.json curated-report.md publish-guard-report.md source-report.md check-report.md; do
+          for file in live-curated.txt live.txt ku9-live.txt live-verified.txt live.m3u full-check-summary.json curated-report.md published-recheck-report.md publish-guard-report.md source-report.md check-report.md; do
             echo "Purging $file"
             curl -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}/$file" || true
             curl -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/$file" || true
@@ -145,6 +154,7 @@ jobs:
               ("jsdelivr_live_verified", "https://cdn.jsdelivr.net/gh/${{ github.repository }}@main/live-verified.txt", 3),
               ("jsdelivr_unversioned", "https://cdn.jsdelivr.net/gh/${{ github.repository }}/live-curated.txt", 3),
           ]
+          records = []
           def fetch(url):
               with urllib.request.urlopen(url + f"?cachecheck={int(time.time())}", timeout=30) as r:
                   return r.read()
@@ -152,6 +162,7 @@ jobs:
               ok = False
               last_size = 0
               last_hash = ""
+              last_error = ""
               for i in range(retries):
                   try:
                       data = fetch(url)
@@ -164,9 +175,40 @@ jobs:
                           ok = True
                           break
                       print(f"{name} cache retry {i + 1}: size={last_size} hash={last_hash} expected_size={expected_size} expected_hash={expected_hash}")
+                      last_error = "stale hash"
                   except Exception as e:
                       print(f"{name} cache retry {i + 1}: {e!r}")
+                      last_error = repr(e)
                   time.sleep(10)
+              records.append({
+                  "name": name,
+                  "url": url,
+                  "ok": ok,
+                  "size": last_size,
+                  "hash": last_hash,
+                  "expected_size": expected_size,
+                  "expected_hash": expected_hash,
+                  "error": last_error,
+              })
               if not ok:
                   print(f"WARNING: {name} is still stale or unreachable; generated playlist and GitHub Raw are already verified. url={url} last_size={last_size} last_hash={last_hash} expected_size={expected_size} expected_hash={expected_hash}")
+          lines = [
+              "# CDN alias health report",
+              "",
+              f"Expected size: {expected_size}",
+              f"Expected SHA256: {expected_hash}",
+              "",
+              "| Alias | OK | Size | SHA256 | URL | Error |",
+              "|---|---:|---:|---|---|---|",
+          ]
+          for r in records:
+              lines.append(f"| {r['name']} | {r['ok']} | {r['size']} | {r['hash']} | {r['url']} | {str(r['error']).replace('|', '/')} |")
+          Path("cdn-health-report.md").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
           PY
+      - name: Upload CDN health artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cdn-health-${{ github.run_id }}
+          retention-days: 30
+          path: cdn-health-report.md
