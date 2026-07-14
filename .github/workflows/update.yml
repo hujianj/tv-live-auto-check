@@ -141,6 +141,8 @@ jobs:
               ("ghproxy_raw", "https://gh-proxy.com/raw.githubusercontent.com/${{ github.repository }}/main/live-curated.txt", 6),
               ("jsdelivr_main", "https://cdn.jsdelivr.net/gh/${{ github.repository }}@main/live-curated.txt", 3),
               ("jsdelivr_live_txt", "https://cdn.jsdelivr.net/gh/${{ github.repository }}@main/live.txt", 3),
+              ("jsdelivr_ku9_live", "https://cdn.jsdelivr.net/gh/${{ github.repository }}@main/ku9-live.txt", 3),
+              ("jsdelivr_live_verified", "https://cdn.jsdelivr.net/gh/${{ github.repository }}@main/live-verified.txt", 3),
               ("jsdelivr_unversioned", "https://cdn.jsdelivr.net/gh/${{ github.repository }}/live-curated.txt", 3),
           ]
           def fetch(url):
