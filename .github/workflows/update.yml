@@ -160,6 +160,8 @@ jobs:
           urls = [
               ("pages", "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/live-curated.txt", 6),
               ("ghproxy_raw", "https://gh-proxy.com/raw.githubusercontent.com/${{ github.repository }}/main/live-curated.txt", 6),
+              ("jsdelivr_ku9_live_bare", "https://cdn.jsdelivr.net/gh/${{ github.repository }}/ku9-live.txt", 3),
+              ("jsdelivr_live_txt_bare", "https://cdn.jsdelivr.net/gh/${{ github.repository }}/live.txt", 3),
               ("jsdelivr_main", "https://cdn.jsdelivr.net/gh/${{ github.repository }}@main/live-curated.txt", 3),
               ("jsdelivr_live_txt", "https://cdn.jsdelivr.net/gh/${{ github.repository }}@main/live.txt", 3),
               ("jsdelivr_ku9_live", "https://cdn.jsdelivr.net/gh/${{ github.repository }}@main/ku9-live.txt", 3),
