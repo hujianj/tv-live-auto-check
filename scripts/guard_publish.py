@@ -22,21 +22,21 @@ G_ENT = "\u7efc\u5408\u5a31\u4e50"
 G_HK = "\u6e2f\u6fb3\u53f0\u9891\u9053"
 G_OVERSEA = "\u6d77\u5916\u534e\u8bed\u9891\u9053"
 MIN_GROUPS = {
-    G_CCTV: 100,
-    G_SAT: 150,
     # Static minimums are catastrophic-failure floors, not quality targets.
     # A stricter relative-drop guard below compares against the previous run.
     # Keep this below normal variance so a valid but slightly smaller run can
     # still publish fixes such as URL-format cleanup.
-    G_LOCAL: 300,
-    G_MOVIE: 100,
+    G_CCTV: 90,
+    G_SAT: 120,
+    G_LOCAL: 250,
+    G_MOVIE: 90,
     G_KIDS: 20,
-    G_SPORT_DOC: 50,
-    G_MUSIC_SHOW: 30,
-    G_LIFE: 120,
-    G_ENT: 600,
-    G_HK: 50,
-    G_OVERSEA: 100,
+    G_SPORT_DOC: 40,
+    G_MUSIC_SHOW: 25,
+    G_LIFE: 100,
+    G_ENT: 500,
+    G_HK: 40,
+    G_OVERSEA: 80,
 }
 CORE_SOURCES = {"zbds_iptv4_txt", "epg_cn", "iyouhun_zb", "guovin_ipv4", "suxuang_ipv4", "bigbiggrandg_gather"}
 
