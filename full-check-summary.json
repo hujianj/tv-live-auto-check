@@ -1,60 +1,139 @@
 {
-  "generated": "2026-07-14 15:55:17",
-  "generated_utc": "2026-07-14T15:55:17Z",
-  "generated_beijing": "2026-07-14 23:55:17 Asia/Shanghai",
-  "sources_total": 31,
-  "sources_fetched_ok": 30,
-  "parsed_candidates": 36352,
-  "unique_candidates": 30922,
-  "unique_name_url_candidates": 31833,
-  "checked_candidates": 30922,
+  "generated": "2026-07-14 17:06:25",
+  "generated_utc": "2026-07-14T17:06:25Z",
+  "generated_beijing": "2026-07-15 01:06:25 Asia/Shanghai",
+  "sources_total": 29,
+  "sources_fetched_ok": 29,
+  "parsed_candidates": 36187,
+  "unique_candidates": 30685,
+  "unique_name_url_candidates": 31613,
+  "checked_candidates": 30685,
   "checked_all_unique": true,
-  "playable_channel_names": 9704,
-  "playable_unique_urls": 11504,
-  "playable_name_url_lines": 11908,
-  "playable_urls_found": 11908,
-  "all_playable_lines": 11908,
-  "pre_curated_published_lines": 11256,
-  "primary_published_lines": 2266,
+  "playable_channel_names": 9407,
+  "playable_unique_urls": 11129,
+  "playable_name_url_lines": 11556,
+  "playable_urls_found": 11556,
+  "all_playable_lines": 11556,
+  "pre_curated_published_lines": 10953,
+  "primary_published_lines": 2324,
   "curated_generated": true,
-  "curated_published_lines": 2266,
-  "curated_channel_names": 1553,
+  "curated_published_lines": 2324,
+  "curated_channel_names": 1587,
   "curated_groups": {
-    "央视频道": 122,
-    "卫视频道": 159,
+    "央视频道": 118,
+    "卫视频道": 143,
     "地方频道": 319,
-    "影视剧场": 140,
-    "少儿动漫": 36,
-    "体育纪实": 55,
-    "音乐综艺": 47,
-    "生活休闲": 141,
-    "综合娱乐": 951,
-    "港澳台频道": 75,
-    "海外华语频道": 221
+    "影视剧场": 144,
+    "少儿动漫": 38,
+    "体育纪实": 53,
+    "音乐综艺": 48,
+    "生活休闲": 189,
+    "综合娱乐": 967,
+    "港澳台频道": 78,
+    "海外华语频道": 227
   },
   "curated_sources": {
-    "zbds_iptv4_txt": 198,
-    "guovin_ipv4": 121,
-    "suxuang_ipv4": 157,
-    "migu_interface": 30,
+    "zbds_iptv4_txt": 184,
+    "suxuang_ipv4": 132,
+    "guovin_ipv4": 120,
+    "iyouhun_zb": 339,
+    "migu_interface": 46,
     "iptv_org_all": 23,
-    "iyouhun_zb": 301,
-    "epg_cn": 394,
-    "guovin_all": 105,
-    "bigbiggrandg_gather": 458,
-    "suxuang_ipv6": 19,
-    "guovin_ipv6": 6,
-    "mursor_yy": 303,
+    "epg_cn": 383,
+    "bigbiggrandg_gather": 464,
+    "suxuang_ipv6": 15,
+    "guovin_ipv6": 144,
     "kimentanm_aptv": 6,
-    "fanmingming_ipv6_raw": 2,
-    "vamoschuck_m3u": 13,
-    "epg_tw": 92,
+    "fanmingming_ipv6_raw": 4,
+    "mursor_yy": 312,
+    "vamoschuck_m3u": 28,
+    "epg_tw": 88,
     "epg_my": 5,
     "epg_hk": 22,
-    "mursor_bililive": 3,
+    "yang_gather": 2,
     "epg_mo": 5,
-    "iptv_org_tw": 3
+    "iptv_org_tw": 2
   },
   "final_primary_file": "live-curated.txt",
-  "final_primary_published_lines": 2266
+  "final_primary_published_lines": 2324,
+  "publish_guard": {
+    "status": "ok",
+    "baseline_lines": 2266,
+    "current_lines": 2324,
+    "total_drop_ratio": -0.02559576345984113,
+    "min_lines": 1800,
+    "max_total_drop_ratio": 0.2,
+    "group_deltas": {
+      "央视频道": {
+        "baseline": 122,
+        "current": 118,
+        "delta": -4,
+        "drop_ratio": 0.03278688524590164
+      },
+      "卫视频道": {
+        "baseline": 159,
+        "current": 143,
+        "delta": -16,
+        "drop_ratio": 0.10062893081761007
+      },
+      "地方频道": {
+        "baseline": 319,
+        "current": 319,
+        "delta": 0,
+        "drop_ratio": 0.0
+      },
+      "影视剧场": {
+        "baseline": 140,
+        "current": 144,
+        "delta": 4,
+        "drop_ratio": -0.02857142857142857
+      },
+      "少儿动漫": {
+        "baseline": 36,
+        "current": 38,
+        "delta": 2,
+        "drop_ratio": -0.05555555555555555
+      },
+      "体育纪实": {
+        "baseline": 55,
+        "current": 53,
+        "delta": -2,
+        "drop_ratio": 0.03636363636363636
+      },
+      "音乐综艺": {
+        "baseline": 47,
+        "current": 48,
+        "delta": 1,
+        "drop_ratio": -0.02127659574468085
+      },
+      "生活休闲": {
+        "baseline": 141,
+        "current": 189,
+        "delta": 48,
+        "drop_ratio": -0.3404255319148936
+      },
+      "综合娱乐": {
+        "baseline": 951,
+        "current": 967,
+        "delta": 16,
+        "drop_ratio": -0.016824395373291272
+      },
+      "港澳台频道": {
+        "baseline": 75,
+        "current": 78,
+        "delta": 3,
+        "drop_ratio": -0.04
+      },
+      "海外华语频道": {
+        "baseline": 221,
+        "current": 227,
+        "delta": 6,
+        "drop_ratio": -0.027149321266968326
+      }
+    },
+    "failed_sources": [],
+    "zero_parsed_sources": [],
+    "failures": [],
+    "warnings": []
+  }
 }
