@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from validate_playlist import validate_m3u_text, validate_text
-from verify_sources import SOURCES, parse_m3u, parse_txt, split_stream_urls, split_unquoted_last_comma
+from verify_sources import SOURCES, Candidate, is_core_family_candidate, looks_transient_failure, parse_m3u, parse_txt, split_stream_urls, split_unquoted_last_comma
 from playlist_config import get_group_order, load_guard, load_priority, load_quality, source_priority
 from stability import stability_adjustment
 import stability as stability_module
@@ -253,6 +253,16 @@ def test_parse_txt_split_urls() -> None:
     assert [c.url for c in cands] == ["http://a/live.m3u8", "https://b/live.m3u8"]
 
 
+def test_core_retry_classification() -> None:
+    assert is_core_family_candidate(Candidate("unit", "央视频道", "CCTV-1", "http://a/live.m3u8"))
+    assert is_core_family_candidate(Candidate("unit", "卫视频道", "辽宁卫视", "http://a/live.m3u8"))
+    assert not is_core_family_candidate(Candidate("unit", "综合娱乐", "电影频道", "http://a/live.m3u8"))
+    assert looks_transient_failure("TimeoutError('timed out')")
+    assert looks_transient_failure("RemoteDisconnected('Remote end closed connection without response')")
+    assert not looks_transient_failure("<HTTPError 404: 'Not Found'>")
+    assert not looks_transient_failure("bad marker/html")
+
+
 def test_validate_rejects_malformed_url() -> None:
     malformed = """央视频道,#genre#
 CCTV-1,http://a/live.m3u8;http://b/live.m3u8
@@ -364,6 +374,7 @@ def main() -> int:
         test_split_stream_urls,
         test_parse_m3u_name_and_split_urls,
         test_parse_txt_split_urls,
+        test_core_retry_classification,
         test_validate_rejects_malformed_url,
         test_validate_m3u_accepts_generated_shape,
         test_validate_m3u_rejects_polluted_url,

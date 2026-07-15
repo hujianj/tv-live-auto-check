@@ -13,7 +13,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from validate_playlist import validate_file, validate_text
-from verify_sources import Candidate, CheckResult, check_candidate
+from verify_sources import Candidate, CheckResult, check_candidate_resilient
 from stability import update_history
 from playlist_config import load_guard
 from channel_utils import format_extinf
@@ -248,7 +248,7 @@ def main() -> int:
     results: dict[str, CheckResult] = {}
     with cf.ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
         futs = {
-            ex.submit(check_candidate, Candidate("published_recheck", row.group, row.name, row.url)): url
+            ex.submit(check_candidate_resilient, Candidate("published_recheck", row.group, row.name, row.url)): url
             for url, row in by_url.items()
         }
         for i, fut in enumerate(cf.as_completed(futs), 1):

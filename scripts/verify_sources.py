@@ -22,7 +22,7 @@ from urllib.parse import urljoin, urlparse
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 
-from channel_utils import format_extinf
+from channel_utils import cctv_number, format_extinf
 from playlist_config import score_adjustments, source_priority as configured_source_priority
 
 try:
@@ -38,6 +38,8 @@ CHECK_WORKERS = int(os.getenv("IPTV_CHECK_WORKERS", "192"))
 MAX_VALID_PER_NAME = int(os.getenv("IPTV_MAX_VALID_PER_NAME", "5"))
 HLS_SEGMENT_CHECKS = int(os.getenv("IPTV_HLS_SEGMENT_CHECKS", "2"))
 HLS_VARIANT_CHECKS = int(os.getenv("IPTV_HLS_VARIANT_CHECKS", "2"))
+CORE_RETRY_ATTEMPTS = int(os.getenv("IPTV_CORE_RETRY_ATTEMPTS", "1"))
+CORE_RETRY_TIMEOUT = int(os.getenv("IPTV_CORE_RETRY_TIMEOUT", "14"))
 UA = "Player"
 SOURCE_CONFIG = ROOT / "config" / "sources.json"
 TRANSIENT_OUTPUTS = [
@@ -317,6 +319,40 @@ def http_get_small(url: str, max_bytes: int = 65536, timeout: int = TIMEOUT) -> 
     return code, ctype, data, final
 
 
+def is_core_family_candidate(cand: Candidate) -> bool:
+    name = cand.name or ""
+    group = cand.group or ""
+    return bool(cctv_number(name) or "卫视" in name or "央视频道" in group or "卫视频道" in group)
+
+
+def looks_transient_failure(detail: str) -> bool:
+    low = (detail or "").lower()
+    transient = (
+        "timed out",
+        "timeouterror",
+        "connectionreset",
+        "connection reset",
+        "remote end closed",
+        "remotedisconnected",
+        "incompleteread",
+        "temporarily unavailable",
+        "temporary failure",
+        "ssl",
+        "eof occurred",
+    )
+    permanent = (
+        "http 404",
+        "http 410",
+        "not found",
+        "forbidden",
+        "bad marker/html",
+        "unsupported scheme",
+    )
+    if any(x in low for x in permanent):
+        return False
+    return any(x in low for x in transient)
+
+
 def looks_bad(data: bytes, text: str = "") -> bool:
     sample = (text or data[:4096].decode("utf-8", "ignore")).lower()
     if any(m in sample for m in BAD_MARKERS):
@@ -368,12 +404,12 @@ def parse_m3u8_items(text: str, base: str) -> tuple[list[str], list[str]]:
     return unique_keep_order(variants), unique_keep_order(segments)
 
 
-def check_media_segments(segments: list[str], limit: int = HLS_SEGMENT_CHECKS) -> tuple[bool, str]:
+def check_media_segments(segments: list[str], limit: int = HLS_SEGMENT_CHECKS, timeout: int = TIMEOUT) -> tuple[bool, str]:
     if not segments:
         return False, "no segment"
     checked = 0
     for seg in segments[:max(1, limit)]:
-        c, ct, d, f = http_get_small(seg, max_bytes=4096)
+        c, ct, d, f = http_get_small(seg, max_bytes=4096, timeout=timeout)
         checked += 1
         if c >= 400 or not looks_media(d, ct):
             return False, f"segment bad {c} {ct} bytes={len(d)} checked={checked}"
@@ -404,13 +440,13 @@ def looks_media(data: bytes, ctype: str) -> bool:
     return False
 
 
-def check_candidate(cand: Candidate) -> CheckResult:
+def check_candidate(cand: Candidate, timeout: int = TIMEOUT) -> CheckResult:
     url = cand.url.strip()
     if not url.startswith(("http://", "https://")):
         return CheckResult(cand, False, "unsupported scheme")
     # For home Ku9 on common networks, IPv6-only URLs often fail; still test, but mark fail on network error.
     try:
-        code, ctype, data, final = http_get_small(url)
+        code, ctype, data, final = http_get_small(url, timeout=timeout)
         if code >= 400:
             return CheckResult(cand, False, f"http {code}")
         if looks_bad(data):
@@ -423,23 +459,41 @@ def check_candidate(cand: Candidate) -> CheckResult:
                 last_detail = ""
                 for child in variants[:max(1, HLS_VARIANT_CHECKS)]:
                     checked_variants += 1
-                    c2, ct2, d2, f2 = http_get_small(child)
+                    c2, ct2, d2, f2 = http_get_small(child, timeout=timeout)
                     if c2 >= 400 or looks_bad(d2):
                         last_detail = f"child bad {c2}"
                         continue
                     t2 = d2.decode("utf-8", "ignore")
                     _v2, child_segments = parse_m3u8_items(t2, f2)
-                    ok, detail = check_media_segments(child_segments)
+                    ok, detail = check_media_segments(child_segments, timeout=timeout)
                     last_detail = detail
                     if ok:
                         return CheckResult(cand, True, f"variant ok variants_checked={checked_variants} {detail}")
                 return CheckResult(cand, False, f"variant fail variants_checked={checked_variants} {last_detail}")
-            ok, detail = check_media_segments(segments)
+            ok, detail = check_media_segments(segments, timeout=timeout)
             return CheckResult(cand, ok, detail)
         else:
             return CheckResult(cand, looks_media(data, ctype), f"direct {ctype} bytes={len(data)}")
     except Exception as e:
         return CheckResult(cand, False, repr(e)[:160])
+
+
+def check_candidate_resilient(cand: Candidate) -> CheckResult:
+    """Check a URL, with a slow retry for core family channels on transient failures."""
+    first = check_candidate(cand, timeout=TIMEOUT)
+    if first.ok or CORE_RETRY_ATTEMPTS <= 0:
+        return first
+    if not is_core_family_candidate(cand) or not looks_transient_failure(first.detail):
+        return first
+    last = first
+    for attempt in range(1, CORE_RETRY_ATTEMPTS + 1):
+        retry = check_candidate(cand, timeout=max(TIMEOUT, CORE_RETRY_TIMEOUT))
+        if retry.ok:
+            return CheckResult(cand, True, f"core retry ok attempt={attempt} first={first.detail}; {retry.detail}")
+        last = retry
+        if not looks_transient_failure(retry.detail):
+            break
+    return CheckResult(cand, False, f"{last.detail} (core retry after first={first.detail})")
 
 
 def source_priority(source: str, url: str = "") -> int:
@@ -507,7 +561,7 @@ def main() -> None:
 
     checked_by_url: dict[str, CheckResult] = {}
     with cf.ThreadPoolExecutor(max_workers=CHECK_WORKERS) as ex:
-        futs = [ex.submit(check_candidate, c) for c in to_check]
+        futs = [ex.submit(check_candidate_resilient, c) for c in to_check]
         ok_count = 0
         for i, fut in enumerate(cf.as_completed(futs), 1):
             r = fut.result()
