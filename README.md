@@ -27,7 +27,7 @@ https://gh-proxy.com/raw.githubusercontent.com/hujianj/tv-live-auto-check/main/l
 M3U 格式：
 
 ```text
-https://gcore.jsdelivr.net/gh/hujianj/tv-live-auto-check@main/live.m3u
+https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check@main/live.m3u
 ```
 
 GitHub Pages / Raw 地址保留给电脑或人工测试；部分电视网络可能获取为空或连接失败：
