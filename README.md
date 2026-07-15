@@ -4,16 +4,16 @@ IPTV 自动维护项目：抓取公开直播源，对去重后的真实播放 UR
 
 ## 推荐订阅地址
 
-电视端/酷9优先使用 jsDelivr 的 GCore 边缘地址。实测通用 `cdn.jsdelivr.net` 不同边缘节点偶发返回旧文件，而 `gcore.jsdelivr.net @main` 当前刷新更稳定：
-
-```text
-https://gcore.jsdelivr.net/gh/hujianj/tv-live-auto-check@main/ku9-live.txt
-```
-
-如果该路径在电视端不可访问，可临时使用 GitHub Pages 备用地址：
+如果电视端能正常访问 GitHub Pages，优先使用这个地址；它当前最接近仓库最新版，适合自动更新后尽快生效：
 
 ```text
 https://hujianj.github.io/tv-live-auto-check/ku9-live.txt
+```
+
+如果电视端访问 GitHub Pages 显示数据为空，再使用 jsDelivr 的 GCore 边缘地址作为稳定兼容地址；它通常更容易被电视端拉取，但第三方 CDN 可能短时返回上一版：
+
+```text
+https://gcore.jsdelivr.net/gh/hujianj/tv-live-auto-check@main/ku9-live.txt
 ```
 
 历史兼容地址 `live-curated.txt` / `live.txt` / `live-verified.txt` 仍会生成，但不同 jsDelivr 边缘节点可能对不同文件路径缓存不同步；电视端长期订阅优先用上面的 `ku9-live.txt`。
