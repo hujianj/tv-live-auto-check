@@ -78,5 +78,14 @@
       "cctv"
     ],
     "bonus": -8
+  },
+  "final_quality_audit": {
+    "min_exact_cctv_lines": 3,
+    "min_important_satellite_lines": 3,
+    "warn_exact_cctv_lines_below": 4,
+    "warn_important_satellite_lines_below": 4,
+    "fail_on_strict_filter_residue": true,
+    "fail_on_channel_limit_violation": true,
+    "fail_on_group_limit_violation": true
   }
 }

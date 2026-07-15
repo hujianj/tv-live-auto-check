@@ -20,6 +20,7 @@ PUBLIC_FILES = [
     "final-publish-report.md",
     "stability-report.md",
     "coverage-report.md",
+    "quality-audit-report.md",
     "publish-guard-report.md",
     "published-recheck-report.md",
     "source-report.md",
