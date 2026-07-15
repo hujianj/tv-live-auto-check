@@ -1,53 +1,54 @@
 {
-  "generated": "2026-07-15 10:27:11",
-  "generated_utc": "2026-07-15T10:27:11Z",
-  "generated_beijing": "2026-07-15 18:27:11 Asia/Shanghai",
+  "generated": "2026-07-15 10:53:12",
+  "generated_utc": "2026-07-15T10:53:12Z",
+  "generated_beijing": "2026-07-15 18:53:12 Asia/Shanghai",
   "sources_total": 29,
   "sources_fetched_ok": 29,
-  "parsed_candidates": 35029,
-  "unique_candidates": 29634,
-  "unique_name_url_candidates": 30557,
-  "checked_candidates": 29634,
+  "parsed_candidates": 34930,
+  "unique_candidates": 29533,
+  "unique_name_url_candidates": 30456,
+  "checked_candidates": 29533,
   "checked_all_unique": true,
-  "playable_channel_names": 10375,
-  "playable_unique_urls": 12827,
-  "playable_name_url_lines": 13319,
-  "playable_urls_found": 13319,
-  "all_playable_lines": 13319,
-  "pre_curated_published_lines": 12157,
-  "primary_published_lines": 2413,
-  "pre_recheck_curated_lines": 2626,
-  "pre_recheck_curated_channel_names": 1816,
+  "playable_channel_names": 10479,
+  "playable_unique_urls": 12926,
+  "playable_name_url_lines": 13423,
+  "playable_urls_found": 13423,
+  "all_playable_lines": 13423,
+  "pre_curated_published_lines": 12256,
+  "primary_published_lines": 2447,
+  "pre_recheck_curated_lines": 2569,
+  "pre_recheck_curated_channel_names": 1788,
   "pre_recheck_curated_groups": {
     "央视频道": 148,
-    "卫视频道": 207,
-    "地方频道": 625,
-    "影视剧场": 160,
-    "少儿动漫": 23,
-    "体育纪实": 73,
-    "音乐综艺": 50,
+    "卫视频道": 210,
+    "地方频道": 528,
+    "影视剧场": 172,
+    "少儿动漫": 26,
+    "体育纪实": 69,
+    "音乐综艺": 51,
     "生活休闲": 180,
     "综合娱乐": 900,
-    "港澳台频道": 64,
-    "海外华语频道": 196
+    "港澳台频道": 65,
+    "海外华语频道": 220
   },
   "pre_recheck_curated_sources": {
-    "zbds_iptv4_txt": 445,
-    "guovin_ipv4": 268,
-    "iyouhun_zb": 300,
-    "migu_interface": 55,
-    "iptv_org_all": 23,
-    "suxuang_ipv4": 138,
-    "epg_cn": 401,
-    "guovin_ipv6": 52,
-    "bigbiggrandg_gather": 550,
+    "zbds_iptv4_txt": 370,
+    "guovin_ipv4": 217,
+    "migu_interface": 64,
+    "iptv_org_all": 25,
+    "epg_cn": 364,
+    "suxuang_ipv4": 158,
+    "iyouhun_zb": 265,
+    "guovin_all": 124,
+    "guovin_ipv6": 2,
+    "bigbiggrandg_gather": 546,
     "kimentanm_aptv": 4,
     "fanmingming_ipv6_raw": 3,
-    "mursor_yy": 278,
-    "vamoschuck_m3u": 37,
-    "epg_tw": 42,
-    "mursor_bililive": 2,
-    "epg_hk": 13,
+    "mursor_yy": 322,
+    "vamoschuck_m3u": 31,
+    "epg_tw": 40,
+    "mursor_bililive": 4,
+    "epg_hk": 15,
     "yang_gather": 2,
     "epg_my": 2,
     "epg_mo": 5,
@@ -57,52 +58,53 @@
   },
   "pre_recheck_per_group_unique_names": {
     "央视频道": 39,
-    "卫视频道": 53,
-    "地方频道": 397,
-    "影视剧场": 136,
-    "少儿动漫": 15,
+    "卫视频道": 52,
+    "地方频道": 320,
+    "影视剧场": 148,
+    "少儿动漫": 18,
     "体育纪实": 52,
-    "音乐综艺": 46,
-    "生活休闲": 125,
-    "综合娱乐": 756,
-    "港澳台频道": 54,
-    "海外华语频道": 187
+    "音乐综艺": 47,
+    "生活休闲": 122,
+    "综合娱乐": 745,
+    "港澳台频道": 55,
+    "海外华语频道": 210
   },
   "stability_history_loaded": true,
-  "stability_history_urls": 3722,
+  "stability_history_urls": 3754,
   "curated_generated": true,
-  "curated_published_lines": 2413,
-  "curated_channel_names": 1674,
+  "curated_published_lines": 2447,
+  "curated_channel_names": 1715,
   "curated_groups": {
-    "央视频道": 140,
-    "卫视频道": 195,
-    "地方频道": 590,
-    "影视剧场": 119,
-    "少儿动漫": 22,
-    "体育纪实": 66,
-    "音乐综艺": 49,
-    "生活休闲": 167,
-    "综合娱乐": 866,
-    "港澳台频道": 63,
-    "海外华语频道": 136
+    "央视频道": 145,
+    "卫视频道": 206,
+    "地方频道": 498,
+    "影视剧场": 155,
+    "少儿动漫": 21,
+    "体育纪实": 69,
+    "音乐综艺": 50,
+    "生活休闲": 172,
+    "综合娱乐": 878,
+    "港澳台频道": 65,
+    "海外华语频道": 188
   },
   "curated_sources": {
-    "zbds_iptv4_txt": 430,
-    "guovin_ipv4": 254,
-    "iyouhun_zb": 286,
-    "migu_interface": 52,
-    "iptv_org_all": 20,
-    "suxuang_ipv4": 80,
-    "epg_cn": 382,
-    "guovin_ipv6": 42,
-    "bigbiggrandg_gather": 548,
+    "zbds_iptv4_txt": 359,
+    "guovin_ipv4": 209,
+    "migu_interface": 60,
+    "iptv_org_all": 23,
+    "epg_cn": 338,
+    "suxuang_ipv4": 150,
+    "iyouhun_zb": 255,
+    "guovin_all": 121,
+    "guovin_ipv6": 2,
+    "bigbiggrandg_gather": 544,
     "kimentanm_aptv": 4,
     "fanmingming_ipv6_raw": 3,
-    "mursor_yy": 205,
-    "vamoschuck_m3u": 36,
-    "epg_tw": 41,
-    "mursor_bililive": 2,
-    "epg_hk": 13,
+    "mursor_yy": 275,
+    "vamoschuck_m3u": 31,
+    "epg_tw": 40,
+    "mursor_bililive": 3,
+    "epg_hk": 15,
     "yang_gather": 2,
     "epg_my": 2,
     "epg_mo": 5,
@@ -112,58 +114,59 @@
   },
   "per_group_unique_names": {
     "央视频道": 39,
-    "卫视频道": 53,
-    "地方频道": 397,
-    "影视剧场": 136,
-    "少儿动漫": 15,
+    "卫视频道": 52,
+    "地方频道": 320,
+    "影视剧场": 148,
+    "少儿动漫": 18,
     "体育纪实": 52,
-    "音乐综艺": 46,
-    "生活休闲": 125,
-    "综合娱乐": 756,
-    "港澳台频道": 54,
-    "海外华语频道": 187
+    "音乐综艺": 47,
+    "生活休闲": 122,
+    "综合娱乐": 745,
+    "港澳台频道": 55,
+    "海外华语频道": 210
   },
   "quality_limits_applied": {
     "config_file": "config/quality.json",
-    "channel_limit_trimmed_rows": 1264,
+    "channel_limit_trimmed_rows": 1287,
     "channel_limit_trimmed_by_group": {
-      "地方频道": 374,
-      "海外华语频道": 12,
-      "少儿动漫": 17,
-      "港澳台频道": 17,
-      "生活休闲": 32,
-      "综合娱乐": 431,
-      "体育纪实": 8,
-      "卫视频道": 105,
+      "地方频道": 331,
+      "海外华语频道": 13,
+      "少儿动漫": 14,
+      "港澳台频道": 14,
+      "生活休闲": 45,
+      "综合娱乐": 413,
+      "体育纪实": 5,
+      "卫视频道": 158,
       "音乐综艺": 32,
-      "央视频道": 214,
-      "影视剧场": 22
+      "央视频道": 245,
+      "影视剧场": 17
     },
     "group_limit_trimmed_counts": {
-      "生活休闲": 11,
-      "综合娱乐": 90
+      "生活休闲": 60,
+      "综合娱乐": 117,
+      "海外华语频道": 50
     },
-    "strict_filter_dropped_rows": 371,
+    "strict_filter_dropped_rows": 349,
     "drop_counts": {
-      "unwanted_overseas_english": 7846,
-      "strict_quality_filter": 371,
-      "unstable_or_wrong_alias": 750,
-      "foreign_channel": 312,
+      "unwanted_overseas_english": 7857,
+      "strict_quality_filter": 349,
+      "unstable_or_wrong_alias": 762,
+      "foreign_channel": 320,
       "cgtn_url": 26,
-      "invalid_name_or_url": 2
+      "invalid_name_or_url": 3
     },
     "top_strict_drop_reasons": {
-      "token:Geo-blocked": 275,
-      "token:Astro": 25,
-      "regex:(^|[^A-Za-z])(Animal[_ ]?Planet|Discovery(Asia)?|FashionTV|Foodnetwork|HGTV|History|NatGeo(_?Wild)?|CartoonNetwork|BabyTV|Animax|CBeebies|KidsTV|CampSpoopy)([^A-Za-z]|$)": 15,
+      "token:Geo-blocked": 256,
+      "regex:(^|[^A-Za-z])(Animal[_ ]?Planet|Discovery(Asia)?|FashionTV|Foodnetwork|HGTV|History|NatGeo(_?Wild)?|CartoonNetwork|BabyTV|Animax|CBeebies|KidsTV|CampSpoopy)([^A-Za-z]|$)": 18,
+      "token:Astro": 16,
       "token:Foodnetwork": 8,
       "token:Discovery": 7,
+      "token:Ocko": 5,
+      "token:GOODTV": 5,
       "token:NatGeo": 5,
       "token:FashionTV": 4,
-      "token:GOODTV": 4,
       "token:HGTV": 3,
       "token:CityFM": 3,
-      "token:Ocko": 3,
       "token:DeluxeLoungeHD": 2,
       "token:CampSpoopy": 2,
       "token:|BabyTV": 2,
@@ -201,92 +204,92 @@
     }
   },
   "final_primary_file": "live-curated.txt",
-  "final_primary_published_lines": 2413,
+  "final_primary_published_lines": 2447,
   "curated_group_sources": {
-    "央视频道|zbds_iptv4_txt": 36,
-    "央视频道|guovin_ipv4": 53,
-    "央视频道|iyouhun_zb": 9,
+    "央视频道|zbds_iptv4_txt": 61,
+    "央视频道|guovin_ipv4": 39,
     "央视频道|migu_interface": 2,
-    "央视频道|iptv_org_all": 12,
-    "央视频道|suxuang_ipv4": 2,
-    "央视频道|epg_cn": 26,
-    "卫视频道|zbds_iptv4_txt": 66,
-    "卫视频道|guovin_ipv4": 90,
-    "卫视频道|suxuang_ipv4": 11,
-    "卫视频道|guovin_ipv6": 6,
-    "卫视频道|migu_interface": 6,
-    "卫视频道|iyouhun_zb": 14,
+    "央视频道|iptv_org_all": 13,
+    "央视频道|epg_cn": 25,
+    "央视频道|suxuang_ipv4": 3,
+    "央视频道|iyouhun_zb": 2,
+    "卫视频道|zbds_iptv4_txt": 107,
+    "卫视频道|guovin_ipv4": 64,
+    "卫视频道|guovin_all": 4,
+    "卫视频道|suxuang_ipv4": 8,
+    "卫视频道|migu_interface": 8,
     "卫视频道|iptv_org_all": 1,
+    "卫视频道|guovin_ipv6": 2,
     "卫视频道|bigbiggrandg_gather": 1,
-    "地方频道|zbds_iptv4_txt": 222,
+    "卫视频道|iyouhun_zb": 11,
+    "地方频道|zbds_iptv4_txt": 117,
     "地方频道|bigbiggrandg_gather": 95,
-    "地方频道|epg_cn": 128,
-    "地方频道|iyouhun_zb": 55,
-    "地方频道|guovin_ipv4": 41,
-    "地方频道|suxuang_ipv4": 20,
-    "地方频道|migu_interface": 11,
-    "地方频道|guovin_ipv6": 13,
+    "地方频道|iyouhun_zb": 63,
+    "地方频道|guovin_ipv4": 37,
+    "地方频道|suxuang_ipv4": 22,
+    "地方频道|epg_cn": 123,
+    "地方频道|guovin_all": 22,
+    "地方频道|migu_interface": 14,
     "地方频道|kimentanm_aptv": 1,
     "地方频道|fanmingming_ipv6_raw": 3,
     "地方频道|iptv_org_all": 1,
-    "影视剧场|mursor_yy": 44,
-    "影视剧场|iyouhun_zb": 16,
+    "影视剧场|mursor_yy": 60,
+    "影视剧场|iyouhun_zb": 14,
     "影视剧场|guovin_ipv4": 16,
-    "影视剧场|zbds_iptv4_txt": 21,
+    "影视剧场|zbds_iptv4_txt": 13,
     "影视剧场|bigbiggrandg_gather": 1,
-    "影视剧场|guovin_ipv6": 13,
-    "影视剧场|vamoschuck_m3u": 2,
-    "影视剧场|migu_interface": 3,
-    "影视剧场|suxuang_ipv4": 3,
-    "少儿动漫|epg_cn": 9,
+    "影视剧场|guovin_all": 19,
+    "影视剧场|migu_interface": 4,
+    "影视剧场|suxuang_ipv4": 27,
+    "影视剧场|vamoschuck_m3u": 1,
+    "少儿动漫|epg_cn": 8,
     "少儿动漫|iyouhun_zb": 2,
-    "少儿动漫|mursor_yy": 5,
-    "少儿动漫|guovin_ipv6": 2,
-    "少儿动漫|zbds_iptv4_txt": 2,
-    "少儿动漫|iptv_org_all": 1,
+    "少儿动漫|mursor_yy": 7,
+    "少儿动漫|guovin_all": 2,
+    "少儿动漫|zbds_iptv4_txt": 1,
     "少儿动漫|epg_tw": 1,
-    "体育纪实|iyouhun_zb": 25,
+    "体育纪实|zbds_iptv4_txt": 27,
+    "体育纪实|iyouhun_zb": 23,
     "体育纪实|epg_cn": 3,
-    "体育纪实|guovin_ipv4": 8,
-    "体育纪实|zbds_iptv4_txt": 25,
+    "体育纪实|guovin_ipv4": 11,
     "体育纪实|mursor_yy": 4,
-    "体育纪实|guovin_ipv6": 1,
+    "体育纪实|guovin_all": 1,
     "音乐综艺|iyouhun_zb": 2,
-    "音乐综艺|zbds_iptv4_txt": 18,
-    "音乐综艺|suxuang_ipv4": 1,
-    "音乐综艺|mursor_yy": 10,
-    "音乐综艺|bigbiggrandg_gather": 11,
+    "音乐综艺|suxuang_ipv4": 18,
+    "音乐综艺|mursor_yy": 12,
+    "音乐综艺|bigbiggrandg_gather": 9,
     "音乐综艺|kimentanm_aptv": 3,
+    "音乐综艺|guovin_all": 1,
+    "音乐综艺|zbds_iptv4_txt": 1,
     "音乐综艺|guovin_ipv4": 4,
-    "生活休闲|iyouhun_zb": 65,
+    "生活休闲|iyouhun_zb": 47,
     "生活休闲|bigbiggrandg_gather": 13,
-    "生活休闲|mursor_yy": 3,
+    "生活休闲|mursor_yy": 4,
     "生活休闲|guovin_ipv4": 15,
-    "生活休闲|vamoschuck_m3u": 25,
-    "生活休闲|guovin_ipv6": 5,
-    "生活休闲|iptv_org_all": 3,
-    "生活休闲|epg_cn": 25,
-    "生活休闲|zbds_iptv4_txt": 1,
-    "生活休闲|migu_interface": 10,
+    "生活休闲|guovin_all": 33,
+    "生活休闲|epg_cn": 17,
+    "生活休闲|migu_interface": 9,
+    "生活休闲|suxuang_ipv4": 9,
+    "生活休闲|vamoschuck_m3u": 19,
+    "生活休闲|iptv_org_all": 5,
     "生活休闲|mursor_bililive": 1,
-    "生活休闲|suxuang_ipv4": 1,
-    "综合娱乐|iyouhun_zb": 80,
-    "综合娱乐|mursor_yy": 6,
-    "综合娱乐|epg_cn": 191,
-    "综合娱乐|zbds_iptv4_txt": 38,
-    "综合娱乐|bigbiggrandg_gather": 412,
-    "综合娱乐|epg_tw": 33,
+    "综合娱乐|iyouhun_zb": 73,
+    "综合娱乐|epg_cn": 162,
+    "综合娱乐|zbds_iptv4_txt": 31,
+    "综合娱乐|bigbiggrandg_gather": 410,
+    "综合娱乐|epg_tw": 32,
     "综合娱乐|epg_hk": 6,
-    "综合娱乐|vamoschuck_m3u": 9,
-    "综合娱乐|suxuang_ipv4": 35,
-    "综合娱乐|guovin_ipv6": 2,
-    "综合娱乐|migu_interface": 20,
-    "综合娱乐|guovin_ipv4": 24,
+    "综合娱乐|suxuang_ipv4": 56,
+    "综合娱乐|guovin_all": 39,
+    "综合娱乐|vamoschuck_m3u": 11,
+    "综合娱乐|migu_interface": 23,
+    "综合娱乐|mursor_yy": 4,
+    "综合娱乐|guovin_ipv4": 20,
     "综合娱乐|yang_gather": 2,
     "综合娱乐|epg_my": 2,
     "综合娱乐|epg_mo": 5,
-    "综合娱乐|mursor_bililive": 1,
-    "港澳台频道|epg_hk": 7,
+    "综合娱乐|mursor_bililive": 2,
+    "港澳台频道|epg_hk": 9,
     "港澳台频道|free_tv_world": 1,
     "港澳台频道|iptv_org_tw": 1,
     "港澳台频道|epg_tw": 7,
@@ -296,35 +299,35 @@
     "港澳台频道|bigbiggrandg_gather": 15,
     "港澳台频道|suxuang_ipv6": 3,
     "港澳台频道|zbds_iptv4_txt": 1,
-    "海外华语频道|mursor_yy": 133,
+    "海外华语频道|mursor_yy": 184,
     "海外华语频道|iptv_org_tw": 1,
-    "海外华语频道|iptv_org_all": 2
+    "海外华语频道|iptv_org_all": 3
   },
   "final_publish_report_file": "final-publish-report.md",
   "curated_source_map_available": true,
   "stability": {
     "enabled": true,
     "history_file": "stability-history.tsv",
-    "tracked_urls_before": 3722,
-    "tracked_urls_after": 3754,
+    "tracked_urls_before": 3754,
+    "tracked_urls_after": 3775,
     "max_entries": 5000,
-    "new_urls": 32,
-    "updated_urls": 2518,
-    "ok_updates": 2315,
-    "fail_updates": 203,
+    "new_urls": 21,
+    "updated_urls": 2470,
+    "ok_updates": 2351,
+    "fail_updates": 119,
     "trimmed_urls": 0,
-    "last_updated_beijing": "2026-07-15T18:29:30+08:00",
-    "current_adjustment_min": -88,
+    "last_updated_beijing": "2026-07-15T18:55:21+08:00",
+    "current_adjustment_min": -90,
     "current_adjustment_max": 140
   },
   "published_recheck": {
     "enabled": true,
-    "checked_unique_urls": 2518,
-    "before_rows": 2626,
-    "after_rows": 2413,
-    "removed_rows": 213,
-    "failed_unique_urls": 203,
-    "elapsed_seconds": 137.6
+    "checked_unique_urls": 2470,
+    "before_rows": 2569,
+    "after_rows": 2447,
+    "removed_rows": 122,
+    "failed_unique_urls": 119,
+    "elapsed_seconds": 126.9
   },
   "coverage": {
     "min_sources_per_important_name": 1,
@@ -333,7 +336,7 @@
     "required_cctv": [
       {
         "name": "CCTV-1",
-        "count": 6
+        "count": 5
       },
       {
         "name": "CCTV-2",
@@ -341,7 +344,7 @@
       },
       {
         "name": "CCTV-3",
-        "count": 6
+        "count": 7
       },
       {
         "name": "CCTV-4",
@@ -349,7 +352,7 @@
       },
       {
         "name": "CCTV-5",
-        "count": 5
+        "count": 4
       },
       {
         "name": "CCTV-6",
@@ -361,11 +364,11 @@
       },
       {
         "name": "CCTV-8",
-        "count": 5
+        "count": 7
       },
       {
         "name": "CCTV-9",
-        "count": 5
+        "count": 6
       },
       {
         "name": "CCTV-10",
@@ -393,7 +396,7 @@
       },
       {
         "name": "CCTV-16",
-        "count": 5
+        "count": 6
       },
       {
         "name": "CCTV-17",
@@ -401,7 +404,7 @@
       },
       {
         "name": "CCTV-5+",
-        "count": 3
+        "count": 6
       }
     ],
     "required_cctv_variants": [
@@ -411,15 +414,15 @@
       },
       {
         "name": "CCTV-4",
-        "variant_count": 11
+        "variant_count": 10
       },
       {
         "name": "CCTV-5",
-        "variant_count": 6
+        "variant_count": 5
       },
       {
         "name": "CCTV-8",
-        "variant_count": 5
+        "variant_count": 7
       },
       {
         "name": "CCTV-9",
@@ -431,7 +434,7 @@
       },
       {
         "name": "CCTV-5+",
-        "variant_count": 5
+        "variant_count": 4
       }
     ],
     "important_satellite": [
@@ -441,7 +444,7 @@
       },
       {
         "name": "河北卫视",
-        "count": 5
+        "count": 6
       },
       {
         "name": "河南卫视",
@@ -461,7 +464,7 @@
       },
       {
         "name": "江苏卫视",
-        "count": 5
+        "count": 6
       },
       {
         "name": "湖南卫视",
@@ -481,28 +484,28 @@
   },
   "quality_audit": {
     "status": "ok",
-    "rows": 2413,
-    "unique_names": 1674,
-    "unique_urls": 2315,
+    "rows": 2447,
+    "unique_names": 1715,
+    "unique_urls": 2351,
     "groups": {
-      "央视频道": 140,
-      "卫视频道": 195,
-      "地方频道": 590,
-      "影视剧场": 119,
-      "少儿动漫": 22,
-      "体育纪实": 66,
-      "音乐综艺": 49,
-      "生活休闲": 167,
-      "综合娱乐": 866,
-      "港澳台频道": 63,
-      "海外华语频道": 136
+      "央视频道": 145,
+      "卫视频道": 206,
+      "地方频道": 498,
+      "影视剧场": 155,
+      "少儿动漫": 21,
+      "体育纪实": 69,
+      "音乐综艺": 50,
+      "生活休闲": 172,
+      "综合娱乐": 878,
+      "港澳台频道": 65,
+      "海外华语频道": 188
     },
     "min_exact_cctv_lines": 3,
     "min_important_satellite_lines": 3,
     "required_cctv": [
       {
         "name": "CCTV-1",
-        "count": 6
+        "count": 5
       },
       {
         "name": "CCTV-2",
@@ -510,7 +513,7 @@
       },
       {
         "name": "CCTV-3",
-        "count": 6
+        "count": 7
       },
       {
         "name": "CCTV-4",
@@ -518,7 +521,7 @@
       },
       {
         "name": "CCTV-5",
-        "count": 5
+        "count": 4
       },
       {
         "name": "CCTV-6",
@@ -530,11 +533,11 @@
       },
       {
         "name": "CCTV-8",
-        "count": 5
+        "count": 7
       },
       {
         "name": "CCTV-9",
-        "count": 5
+        "count": 6
       },
       {
         "name": "CCTV-10",
@@ -562,7 +565,7 @@
       },
       {
         "name": "CCTV-16",
-        "count": 5
+        "count": 6
       },
       {
         "name": "CCTV-17",
@@ -570,7 +573,7 @@
       },
       {
         "name": "CCTV-5+",
-        "count": 3
+        "count": 6
       }
     ],
     "important_satellite": [
@@ -580,7 +583,7 @@
       },
       {
         "name": "河北卫视",
-        "count": 5
+        "count": 6
       },
       {
         "name": "河南卫视",
@@ -600,7 +603,7 @@
       },
       {
         "name": "江苏卫视",
-        "count": 5
+        "count": 6
       },
       {
         "name": "湖南卫视",
@@ -617,31 +620,16 @@
     ],
     "missing_cctv_quality": [],
     "missing_satellite_quality": [],
-    "weak_cctv": [
-      {
-        "name": "CCTV-5+",
-        "count": 3
-      }
-    ],
+    "weak_cctv": [],
     "weak_satellite": [],
     "strict_filter_residue": [],
     "strict_filter_residue_count": 0,
-    "latin_noise_review_count": 3,
+    "latin_noise_review_count": 1,
     "latin_noise_review_sample": [
-      {
-        "group": "生活休闲",
-        "name": "SimonAmstell：躺平哲学",
-        "url": "https://live.ottiptv.cc/yy/1382749951"
-      },
       {
         "group": "综合娱乐",
         "name": "澳門MACAU",
         "url": "https://stream1.freetv.fun/eb94af0b6109dfbd211cb710ee89231c84e05d91dd374fa158d189da67b06c43.ctv"
-      },
-      {
-        "group": "海外华语频道",
-        "name": "Storm憋了一年大招",
-        "url": "https://live.ottiptv.cc/yy/1382735559"
       }
     ],
     "channel_limit_violations": [],
@@ -649,15 +637,14 @@
     "group_limit_violations": [],
     "failures": [],
     "warnings": [
-      "core CCTV channels below warning target: CCTV-5+=3",
-      "latin/noise-like channel names remain for review: 3"
+      "latin/noise-like channel names remain for review: 1"
     ]
   },
   "publish_guard": {
     "status": "ok",
-    "baseline_lines": 2410,
-    "current_lines": 2413,
-    "total_drop_ratio": -0.0012448132780082987,
+    "baseline_lines": 2413,
+    "current_lines": 2447,
+    "total_drop_ratio": -0.014090343970161625,
     "min_lines": 1800,
     "max_total_drop_ratio": 0.2,
     "max_failed_sources": 5,
@@ -672,70 +659,70 @@
     ],
     "group_deltas": {
       "央视频道": {
-        "baseline": 145,
-        "current": 140,
-        "delta": -5,
-        "drop_ratio": 0.034482758620689655
+        "baseline": 140,
+        "current": 145,
+        "delta": 5,
+        "drop_ratio": -0.03571428571428571
       },
       "卫视频道": {
-        "baseline": 187,
-        "current": 195,
-        "delta": 8,
-        "drop_ratio": -0.0427807486631016
+        "baseline": 195,
+        "current": 206,
+        "delta": 11,
+        "drop_ratio": -0.05641025641025641
       },
       "地方频道": {
-        "baseline": 507,
-        "current": 590,
-        "delta": 83,
-        "drop_ratio": -0.16370808678500987
+        "baseline": 590,
+        "current": 498,
+        "delta": -92,
+        "drop_ratio": 0.15593220338983052
       },
       "影视剧场": {
-        "baseline": 130,
-        "current": 119,
-        "delta": -11,
-        "drop_ratio": 0.08461538461538462
+        "baseline": 119,
+        "current": 155,
+        "delta": 36,
+        "drop_ratio": -0.3025210084033613
       },
       "少儿动漫": {
-        "baseline": 19,
-        "current": 22,
-        "delta": 3,
-        "drop_ratio": -0.15789473684210525
+        "baseline": 22,
+        "current": 21,
+        "delta": -1,
+        "drop_ratio": 0.045454545454545456
       },
       "体育纪实": {
-        "baseline": 67,
-        "current": 66,
-        "delta": -1,
-        "drop_ratio": 0.014925373134328358
+        "baseline": 66,
+        "current": 69,
+        "delta": 3,
+        "drop_ratio": -0.045454545454545456
       },
       "音乐综艺": {
-        "baseline": 47,
-        "current": 49,
-        "delta": 2,
-        "drop_ratio": -0.0425531914893617
+        "baseline": 49,
+        "current": 50,
+        "delta": 1,
+        "drop_ratio": -0.02040816326530612
       },
       "生活休闲": {
-        "baseline": 171,
-        "current": 167,
-        "delta": -4,
-        "drop_ratio": 0.023391812865497075
+        "baseline": 167,
+        "current": 172,
+        "delta": 5,
+        "drop_ratio": -0.029940119760479042
       },
       "综合娱乐": {
-        "baseline": 884,
-        "current": 866,
-        "delta": -18,
-        "drop_ratio": 0.020361990950226245
+        "baseline": 866,
+        "current": 878,
+        "delta": 12,
+        "drop_ratio": -0.013856812933025405
       },
       "港澳台频道": {
-        "baseline": 59,
-        "current": 63,
-        "delta": 4,
-        "drop_ratio": -0.06779661016949153
+        "baseline": 63,
+        "current": 65,
+        "delta": 2,
+        "drop_ratio": -0.031746031746031744
       },
       "海外华语频道": {
-        "baseline": 194,
-        "current": 136,
-        "delta": -58,
-        "drop_ratio": 0.29896907216494845
+        "baseline": 136,
+        "current": 188,
+        "delta": 52,
+        "drop_ratio": -0.38235294117647056
       }
     },
     "failed_sources": [],
@@ -746,34 +733,34 @@
   "publish_size": {
     "status": "ok",
     "files": {
-      "live-curated.txt": 210532,
-      "live.txt": 210532,
-      "live-verified.txt": 210532,
-      "ku9-live.txt": 210532,
-      "live.m3u": 370644,
-      "stability-history.tsv": 547297,
-      "full-check-summary.json": 18131,
-      "final-publish-report.md": 11690,
-      "stability-report.md": 7654,
+      "live-curated.txt": 210369,
+      "live.txt": 210369,
+      "live-verified.txt": 210369,
+      "ku9-live.txt": 210369,
+      "live.m3u": 373402,
+      "stability-history.tsv": 547398,
+      "full-check-summary.json": 17769,
+      "final-publish-report.md": 11612,
+      "stability-report.md": 7791,
       "coverage-report.md": 1139,
-      "quality-audit-report.md": 1335,
-      "publish-guard-report.md": 797,
-      "published-recheck-report.md": 10402,
-      "source-report.md": 5655,
-      "check-report.md": 5655,
-      "curated-report.md": 3682,
+      "quality-audit-report.md": 1190,
+      "publish-guard-report.md": 798,
+      "published-recheck-report.md": 11087,
+      "source-report.md": 5669,
+      "check-report.md": 5669,
+      "curated-report.md": 3723,
       "sources_status.csv": 2449
     },
     "txt_alias_same_hash": true,
     "txt_alias_hashes": {
-      "live-curated.txt": "88a927107ae4b052777e5abfccdab771b833b15c5c64476d0b1c1c6a228f39bd",
-      "live.txt": "88a927107ae4b052777e5abfccdab771b833b15c5c64476d0b1c1c6a228f39bd",
-      "live-verified.txt": "88a927107ae4b052777e5abfccdab771b833b15c5c64476d0b1c1c6a228f39bd",
-      "ku9-live.txt": "88a927107ae4b052777e5abfccdab771b833b15c5c64476d0b1c1c6a228f39bd"
+      "live-curated.txt": "d5ce6b51600bb54e86b9a2948448f3b3872dbfc2f62857ef262b96b565e5f9ca",
+      "live.txt": "d5ce6b51600bb54e86b9a2948448f3b3872dbfc2f62857ef262b96b565e5f9ca",
+      "live-verified.txt": "d5ce6b51600bb54e86b9a2948448f3b3872dbfc2f62857ef262b96b565e5f9ca",
+      "ku9-live.txt": "d5ce6b51600bb54e86b9a2948448f3b3872dbfc2f62857ef262b96b565e5f9ca"
     },
-    "working_tree_public_bytes": 1828658,
-    "unique_public_blob_bytes": 1191407,
-    "duplicate_txt_worktree_bytes": 631596,
+    "working_tree_public_bytes": 1831172,
+    "unique_public_blob_bytes": 1194396,
+    "duplicate_txt_worktree_bytes": 631107,
     "max_unique_public_blob_bytes": 2500000,
     "forbidden_tracked_artifacts": [],
     "failures": [],
