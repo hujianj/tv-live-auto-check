@@ -6,6 +6,7 @@ from pathlib import Path
 from collections import defaultdict, Counter
 from validate_playlist import validate_text
 from playlist_config import get_group_order, load_rules, score_adjustments, source_priority as configured_source_priority
+from stability import load_history, stability_adjustment, stability_enabled
 
 ROOT = Path(__file__).resolve().parents[1]
 IN = ROOT / "stream_check_results.csv"
@@ -46,6 +47,7 @@ TVB_PREFIXES = tuple(RULES['tvb_prefixes'])
 DROP_LATIN_TOKENS = RULES['drop_latin_tokens']
 SATELLITE_PRIORITY = RULES['satellite_priority']
 CCTV_FOREIGN_SUFFIXES = RULES['cctv_foreign_suffixes']
+STABILITY_HISTORY = load_history()
 
 def chinese_count(s: str) -> int:
     return sum(1 for ch in s if '\u4e00' <= ch <= '\u9fff')
@@ -208,6 +210,8 @@ def url_score(url: str, source: str):
         s += adjust.get('ipv6_source_or_literal', 20)
     if 'migu' in url.lower():
         s += adjust.get('migu_url', 5)
+    if stability_enabled():
+        s += stability_adjustment(url, STABILITY_HISTORY)
     return (s, len(url), source)
 
 
@@ -339,6 +343,8 @@ def main():
         'pre_recheck_curated_channel_names': len(by),
         'pre_recheck_curated_groups': dict(cnt),
         'pre_recheck_curated_sources': dict(source_cnt),
+        'stability_history_loaded': stability_enabled(),
+        'stability_history_urls': len((STABILITY_HISTORY.get('urls') or {})),
         'curated_generated': True,
         'curated_published_lines': len(pub),
         'curated_channel_names': len(by),
@@ -351,7 +357,7 @@ def main():
     })
     summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + '\n', encoding='utf-8', newline='\n')
 
-    report = ['# Pre-recheck curated Ku9 playlist report', '', 'This report is generated immediately after curation and before the final published URL recheck. See `final-publish-report.md` for the TV-facing result after recheck.', '', f'Pre-recheck candidate lines: {len(pub)}', f'Channel names: {len(by)}', '', '## Groups']
+    report = ['# Pre-recheck curated Ku9 playlist report', '', 'This report is generated immediately after curation and before the final published URL recheck. See `final-publish-report.md` for the TV-facing result after recheck.', '', f'Pre-recheck candidate lines: {len(pub)}', f'Channel names: {len(by)}', f'Stability history URLs loaded: {len((STABILITY_HISTORY.get("urls") or {}))}', '', '## Groups']
     for g in GROUP_ORDER:
         if cnt[g]:
             report.append(f'- {g}: {cnt[g]}')

@@ -51,5 +51,18 @@
       "ipv6_source_or_literal": 20,
       "migu_url": 5
     }
+  },
+  "stability": {
+    "enabled": true,
+    "history_file": "stability-history.json",
+    "report_file": "stability-report.md",
+    "max_entries": 5000,
+    "no_history_adjustment": 0,
+    "ok_bonus": -3,
+    "fail_penalty": 10,
+    "streak_ok_bonus": -8,
+    "streak_fail_penalty": 45,
+    "min_adjustment": -90,
+    "max_adjustment": 140
   }
 }
