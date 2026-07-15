@@ -4,10 +4,10 @@ from __future__ import annotations
 
 import json
 import os
-import re
 from collections import Counter, defaultdict
 from pathlib import Path
 
+from channel_utils import cctv_key, cctv_variant_base
 from validate_playlist import validate_file
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -15,29 +15,6 @@ RULES_PATH = ROOT / "config" / "rules.json"
 PLAYLIST = ROOT / "live-curated.txt"
 SUMMARY = ROOT / "full-check-summary.json"
 REPORT = ROOT / "coverage-report.md"
-
-
-def cctv_key(name: str) -> str | None:
-    """Return exact core CCTV key only.
-
-    Resolution suffixes in parentheses are accepted, but variants such as
-    CCTV-4K, CCTV-4FHD, CCTV-4中文国际 or CCTV-5+ must not be counted as the
-    base CCTV-4/CCTV-5 channel. This keeps coverage reporting honest.
-    """
-    m = re.match(r"^CCTV[-_ ]?(\d+)(\+?)(?:\((?:\d+p|HD|FHD|4K|高清|超清)\))?$", name.strip(), re.I)
-    if not m:
-        return None
-    return f"CCTV-{int(m.group(1))}{'+' if m.group(2) else ''}"
-
-
-def cctv_variant_base(name: str) -> str | None:
-    n = name.strip()
-    if cctv_key(n):
-        return None
-    m = re.match(r"^CCTV[-_ ]?(\d+)(\+?)", n, re.I)
-    if not m:
-        return None
-    return f"CCTV-{int(m.group(1))}{'+' if m.group(2) else ''}"
 
 
 def parse_txt(path: Path) -> list[tuple[str, str, str]]:

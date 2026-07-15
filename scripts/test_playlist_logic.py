@@ -19,7 +19,7 @@ import stability as stability_module
 import curate_ku9 as curate_module
 import audit_quality as quality_module
 import local_network_check as local_check_module
-from audit_coverage import cctv_key as coverage_cctv_key, cctv_variant_base
+from channel_utils import cctv_key as coverage_cctv_key, cctv_variant_base, is_latin_noise_name
 
 
 def test_source_config_omits_disabled_unstable_sources() -> None:
@@ -111,6 +111,9 @@ def test_coverage_counts_exact_cctv_and_reports_variants() -> None:
     assert cctv_variant_base("CCTV-4K") == "CCTV-4"
     assert coverage_cctv_key("CCTV-5+") == "CCTV-5+"
     assert cctv_variant_base("CCTV-5+体育") == "CCTV-5+"
+    assert is_latin_noise_name("DiscoveryAsia") is True
+    assert is_latin_noise_name("BRTV北京卫视") is False
+    assert is_latin_noise_name("TVB翡翠台") is False
 
 
 def test_quality_audit_detects_core_and_strict_residue() -> None:
@@ -146,6 +149,15 @@ CCTV-4K,http://a/cctv4k.m3u8
     assert ("卫视频道", "辽宁卫视", "http://a/ln.m3u8") in filtered
     assert not any(name == "CCTV-4K" for _group, name, _url in filtered)
     assert not any(name == "综合频道" for _group, name, _url in filtered)
+    fake_results = [
+        {"ok": True, "group": "央视频道", "name": "CCTV-1", "core_key": "CCTV-1", "url": "http://a", "detail": "ok"},
+        {"ok": False, "group": "央视频道", "name": "CCTV-1", "core_key": "CCTV-1", "url": "http://b", "detail": "timeout"},
+        {"ok": False, "group": "央视频道", "name": "CCTV-17", "core_key": "CCTV-17", "url": "http://c", "detail": "timeout"},
+    ]
+    stats = local_check_module.channel_stats(fake_results)
+    by_channel = {item["channel"]: item for item in stats}
+    assert by_channel["CCTV-1"]["ok"] == 1
+    assert by_channel["CCTV-17"]["ok"] == 0
 
 
 def test_stability_adjustment_prefers_proven_urls() -> None:
