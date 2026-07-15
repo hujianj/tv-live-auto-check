@@ -92,6 +92,8 @@ jobs:
           PY
       - name: Guard against shrunken or unsafe publish
         run: python scripts/guard_publish.py
+      - name: Audit publish size and alias safety
+        run: python scripts/audit_publish_size.py
       - name: Upload full diagnostic artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -109,15 +111,16 @@ jobs:
             stability-report.md
             coverage-report.md
             publish-guard-report.md
+            publish-size-report.md
       - name: Commit verified playlist
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: verify and publish playable IPTV playlist"
-          file_pattern: live.txt live-verified.txt live-curated.txt ku9-live.txt live.m3u source-report.md check-report.md curated-report.md published-recheck-report.md final-publish-report.md stability-report.md stability-history.tsv coverage-report.md publish-guard-report.md sources_status.csv full-check-summary.json
+          file_pattern: live.txt live-verified.txt live-curated.txt ku9-live.txt live.m3u source-report.md check-report.md curated-report.md published-recheck-report.md final-publish-report.md stability-report.md stability-history.tsv coverage-report.md publish-guard-report.md publish-size-report.md sources_status.csv full-check-summary.json
       - name: Purge jsDelivr CDN
         run: |
           set -e
-          for file in live-curated.txt live.txt ku9-live.txt live-verified.txt live.m3u full-check-summary.json curated-report.md published-recheck-report.md final-publish-report.md stability-report.md stability-history.tsv coverage-report.md publish-guard-report.md source-report.md check-report.md; do
+          for file in live-curated.txt live.txt ku9-live.txt live-verified.txt live.m3u full-check-summary.json curated-report.md published-recheck-report.md final-publish-report.md stability-report.md stability-history.tsv coverage-report.md publish-guard-report.md publish-size-report.md source-report.md check-report.md; do
             echo "Purging $file"
             curl -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}/$file" || true
             curl -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/$file" || true

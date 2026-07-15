@@ -64,6 +64,8 @@ def test_priority_and_guard_config_are_externalized() -> None:
     assert guard["min_lines"] >= 1800
     assert guard["min_groups"]["央视频道"] >= 90
     assert "zbds_iptv4_txt" in guard["core_sources"]
+    assert guard["publish_size"]["max_unique_public_blob_bytes"] >= 2_000_000
+    assert "stream_check_results.csv" in guard["publish_size"]["forbid_tracked_artifacts"]
 
 
 def test_stability_adjustment_prefers_proven_urls() -> None:
