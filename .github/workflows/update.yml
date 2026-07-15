@@ -77,7 +77,8 @@ jobs:
           assert not coverage.get("missing_satellite"), coverage
           stability = summary.get("stability") or {}
           assert stability.get("enabled") is True, stability
-          assert stability.get("tracked_urls_after", 0) >= summary["curated_published_lines"], stability
+          assert stability.get("updated_urls") == summary["published_recheck"]["checked_unique_urls"], (stability, summary["published_recheck"])
+          assert stability.get("tracked_urls_after", 0) >= summary["published_recheck"]["checked_unique_urls"], (stability, summary["published_recheck"])
           files = ["live-curated.txt", "live.txt", "live-verified.txt", "ku9-live.txt"]
           payloads = [Path(f).read_bytes() for f in files]
           assert len({hashlib.sha256(x).hexdigest() for x in payloads}) == 1, "TV TXT outputs differ"
