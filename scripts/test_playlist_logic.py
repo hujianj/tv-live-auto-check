@@ -13,7 +13,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from validate_playlist import validate_m3u_text, validate_text
 from verify_sources import SOURCES, Candidate, is_core_family_candidate, looks_transient_failure, parse_m3u, parse_txt, split_stream_urls, split_unquoted_last_comma
-from playlist_config import get_group_order, load_guard, load_priority, load_quality, source_priority
+from playlist_config import get_group_order, load_guard, load_home_priority, load_priority, load_quality, source_priority
 from stability import stability_adjustment
 import stability as stability_module
 import curate_ku9 as curate_module
@@ -75,6 +75,11 @@ def test_priority_and_guard_config_are_externalized() -> None:
     assert quality["channel_limits"]["core_max_urls_per_name"] >= quality["channel_limits"]["default_max_urls_per_name"]
     assert quality["group_max_rows"]["综合娱乐"] >= guard["min_groups"]["综合娱乐"]
     assert "Geo-blocked" in quality["strict_drop_name_tokens"]
+    assert "澳門MACAU" in quality["strict_drop_name_tokens"]
+    home_priority = load_home_priority()
+    assert home_priority.get("enabled") is True
+    assert "home_ok_urls" in home_priority
+    assert "home_failed_urls" in home_priority
 
 
 def test_quality_filters_and_limits_are_enforced() -> None:
@@ -101,6 +106,58 @@ def test_quality_filters_and_limits_are_enforced() -> None:
     finally:
         curate_module.GROUP_MAX_ROWS.clear()
         curate_module.GROUP_MAX_ROWS.update(old_limits)
+
+
+def test_home_priority_adjustment_and_writer() -> None:
+    old_enabled = curate_module.HOME_PRIORITY_ENABLED
+    old_ok = set(curate_module.HOME_OK_URLS)
+    old_failed = set(curate_module.HOME_FAILED_URLS)
+    old_bonus = curate_module.HOME_PRIORITY_BONUS
+    old_penalty = curate_module.HOME_PRIORITY_PENALTY
+    try:
+        curate_module.HOME_PRIORITY_ENABLED = True
+        curate_module.HOME_OK_URLS.clear()
+        curate_module.HOME_FAILED_URLS.clear()
+        curate_module.HOME_OK_URLS.add("http://ok/live.m3u8")
+        curate_module.HOME_FAILED_URLS.add("http://bad/live.m3u8")
+        curate_module.HOME_PRIORITY_BONUS = -120
+        curate_module.HOME_PRIORITY_PENALTY = 180
+        assert curate_module.home_priority_adjustment("http://ok/live.m3u8") == -120
+        assert curate_module.home_priority_adjustment("http://bad/live.m3u8") == 180
+        assert curate_module.home_priority_adjustment("http://new/live.m3u8") == 0
+    finally:
+        curate_module.HOME_PRIORITY_ENABLED = old_enabled
+        curate_module.HOME_OK_URLS.clear(); curate_module.HOME_OK_URLS.update(old_ok)
+        curate_module.HOME_FAILED_URLS.clear(); curate_module.HOME_FAILED_URLS.update(old_failed)
+        curate_module.HOME_PRIORITY_BONUS = old_bonus
+        curate_module.HOME_PRIORITY_PENALTY = old_penalty
+
+    with tempfile.TemporaryDirectory() as td:
+        path = Path(td) / "home-priority.json"
+        args = SimpleNamespace(
+            home_priority=str(path),
+            home_priority_max_urls=2,
+            core_only=True,
+            timeout=15,
+        )
+        result = {
+            "rows": [
+                {"ok": True, "url": "http://ok/1.m3u8"},
+                {"ok": True, "url": "http://ok/1.m3u8"},
+                {"ok": True, "url": "http://ok/2.m3u8"},
+                {"ok": True, "url": "http://ok/3.m3u8"},
+                {"ok": False, "url": "http://bad/1.m3u8"},
+            ],
+            "checked_rows": 5,
+            "checked_unique_urls": 4,
+            "ok_unique_urls": 3,
+            "failed_unique_urls": 1,
+        }
+        local_check_module.write_home_priority(result, "unit", args)
+        data = json.loads(path.read_text(encoding="utf-8"))
+        assert data["home_ok_urls"] == ["http://ok/1.m3u8", "http://ok/2.m3u8"]
+        assert data["home_failed_urls"] == ["http://bad/1.m3u8"]
+        assert data["mode"] == "core-only"
 
 
 def test_coverage_counts_exact_cctv_and_reports_variants() -> None:
@@ -364,6 +421,7 @@ def main() -> int:
         test_rules_config_contains_core_coverage,
         test_priority_and_guard_config_are_externalized,
         test_quality_filters_and_limits_are_enforced,
+        test_home_priority_adjustment_and_writer,
         test_coverage_counts_exact_cctv_and_reports_variants,
         test_format_extinf_escapes_quoted_attributes,
         test_quality_audit_detects_core_and_strict_residue,

@@ -200,3 +200,13 @@ local-network-results.csv
 - jsDelivr 有时会滞后，项目会主动 purge，但第三方 CDN 边缘节点不保证立即刷新。
 - 如果电视端能打开 Pages，长期订阅优先用 Pages 地址。
 - 如果 Pages 不可用，再用 gh-proxy 备用。
+
+## 家庭网络优先级
+
+在家里网络运行：
+
+```powershell
+python scripts\local_network_check.py --core-only --workers 24 --timeout 15 --write-home-priority
+```
+
+会更新 `config/home-priority.json`，后续自动整理会优先家里实际可播的 URL，并降权家里失败的 URL。
