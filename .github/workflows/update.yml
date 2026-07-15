@@ -39,6 +39,8 @@ jobs:
           IPTV_FETCH_TIMEOUT: "20"
           IPTV_HLS_VARIANT_CHECKS: "2"
           IPTV_HLS_SEGMENT_CHECKS: "2"
+          IPTV_CORE_RETRY_ATTEMPTS: "1"
+          IPTV_CORE_RETRY_TIMEOUT: "14"
         run: python scripts/verify_sources.py
       - name: Curate Ku9 channel order
         run: python scripts/curate_ku9.py
@@ -48,6 +50,8 @@ jobs:
           IPTV_CHECK_TIMEOUT: "6"
           IPTV_HLS_VARIANT_CHECKS: "2"
           IPTV_HLS_SEGMENT_CHECKS: "2"
+          IPTV_CORE_RETRY_ATTEMPTS: "1"
+          IPTV_CORE_RETRY_TIMEOUT: "14"
         run: python scripts/recheck_published.py
       - name: Audit core channel coverage
         run: python scripts/audit_coverage.py
