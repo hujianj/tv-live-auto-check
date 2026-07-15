@@ -44,7 +44,7 @@ jobs:
         run: python scripts/curate_ku9.py
       - name: Recheck every final published stream URL
         env:
-          IPTV_PUBLISHED_RECHECK_WORKERS: "128"
+          IPTV_PUBLISHED_RECHECK_WORKERS: "64"
           IPTV_CHECK_TIMEOUT: "6"
           IPTV_HLS_VARIANT_CHECKS: "2"
           IPTV_HLS_SEGMENT_CHECKS: "2"

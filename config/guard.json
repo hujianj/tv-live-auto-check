@@ -1,6 +1,7 @@
 {
   "min_lines": 1800,
   "max_total_drop_ratio": 0.2,
+  "max_published_recheck_failed_url_ratio": 0.25,
   "max_failed_sources": 5,
   "core_failed_fail_threshold": 2,
   "core_sources": [

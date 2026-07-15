@@ -13,9 +13,11 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from validate_playlist import validate_m3u_text, validate_text
 from verify_sources import SOURCES, parse_m3u, parse_txt, split_stream_urls, split_unquoted_last_comma
-from playlist_config import get_group_order, load_guard, load_priority, source_priority
+from playlist_config import get_group_order, load_guard, load_priority, load_quality, source_priority
 from stability import stability_adjustment
 import stability as stability_module
+import curate_ku9 as curate_module
+from audit_coverage import cctv_key as coverage_cctv_key, cctv_variant_base
 
 
 def test_source_config_omits_disabled_unstable_sources() -> None:
@@ -55,6 +57,7 @@ def test_rules_config_contains_core_coverage() -> None:
 def test_priority_and_guard_config_are_externalized() -> None:
     priority = load_priority()
     guard = load_guard()
+    quality = load_quality()
     assert source_priority("zbds_iptv4_txt", "https://live.zbds.top/tv/iptv4.txt") == -200
     assert source_priority("zbds_iptv4_m3u", "https://live.zbds.top/tv/iptv4.m3u") == -150
     assert source_priority("suxuang_ipv4", "https://example.test/a.m3u8") == -30
@@ -63,9 +66,49 @@ def test_priority_and_guard_config_are_externalized() -> None:
     assert priority["stability"]["max_entries"] <= 5000
     assert guard["min_lines"] >= 1800
     assert guard["min_groups"]["央视频道"] >= 90
+    assert 0 < guard["max_published_recheck_failed_url_ratio"] <= 0.5
     assert "zbds_iptv4_txt" in guard["core_sources"]
     assert guard["publish_size"]["max_unique_public_blob_bytes"] >= 2_000_000
     assert "stream_check_results.csv" in guard["publish_size"]["forbid_tracked_artifacts"]
+    assert quality["channel_limits"]["core_max_urls_per_name"] >= quality["channel_limits"]["default_max_urls_per_name"]
+    assert quality["group_max_rows"]["综合娱乐"] >= guard["min_groups"]["综合娱乐"]
+    assert "Geo-blocked" in quality["strict_drop_name_tokens"]
+
+
+def test_quality_filters_and_limits_are_enforced() -> None:
+    assert curate_module.strict_quality_drop_reason("纪录|Discovery")
+    assert curate_module.strict_quality_drop_reason("吉林市新闻综合[Geo-blocked]")
+    assert not curate_module.strict_quality_drop_reason("BRTV北京卫视(1080p)")
+    assert curate_module.per_channel_limit(curate_module.G_CCTV, "CCTV-1") >= 6
+    assert curate_module.per_channel_limit(curate_module.G_ENT, "普通娱乐") <= 3
+
+    old_limits = dict(curate_module.GROUP_MAX_ROWS)
+    try:
+        curate_module.GROUP_MAX_ROWS[curate_module.G_SAT] = 1
+        rows = [
+            (curate_module.G_SAT, "辽宁卫视", "http://a/ln.m3u8", "s"),
+            (curate_module.G_SAT, "河北卫视", "http://a/hb.m3u8", "s"),
+            (curate_module.G_SAT, "普通卫视", "http://a/other.m3u8", "s"),
+        ]
+        limited, trimmed = curate_module.apply_group_limits(rows)
+        names = [x[1] for x in limited]
+        assert "辽宁卫视" in names
+        assert "河北卫视" in names
+        assert "普通卫视" not in names
+        assert trimmed[curate_module.G_SAT] == 1
+    finally:
+        curate_module.GROUP_MAX_ROWS.clear()
+        curate_module.GROUP_MAX_ROWS.update(old_limits)
+
+
+def test_coverage_counts_exact_cctv_and_reports_variants() -> None:
+    assert coverage_cctv_key("CCTV-4") == "CCTV-4"
+    assert coverage_cctv_key("CCTV-4(1080p)") == "CCTV-4"
+    assert coverage_cctv_key("CCTV-4K") is None
+    assert coverage_cctv_key("CCTV-4FHD") is None
+    assert cctv_variant_base("CCTV-4K") == "CCTV-4"
+    assert coverage_cctv_key("CCTV-5+") == "CCTV-5+"
+    assert cctv_variant_base("CCTV-5+体育") == "CCTV-5+"
 
 
 def test_stability_adjustment_prefers_proven_urls() -> None:
@@ -223,6 +266,18 @@ http://a/cctv1.m3u8;http://b/cctv1.m3u8
         raise AssertionError("malformed M3U URL was not rejected")
 
 
+def test_validate_rejects_strict_quality_filtered_channel() -> None:
+    txt = """综合娱乐,#genre#
+纪录|Discovery,http://a/discovery.m3u8
+"""
+    try:
+        validate_text(txt, require_categories=False)
+    except ValueError as e:
+        assert "strict quality filtered channel" in str(e)
+    else:
+        raise AssertionError("strict quality filtered channel was not rejected")
+
+
 def test_recheck_source_map_helper() -> None:
     from recheck_published import Row, source_for
 
@@ -236,6 +291,8 @@ def main() -> int:
         test_source_config_omits_disabled_unstable_sources,
         test_rules_config_contains_core_coverage,
         test_priority_and_guard_config_are_externalized,
+        test_quality_filters_and_limits_are_enforced,
+        test_coverage_counts_exact_cctv_and_reports_variants,
         test_stability_adjustment_prefers_proven_urls,
         test_stability_update_counts_unique_urls,
         test_split_unquoted_last_comma,
@@ -245,6 +302,7 @@ def main() -> int:
         test_validate_rejects_malformed_url,
         test_validate_m3u_accepts_generated_shape,
         test_validate_m3u_rejects_polluted_url,
+        test_validate_rejects_strict_quality_filtered_channel,
         test_recheck_source_map_helper,
     ]:
         test()

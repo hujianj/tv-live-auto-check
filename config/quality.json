@@ -1,0 +1,82 @@
+{
+  "description": "TV-facing quality rules: keep family-use mainland channels clean, preserve core channels, and cap low-value categories.",
+  "strict_drop_name_tokens": [
+    "Geo-blocked",
+    "[Geo-blocked]",
+    "(Eng)",
+    "|Animax",
+    "|BabyTV",
+    "BabyTVEng",
+    "|CBeebies",
+    "|CartoonNetwork",
+    "|KidsTV",
+    "CampSpoopy",
+    "AnimalPlanet",
+    "Animal_Planet",
+    "AsiaTravel",
+    "Discovery",
+    "DiscoveryAsia",
+    "FashionTV",
+    "Foodnetwork",
+    "HGTV",
+    "NatGeo",
+    "NatGeoWild",
+    "NatGeo_Wild",
+    "DeluxeLoungeHD",
+    "Ocko",
+    "OckoExpres",
+    "OckoStar"
+  ],
+  "strict_drop_regex": [
+    "(^|[^A-Za-z])(Animal[_ ]?Planet|Discovery(Asia)?|FashionTV|Foodnetwork|HGTV|History|NatGeo(_?Wild)?|CartoonNetwork|BabyTV|Animax|CBeebies|KidsTV|CampSpoopy)([^A-Za-z]|$)",
+    "(^|[^A-Za-z])Geo-blocked([^A-Za-z]|$)"
+  ],
+  "channel_limits": {
+    "default_max_urls_per_name": 4,
+    "core_max_urls_per_name": 6,
+    "cctv_max_urls_per_name": 6,
+    "satellite_max_urls_per_name": 5,
+    "local_max_urls_per_name": 5,
+    "movie_max_urls_per_name": 3,
+    "kids_max_urls_per_name": 3,
+    "sport_doc_max_urls_per_name": 3,
+    "music_show_max_urls_per_name": 3,
+    "life_max_urls_per_name": 3,
+    "entertainment_max_urls_per_name": 3,
+    "hk_max_urls_per_name": 2,
+    "oversea_max_urls_per_name": 2
+  },
+  "group_max_rows": {
+    "影视剧场": 180,
+    "少儿动漫": 40,
+    "体育纪实": 90,
+    "音乐综艺": 80,
+    "生活休闲": 180,
+    "综合娱乐": 900,
+    "港澳台频道": 90,
+    "海外华语频道": 220
+  },
+  "core_channel_patterns": [
+    "^CCTV-([1-9]|1[0-7])$",
+    "^CCTV-5\\+$",
+    "辽宁卫视",
+    "河北卫视",
+    "河南卫视",
+    "北京卫视",
+    "东方卫视",
+    "浙江卫视",
+    "江苏卫视",
+    "湖南卫视",
+    "广东卫视",
+    "深圳卫视"
+  ],
+  "quality_source_bonus": {
+    "official_domain_contains": [
+      "hebtv.com",
+      "migu",
+      "cntv",
+      "cctv"
+    ],
+    "bonus": -8
+  }
+}

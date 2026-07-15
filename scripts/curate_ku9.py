@@ -5,7 +5,7 @@ import csv, json, re
 from pathlib import Path
 from collections import defaultdict, Counter
 from validate_playlist import validate_text
-from playlist_config import get_group_order, load_rules, score_adjustments, source_priority as configured_source_priority
+from playlist_config import get_group_order, load_quality, load_rules, score_adjustments, source_priority as configured_source_priority
 from stability import load_history, stability_adjustment, stability_enabled
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,6 +28,7 @@ GROUP_ORDER = get_group_order()
 
 
 RULES = load_rules()
+QUALITY = load_quality()
 PROVINCES = RULES['provinces']
 HK_KEYS = RULES['category_keywords']['hk']
 MOVIE_KEYS = RULES['category_keywords']['movie']
@@ -48,6 +49,12 @@ DROP_LATIN_TOKENS = RULES['drop_latin_tokens']
 SATELLITE_PRIORITY = RULES['satellite_priority']
 CCTV_FOREIGN_SUFFIXES = RULES['cctv_foreign_suffixes']
 STABILITY_HISTORY = load_history()
+STRICT_DROP_NAME_TOKENS = [str(x) for x in QUALITY.get('strict_drop_name_tokens', [])]
+STRICT_DROP_REGEX = [re.compile(str(x), re.I) for x in QUALITY.get('strict_drop_regex', [])]
+CHANNEL_LIMITS = QUALITY.get('channel_limits', {})
+GROUP_MAX_ROWS = {str(k): int(v) for k, v in QUALITY.get('group_max_rows', {}).items()}
+CORE_CHANNEL_PATTERNS = [re.compile(str(x), re.I) for x in QUALITY.get('core_channel_patterns', [])]
+QUALITY_SOURCE_BONUS = QUALITY.get('quality_source_bonus', {})
 
 def chinese_count(s: str) -> int:
     return sum(1 for ch in s if '\u4e00' <= ch <= '\u9fff')
@@ -87,6 +94,23 @@ def cctv_num(name: str):
     if not m:
         return None
     return (int(m.group(1)), 1 if m.group(2) else 0)
+
+
+def is_core_channel_name(name: str) -> bool:
+    n = (name or '').strip()
+    return any(rx.search(n) for rx in CORE_CHANNEL_PATTERNS)
+
+
+def strict_quality_drop_reason(name: str) -> str:
+    n = name or ''
+    low = n.lower()
+    for token in STRICT_DROP_NAME_TOKENS:
+        if token and token.lower() in low:
+            return f"token:{token}"
+    for rx in STRICT_DROP_REGEX:
+        if rx.search(n):
+            return f"regex:{rx.pattern}"
+    return ''
 
 
 def is_hk_mo_tw_channel(name: str, group: str = '') -> bool:
@@ -210,9 +234,63 @@ def url_score(url: str, source: str):
         s += adjust.get('ipv6_source_or_literal', 20)
     if 'migu' in url.lower():
         s += adjust.get('migu_url', 5)
+    source_bonus_tokens = [str(x).lower() for x in QUALITY_SOURCE_BONUS.get('official_domain_contains', [])]
+    if source_bonus_tokens and any(x in (url or '').lower() or x in (source or '').lower() for x in source_bonus_tokens):
+        s += int(QUALITY_SOURCE_BONUS.get('bonus', -8))
     if stability_enabled():
         s += stability_adjustment(url, STABILITY_HISTORY)
     return (s, len(url), source)
+
+
+def per_channel_limit(group: str, name: str) -> int:
+    limits = CHANNEL_LIMITS
+    if is_core_channel_name(name):
+        return int(limits.get('core_max_urls_per_name', 6))
+    if group == G_CCTV:
+        return int(limits.get('cctv_max_urls_per_name', limits.get('default_max_urls_per_name', 3)))
+    if group == G_SAT:
+        return int(limits.get('satellite_max_urls_per_name', limits.get('default_max_urls_per_name', 3)))
+    if group == G_LOCAL:
+        return int(limits.get('local_max_urls_per_name', limits.get('default_max_urls_per_name', 3)))
+    if group == G_MOVIE:
+        return int(limits.get('movie_max_urls_per_name', limits.get('default_max_urls_per_name', 3)))
+    if group == G_KIDS:
+        return int(limits.get('kids_max_urls_per_name', limits.get('default_max_urls_per_name', 3)))
+    if group == G_SPORT_DOC:
+        return int(limits.get('sport_doc_max_urls_per_name', limits.get('default_max_urls_per_name', 3)))
+    if group == G_MUSIC_SHOW:
+        return int(limits.get('music_show_max_urls_per_name', limits.get('default_max_urls_per_name', 3)))
+    if group == G_LIFE:
+        return int(limits.get('life_max_urls_per_name', limits.get('default_max_urls_per_name', 3)))
+    if group == G_HK:
+        return int(limits.get('hk_max_urls_per_name', limits.get('default_max_urls_per_name', 3)))
+    if group == G_OVERSEA:
+        return int(limits.get('oversea_max_urls_per_name', limits.get('default_max_urls_per_name', 3)))
+    if group == G_ENT:
+        return int(limits.get('entertainment_max_urls_per_name', limits.get('default_max_urls_per_name', 3)))
+    return int(limits.get('default_max_urls_per_name', 3))
+
+
+def apply_group_limits(pub: list[tuple[str, str, str, str]]) -> tuple[list[tuple[str, str, str, str]], dict[str, int]]:
+    trimmed: dict[str, int] = {}
+    limited: list[tuple[str, str, str, str]] = []
+    seen_groups = list(GROUP_ORDER) + sorted({g for g, _, _, _ in pub} - set(GROUP_ORDER))
+    for group in seen_groups:
+        part = [x for x in pub if x[0] == group]
+        if not part:
+            continue
+        limit = GROUP_MAX_ROWS.get(group, 0)
+        if limit <= 0 or len(part) <= limit:
+            limited.extend(part)
+            continue
+        core = [x for x in part if is_core_channel_name(x[1])]
+        ordinary = [x for x in part if not is_core_channel_name(x[1])]
+        keep_slots = max(0, limit - len(core))
+        keep = core + ordinary[:keep_slots]
+        # Never let category limits remove required CCTV/important satellite rows.
+        trimmed[group] = len(part) - len(keep)
+        limited.extend(keep)
+    return limited, trimmed
 
 
 BAD_NAME_TOKENS = RULES['bad_name_tokens']
@@ -262,6 +340,8 @@ def sort_key(item):
 
 def main():
     rows = []
+    drop_counts = Counter()
+    strict_drop_reasons = Counter()
     with IN.open(encoding='utf-8', newline='') as f:
         for r in csv.DictReader(f):
             if r.get('ok') != 'True':
@@ -271,19 +351,31 @@ def main():
             group = r.get('group', '') or ''
             source = r.get('source', '') or ''
             if has_invalid_channel_name(name) or not url.startswith(('http://', 'https://')):
+                drop_counts['invalid_name_or_url'] += 1
                 continue
             if has_abnormal_channel_name(name):
+                drop_counts['abnormal_channel_name'] += 1
                 continue
             if 'cgtn' in url.lower():
+                drop_counts['cgtn_url'] += 1
                 continue
             if is_unstable_or_wrong_alias(name, group, source):
+                drop_counts['unstable_or_wrong_alias'] += 1
+                continue
+            strict_reason = strict_quality_drop_reason(name)
+            if strict_reason:
+                drop_counts['strict_quality_filter'] += 1
+                strict_drop_reasons[strict_reason] += 1
                 continue
             if is_unwanted_overseas_english(name, group, source):
+                drop_counts['unwanted_overseas_english'] += 1
                 continue
             if is_foreign_channel(name, group, source):
+                drop_counts['foreign_channel'] += 1
                 continue
             g = classify(name, group, source)
             if g == G_OVERSEA and chinese_count(name) == 0:
+                drop_counts['oversea_latin_name'] += 1
                 continue
             rows.append((g, name, url, source))
 
@@ -297,8 +389,17 @@ def main():
         by[n].append(row)
 
     pub = []
+    channel_limit_trimmed = 0
+    channel_limit_stats = Counter()
     for n, arr in by.items():
-        pub.extend(sorted(arr, key=lambda x: url_score(x[2], x[3]))[:5])
+        arr = sorted(arr, key=lambda x: (url_score(x[2], x[3]), sort_key(x)))
+        limit = max(1, per_channel_limit(arr[0][0], n))
+        if len(arr) > limit:
+            channel_limit_trimmed += len(arr) - limit
+            channel_limit_stats[arr[0][0]] += len(arr) - limit
+        pub.extend(arr[:limit])
+    pub.sort(key=sort_key)
+    pub, group_limit_trimmed = apply_group_limits(pub)
     pub.sort(key=sort_key)
     with CURATED_SOURCE_MAP.open('w', encoding='utf-8', newline='') as f:
         w = csv.writer(f)
@@ -330,6 +431,8 @@ def main():
     cnt = Counter(g for g, _, _, _ in pub)
     source_cnt = Counter(src for _, _, _, src in pub)
     group_source_cnt = Counter((g, src) for g, _, _, src in pub)
+    per_group_unique_names = {g: len({n for gg, n, _, _ in pub if gg == g}) for g in GROUP_ORDER}
+    published_unique_names = len({n for _, n, _, _ in pub})
     summary_path = ROOT / 'full-check-summary.json'
     if summary_path.exists():
         try:
@@ -340,16 +443,29 @@ def main():
         summary = {}
     summary.update({
         'pre_recheck_curated_lines': len(pub),
-        'pre_recheck_curated_channel_names': len(by),
+        'pre_recheck_curated_channel_names': published_unique_names,
         'pre_recheck_curated_groups': dict(cnt),
         'pre_recheck_curated_sources': dict(source_cnt),
+        'pre_recheck_per_group_unique_names': per_group_unique_names,
         'stability_history_loaded': stability_enabled(),
         'stability_history_urls': len((STABILITY_HISTORY.get('urls') or {})),
         'curated_generated': True,
         'curated_published_lines': len(pub),
-        'curated_channel_names': len(by),
+        'curated_channel_names': published_unique_names,
         'curated_groups': dict(cnt),
         'curated_sources': dict(source_cnt),
+        'per_group_unique_names': per_group_unique_names,
+        'quality_limits_applied': {
+            'config_file': 'config/quality.json',
+            'channel_limit_trimmed_rows': channel_limit_trimmed,
+            'channel_limit_trimmed_by_group': dict(channel_limit_stats),
+            'group_limit_trimmed_counts': group_limit_trimmed,
+            'strict_filter_dropped_rows': int(drop_counts.get('strict_quality_filter', 0)),
+            'drop_counts': dict(drop_counts),
+            'top_strict_drop_reasons': dict(strict_drop_reasons.most_common(20)),
+            'group_max_rows': GROUP_MAX_ROWS,
+            'channel_limits': CHANNEL_LIMITS,
+        },
         'final_primary_file': 'live-curated.txt',
         'final_primary_published_lines': len(pub),
         # Keep this legacy field aligned with the final TV-facing playlist after curation.
@@ -357,7 +473,34 @@ def main():
     })
     summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + '\n', encoding='utf-8', newline='\n')
 
-    report = ['# Pre-recheck curated Ku9 playlist report', '', 'This report is generated immediately after curation and before the final published URL recheck. See `final-publish-report.md` for the TV-facing result after recheck.', '', f'Pre-recheck candidate lines: {len(pub)}', f'Channel names: {len(by)}', f'Stability history URLs loaded: {len((STABILITY_HISTORY.get("urls") or {}))}', '', '## Groups']
+    report = [
+        '# Pre-recheck curated Ku9 playlist report',
+        '',
+        'This report is generated immediately after curation and before the final published URL recheck. See `final-publish-report.md` for the TV-facing result after recheck.',
+        '',
+        f'Pre-recheck candidate lines: {len(pub)}',
+        f'Published channel names: {published_unique_names}',
+        f'Stability history URLs loaded: {len((STABILITY_HISTORY.get("urls") or {}))}',
+        '',
+        '## Quality filters and limits',
+        '',
+        f'- Strict quality filter dropped rows: {int(drop_counts.get("strict_quality_filter", 0))}',
+        f'- Channel limit trimmed rows: {channel_limit_trimmed}',
+        f'- Group limit trimmed rows: {sum(group_limit_trimmed.values())}',
+        f'- Quality config: `config/quality.json`',
+        '',
+        '### Drop counts',
+        '',
+    ]
+    for reason, amount in drop_counts.most_common():
+        report.append(f'- {reason}: {amount}')
+    report += ['', '### Group limit trims', '']
+    if group_limit_trimmed:
+        for group, amount in sorted(group_limit_trimmed.items(), key=lambda x: (-x[1], x[0])):
+            report.append(f'- {group}: {amount}')
+    else:
+        report.append('- none')
+    report += ['', '## Groups']
     for g in GROUP_ORDER:
         if cnt[g]:
             report.append(f'- {g}: {cnt[g]}')
@@ -375,7 +518,7 @@ def main():
         report.append('')
     report += ['', '## Rules', '- CCTV sorted as CCTV-1, CCTV-2, CCTV-3...', '- Mainland CCTV/satellite/local channels first', '- Hong Kong/Macau/Taiwan and overseas Chinese channels moved later', '- Pure English/overseas entertainment channels removed from TV-facing playlist unless explicitly HK/MO/TW/Chinese', '- English/foreign-language channels removed', '- English category names removed', '- Not24/7 and obvious unstable entries removed from TV-facing playlist', '- Pseudo-CCTV aliases containing RTHK/TVB/ViuTV/HK/TW markers removed from CCTV']
     (ROOT / 'curated-report.md').write_text('\n'.join(report) + '\n', encoding='utf-8', newline='\n')
-    print('published', len(pub), 'names', len(by), 'bytes', len(text.encode('utf-8')))
+    print('published', len(pub), 'names', published_unique_names, 'bytes', len(text.encode('utf-8')))
     for g in GROUP_ORDER:
         print(g.encode('unicode_escape').decode(), cnt[g])
 
