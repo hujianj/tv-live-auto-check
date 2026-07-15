@@ -100,5 +100,43 @@
     "fail_on_strict_filter_residue": true,
     "fail_on_channel_limit_violation": true,
     "fail_on_group_limit_violation": true
+  },
+  "family_profile": {
+    "enabled": true,
+    "description": "Family compact playlist derived after final recheck. It keeps core CCTV/satellite/local channels first and limits low-value entertainment/overseas rows for easier TV use.",
+    "txt_files": [
+      "ku9-family.txt",
+      "live-family.txt"
+    ],
+    "m3u_file": "family.m3u",
+    "default_max_urls_per_name": 1,
+    "group_channel_limits": {
+      "央视频道": 4,
+      "卫视频道": 4,
+      "地方频道": 2,
+      "影视剧场": 1,
+      "少儿动漫": 1,
+      "体育纪实": 1,
+      "音乐综艺": 1,
+      "生活休闲": 1,
+      "综合娱乐": 1,
+      "港澳台频道": 1,
+      "海外华语频道": 1
+    },
+    "group_max_rows": {
+      "央视频道": 120,
+      "卫视频道": 160,
+      "地方频道": 320,
+      "影视剧场": 90,
+      "少儿动漫": 30,
+      "体育纪实": 60,
+      "音乐综艺": 45,
+      "生活休闲": 110,
+      "综合娱乐": 260,
+      "港澳台频道": 60,
+      "海外华语频道": 80
+    },
+    "min_lines": 700,
+    "max_lines": 1400
   }
 }

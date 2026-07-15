@@ -38,6 +38,7 @@ CHECK_WORKERS = int(os.getenv("IPTV_CHECK_WORKERS", "192"))
 MAX_VALID_PER_NAME = int(os.getenv("IPTV_MAX_VALID_PER_NAME", "5"))
 HLS_SEGMENT_CHECKS = int(os.getenv("IPTV_HLS_SEGMENT_CHECKS", "2"))
 HLS_VARIANT_CHECKS = int(os.getenv("IPTV_HLS_VARIANT_CHECKS", "2"))
+CORE_HLS_SEGMENT_CHECKS = int(os.getenv("IPTV_CORE_HLS_SEGMENT_CHECKS", str(max(3, HLS_SEGMENT_CHECKS))))
 CORE_RETRY_ATTEMPTS = int(os.getenv("IPTV_CORE_RETRY_ATTEMPTS", "1"))
 CORE_RETRY_TIMEOUT = int(os.getenv("IPTV_CORE_RETRY_TIMEOUT", "14"))
 UA = "Player"
@@ -444,6 +445,7 @@ def check_candidate(cand: Candidate, timeout: int = TIMEOUT) -> CheckResult:
     url = cand.url.strip()
     if not url.startswith(("http://", "https://")):
         return CheckResult(cand, False, "unsupported scheme")
+    segment_limit = CORE_HLS_SEGMENT_CHECKS if is_core_family_candidate(cand) else HLS_SEGMENT_CHECKS
     # For home Ku9 on common networks, IPv6-only URLs often fail; still test, but mark fail on network error.
     try:
         code, ctype, data, final = http_get_small(url, timeout=timeout)
@@ -465,12 +467,12 @@ def check_candidate(cand: Candidate, timeout: int = TIMEOUT) -> CheckResult:
                         continue
                     t2 = d2.decode("utf-8", "ignore")
                     _v2, child_segments = parse_m3u8_items(t2, f2)
-                    ok, detail = check_media_segments(child_segments, timeout=timeout)
+                    ok, detail = check_media_segments(child_segments, limit=segment_limit, timeout=timeout)
                     last_detail = detail
                     if ok:
                         return CheckResult(cand, True, f"variant ok variants_checked={checked_variants} {detail}")
                 return CheckResult(cand, False, f"variant fail variants_checked={checked_variants} {last_detail}")
-            ok, detail = check_media_segments(segments, timeout=timeout)
+            ok, detail = check_media_segments(segments, limit=segment_limit, timeout=timeout)
             return CheckResult(cand, ok, detail)
         else:
             return CheckResult(cand, looks_media(data, ctype), f"direct {ctype} bytes={len(data)}")

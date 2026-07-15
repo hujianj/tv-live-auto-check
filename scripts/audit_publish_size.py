@@ -12,9 +12,11 @@ from pathlib import Path
 from playlist_config import ROOT, load_guard
 
 TXT_ALIAS_FILES = ["live-curated.txt", "live.txt", "live-verified.txt", "ku9-live.txt"]
+FAMILY_FILES = ["ku9-family.txt", "live-family.txt", "family.m3u"]
 PUBLIC_FILES = [
     *TXT_ALIAS_FILES,
     "live.m3u",
+    *FAMILY_FILES,
     "stability-history.tsv",
     "full-check-summary.json",
     "final-publish-report.md",
@@ -93,6 +95,10 @@ def main() -> int:
     txt_alias_same_hash = len(set(txt_hashes.values())) == 1
     if guard.get("require_txt_alias_same_hash", True) and not txt_alias_same_hash:
         failures.append("TXT alias files differ: " + repr(txt_hashes))
+    family_txt_hashes = {p: hashes[p] for p in ["ku9-family.txt", "live-family.txt"] if p in hashes}
+    family_txt_alias_same_hash = len(set(family_txt_hashes.values())) <= 1
+    if not family_txt_alias_same_hash:
+        failures.append("family TXT alias files differ: " + repr(family_txt_hashes))
 
     thresholds = {
         "max_primary_txt_bytes": ("ku9-live.txt", int(guard.get("max_primary_txt_bytes", 600_000))),
@@ -117,7 +123,9 @@ def main() -> int:
         "status": "rejected" if failures else "ok",
         "files": sizes,
         "txt_alias_same_hash": txt_alias_same_hash,
+        "family_txt_alias_same_hash": family_txt_alias_same_hash,
         "txt_alias_hashes": txt_hashes,
+        "family_txt_alias_hashes": family_txt_hashes,
         "working_tree_public_bytes": working_tree_public_bytes,
         "unique_public_blob_bytes": unique_public_blob_bytes,
         "duplicate_txt_worktree_bytes": duplicate_txt_worktree_bytes,
@@ -139,6 +147,7 @@ def main() -> int:
         f"Unique public blob bytes: {unique_public_blob_bytes}",
         f"Max unique public blob bytes: {max_unique}",
         f"TXT alias same hash: {txt_alias_same_hash}",
+        f"Family TXT alias same hash: {family_txt_alias_same_hash}",
         f"Duplicate TXT working-tree bytes: {duplicate_txt_worktree_bytes}",
         "",
         "## Public files",

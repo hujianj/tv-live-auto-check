@@ -80,6 +80,10 @@ def test_priority_and_guard_config_are_externalized() -> None:
     assert home_priority.get("enabled") is True
     assert "home_ok_urls" in home_priority
     assert "home_failed_urls" in home_priority
+    family = quality.get("family_profile") or {}
+    assert family.get("enabled") is True
+    assert "ku9-family.txt" in family.get("txt_files", [])
+    assert family.get("min_lines", 0) >= 500
 
 
 def test_quality_filters_and_limits_are_enforced() -> None:
@@ -310,6 +314,23 @@ def test_parse_txt_split_urls() -> None:
     assert [c.url for c in cands] == ["http://a/live.m3u8", "https://b/live.m3u8"]
 
 
+def test_family_playlist_limits() -> None:
+    from recheck_published import Row, build_family_rows, family_profile
+
+    profile = family_profile()
+    assert profile.get("enabled") is True
+    rows = [
+        Row("央视频道", "CCTV-1", f"http://a/cctv1-{i}.m3u8") for i in range(6)
+    ] + [
+        Row("综合娱乐", "娱乐频道", f"http://a/ent-{i}.m3u8") for i in range(3)
+    ]
+    family_rows = build_family_rows(["央视频道", "综合娱乐"], rows)
+    cctv_urls = [row.url for row in family_rows if row.name == "CCTV-1"]
+    ent_urls = [row.url for row in family_rows if row.name == "娱乐频道"]
+    assert len(cctv_urls) == min(4, int((profile.get("group_channel_limits") or {}).get("央视频道", 4)))
+    assert len(ent_urls) == 1
+
+
 def test_core_retry_classification() -> None:
     assert is_core_family_candidate(Candidate("unit", "央视频道", "CCTV-1", "http://a/live.m3u8"))
     assert is_core_family_candidate(Candidate("unit", "卫视频道", "辽宁卫视", "http://a/live.m3u8"))
@@ -432,6 +453,7 @@ def main() -> int:
         test_split_stream_urls,
         test_parse_m3u_name_and_split_urls,
         test_parse_txt_split_urls,
+        test_family_playlist_limits,
         test_core_retry_classification,
         test_validate_rejects_malformed_url,
         test_validate_m3u_accepts_generated_shape,

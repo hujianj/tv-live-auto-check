@@ -201,6 +201,18 @@ local-network-results.csv
 - 如果电视端能打开 Pages，长期订阅优先用 Pages 地址。
 - 如果 Pages 不可用，再用 gh-proxy 备用。
 
+## 家用精简版
+
+自动维护流程现在会同时生成完整列表和家用精简列表：
+
+```text
+完整主列表：https://hujianj.github.io/tv-live-auto-check/ku9-live.txt
+家用精简版：https://hujianj.github.io/tv-live-auto-check/ku9-family.txt
+家用精简版 M3U：https://hujianj.github.io/tv-live-auto-check/family.m3u
+```
+
+精简版从最终复测通过的列表里再筛选生成，不跳过真实播放检测；它会保留 CCTV、卫视、地方台优先顺序，并减少综合娱乐、海外等低频分类的数量，方便家人在电视上找台。
+
 ## 家庭网络优先级
 
 在家里网络运行：
