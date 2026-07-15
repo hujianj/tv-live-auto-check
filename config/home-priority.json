@@ -1,0 +1,11 @@
+{
+  "description": "Optional local/home network priority hints. Generate with scripts/local_network_check.py --write-home-priority after testing from the actual home network. Empty lists mean no effect in GitHub Actions.",
+  "enabled": true,
+  "bonus": -120,
+  "penalty": 180,
+  "max_urls": 500,
+  "home_ok_urls": [],
+  "home_failed_urls": [],
+  "generated_from": "",
+  "generated_at": ""
+}

@@ -5,7 +5,7 @@ import csv, json, re
 from pathlib import Path
 from collections import defaultdict, Counter
 from validate_playlist import validate_text
-from playlist_config import get_group_order, load_quality, load_rules, score_adjustments, source_priority as configured_source_priority
+from playlist_config import get_group_order, load_home_priority, load_quality, load_rules, score_adjustments, source_priority as configured_source_priority
 from stability import load_history, stability_adjustment, stability_enabled
 from channel_utils import cctv_number, cctv_sort_key, chinese_count as shared_chinese_count, format_extinf
 
@@ -30,6 +30,7 @@ GROUP_ORDER = get_group_order()
 
 RULES = load_rules()
 QUALITY = load_quality()
+HOME_PRIORITY = load_home_priority()
 PROVINCES = RULES['provinces']
 HK_KEYS = RULES['category_keywords']['hk']
 MOVIE_KEYS = RULES['category_keywords']['movie']
@@ -56,6 +57,11 @@ CHANNEL_LIMITS = QUALITY.get('channel_limits', {})
 GROUP_MAX_ROWS = {str(k): int(v) for k, v in QUALITY.get('group_max_rows', {}).items()}
 CORE_CHANNEL_PATTERNS = [re.compile(str(x), re.I) for x in QUALITY.get('core_channel_patterns', [])]
 QUALITY_SOURCE_BONUS = QUALITY.get('quality_source_bonus', {})
+HOME_PRIORITY_ENABLED = bool(HOME_PRIORITY.get('enabled', True))
+HOME_OK_URLS = {str(x).strip() for x in HOME_PRIORITY.get('home_ok_urls', []) if str(x).strip()}
+HOME_FAILED_URLS = {str(x).strip() for x in HOME_PRIORITY.get('home_failed_urls', []) if str(x).strip()}
+HOME_PRIORITY_BONUS = int(HOME_PRIORITY.get('bonus', -120))
+HOME_PRIORITY_PENALTY = int(HOME_PRIORITY.get('penalty', 180))
 
 def chinese_count(s: str) -> int:
     return shared_chinese_count(s)
@@ -221,6 +227,16 @@ def source_priority(source: str, url: str = '') -> int:
     return configured_source_priority(source, url)
 
 
+def home_priority_adjustment(url: str) -> int:
+    if not HOME_PRIORITY_ENABLED:
+        return 0
+    if url in HOME_OK_URLS:
+        return HOME_PRIORITY_BONUS
+    if url in HOME_FAILED_URLS:
+        return HOME_PRIORITY_PENALTY
+    return 0
+
+
 def url_score(url: str, source: str):
     s = source_priority(source, url)
     adjust = score_adjustments('curate')
@@ -237,6 +253,7 @@ def url_score(url: str, source: str):
         s += int(QUALITY_SOURCE_BONUS.get('bonus', -8))
     if stability_enabled():
         s += stability_adjustment(url, STABILITY_HISTORY)
+    s += home_priority_adjustment(url)
     return (s, len(url), source)
 
 
@@ -446,6 +463,13 @@ def main():
         'pre_recheck_per_group_unique_names': per_group_unique_names,
         'stability_history_loaded': stability_enabled(),
         'stability_history_urls': len((STABILITY_HISTORY.get('urls') or {})),
+        'home_priority': {
+            'enabled': HOME_PRIORITY_ENABLED,
+            'ok_urls': len(HOME_OK_URLS),
+            'failed_urls': len(HOME_FAILED_URLS),
+            'bonus': HOME_PRIORITY_BONUS,
+            'penalty': HOME_PRIORITY_PENALTY,
+        },
         'curated_generated': True,
         'curated_published_lines': len(pub),
         'curated_channel_names': published_unique_names,
@@ -478,6 +502,7 @@ def main():
         f'Pre-recheck candidate lines: {len(pub)}',
         f'Published channel names: {published_unique_names}',
         f'Stability history URLs loaded: {len((STABILITY_HISTORY.get("urls") or {}))}',
+        f'Home priority URLs loaded: ok={len(HOME_OK_URLS)}, failed={len(HOME_FAILED_URLS)}, enabled={HOME_PRIORITY_ENABLED}',
         '',
         '## Quality filters and limits',
         '',

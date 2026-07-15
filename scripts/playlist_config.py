@@ -46,6 +46,13 @@ def load_quality() -> dict:
     return load_json_config("quality.json")
 
 
+def load_home_priority() -> dict:
+    path = CONFIG_DIR / "home-priority.json"
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8-sig"))
+
+
 def get_group_order() -> list[str]:
     rules = load_rules()
     groups = rules.get("group_order") or DEFAULT_GROUP_ORDER
