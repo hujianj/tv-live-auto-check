@@ -4,19 +4,19 @@ IPTV 自动维护项目：抓取公开直播源，对去重后的真实播放 UR
 
 ## 推荐订阅地址
 
-电视端/酷9优先使用 jsDelivr CDN 地址，国内网络通常比 `github.io` 和 `raw.githubusercontent.com` 更稳定。当前推荐使用不带 `@main` 的酷9专用别名；实测该别名在 jsDelivr 上比部分 `@main` 路径刷新更及时：
+电视端/酷9优先使用 jsDelivr 的 GCore 边缘地址。实测通用 `cdn.jsdelivr.net` 不同边缘节点偶发返回旧文件，而 `gcore.jsdelivr.net @main` 当前刷新更稳定：
 
 ```text
-https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check/ku9-live.txt
+https://gcore.jsdelivr.net/gh/hujianj/tv-live-auto-check@main/ku9-live.txt
 ```
 
-如果该路径在 CDN 边缘节点偶发滞后，可临时使用同内容备用别名：
+如果该路径在电视端不可访问，可临时使用 GitHub Pages 备用地址：
 
 ```text
-https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check/live.txt
+https://hujianj.github.io/tv-live-auto-check/ku9-live.txt
 ```
 
-历史兼容地址 `live-curated.txt` / `live-verified.txt` 仍会生成，但不同 jsDelivr 边缘节点可能对不同文件路径缓存不同步；电视端长期订阅优先用上面的 `ku9-live.txt`。`@main` 路径仍可用于人工测试，但不再作为电视端首选。
+历史兼容地址 `live-curated.txt` / `live.txt` / `live-verified.txt` 仍会生成，但不同 jsDelivr 边缘节点可能对不同文件路径缓存不同步；电视端长期订阅优先用上面的 `ku9-live.txt`。
 
 如果想在每次维护后尽快拿到最新版，可测试 Raw 代理地址：
 
@@ -27,7 +27,7 @@ https://gh-proxy.com/raw.githubusercontent.com/hujianj/tv-live-auto-check/main/l
 M3U 格式：
 
 ```text
-https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check/live.m3u
+https://gcore.jsdelivr.net/gh/hujianj/tv-live-auto-check@main/live.m3u
 ```
 
 GitHub Pages / Raw 地址保留给电脑或人工测试；部分电视网络可能获取为空或连接失败：
