@@ -75,6 +75,9 @@ jobs:
           coverage = summary.get("coverage") or {}
           assert not coverage.get("missing_cctv"), coverage
           assert not coverage.get("missing_satellite"), coverage
+          stability = summary.get("stability") or {}
+          assert stability.get("enabled") is True, stability
+          assert stability.get("tracked_urls_after", 0) >= summary["curated_published_lines"], stability
           files = ["live-curated.txt", "live.txt", "live-verified.txt", "ku9-live.txt"]
           payloads = [Path(f).read_bytes() for f in files]
           assert len({hashlib.sha256(x).hexdigest() for x in payloads}) == 1, "TV TXT outputs differ"
@@ -82,6 +85,8 @@ jobs:
           all_data = Path("live-all-playable.txt").read_bytes()
           assert len(all_data) >= len(payloads[0]), (len(all_data), len(payloads[0]))
           assert Path("final-publish-report.md").exists(), "missing final publish report"
+          assert Path("stability-history.json").exists(), "missing stability history"
+          assert Path("stability-report.md").exists(), "missing stability report"
           print("Generated full-check playlist smoke OK", len(payloads[0]), "bytes", summary)
           PY
       - name: Guard against shrunken or unsafe publish
@@ -100,17 +105,18 @@ jobs:
             published_recheck_results.csv
             published-recheck-report.md
             final-publish-report.md
+            stability-report.md
             coverage-report.md
             publish-guard-report.md
       - name: Commit verified playlist
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: verify and publish playable IPTV playlist"
-          file_pattern: live.txt live-verified.txt live-curated.txt ku9-live.txt live.m3u source-report.md check-report.md curated-report.md published-recheck-report.md final-publish-report.md coverage-report.md publish-guard-report.md sources_status.csv full-check-summary.json
+          file_pattern: live.txt live-verified.txt live-curated.txt ku9-live.txt live.m3u source-report.md check-report.md curated-report.md published-recheck-report.md final-publish-report.md stability-report.md stability-history.json coverage-report.md publish-guard-report.md sources_status.csv full-check-summary.json
       - name: Purge jsDelivr CDN
         run: |
           set -e
-          for file in live-curated.txt live.txt ku9-live.txt live-verified.txt live.m3u full-check-summary.json curated-report.md published-recheck-report.md final-publish-report.md coverage-report.md publish-guard-report.md source-report.md check-report.md; do
+          for file in live-curated.txt live.txt ku9-live.txt live-verified.txt live.m3u full-check-summary.json curated-report.md published-recheck-report.md final-publish-report.md stability-report.md stability-history.json coverage-report.md publish-guard-report.md source-report.md check-report.md; do
             echo "Purging $file"
             curl -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}/$file" || true
             curl -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/$file" || true

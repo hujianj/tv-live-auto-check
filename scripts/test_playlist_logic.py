@@ -5,6 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 import json
 import sys
+import tempfile
+from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -12,6 +14,8 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from validate_playlist import validate_m3u_text, validate_text
 from verify_sources import SOURCES, parse_m3u, parse_txt, split_stream_urls, split_unquoted_last_comma
 from playlist_config import get_group_order, load_guard, load_priority, source_priority
+from stability import stability_adjustment
+import stability as stability_module
 
 
 def test_source_config_omits_disabled_unstable_sources() -> None:
@@ -55,9 +59,49 @@ def test_priority_and_guard_config_are_externalized() -> None:
     assert source_priority("zbds_iptv4_m3u", "https://live.zbds.top/tv/iptv4.m3u") == -150
     assert source_priority("suxuang_ipv4", "https://example.test/a.m3u8") == -30
     assert priority["score_adjustments"]["verify"]["ipv6"] > 0
+    assert priority["stability"]["enabled"] is True
+    assert priority["stability"]["max_entries"] <= 5000
     assert guard["min_lines"] >= 1800
     assert guard["min_groups"]["央视频道"] >= 90
     assert "zbds_iptv4_txt" in guard["core_sources"]
+
+
+def test_stability_adjustment_prefers_proven_urls() -> None:
+    history = {
+        "urls": {
+            "http://stable.example/live.m3u8": {"ok": 5, "fail": 0, "streak_ok": 5, "streak_fail": 0},
+            "http://flaky.example/live.m3u8": {"ok": 1, "fail": 3, "streak_ok": 0, "streak_fail": 2},
+        }
+    }
+    assert stability_adjustment("http://stable.example/live.m3u8", history) < 0
+    assert stability_adjustment("http://flaky.example/live.m3u8", history) > 0
+    assert stability_adjustment("http://stable.example/live.m3u8", history) < stability_adjustment("http://flaky.example/live.m3u8", history)
+    assert stability_adjustment("http://new.example/live.m3u8", history) == 0
+
+
+def test_stability_update_counts_unique_urls() -> None:
+    old_history_path = stability_module.history_path
+    old_report_path = stability_module.report_path
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp_path = Path(tmp)
+        stability_module.history_path = lambda: tmp_path / "history.json"  # type: ignore[assignment]
+        stability_module.report_path = lambda: tmp_path / "report.md"  # type: ignore[assignment]
+        try:
+            rows = [
+                SimpleNamespace(group="央视频道", name="CCTV-1", url="http://a/live.m3u8"),
+                SimpleNamespace(group="卫视频道", name="辽宁卫视", url="http://a/live.m3u8"),
+                SimpleNamespace(group="卫视频道", name="河北卫视", url="http://b/live.m3u8"),
+            ]
+            summary = stability_module.update_history(rows, {"http://b/live.m3u8": "timeout"}, {})
+            assert summary["updated_urls"] == 2
+            assert summary["ok_updates"] == 1
+            assert summary["fail_updates"] == 1
+            history = json.loads((tmp_path / "history.json").read_text(encoding="utf-8"))
+            assert history["urls"]["http://a/live.m3u8"]["ok"] == 1
+            assert history["urls"]["http://b/live.m3u8"]["fail"] == 1
+        finally:
+            stability_module.history_path = old_history_path  # type: ignore[assignment]
+            stability_module.report_path = old_report_path  # type: ignore[assignment]
 
 
 def test_split_unquoted_last_comma() -> None:
@@ -190,6 +234,8 @@ def main() -> int:
         test_source_config_omits_disabled_unstable_sources,
         test_rules_config_contains_core_coverage,
         test_priority_and_guard_config_are_externalized,
+        test_stability_adjustment_prefers_proven_urls,
+        test_stability_update_counts_unique_urls,
         test_split_unquoted_last_comma,
         test_split_stream_urls,
         test_parse_m3u_name_and_split_urls,

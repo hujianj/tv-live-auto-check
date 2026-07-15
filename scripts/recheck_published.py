@@ -14,6 +14,7 @@ from pathlib import Path
 
 from validate_playlist import validate_file, validate_text
 from verify_sources import Candidate, CheckResult, check_candidate
+from stability import update_history
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -109,7 +110,7 @@ def source_for(row: Row, source_map: dict[tuple[str, str], str]) -> str:
     return source_map.get((row.name, row.url), "unknown")
 
 
-def update_summary(before_rows: list[Row], after_rows: list[Row], checked_urls: int, failed_urls: dict[str, str], elapsed: float, source_map: dict[tuple[str, str], str]) -> None:
+def update_summary(before_rows: list[Row], after_rows: list[Row], checked_urls: int, failed_urls: dict[str, str], elapsed: float, source_map: dict[tuple[str, str], str], stability_summary: dict) -> None:
     path = ROOT / SUMMARY_FILE
     summary = json.loads(path.read_text(encoding="utf-8"))
     cnt = Counter(row.group for row in after_rows)
@@ -125,6 +126,7 @@ def update_summary(before_rows: list[Row], after_rows: list[Row], checked_urls: 
         "primary_published_lines": len(after_rows),
         "final_publish_report_file": FINAL_REPORT_FILE,
         "curated_source_map_available": bool(source_map),
+        "stability": stability_summary,
         "published_recheck": {
             "enabled": True,
             "checked_unique_urls": checked_urls,
@@ -165,7 +167,7 @@ def write_report(before_rows: list[Row], after_rows: list[Row], failed_urls: dic
     (ROOT / REPORT_FILE).write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
 
-def write_final_report(groups: list[str], rows: list[Row], failed_urls: dict[str, str], elapsed: float, source_map: dict[tuple[str, str], str]) -> None:
+def write_final_report(groups: list[str], rows: list[Row], failed_urls: dict[str, str], elapsed: float, source_map: dict[tuple[str, str], str], stability_summary: dict) -> None:
     group_counts = Counter(row.group for row in rows)
     source_counts = Counter(source_for(row, source_map) for row in rows)
     group_source_counts = Counter((row.group, source_for(row, source_map)) for row in rows)
@@ -180,6 +182,8 @@ def write_final_report(groups: list[str], rows: list[Row], failed_urls: dict[str
         f"Failed unique URLs removed during final recheck: {len(failed_urls)}",
         f"Final recheck elapsed: {elapsed:.1f}s",
         f"Source map available: {bool(source_map)}",
+        f"Stability tracked URLs after update: {stability_summary.get('tracked_urls_after')}",
+        f"Stability OK/fail updates: {stability_summary.get('ok_updates')}/{stability_summary.get('fail_updates')}",
         "",
         "## Groups",
         "",
@@ -233,9 +237,10 @@ def main() -> int:
     kept_rows = [row for row in rows if row.url not in failed_urls]
     write_outputs(groups, kept_rows)
     elapsed = time.time() - start
-    update_summary(rows, kept_rows, len(by_url), failed_urls, elapsed, source_map)
+    stability_summary = update_history(rows, failed_urls, source_map)
+    update_summary(rows, kept_rows, len(by_url), failed_urls, elapsed, source_map, stability_summary)
     write_report(rows, kept_rows, failed_urls, elapsed)
-    write_final_report(groups, kept_rows, failed_urls, elapsed, source_map)
+    write_final_report(groups, kept_rows, failed_urls, elapsed, source_map, stability_summary)
     with (ROOT / CSV_FILE).open("w", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
         w.writerow(["ok", "group", "name", "url", "detail"])
