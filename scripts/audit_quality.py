@@ -3,11 +3,10 @@
 from __future__ import annotations
 
 import json
-import re
 from collections import Counter, defaultdict
 from pathlib import Path
 
-from audit_coverage import cctv_key
+from channel_utils import cctv_key, is_latin_noise_name
 from curate_ku9 import per_channel_limit, strict_quality_drop_reason
 from playlist_config import get_group_order, load_quality, load_rules
 from validate_playlist import validate_file
@@ -32,21 +31,6 @@ def parse_txt(path: Path = PLAYLIST) -> list[tuple[str, str, str]]:
         name, url = line.split(",", 1)
         rows.append((group, name, url))
     return rows
-
-
-def is_latin_noise_name(name: str) -> bool:
-    """Heuristic for report-only English/overseas residue.
-
-    Do not fail on this alone because valid names such as BRTV北京卫视, IPTV4K or
-    TVB are acceptable. Strict fail tokens live in config/quality.json.
-    """
-    n = name.strip()
-    upper = n.upper()
-    if re.match(r"^CCTV[-_ ]?\d+", upper):
-        return False
-    if re.match(r"^(TVB|TVBS|RTHK|VIUTV|PHOENIX)", upper):
-        return False
-    return bool(re.search(r"[A-Za-z]{5,}", n))
 
 
 def build_audit(rows: list[tuple[str, str, str]]) -> tuple[dict, list[str], list[str]]:

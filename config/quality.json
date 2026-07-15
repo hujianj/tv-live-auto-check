@@ -25,7 +25,16 @@
     "DeluxeLoungeHD",
     "Ocko",
     "OckoExpres",
-    "OckoStar"
+    "OckoStar",
+    "CRIHITFM",
+    "MiaoMi",
+    "MomoTV",
+    "CityFM",
+    "MovieMusic",
+    "Astro",
+    "DJSoda",
+    "BreadTV",
+    "GOODTV"
   ],
   "strict_drop_regex": [
     "(^|[^A-Za-z])(Animal[_ ]?Planet|Discovery(Asia)?|FashionTV|Foodnetwork|HGTV|History|NatGeo(_?Wild)?|CartoonNetwork|BabyTV|Animax|CBeebies|KidsTV|CampSpoopy)([^A-Za-z]|$)",

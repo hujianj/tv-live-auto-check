@@ -66,7 +66,7 @@ def parse_tv_txt(text: str) -> list[tuple[str, str, str]]:
 
 
 def is_core_row(group: str, name: str, required_cctv: set[str], important_satellite: set[str]) -> bool:
-    from audit_coverage import cctv_key
+    from channel_utils import cctv_key
 
     key = cctv_key(name)
     if key and key in required_cctv:
@@ -75,7 +75,7 @@ def is_core_row(group: str, name: str, required_cctv: set[str], important_satell
 
 
 def core_key_for_report(group: str, name: str) -> str:
-    from audit_coverage import cctv_key
+    from channel_utils import cctv_key
 
     return cctv_key(name) or name
 
@@ -200,6 +200,16 @@ def write_outputs(result: dict[str, object], source: str, args: argparse.Namespa
         lines += ["", "## First failed rows", ""]
         for row in failed[:80]:
             lines.append(f"- {row['group']} / {row['name']} / {row['detail']} / {row['url']}")
+    if zero_ok_channels:
+        lines += [
+            "",
+            "## Recommended next actions",
+            "",
+            "These channel/core keys had zero playable lines from this network. Re-run once with a larger timeout before changing the published list; if they remain zero, add or prioritize home-network-playable backup URLs for these channels.",
+            "",
+        ]
+        for item in zero_ok_channels:
+            lines.append(f"- {item.get('channel')}: 0/{item.get('rows')} playable")
     report_path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
     with csv_path.open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=["ok", "group", "name", "core_key", "url", "detail"])
