@@ -36,5 +36,19 @@
     "综合娱乐": 0.6,
     "港澳台频道": 0.65,
     "海外华语频道": 0.75
+  },
+  "publish_size": {
+    "max_primary_txt_bytes": 600000,
+    "max_m3u_bytes": 1000000,
+    "max_stability_history_bytes": 1200000,
+    "max_unique_public_blob_bytes": 2500000,
+    "require_txt_alias_same_hash": true,
+    "forbid_tracked_artifacts": [
+      "stream_check_results.csv",
+      "live-all-playable.txt",
+      "all-playable.m3u",
+      "published_recheck_results.csv",
+      "curated-source-map.csv"
+    ]
   }
 }

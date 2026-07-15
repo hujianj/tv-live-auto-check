@@ -50,6 +50,7 @@ https://raw.githubusercontent.com/hujianj/tv-live-auto-check/main/live-curated.t
 - 每次最终复测后会更新 `stability-history.tsv`，记录最终候选 URL 的成功/失败次数和连续成功/失败状态；下一轮整理时会优先排列历史更稳定的线路，降低反复波动源排在前面的概率。
 - 发布前会运行 `scripts/audit_coverage.py`，生成核心央视和重点卫视频道覆盖报告；如果核心 CCTV 或重点卫视缺失，会拒绝发布，避免只看总行数而漏掉家人常看的频道。
 - 发布前会运行 `scripts/guard_publish.py`，如果本次结果比上一版明显缩水，或核心分类数量低于阈值，会拒绝发布，保留上一版可用列表。
+- 发布前会运行 `scripts/audit_publish_size.py`，检查发布文件体积、TXT 别名 hash 是否一致、全量诊断大文件是否误提交，避免稳定性历史和报告继续膨胀。
 - 发布后自动 purge jsDelivr，并检查 Raw / Pages / jsDelivr 缓存状态。jsDelivr 偶发短时滞后只记录告警，不代表仓库文件错误。
 
 ## 频道分类规则
@@ -91,6 +92,8 @@ config/priority.json
 ```text
 config/guard.json
 ```
+
+其中 `publish_size` 字段控制发布文件体积上限和禁止误提交的大型诊断文件清单。
 
 ## 优先源
 
