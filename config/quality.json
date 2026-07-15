@@ -35,7 +35,10 @@
     "DJSoda",
     "BreadTV",
     "GOODTV",
-    "澳門MACAU"
+    "澳門MACAU",
+    "SimonAmstell",
+    "BillBurr",
+    "Storm憋了一年大招"
   ],
   "strict_drop_regex": [
     "(^|[^A-Za-z])(Animal[_ ]?Planet|Discovery(Asia)?|FashionTV|Foodnetwork|HGTV|History|NatGeo(_?Wild)?|CartoonNetwork|BabyTV|Animax|CBeebies|KidsTV|CampSpoopy)([^A-Za-z]|$)",
