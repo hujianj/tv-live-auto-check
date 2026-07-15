@@ -39,6 +39,7 @@ jobs:
           IPTV_FETCH_TIMEOUT: "20"
           IPTV_HLS_VARIANT_CHECKS: "2"
           IPTV_HLS_SEGMENT_CHECKS: "2"
+          IPTV_CORE_HLS_SEGMENT_CHECKS: "3"
           IPTV_CORE_RETRY_ATTEMPTS: "1"
           IPTV_CORE_RETRY_TIMEOUT: "14"
         run: python scripts/verify_sources.py
@@ -50,6 +51,7 @@ jobs:
           IPTV_CHECK_TIMEOUT: "6"
           IPTV_HLS_VARIANT_CHECKS: "2"
           IPTV_HLS_SEGMENT_CHECKS: "2"
+          IPTV_CORE_HLS_SEGMENT_CHECKS: "3"
           IPTV_CORE_RETRY_ATTEMPTS: "1"
           IPTV_CORE_RETRY_TIMEOUT: "14"
         run: python scripts/recheck_published.py
@@ -59,7 +61,7 @@ jobs:
         run: python scripts/audit_quality.py
       - name: Smoke test generated playlist
         run: |
-          python scripts/validate_playlist.py live-curated.txt live.txt live-verified.txt ku9-live.txt live.m3u
+          python scripts/validate_playlist.py live-curated.txt live.txt live-verified.txt ku9-live.txt live.m3u ku9-family.txt live-family.txt family.m3u
           python - <<'PY'
           import hashlib, json
           from pathlib import Path
@@ -74,6 +76,13 @@ jobs:
           assert summary["curated_generated"] is True, summary
           assert summary["curated_published_lines"] == summary["primary_published_lines"], summary
           assert summary["final_primary_published_lines"] == summary["curated_published_lines"], summary
+          family = summary.get("family_playlist") or {}
+          assert family.get("enabled") is True, family
+          assert family.get("lines", 0) > 500, family
+          assert family.get("lines", 0) <= summary["curated_published_lines"], (family, summary["curated_published_lines"])
+          assert Path("ku9-family.txt").exists(), "missing ku9-family.txt"
+          assert Path("live-family.txt").exists(), "missing live-family.txt"
+          assert Path("family.m3u").exists(), "missing family.m3u"
           assert summary["curated_published_lines"] > 100, summary
           assert sum(summary.get("curated_groups", {}).values()) == summary["curated_published_lines"], summary
           assert sum(summary.get("curated_sources", {}).values()) == summary["curated_published_lines"], summary
@@ -128,11 +137,11 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: verify and publish playable IPTV playlist"
-          file_pattern: live.txt live-verified.txt live-curated.txt ku9-live.txt live.m3u source-report.md check-report.md curated-report.md published-recheck-report.md final-publish-report.md stability-report.md stability-history.tsv coverage-report.md quality-audit-report.md publish-guard-report.md publish-size-report.md sources_status.csv full-check-summary.json
+          file_pattern: live.txt live-verified.txt live-curated.txt ku9-live.txt live.m3u ku9-family.txt live-family.txt family.m3u source-report.md check-report.md curated-report.md published-recheck-report.md final-publish-report.md stability-report.md stability-history.tsv coverage-report.md quality-audit-report.md publish-guard-report.md publish-size-report.md sources_status.csv full-check-summary.json
       - name: Purge jsDelivr CDN
         run: |
           set -e
-          for file in live-curated.txt live.txt ku9-live.txt live-verified.txt live.m3u full-check-summary.json curated-report.md published-recheck-report.md final-publish-report.md stability-report.md stability-history.tsv coverage-report.md quality-audit-report.md publish-guard-report.md publish-size-report.md source-report.md check-report.md; do
+          for file in live-curated.txt live.txt ku9-live.txt live-verified.txt live.m3u ku9-family.txt live-family.txt family.m3u full-check-summary.json curated-report.md published-recheck-report.md final-publish-report.md stability-report.md stability-history.tsv coverage-report.md quality-audit-report.md publish-guard-report.md publish-size-report.md source-report.md check-report.md; do
             echo "Purging $file"
             curl -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}/$file" || true
             curl -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/$file" || true

@@ -15,7 +15,7 @@ from pathlib import Path
 from validate_playlist import validate_file, validate_text
 from verify_sources import Candidate, CheckResult, check_candidate_resilient
 from stability import update_history
-from playlist_config import load_guard
+from playlist_config import load_guard, load_quality
 from channel_utils import format_extinf
 
 try:
@@ -26,6 +26,8 @@ except Exception:
 ROOT = Path(__file__).resolve().parents[1]
 TXT_FILES = ["live-curated.txt", "live.txt", "live-verified.txt", "ku9-live.txt"]
 M3U_FILE = "live.m3u"
+FAMILY_DEFAULT_TXT_FILES = ["ku9-family.txt", "live-family.txt"]
+FAMILY_DEFAULT_M3U_FILE = "family.m3u"
 SUMMARY_FILE = "full-check-summary.json"
 REPORT_FILE = "published-recheck-report.md"
 FINAL_REPORT_FILE = "final-publish-report.md"
@@ -88,6 +90,84 @@ def render_m3u(rows: list[Row]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def family_profile() -> dict:
+    return load_quality().get("family_profile") or {}
+
+
+def family_enabled() -> bool:
+    return bool(family_profile().get("enabled", False))
+
+
+def family_txt_files() -> list[str]:
+    files = family_profile().get("txt_files") or FAMILY_DEFAULT_TXT_FILES
+    return [str(x) for x in files if str(x).strip()]
+
+
+def family_m3u_file() -> str:
+    return str(family_profile().get("m3u_file") or FAMILY_DEFAULT_M3U_FILE)
+
+
+def family_limit_for_group(group: str) -> int:
+    profile = family_profile()
+    limits = profile.get("group_channel_limits") or {}
+    return max(1, int(limits.get(group, profile.get("default_max_urls_per_name", 1))))
+
+
+def build_family_rows(groups: list[str], rows: list[Row]) -> list[Row]:
+    """Build a compact TV-facing family playlist while preserving curated order."""
+    if not family_enabled():
+        return []
+    profile = family_profile()
+    group_max_rows = {str(k): int(v) for k, v in (profile.get("group_max_rows") or {}).items()}
+    group_counts: Counter[str] = Counter()
+    name_counts: Counter[tuple[str, str]] = Counter()
+    out: list[Row] = []
+    for row in rows:
+        group_limit = group_max_rows.get(row.group, 0)
+        if group_limit > 0 and group_counts[row.group] >= group_limit:
+            continue
+        key = (row.group, row.name)
+        if name_counts[key] >= family_limit_for_group(row.group):
+            continue
+        out.append(row)
+        group_counts[row.group] += 1
+        name_counts[key] += 1
+    return out
+
+
+def write_family_outputs(groups: list[str], rows: list[Row]) -> dict:
+    """Write compact family playlist aliases and return summary metadata."""
+    if not family_enabled():
+        return {"enabled": False}
+    family_rows = build_family_rows(groups, rows)
+    text = render_txt(groups, family_rows)
+    validate_text(text, require_categories=True)
+    txt_files = family_txt_files()
+    for filename in txt_files:
+        (ROOT / filename).write_text(text, encoding="utf-8", newline="\n")
+    m3u_file = family_m3u_file()
+    (ROOT / m3u_file).write_text(render_m3u(family_rows), encoding="utf-8", newline="\n")
+    validate_file(ROOT / m3u_file)
+    group_counts = Counter(row.group for row in family_rows)
+    profile = family_profile()
+    result = {
+        "enabled": True,
+        "txt_files": txt_files,
+        "m3u_file": m3u_file,
+        "lines": len(family_rows),
+        "unique_names": len({row.name for row in family_rows}),
+        "unique_urls": len({row.url for row in family_rows}),
+        "groups": dict(group_counts),
+        "min_lines": int(profile.get("min_lines", 0) or 0),
+        "max_lines": int(profile.get("max_lines", 0) or 0),
+    }
+    if result["min_lines"] and result["lines"] < result["min_lines"]:
+        raise ValueError(f"family playlist too small: {result['lines']} < {result['min_lines']}")
+    if result["max_lines"] and result["lines"] > result["max_lines"]:
+        raise ValueError(f"family playlist too large: {result['lines']} > {result['max_lines']}")
+    return result
+
+
 def cleanup_stale_diagnostics() -> None:
     path = ROOT / CSV_FILE
     try:
@@ -125,7 +205,7 @@ def source_for(row: Row, source_map: dict[tuple[str, str], str]) -> str:
     return source_map.get((row.name, row.url), "unknown")
 
 
-def update_summary(before_rows: list[Row], after_rows: list[Row], checked_urls: int, failed_urls: dict[str, str], elapsed: float, source_map: dict[tuple[str, str], str], stability_summary: dict) -> None:
+def update_summary(before_rows: list[Row], after_rows: list[Row], checked_urls: int, failed_urls: dict[str, str], elapsed: float, source_map: dict[tuple[str, str], str], stability_summary: dict, family_summary: dict) -> None:
     path = ROOT / SUMMARY_FILE
     summary = json.loads(path.read_text(encoding="utf-8"))
     cnt = Counter(row.group for row in after_rows)
@@ -141,6 +221,7 @@ def update_summary(before_rows: list[Row], after_rows: list[Row], checked_urls: 
         "primary_published_lines": len(after_rows),
         "final_publish_report_file": FINAL_REPORT_FILE,
         "curated_source_map_available": bool(source_map),
+        "family_playlist": family_summary,
         "stability": stability_summary,
         "published_recheck": {
             "enabled": True,
@@ -182,7 +263,7 @@ def write_report(before_rows: list[Row], after_rows: list[Row], failed_urls: dic
     (ROOT / REPORT_FILE).write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
 
 
-def write_final_report(groups: list[str], rows: list[Row], failed_urls: dict[str, str], elapsed: float, source_map: dict[tuple[str, str], str], stability_summary: dict) -> None:
+def write_final_report(groups: list[str], rows: list[Row], failed_urls: dict[str, str], elapsed: float, source_map: dict[tuple[str, str], str], stability_summary: dict, family_summary: dict) -> None:
     group_counts = Counter(row.group for row in rows)
     source_counts = Counter(source_for(row, source_map) for row in rows)
     group_source_counts = Counter((row.group, source_for(row, source_map)) for row in rows)
@@ -207,6 +288,7 @@ def write_final_report(groups: list[str], rows: list[Row], failed_urls: dict[str
         f"Strict quality filter dropped rows before recheck: {quality.get('strict_filter_dropped_rows', 0)}",
         f"Channel limit trimmed rows before recheck: {quality.get('channel_limit_trimmed_rows', 0)}",
         f"Group limit trimmed rows before recheck: {sum((quality.get('group_limit_trimmed_counts') or {}).values())}",
+        f"Family compact playlist: {family_summary.get('lines', 0)} rows / {family_summary.get('unique_names', 0)} names / {family_summary.get('unique_urls', 0)} URLs",
         "",
         "## Groups",
         "",
@@ -216,6 +298,20 @@ def write_final_report(groups: list[str], rows: list[Row], failed_urls: dict[str
     for group in groups:
         if group_counts[group]:
             lines.append(f"| {group} | {group_counts[group]} |")
+    if family_summary.get("enabled"):
+        lines += ["", "## Family compact playlist", ""]
+        lines.append(f"- TXT files: {', '.join(family_summary.get('txt_files') or [])}")
+        lines.append(f"- M3U file: {family_summary.get('m3u_file')}")
+        lines.append(f"- Rows: {family_summary.get('lines')}")
+        lines.append(f"- Unique names: {family_summary.get('unique_names')}")
+        lines.append(f"- Unique URLs: {family_summary.get('unique_urls')}")
+        lines.append("")
+        lines.append("| Group | Rows |")
+        lines.append("|---|---:|")
+        for group in groups:
+            count = (family_summary.get("groups") or {}).get(group, 0)
+            if count:
+                lines.append(f"| {group} | {count} |")
     lines += ["", "## Final published lines by source", "", "| Source | Rows |", "|---|---:|"]
     for source, count in source_counts.most_common():
         lines.append(f"| {source} | {count} |")
@@ -285,10 +381,11 @@ def main() -> int:
         )
         return 1
     write_outputs(groups, kept_rows)
+    family_summary = write_family_outputs(groups, kept_rows)
     stability_summary = update_history(rows, failed_urls, source_map)
-    update_summary(rows, kept_rows, len(by_url), failed_urls, elapsed, source_map, stability_summary)
+    update_summary(rows, kept_rows, len(by_url), failed_urls, elapsed, source_map, stability_summary, family_summary)
     write_report(rows, kept_rows, failed_urls, elapsed)
-    write_final_report(groups, kept_rows, failed_urls, elapsed, source_map, stability_summary)
+    write_final_report(groups, kept_rows, failed_urls, elapsed, source_map, stability_summary, family_summary)
     with (ROOT / CSV_FILE).open("w", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
         w.writerow(["ok", "group", "name", "url", "detail"])
