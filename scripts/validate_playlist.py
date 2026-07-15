@@ -8,9 +8,10 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-from playlist_config import get_group_order, load_rules
+from playlist_config import get_group_order, load_quality, load_rules
 
 RULES = load_rules()
+QUALITY = load_quality()
 G_CCTV = "\u592e\u89c6\u9891\u9053"
 G_SAT = "\u536b\u89c6\u9891\u9053"
 G_LOCAL = "\u5730\u65b9\u9891\u9053"
@@ -32,6 +33,8 @@ TVB_PREFIXES = tuple(RULES["tvb_prefixes"])
 CCTV_ALIAS_BLOCK_TOKENS = [str(x).upper() for x in RULES["cctv_alias_block_tokens"]]
 UNSTABLE_NAME_TOKENS = [str(x).upper() for x in RULES["unstable_name_tokens"]]
 OBSOLETE_CATEGORIES = RULES["obsolete_categories"]
+STRICT_DROP_NAME_TOKENS = [str(x) for x in QUALITY.get("strict_drop_name_tokens", [])]
+STRICT_DROP_REGEX = [re.compile(str(x), re.I) for x in QUALITY.get("strict_drop_regex", [])]
 
 
 def chinese_count(s: str) -> int:
@@ -95,6 +98,17 @@ def has_invalid_url(url: str) -> bool:
     return False
 
 
+def strict_quality_drop_reason(name: str) -> str:
+    low = (name or "").lower()
+    for token in STRICT_DROP_NAME_TOKENS:
+        if token and token.lower() in low:
+            return f"token:{token}"
+    for rx in STRICT_DROP_REGEX:
+        if rx.search(name or ""):
+            return f"regex:{rx.pattern}"
+    return ""
+
+
 def split_unquoted_last_comma(line: str) -> tuple[str, str]:
     in_quote = False
     escape = False
@@ -126,6 +140,9 @@ def validate_channel_semantics(group: str, name: str, url: str, lineno: int, lin
         bad.append((lineno, "pseudo CCTV alias", line[:240]))
     if any(tok in upper_name for tok in UNSTABLE_NAME_TOKENS):
         bad.append((lineno, "unstable Not24/7", line[:240]))
+    strict_reason = strict_quality_drop_reason(name)
+    if strict_reason:
+        bad.append((lineno, f"strict quality filtered channel ({strict_reason})", line[:240]))
     if not cctv_num(name) and not is_hk_mo_tw_channel(name, group):
         if any(tok in upper_name for tok in UNWANTED_OVERSEAS_TOKENS):
             bad.append((lineno, "unwanted overseas/English channel", line[:240]))

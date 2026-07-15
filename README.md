@@ -1,61 +1,67 @@
 # TV Live Auto Check
 
-IPTV 自动维护项目：抓取公开直播源，对去重后的真实播放 URL 做媒体流检测，只发布检测到可播放分片/媒体字节的线路，并生成适合酷9/TCL 电视端导入的订阅列表。
+这是给家用电视/酷9准备的 IPTV 自动维护项目：定时抓取公开上游直播源，解析频道，去重后实测真实媒体流分片，只发布通过检测的可播放线路，并按家人使用习惯整理成酷9可导入的 TXT 列表和通用 M3U 列表。
 
 ## 推荐订阅地址
 
-如果电视端能正常访问 GitHub Pages，优先使用这个地址；它当前最接近仓库最新版，适合自动更新后尽快生效：
+电视端优先使用 GitHub Pages 地址：
 
 ```text
 https://hujianj.github.io/tv-live-auto-check/ku9-live.txt
 ```
 
-如果电视端访问 GitHub Pages 显示数据为空，再使用 jsDelivr 的 GCore 边缘地址作为稳定兼容地址；它通常更容易被电视端拉取，但第三方 CDN 可能短时返回上一版：
+如果电视网络访问 GitHub Pages 显示“数据为空”或无法连接，使用 Raw 代理备用地址：
 
 ```text
-https://gcore.jsdelivr.net/gh/hujianj/tv-live-auto-check@main/ku9-live.txt
+https://gh-proxy.com/raw.githubusercontent.com/hujianj/tv-live-auto-check/main/ku9-live.txt
 ```
 
-历史兼容地址 `live-curated.txt` / `live.txt` / `live-verified.txt` 仍会生成，但不同 jsDelivr 边缘节点可能对不同文件路径缓存不同步；电视端长期订阅优先用上面的 `ku9-live.txt`。
-
-如果想在每次维护后尽快拿到最新版，可测试 Raw 代理地址：
+兼容备用 CDN 地址如下。jsDelivr 边缘节点可能短时间返回旧版，因此只作为电视端兼容备用，不作为“是否已经更新到最新版”的判断依据：
 
 ```text
-https://gh-proxy.com/raw.githubusercontent.com/hujianj/tv-live-auto-check/main/live-curated.txt
+https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check@main/ku9-live.txt
 ```
 
 M3U 格式：
 
 ```text
-https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check@main/live.m3u
+https://hujianj.github.io/tv-live-auto-check/live.m3u
 ```
 
-GitHub Pages / Raw 地址保留给电脑或人工测试；部分电视网络可能获取为空或连接失败：
-
-```text
-https://hujianj.github.io/tv-live-auto-check/live-curated.txt
-https://raw.githubusercontent.com/hujianj/tv-live-auto-check/main/live-curated.txt
-```
+历史兼容别名 `live-curated.txt` / `live.txt` / `live-verified.txt` 仍会生成，内容与 `ku9-live.txt` 一致。
 
 ## 自动维护逻辑
 
-- 每天北京时间 04:20 自动运行，也可在 GitHub Actions 手动 `Run workflow`。
-- 抓取 `config/sources.json` 中启用的所有上游公开源。
-- 对所有去重后的真实流 URL 做全量检测；同一个 URL 被多个频道名引用时只检测一次，再复用检测结果。
-- HLS 检测会打开播放列表，并继续检测下一级媒体分片；默认最多检测 2 个 variant、每个媒体列表最多 2 个分片。
-- 生成电视端主订阅 `live-curated.txt`、同内容别名 `live.txt` / `live-verified.txt` / `ku9-live.txt`，以及 `live.m3u`。
-- 全量明细 `stream_check_results.csv`、`live-all-playable.txt`、`all-playable.m3u` 不再提交到 Git 仓库，只作为 GitHub Actions artifact 保存 30 天。
-- 发布前会先运行 `scripts/test_playlist_logic.py` 单元测试，再运行统一校验 `scripts/validate_playlist.py`，同时检查 TXT 和 M3U，防止异常频道名、异常 URL、错误分类或不可解析行进入正式列表。
-- 正式提交前会运行 `scripts/recheck_published.py`，对最终发布列表里的每个唯一 URL 再做一次全量复测；复测失败的 URL 会从本次发布中剔除。
-- 每次最终复测后会更新 `stability-history.tsv`，记录最终候选 URL 的成功/失败次数和连续成功/失败状态；下一轮整理时会优先排列历史更稳定的线路，降低反复波动源排在前面的概率。
-- 发布前会运行 `scripts/audit_coverage.py`，生成核心央视和重点卫视频道覆盖报告；如果核心 CCTV 或重点卫视缺失，会拒绝发布，避免只看总行数而漏掉家人常看的频道。
-- 发布前会运行 `scripts/guard_publish.py`，如果本次结果比上一版明显缩水，或核心分类数量低于阈值，会拒绝发布，保留上一版可用列表。
-- 发布前会运行 `scripts/audit_publish_size.py`，检查发布文件体积、TXT 别名 hash 是否一致、全量诊断大文件是否误提交，避免稳定性历史和报告继续膨胀。
-- 发布后自动 purge jsDelivr，并检查 Raw / Pages / jsDelivr 缓存状态。jsDelivr 偶发短时滞后只记录告警，不代表仓库文件错误。
+GitHub Actions 每天北京时间 04:20 自动运行，也可以手动 `Run workflow`。
 
-## 频道分类规则
+流程：
 
-电视主列表按家用观看习惯排序：
+1. 读取 `config/sources.json` 中启用的所有上游源。
+2. 抓取 TXT / M3U / M3U8 聚合列表。
+3. 解析频道名、分类和播放 URL。
+4. 对同一 URL 去重，避免重复检测。
+5. 对所有唯一 URL 做真实媒体流检测；HLS 会继续检查子播放列表和媒体分片。
+6. 只保留检测可播放的 URL。
+7. 按 `config/rules.json` 和 `config/quality.json` 做家用分类、过滤和限量。
+8. 生成 `live-curated.txt` / `live.txt` / `live-verified.txt` / `ku9-live.txt` / `live.m3u`。
+9. 对最终发布列表再做一次全量 URL 复测，复测失败的线路从本次发布中删除。
+10. 更新 `stability-history.tsv`，让历史更稳定的线路在下一轮排序更靠前。
+11. 运行核心频道覆盖审计、防缩水发布守卫、发布体积审计。
+12. 自动提交新版直播源并检查 Raw / Pages / CDN 缓存状态。
+
+大体积诊断文件不会再进入 Git 历史，只作为 GitHub Actions artifact 保存 30 天：
+
+```text
+stream_check_results.csv
+live-all-playable.txt
+all-playable.m3u
+published_recheck_results.csv
+curated-source-map.csv
+```
+
+## 频道分类与质量规则
+
+电视主列表优先顺序：
 
 1. 央视频道
 2. 卫视频道
@@ -69,47 +75,33 @@ https://raw.githubusercontent.com/hujianj/tv-live-auto-check/main/live-curated.t
 10. 港澳台频道
 11. 海外华语频道
 
-`CCTV` 会按 `CCTV-1, CCTV-2, CCTV-3...` 排序。外语频道、纯英文频道、伪 CCTV、`Not24/7`、PlutoTV/RedBull 等非家用频道会被过滤；RTHK/TVB/TVBS/ViuTV 等明确港澳台品牌会保留在港澳台分类。
+`CCTV` 会按 `CCTV-1, CCTV-2, CCTV-3...` 排序。外语频道、纯英文频道、Not24/7、Geo-blocked、PlutoTV、RedBullTV、Discovery、NatGeo、CartoonNetwork 等不适合家用主列表的频道会被过滤。TVB / RTHK / TVBS / ViuTV / 凤凰等明确港澳台或华语频道会保留在靠后的分类中。
 
-分类顺序、分类关键词、港台/海外过滤词、异常频道名拦截词、卫视排序、核心频道覆盖清单集中维护在：
-
-```text
-config/rules.json
-```
-
-修改该文件后，单元测试会检查是否误写入 `????` 或乱码替换符，防止规则配置损坏后影响自动发布。
-
-源排序和 URL 偏好集中维护在：
+核心配置文件：
 
 ```text
-config/priority.json
+config/sources.json   # 上游源列表
+config/rules.json     # 分类、过滤、核心频道覆盖规则
+config/quality.json   # 家用质量过滤、每频道线路数、分类总量限制
+config/priority.json  # 源优先级、URL 偏好、稳定性评分
+config/guard.json     # 防缩水阈值、发布体积阈值、核心源守卫
 ```
 
-其中 `stability` 字段控制历史稳定性评分。历史文件 `stability-history.tsv` 使用紧凑 TSV 格式并限制最大条目数，避免为了稳定性评分再次制造大文件膨胀。
+## 当前最高优先级源
 
-发布防缩水阈值、核心源清单、分类最低数量集中维护在：
-
-```text
-config/guard.json
-```
-
-其中 `publish_size` 字段控制发布文件体积上限和禁止误提交的大型诊断文件清单。
-
-## 优先源
-
-当前最高优先级源：
+优先使用：
 
 ```text
 https://live.zbds.top/tv/iptv4.txt
 ```
 
-对应源码标识：
+对应源标识：
 
-```python
+```text
 zbds_iptv4_txt
 ```
 
-如果该源中某频道有可播放线路，会优先排在该频道前面；如果该源线路不可播放，则自动使用其他已检测可播放线路。
+如果这个源中某个频道有可播放线路，它会优先排在该频道前面；如果不可播放，程序会自动使用其他已经检测可播放的线路。
 
 ## 如何新增上游直播源
 
@@ -119,27 +111,49 @@ zbds_iptv4_txt
 config/sources.json
 ```
 
-按同样格式新增一个对象：
+新增一个对象：
 
 ```json
 {
   "name": "your_source_name",
   "url": "https://example.com/your_playlist.m3u",
-  "enabled": true
+  "enabled": true,
+  "note": "optional note"
 }
 ```
 
 规则：
 
-- `name` 建议只用英文、数字、下划线，后续报告和优先级规则都依赖这个稳定标识。
-- `url` 填写 TXT / M3U / M3U8 聚合源地址。
-- 临时不用的源不要删除，可把 `enabled` 改成 `false` 并写明 `note`。
-- 新增后可手动运行 GitHub Actions，或等待每天自动维护。
-- 如果想调整新源优先级，修改 `config/priority.json`，不要再改脚本里的排序逻辑。
-- 如果这个新源是家人常看频道的重要保障源，把它加入 `config/guard.json` 的 `core_sources`。
+- `name` 建议只用英文、数字、下划线，后续报告、优先级和守卫都依赖这个稳定标识。
+- `url` 可以是 TXT / M3U / M3U8 聚合源地址。
+- 暂时不用或长期失败的源建议保留但设为 `enabled: false`，并在 `note` 写明原因。
+- 如果新源很重要，把它加入 `config/guard.json` 的 `core_sources`。
+- 如果新源需要更高优先级，修改 `config/priority.json`，不要直接改脚本排序逻辑。
+
+## 本地验证命令
+
+```powershell
+Get-ChildItem scripts\*.py | ForEach-Object { python -m py_compile $_.FullName }
+python scripts\test_playlist_logic.py
+python scripts\validate_playlist.py live-curated.txt live.txt live-verified.txt ku9-live.txt live.m3u
+python scripts\audit_coverage.py
+python scripts\audit_publish_size.py
+```
+
+如果本地有最新的 `stream_check_results.csv`，可以重新整理当前检测结果：
+
+```powershell
+python scripts\curate_ku9.py
+python scripts\recheck_published.py
+python scripts\audit_coverage.py
+python scripts\validate_playlist.py live-curated.txt live.txt live-verified.txt ku9-live.txt live.m3u
+python scripts\guard_publish.py
+python scripts\audit_publish_size.py
+```
 
 ## CDN 说明
 
-电视长期订阅优先填写 jsDelivr `@main` 地址。优点是稳定、不容易出现电视端“获取数据为空”；缺点是维护完成后可能短时返回上一版。项目每次发布后会主动 purge jsDelivr，但第三方全球 CDN 的边缘节点刷新不能保证 100% 立刻生效。
-
-如需立即验证最新版，优先看 GitHub Raw 或 gh-proxy Raw；电视端长期使用仍建议 jsDelivr `@main`。
+- GitHub Pages / Raw / gh-proxy 更适合判断最新版。
+- jsDelivr 有时会滞后，项目会主动 purge，但第三方 CDN 边缘节点不保证立即刷新。
+- 如果电视端能打开 Pages，长期订阅优先用 Pages 地址。
+- 如果 Pages 不可用，再用 gh-proxy 备用。

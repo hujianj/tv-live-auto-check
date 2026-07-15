@@ -15,6 +15,7 @@ from pathlib import Path
 from validate_playlist import validate_file, validate_text
 from verify_sources import Candidate, CheckResult, check_candidate
 from stability import update_history
+from playlist_config import load_guard
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -30,7 +31,11 @@ FINAL_REPORT_FILE = "final-publish-report.md"
 CSV_FILE = "published_recheck_results.csv"
 SOURCE_MAP_FILE = "curated-source-map.csv"
 
-MAX_WORKERS = int(os.getenv("IPTV_PUBLISHED_RECHECK_WORKERS", os.getenv("IPTV_CHECK_WORKERS", "128")))
+MAX_WORKERS = int(os.getenv("IPTV_PUBLISHED_RECHECK_WORKERS", os.getenv("IPTV_CHECK_WORKERS", "64")))
+
+
+def max_failed_url_ratio() -> float:
+    return float(os.getenv("IPTV_PUBLISHED_RECHECK_MAX_FAILED_RATIO", str(load_guard().get("max_published_recheck_failed_url_ratio", 0.25))))
 
 
 @dataclass(frozen=True)
@@ -171,6 +176,11 @@ def write_final_report(groups: list[str], rows: list[Row], failed_urls: dict[str
     group_counts = Counter(row.group for row in rows)
     source_counts = Counter(source_for(row, source_map) for row in rows)
     group_source_counts = Counter((row.group, source_for(row, source_map)) for row in rows)
+    try:
+        summary = json.loads((ROOT / SUMMARY_FILE).read_text(encoding="utf-8"))
+    except Exception:
+        summary = {}
+    quality = summary.get("quality_limits_applied") or {}
     lines = [
         "# Final TV-facing playlist report",
         "",
@@ -184,6 +194,9 @@ def write_final_report(groups: list[str], rows: list[Row], failed_urls: dict[str
         f"Source map available: {bool(source_map)}",
         f"Stability tracked URLs after update: {stability_summary.get('tracked_urls_after')}",
         f"Stability OK/fail updates: {stability_summary.get('ok_updates')}/{stability_summary.get('fail_updates')}",
+        f"Strict quality filter dropped rows before recheck: {quality.get('strict_filter_dropped_rows', 0)}",
+        f"Channel limit trimmed rows before recheck: {quality.get('channel_limit_trimmed_rows', 0)}",
+        f"Group limit trimmed rows before recheck: {sum((quality.get('group_limit_trimmed_counts') or {}).values())}",
         "",
         "## Groups",
         "",
@@ -235,8 +248,32 @@ def main() -> int:
                 print(f"published_recheck {i}/{len(futs)} ok_urls={ok_count}", flush=True)
     failed_urls = {url: r.detail for url, r in results.items() if not r.ok}
     kept_rows = [row for row in rows if row.url not in failed_urls]
-    write_outputs(groups, kept_rows)
     elapsed = time.time() - start
+    failed_ratio = len(failed_urls) / max(1, len(by_url))
+    threshold = max_failed_url_ratio()
+    if failed_ratio > threshold:
+        write_report(rows, kept_rows, failed_urls, elapsed)
+        abort_lines = [
+            "# Final TV-facing playlist report",
+            "",
+            "ABORTED: final published-URL recheck failed too many URLs, so playlist files were not rewritten.",
+            "",
+            f"Rows before: {len(rows)}",
+            f"Candidate rows after failed URL removal: {len(kept_rows)}",
+            f"Failed unique URLs: {len(failed_urls)}",
+            f"Checked unique URLs: {len(by_url)}",
+            f"Failed URL ratio: {failed_ratio:.1%}",
+            f"Maximum allowed failed URL ratio: {threshold:.1%}",
+            f"Elapsed: {elapsed:.1f}s",
+        ]
+        (ROOT / FINAL_REPORT_FILE).write_text("\n".join(abort_lines) + "\n", encoding="utf-8", newline="\n")
+        print(
+            "Published recheck aborted: "
+            f"failed_url_ratio={failed_ratio:.1%} threshold={threshold:.1%}; "
+            "not rewriting playlist outputs"
+        )
+        return 1
+    write_outputs(groups, kept_rows)
     stability_summary = update_history(rows, failed_urls, source_map)
     update_summary(rows, kept_rows, len(by_url), failed_urls, elapsed, source_map, stability_summary)
     write_report(rows, kept_rows, failed_urls, elapsed)

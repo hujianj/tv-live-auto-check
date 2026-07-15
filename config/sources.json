@@ -158,5 +158,41 @@
     "url": "https://live.freetv.top/huyayqk.m3u",
     "enabled": false,
     "note": "近期 GitHub Actions 上持续 timeout，且属于轮播娱乐补充源，先禁用以减少波动和耗时。"
+  },
+  {
+    "name": "pizazz_ai_txt",
+    "url": "https://raw.githubusercontent.com/PizazzGY/TV/master/output/user_result.txt",
+    "enabled": false,
+    "note": "历史上游源，最近检测为 404；保留记录，避免重复排查。"
+  },
+  {
+    "name": "pizazz_ai_m3u",
+    "url": "https://raw.githubusercontent.com/PizazzGY/TV/master/output/user_result.m3u",
+    "enabled": false,
+    "note": "历史上游源，最近检测为 404；保留记录，避免重复排查。"
+  },
+  {
+    "name": "gitee_dsy",
+    "url": "https://gitee.com/xxy002/zhiboyuan/raw/master/dsy",
+    "enabled": false,
+    "note": "历史上游源，最近检测为 404 或不可稳定抓取；保留记录。"
+  },
+  {
+    "name": "jacktv_oversea",
+    "url": "https://php.946985.filegear-sg.me/jackTV.m3u",
+    "enabled": false,
+    "note": "海外源，最近检测为 403；不参与家用主列表自动检测。"
+  },
+  {
+    "name": "utako_jp",
+    "url": "https://web.utako.moe/jp.m3u",
+    "enabled": false,
+    "note": "日本源，最近检测 timeout；且不符合大陆家庭主列表优先目标。"
+  },
+  {
+    "name": "freetv_douyu",
+    "url": "https://live.freetv.top/douyuyqk.m3u",
+    "enabled": false,
+    "note": "斗鱼一起看，最近在 GitHub Actions 上 timeout；先停用减少耗时和波动。"
   }
 ]

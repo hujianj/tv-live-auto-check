@@ -42,6 +42,10 @@ def load_guard() -> dict:
     return load_json_config("guard.json")
 
 
+def load_quality() -> dict:
+    return load_json_config("quality.json")
+
+
 def get_group_order() -> list[str]:
     rules = load_rules()
     groups = rules.get("group_order") or DEFAULT_GROUP_ORDER
