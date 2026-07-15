@@ -51,6 +51,8 @@ jobs:
         run: python scripts/recheck_published.py
       - name: Audit core channel coverage
         run: python scripts/audit_coverage.py
+      - name: Audit final playlist quality
+        run: python scripts/audit_quality.py
       - name: Smoke test generated playlist
         run: |
           python scripts/validate_playlist.py live-curated.txt live.txt live-verified.txt ku9-live.txt live.m3u
@@ -75,6 +77,11 @@ jobs:
           coverage = summary.get("coverage") or {}
           assert not coverage.get("missing_cctv"), coverage
           assert not coverage.get("missing_satellite"), coverage
+          quality = summary.get("quality_audit") or {}
+          assert quality.get("status") == "ok", quality
+          assert not quality.get("strict_filter_residue"), quality
+          assert not quality.get("missing_cctv_quality"), quality
+          assert not quality.get("missing_satellite_quality"), quality
           stability = summary.get("stability") or {}
           assert stability.get("enabled") is True, stability
           assert stability.get("updated_urls") == summary["published_recheck"]["checked_unique_urls"], (stability, summary["published_recheck"])
@@ -110,17 +117,18 @@ jobs:
             final-publish-report.md
             stability-report.md
             coverage-report.md
+            quality-audit-report.md
             publish-guard-report.md
             publish-size-report.md
       - name: Commit verified playlist
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore: verify and publish playable IPTV playlist"
-          file_pattern: live.txt live-verified.txt live-curated.txt ku9-live.txt live.m3u source-report.md check-report.md curated-report.md published-recheck-report.md final-publish-report.md stability-report.md stability-history.tsv coverage-report.md publish-guard-report.md publish-size-report.md sources_status.csv full-check-summary.json
+          file_pattern: live.txt live-verified.txt live-curated.txt ku9-live.txt live.m3u source-report.md check-report.md curated-report.md published-recheck-report.md final-publish-report.md stability-report.md stability-history.tsv coverage-report.md quality-audit-report.md publish-guard-report.md publish-size-report.md sources_status.csv full-check-summary.json
       - name: Purge jsDelivr CDN
         run: |
           set -e
-          for file in live-curated.txt live.txt ku9-live.txt live-verified.txt live.m3u full-check-summary.json curated-report.md published-recheck-report.md final-publish-report.md stability-report.md stability-history.tsv coverage-report.md publish-guard-report.md publish-size-report.md source-report.md check-report.md; do
+          for file in live-curated.txt live.txt ku9-live.txt live-verified.txt live.m3u full-check-summary.json curated-report.md published-recheck-report.md final-publish-report.md stability-report.md stability-history.tsv coverage-report.md quality-audit-report.md publish-guard-report.md publish-size-report.md source-report.md check-report.md; do
             echo "Purging $file"
             curl -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}/$file" || true
             curl -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/$file" || true

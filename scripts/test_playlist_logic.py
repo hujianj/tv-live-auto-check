@@ -17,6 +17,8 @@ from playlist_config import get_group_order, load_guard, load_priority, load_qua
 from stability import stability_adjustment
 import stability as stability_module
 import curate_ku9 as curate_module
+import audit_quality as quality_module
+import local_network_check as local_check_module
 from audit_coverage import cctv_key as coverage_cctv_key, cctv_variant_base
 
 
@@ -109,6 +111,41 @@ def test_coverage_counts_exact_cctv_and_reports_variants() -> None:
     assert cctv_variant_base("CCTV-4K") == "CCTV-4"
     assert coverage_cctv_key("CCTV-5+") == "CCTV-5+"
     assert cctv_variant_base("CCTV-5+体育") == "CCTV-5+"
+
+
+def test_quality_audit_detects_core_and_strict_residue() -> None:
+    rows = [
+        ("央视频道", "CCTV-1", "http://a/cctv1.m3u8"),
+        ("央视频道", "CCTV-1", "http://b/cctv1.m3u8"),
+        ("央视频道", "CCTV-1", "http://c/cctv1.m3u8"),
+        ("卫视频道", "辽宁卫视", "http://a/ln.m3u8"),
+        ("卫视频道", "辽宁卫视", "http://b/ln.m3u8"),
+        ("卫视频道", "辽宁卫视", "http://c/ln.m3u8"),
+        ("综合娱乐", "纪录|Discovery", "http://a/discovery.m3u8"),
+    ]
+    result, failures, warnings = quality_module.build_audit(rows)
+    assert result["strict_filter_residue_count"] == 1
+    assert any("strict filtered" in x for x in failures)
+    assert result["missing_cctv_quality"]
+    assert warnings
+
+
+def test_local_network_parser_and_core_filter() -> None:
+    text = """央视频道,#genre#
+CCTV-1,http://a/cctv1.m3u8
+CCTV-4K,http://a/cctv4k.m3u8
+卫视频道,#genre#
+辽宁卫视,http://a/ln.m3u8
+综合娱乐,#genre#
+综合频道,http://a/ent.m3u8
+"""
+    rows = local_check_module.parse_tv_txt(text)
+    args = SimpleNamespace(core_only=True, limit=0)
+    filtered = local_check_module.filter_rows(rows, args)
+    assert ("央视频道", "CCTV-1", "http://a/cctv1.m3u8") in filtered
+    assert ("卫视频道", "辽宁卫视", "http://a/ln.m3u8") in filtered
+    assert not any(name == "CCTV-4K" for _group, name, _url in filtered)
+    assert not any(name == "综合频道" for _group, name, _url in filtered)
 
 
 def test_stability_adjustment_prefers_proven_urls() -> None:
@@ -293,6 +330,8 @@ def main() -> int:
         test_priority_and_guard_config_are_externalized,
         test_quality_filters_and_limits_are_enforced,
         test_coverage_counts_exact_cctv_and_reports_variants,
+        test_quality_audit_detects_core_and_strict_residue,
+        test_local_network_parser_and_core_filter,
         test_stability_adjustment_prefers_proven_urls,
         test_stability_update_counts_unique_urls,
         test_split_unquoted_last_comma,
