@@ -47,7 +47,7 @@ https://raw.githubusercontent.com/hujianj/tv-live-auto-check/main/live-curated.t
 - 全量明细 `stream_check_results.csv`、`live-all-playable.txt`、`all-playable.m3u` 不再提交到 Git 仓库，只作为 GitHub Actions artifact 保存 30 天。
 - 发布前会先运行 `scripts/test_playlist_logic.py` 单元测试，再运行统一校验 `scripts/validate_playlist.py`，同时检查 TXT 和 M3U，防止异常频道名、异常 URL、错误分类或不可解析行进入正式列表。
 - 正式提交前会运行 `scripts/recheck_published.py`，对最终发布列表里的每个唯一 URL 再做一次全量复测；复测失败的 URL 会从本次发布中剔除。
-- 每次最终复测后会更新 `stability-history.json`，记录最终候选 URL 的成功/失败次数和连续成功/失败状态；下一轮整理时会优先排列历史更稳定的线路，降低反复波动源排在前面的概率。
+- 每次最终复测后会更新 `stability-history.tsv`，记录最终候选 URL 的成功/失败次数和连续成功/失败状态；下一轮整理时会优先排列历史更稳定的线路，降低反复波动源排在前面的概率。
 - 发布前会运行 `scripts/audit_coverage.py`，生成核心央视和重点卫视频道覆盖报告；如果核心 CCTV 或重点卫视缺失，会拒绝发布，避免只看总行数而漏掉家人常看的频道。
 - 发布前会运行 `scripts/guard_publish.py`，如果本次结果比上一版明显缩水，或核心分类数量低于阈值，会拒绝发布，保留上一版可用列表。
 - 发布后自动 purge jsDelivr，并检查 Raw / Pages / jsDelivr 缓存状态。jsDelivr 偶发短时滞后只记录告警，不代表仓库文件错误。
@@ -84,7 +84,7 @@ config/rules.json
 config/priority.json
 ```
 
-其中 `stability` 字段控制历史稳定性评分。历史文件 `stability-history.json` 会被限制最大条目数，避免为了稳定性评分再次制造大文件膨胀。
+其中 `stability` 字段控制历史稳定性评分。历史文件 `stability-history.tsv` 使用紧凑 TSV 格式并限制最大条目数，避免为了稳定性评分再次制造大文件膨胀。
 
 发布防缩水阈值、核心源清单、分类最低数量集中维护在：
 

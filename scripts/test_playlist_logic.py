@@ -84,7 +84,7 @@ def test_stability_update_counts_unique_urls() -> None:
     old_report_path = stability_module.report_path
     with tempfile.TemporaryDirectory() as tmp:
         tmp_path = Path(tmp)
-        stability_module.history_path = lambda: tmp_path / "history.json"  # type: ignore[assignment]
+        stability_module.history_path = lambda: tmp_path / "history.tsv"  # type: ignore[assignment]
         stability_module.report_path = lambda: tmp_path / "report.md"  # type: ignore[assignment]
         try:
             rows = [
@@ -96,7 +96,7 @@ def test_stability_update_counts_unique_urls() -> None:
             assert summary["updated_urls"] == 2
             assert summary["ok_updates"] == 1
             assert summary["fail_updates"] == 1
-            history = json.loads((tmp_path / "history.json").read_text(encoding="utf-8"))
+            history = stability_module.load_history()
             assert history["urls"]["http://a/live.m3u8"]["ok"] == 1
             assert history["urls"]["http://b/live.m3u8"]["fail"] == 1
         finally:

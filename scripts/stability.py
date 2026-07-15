@@ -3,12 +3,27 @@
 from __future__ import annotations
 
 import json
+import csv
 from collections import Counter
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Iterable
 
 from playlist_config import ROOT, load_priority
+
+HISTORY_FIELDS = [
+    "url",
+    "ok",
+    "fail",
+    "streak_ok",
+    "streak_fail",
+    "last_status",
+    "adjustment",
+    "last_seen",
+    "last_name",
+    "last_source",
+    "last_error",
+]
 
 
 def stability_config() -> dict:
@@ -20,7 +35,7 @@ def stability_enabled() -> bool:
 
 
 def history_path() -> Path:
-    return ROOT / str(stability_config().get("history_file", "stability-history.json"))
+    return ROOT / str(stability_config().get("history_file", "stability-history.tsv"))
 
 
 def report_path() -> Path:
@@ -33,8 +48,19 @@ def now_beijing() -> str:
 
 def load_history() -> dict:
     path = history_path()
-    if not stability_enabled() or not path.exists():
+    if not stability_enabled():
         return {"version": 1, "urls": {}}
+    if not path.exists():
+        legacy = ROOT / "stability-history.json"
+        if legacy.exists():
+            return load_json_history(legacy)
+        return {"version": 1, "urls": {}}
+    if path.suffix.lower() == ".json":
+        return load_json_history(path)
+    return load_tsv_history(path)
+
+
+def load_json_history(path: Path) -> dict:
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except Exception:
@@ -44,6 +70,34 @@ def load_history() -> dict:
         data["urls"] = {}
     data.setdefault("version", 1)
     return data
+
+
+def load_tsv_history(path: Path) -> dict:
+    urls: dict[str, dict] = {}
+    try:
+        with path.open(encoding="utf-8", newline="") as f:
+            for row in csv.DictReader(f, delimiter="\t"):
+                url = (row.get("url") or "").strip()
+                if not url:
+                    continue
+                entry = {
+                    "ok": int(row.get("ok") or 0),
+                    "fail": int(row.get("fail") or 0),
+                    "streak_ok": int(row.get("streak_ok") or 0),
+                    "streak_fail": int(row.get("streak_fail") or 0),
+                    "last_status": row.get("last_status") or "",
+                    "adjustment": int(row.get("adjustment") or 0),
+                    "last_seen": row.get("last_seen") or "",
+                    "last_name": row.get("last_name") or "",
+                    "last_source": row.get("last_source") or "",
+                }
+                last_error = row.get("last_error") or ""
+                if last_error:
+                    entry["last_error"] = last_error
+                urls[url] = entry
+    except Exception:
+        return {"version": 1, "urls": {}}
+    return {"version": 1, "urls": urls}
 
 
 def _clamp(value: int, lo: int, hi: int) -> int:
@@ -78,6 +132,36 @@ def stability_adjustment(url: str, history: dict | None = None) -> int:
 
 def source_for(row, source_map: dict[tuple[str, str], str]) -> str:
     return source_map.get((row.name, row.url), "unknown")
+
+
+def _text(value: object, limit: int = 0) -> str:
+    text = str(value or "").replace("\r", " ").replace("\n", " ").replace("\t", " ").strip()
+    return text[:limit] if limit > 0 else text
+
+
+def write_history(history: dict) -> None:
+    path = history_path()
+    urls = history.get("urls") or {}
+    if path.suffix.lower() == ".json":
+        path.write_text(json.dumps(history, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8", newline="\n")
+        return
+    with path.open("w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=HISTORY_FIELDS, delimiter="\t", lineterminator="\n", extrasaction="ignore")
+        writer.writeheader()
+        for url, entry in sorted(urls.items(), key=lambda item: item[0]):
+            writer.writerow({
+                "url": _text(url),
+                "ok": int(entry.get("ok") or 0),
+                "fail": int(entry.get("fail") or 0),
+                "streak_ok": int(entry.get("streak_ok") or 0),
+                "streak_fail": int(entry.get("streak_fail") or 0),
+                "last_status": _text(entry.get("last_status")),
+                "adjustment": int(entry.get("adjustment") or 0),
+                "last_seen": _text(entry.get("last_seen")),
+                "last_name": _text(entry.get("last_name"), 80),
+                "last_source": _text(entry.get("last_source"), 80),
+                "last_error": _text(entry.get("last_error"), 160),
+            })
 
 
 def update_history(rows: Iterable, failed_urls: dict[str, str], source_map: dict[tuple[str, str], str]) -> dict:
@@ -166,8 +250,8 @@ def update_history(rows: Iterable, failed_urls: dict[str, str], source_map: dict
         "summary": summary,
     })
     # Keep this committed history compact. The human-readable details are in
-    # stability-report.md; the JSON is for scoring and should not bloat Git.
-    history_path().write_text(json.dumps(history, ensure_ascii=False, sort_keys=True, separators=(",", ":")) + "\n", encoding="utf-8", newline="\n")
+    # stability-report.md; the TSV is for scoring and should not bloat Git.
+    write_history(history)
     write_report(history, summary)
     return summary
 
