@@ -22,6 +22,7 @@ from urllib.parse import urljoin, urlparse
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 
+from channel_utils import format_extinf
 from playlist_config import score_adjustments, source_priority as configured_source_priority
 
 try:
@@ -39,6 +40,13 @@ HLS_SEGMENT_CHECKS = int(os.getenv("IPTV_HLS_SEGMENT_CHECKS", "2"))
 HLS_VARIANT_CHECKS = int(os.getenv("IPTV_HLS_VARIANT_CHECKS", "2"))
 UA = "Player"
 SOURCE_CONFIG = ROOT / "config" / "sources.json"
+TRANSIENT_OUTPUTS = [
+    "stream_check_results.csv",
+    "live-all-playable.txt",
+    "all-playable.m3u",
+    "curated-source-map.csv",
+    "published_recheck_results.csv",
+]
 
 
 def load_sources(path: Path = SOURCE_CONFIG) -> list[tuple[str, str]]:
@@ -67,6 +75,17 @@ SOURCES = load_sources()
 BAD_MARKERS = ("nosignal", "no-signal", "no_signal", "notfound", "404", "offline")
 BAD_HTML = (b"<html", b"<!doctype html", b"<head", b"<body")
 MEDIA_EXTS = (".ts", ".m4s", ".mp4", ".aac", ".mp3", ".flv")
+
+
+def cleanup_transient_outputs() -> None:
+    """Remove ignored diagnostic files so a failed partial run cannot mislead debugging."""
+    for filename in TRANSIENT_OUTPUTS:
+        path = ROOT / filename
+        try:
+            if path.exists():
+                path.unlink()
+        except OSError:
+            pass
 
 @dataclass(frozen=True)
 class Candidate:
@@ -225,7 +244,7 @@ def parse_m3u(text: str, source: str) -> list[Candidate]:
             # Prefer explicit tvg-name/title only when present. Otherwise use
             # the final unquoted comma tail, which is the M3U display name.
             last_name = normalize_name(attrs.get("tvg-name") or attrs.get("title") or tail or "")
-            last_group = attrs.get("group-title") or ""
+            last_group = html.unescape(attrs.get("group-title") or "")
         elif line.startswith("#"):
             continue
         elif re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", line):
@@ -443,6 +462,7 @@ def prefer_score(c: Candidate) -> tuple[int, int, int, str]:
 
 
 def main() -> None:
+    cleanup_transient_outputs()
     start = time.time()
     print(f"Fetching {len(SOURCES)} sources...", flush=True)
     statuses: list[SourceStatus] = []
@@ -542,13 +562,13 @@ def main() -> None:
 
     m3u = ["#EXTM3U"]
     for c in valid:
-        m3u.append(f'#EXTINF:-1 tvg-name="{c.name}" group-title="{c.group}",{c.name}')
+        m3u.append(format_extinf(c.name, c.group))
         m3u.append(c.url)
     (ROOT / "live.m3u").write_text("\n".join(m3u) + "\n", encoding="utf-8", newline="\n")
 
     all_m3u = ["#EXTM3U"]
     for c in all_valid:
-        all_m3u.append(f'#EXTINF:-1 tvg-name="{c.name}" group-title="{c.group}",{c.name}')
+        all_m3u.append(format_extinf(c.name, c.group))
         all_m3u.append(c.url)
     (ROOT / "all-playable.m3u").write_text("\n".join(all_m3u) + "\n", encoding="utf-8", newline="\n")
 

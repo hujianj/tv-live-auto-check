@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import json
+import html
 import re
 import sys
 from collections import Counter
 from pathlib import Path
 
 from playlist_config import get_group_order, load_quality, load_rules
+from channel_utils import cctv_number, chinese_count as shared_chinese_count
 
 RULES = load_rules()
 QUALITY = load_quality()
@@ -38,14 +40,11 @@ STRICT_DROP_REGEX = [re.compile(str(x), re.I) for x in QUALITY.get("strict_drop_
 
 
 def chinese_count(s: str) -> int:
-    return sum(1 for ch in s if "\u4e00" <= ch <= "\u9fff")
+    return shared_chinese_count(s)
 
 
 def cctv_num(name: str):
-    m = re.match(r"^CCTV[-_ ]?(\d+)(\+?)", name, re.I)
-    if not m:
-        return None
-    return int(m.group(1)), 1 if m.group(2) else 0
+    return cctv_number(name)
 
 
 def is_hk_mo_tw_channel(name: str, group: str = "") -> bool:
@@ -206,8 +205,8 @@ def validate_m3u_text(text: str, require_categories: bool = True) -> dict:
         if line.startswith("#EXTINF"):
             head, display_name = split_unquoted_last_comma(line)
             attrs = dict(re.findall(r'([\w-]+)="([^"]*)"', head))
-            group = (attrs.get("group-title") or "").strip()
-            tvg_name = (attrs.get("tvg-name") or "").strip()
+            group = html.unescape((attrs.get("group-title") or "").strip())
+            tvg_name = html.unescape((attrs.get("tvg-name") or "").strip())
             name = display_name or tvg_name
             if group:
                 groups.append(group)
