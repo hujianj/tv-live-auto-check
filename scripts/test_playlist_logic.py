@@ -19,7 +19,7 @@ import stability as stability_module
 import curate_ku9 as curate_module
 import audit_quality as quality_module
 import local_network_check as local_check_module
-from channel_utils import cctv_key as coverage_cctv_key, cctv_variant_base, is_latin_noise_name
+from channel_utils import cctv_key as coverage_cctv_key, cctv_number, cctv_sort_key, cctv_variant_base, format_extinf, is_latin_noise_name
 
 
 def test_source_config_omits_disabled_unstable_sources() -> None:
@@ -108,12 +108,25 @@ def test_coverage_counts_exact_cctv_and_reports_variants() -> None:
     assert coverage_cctv_key("CCTV-4(1080p)") == "CCTV-4"
     assert coverage_cctv_key("CCTV-4K") is None
     assert coverage_cctv_key("CCTV-4FHD") is None
+    assert cctv_number("CCTV-4K") == (4, 0)
+    assert cctv_sort_key("CCTV-4") < cctv_sort_key("CCTV-4K")
     assert cctv_variant_base("CCTV-4K") == "CCTV-4"
     assert coverage_cctv_key("CCTV-5+") == "CCTV-5+"
     assert cctv_variant_base("CCTV-5+体育") == "CCTV-5+"
     assert is_latin_noise_name("DiscoveryAsia") is True
     assert is_latin_noise_name("BRTV北京卫视") is False
     assert is_latin_noise_name("TVB翡翠台") is False
+
+
+def test_format_extinf_escapes_quoted_attributes() -> None:
+    line = format_extinf('示例"频道', "综合娱乐")
+    assert 'tvg-name="示例&quot;频道"' in line
+    m3u = f"""#EXTM3U
+{line}
+http://a/live.m3u8
+"""
+    result = validate_m3u_text(m3u, require_categories=False)
+    assert result["rows"] == 1
 
 
 def test_quality_audit_detects_core_and_strict_residue() -> None:
@@ -342,6 +355,7 @@ def main() -> int:
         test_priority_and_guard_config_are_externalized,
         test_quality_filters_and_limits_are_enforced,
         test_coverage_counts_exact_cctv_and_reports_variants,
+        test_format_extinf_escapes_quoted_attributes,
         test_quality_audit_detects_core_and_strict_residue,
         test_local_network_parser_and_core_filter,
         test_stability_adjustment_prefers_proven_urls,

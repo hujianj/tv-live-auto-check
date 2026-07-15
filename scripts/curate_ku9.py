@@ -7,6 +7,7 @@ from collections import defaultdict, Counter
 from validate_playlist import validate_text
 from playlist_config import get_group_order, load_quality, load_rules, score_adjustments, source_priority as configured_source_priority
 from stability import load_history, stability_adjustment, stability_enabled
+from channel_utils import cctv_number, cctv_sort_key, chinese_count as shared_chinese_count, format_extinf
 
 ROOT = Path(__file__).resolve().parents[1]
 IN = ROOT / "stream_check_results.csv"
@@ -57,7 +58,7 @@ CORE_CHANNEL_PATTERNS = [re.compile(str(x), re.I) for x in QUALITY.get('core_cha
 QUALITY_SOURCE_BONUS = QUALITY.get('quality_source_bonus', {})
 
 def chinese_count(s: str) -> int:
-    return sum(1 for ch in s if '\u4e00' <= ch <= '\u9fff')
+    return shared_chinese_count(s)
 
 
 def clean_name(name: str) -> str:
@@ -90,10 +91,7 @@ def has_invalid_channel_name(name: str) -> bool:
 
 
 def cctv_num(name: str):
-    m = re.match(r'^CCTV[-_ ]?(\d+)(\+?)', name, re.I)
-    if not m:
-        return None
-    return (int(m.group(1)), 1 if m.group(2) else 0)
+    return cctv_number(name)
 
 
 def is_core_channel_name(name: str) -> bool:
@@ -330,8 +328,7 @@ def sort_key(item):
     group, name, url, source = item
     gi = GROUP_ORDER.index(group) if group in GROUP_ORDER else 99
     if group == G_CCTV:
-        cn = cctv_num(name)
-        return (gi, cn[0] if cn else 999, cn[1] if cn else 9, name, url_score(url, source))
+        return (gi, cctv_sort_key(name), url_score(url, source))
     if group == G_SAT:
         pi = SATELLITE_PRIORITY.index(name) if name in SATELLITE_PRIORITY else 99
         return (gi, pi, name, url_score(url, source))
@@ -424,7 +421,7 @@ def main():
 
     m = ['#EXTM3U']
     for g, n, u, s in pub:
-        m.append(f'#EXTINF:-1 tvg-name="{n}" group-title="{g}",{n}')
+        m.append(format_extinf(n, g))
         m.append(u)
     (ROOT / 'live.m3u').write_text('\n'.join(m) + '\n', encoding='utf-8', newline='\n')
 

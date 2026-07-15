@@ -16,6 +16,7 @@ from validate_playlist import validate_file, validate_text
 from verify_sources import Candidate, CheckResult, check_candidate
 from stability import update_history
 from playlist_config import load_guard
+from channel_utils import format_extinf
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -82,9 +83,18 @@ def render_txt(groups: list[str], rows: list[Row]) -> str:
 def render_m3u(rows: list[Row]) -> str:
     lines = ["#EXTM3U"]
     for row in rows:
-        lines.append(f'#EXTINF:-1 tvg-name="{row.name}" group-title="{row.group}",{row.name}')
+        lines.append(format_extinf(row.name, row.group))
         lines.append(row.url)
     return "\n".join(lines) + "\n"
+
+
+def cleanup_stale_diagnostics() -> None:
+    path = ROOT / CSV_FILE
+    try:
+        if path.exists():
+            path.unlink()
+    except OSError:
+        pass
 
 
 def write_outputs(groups: list[str], rows: list[Row]) -> None:
@@ -225,6 +235,7 @@ def write_final_report(groups: list[str], rows: list[Row], failed_urls: dict[str
 
 
 def main() -> int:
+    cleanup_stale_diagnostics()
     start = time.time()
     for filename in TXT_FILES:
         validate_file(ROOT / filename)
