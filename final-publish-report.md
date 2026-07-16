@@ -2,240 +2,259 @@
 
 This report describes the final playlist after curation and after the second full published-URL recheck.
 
-Rows: 2373
-Unique channel names: 1716
-Unique URLs: 2271
-Failed unique URLs removed during final recheck: 156
-Final recheck elapsed: 123.2s
+Rows: 2123
+Unique channel names: 1637
+Unique URLs: 2028
+Failed unique URLs removed during final recheck: 287
+Final recheck elapsed: 103.4s
 Source map available: True
-Stability tracked URLs after update: 3884
-Stability OK/fail updates: 2271/156
-Strict quality filter dropped rows before recheck: 343
-Channel limit trimmed rows before recheck: 806
-Group limit trimmed rows before recheck: 178
+Stability tracked URLs after update: 3986
+Stability OK/fail updates: 2028/287
+Strict quality filter dropped rows before recheck: 342
+Channel limit trimmed rows before recheck: 571
+Group limit trimmed rows before recheck: 92
+Family compact playlist: 1265 rows / 1048 names / 1225 URLs
 
 ## Groups
 
 | Group | Rows |
 |---|---:|
-| 央视频道 | 140 |
-| 卫视频道 | 177 |
-| 地方频道 | 489 |
-| 影视剧场 | 142 |
-| 少儿动漫 | 15 |
-| 体育纪实 | 63 |
-| 音乐综艺 | 48 |
-| 生活休闲 | 175 |
-| 综合娱乐 | 870 |
-| 港澳台频道 | 61 |
-| 海外华语频道 | 193 |
+| 央视频道 | 124 |
+| 卫视频道 | 190 |
+| 地方频道 | 412 |
+| 影视剧场 | 151 |
+| 少儿动漫 | 14 |
+| 体育纪实 | 66 |
+| 音乐综艺 | 51 |
+| 生活休闲 | 151 |
+| 综合娱乐 | 740 |
+| 港澳台频道 | 52 |
+| 海外华语频道 | 172 |
+
+## Family compact playlist
+
+- TXT files: ku9-family.txt, live-family.txt
+- M3U file: family.m3u
+- Rows: 1265
+- Unique names: 1048
+- Unique URLs: 1225
+
+| Group | Rows |
+|---|---:|
+| 央视频道 | 96 |
+| 卫视频道 | 157 |
+| 地方频道 | 320 |
+| 影视剧场 | 90 |
+| 少儿动漫 | 12 |
+| 体育纪实 | 51 |
+| 音乐综艺 | 45 |
+| 生活休闲 | 110 |
+| 综合娱乐 | 260 |
+| 港澳台频道 | 44 |
+| 海外华语频道 | 80 |
 
 ## Final published lines by source
 
 | Source | Rows |
 |---|---:|
 | bigbiggrandg_gather | 548 |
-| zbds_iptv4_txt | 342 |
-| epg_cn | 289 |
-| iyouhun_zb | 273 |
-| mursor_yy | 268 |
-| guovin_ipv4 | 200 |
-| suxuang_ipv4 | 164 |
-| guovin_all | 106 |
-| migu_interface | 64 |
-| epg_tw | 34 |
-| vamoschuck_m3u | 29 |
-| iptv_org_all | 26 |
-| epg_hk | 10 |
-| epg_mo | 4 |
-| fanmingming_ipv6_raw | 3 |
-| kimentanm_aptv | 3 |
-| suxuang_ipv6 | 3 |
-| mursor_bililive | 2 |
+| zbds_iptv4_txt | 333 |
+| mursor_yy | 259 |
+| iyouhun_zb | 250 |
+| guovin_ipv4 | 235 |
+| suxuang_ipv4 | 142 |
+| epg_cn | 114 |
+| guovin_ipv6 | 105 |
+| migu_interface | 50 |
+| iptv_org_all | 25 |
+| suxuang_ipv6 | 17 |
+| vamoschuck_m3u | 17 |
+| epg_tw | 16 |
+| kimentanm_aptv | 4 |
+| fanmingming_ipv6_raw | 4 |
 | yang_gather | 2 |
 | iptv_org_tw | 2 |
-| guovin_ipv6 | 1 |
 
 ## Top sources per group
 
 ### 央视频道
-- zbds_iptv4_txt: 63
-- guovin_ipv4: 37
-- epg_cn: 20
-- iptv_org_all: 13
-- migu_interface: 3
-- iyouhun_zb: 2
-- suxuang_ipv4: 2
+- guovin_ipv4: 51
+- zbds_iptv4_txt: 41
+- iptv_org_all: 14
+- epg_cn: 6
+- migu_interface: 5
+- iyouhun_zb: 4
+- suxuang_ipv4: 3
 
 ### 卫视频道
-- zbds_iptv4_txt: 96
-- guovin_ipv4: 53
+- zbds_iptv4_txt: 87
+- guovin_ipv4: 73
 - iyouhun_zb: 9
 - migu_interface: 7
 - suxuang_ipv4: 7
-- guovin_all: 3
-- guovin_ipv6: 1
+- guovin_ipv6: 4
+- bigbiggrandg_gather: 1
 - iptv_org_all: 1
 
 ### 地方频道
-- epg_cn: 121
 - zbds_iptv4_txt: 113
-- bigbiggrandg_gather: 96
-- iyouhun_zb: 56
-- guovin_ipv4: 41
-- suxuang_ipv4: 27
-- guovin_all: 14
-- migu_interface: 14
+- bigbiggrandg_gather: 93
+- iyouhun_zb: 57
+- epg_cn: 47
+- guovin_ipv4: 39
+- suxuang_ipv4: 21
+- guovin_ipv6: 16
+- suxuang_ipv6: 10
 
 ### 影视剧场
 - mursor_yy: 52
 - suxuang_ipv4: 31
-- iyouhun_zb: 17
+- guovin_ipv6: 17
+- iyouhun_zb: 16
+- zbds_iptv4_txt: 16
 - guovin_ipv4: 14
-- guovin_all: 13
-- zbds_iptv4_txt: 8
-- migu_interface: 4
-- vamoschuck_m3u: 2
+- migu_interface: 3
+- bigbiggrandg_gather: 1
 
 ### 少儿动漫
-- epg_cn: 6
-- mursor_yy: 3
-- guovin_all: 2
+- mursor_yy: 6
+- guovin_ipv6: 2
 - iyouhun_zb: 2
-- epg_tw: 1
+- zbds_iptv4_txt: 2
+- epg_cn: 1
 - iptv_org_all: 1
 
 ### 体育纪实
-- zbds_iptv4_txt: 26
-- iyouhun_zb: 24
-- guovin_ipv4: 9
-- mursor_yy: 3
-- guovin_all: 1
+- iyouhun_zb: 25
+- zbds_iptv4_txt: 25
+- guovin_ipv4: 10
+- mursor_yy: 4
+- epg_cn: 2
 
 ### 音乐综艺
 - suxuang_ipv4: 18
-- mursor_yy: 10
-- bigbiggrandg_gather: 9
+- mursor_yy: 12
+- bigbiggrandg_gather: 10
 - guovin_ipv4: 4
 - kimentanm_aptv: 3
 - iyouhun_zb: 2
-- guovin_all: 1
+- guovin_ipv6: 1
 - zbds_iptv4_txt: 1
 
 ### 生活休闲
-- iyouhun_zb: 60
-- guovin_all: 32
-- guovin_ipv4: 17
-- vamoschuck_m3u: 15
+- guovin_ipv6: 39
+- iyouhun_zb: 38
+- guovin_ipv4: 18
 - bigbiggrandg_gather: 13
-- suxuang_ipv4: 11
-- migu_interface: 10
-- epg_cn: 8
+- vamoschuck_m3u: 12
+- mursor_yy: 8
+- suxuang_ipv4: 8
+- migu_interface: 7
 
 ### 综合娱乐
-- bigbiggrandg_gather: 414
-- epg_cn: 134
-- iyouhun_zb: 84
-- suxuang_ipv4: 62
-- guovin_all: 40
-- zbds_iptv4_txt: 34
-- epg_tw: 26
-- migu_interface: 26
+- bigbiggrandg_gather: 413
+- iyouhun_zb: 80
+- epg_cn: 56
+- suxuang_ipv4: 51
+- zbds_iptv4_txt: 47
+- guovin_ipv6: 26
+- guovin_ipv4: 23
+- migu_interface: 19
 
 ### 港澳台频道
+- bigbiggrandg_gather: 17
 - iyouhun_zb: 17
-- bigbiggrandg_gather: 15
-- epg_tw: 7
-- epg_hk: 6
-- suxuang_ipv4: 6
+- suxuang_ipv6: 5
+- epg_tw: 3
 - guovin_ipv4: 3
-- suxuang_ipv6: 3
+- suxuang_ipv4: 3
 - mursor_yy: 2
+- iptv_org_tw: 1
 
 ### 海外华语频道
-- mursor_yy: 189
-- iptv_org_all: 3
+- mursor_yy: 169
+- iptv_org_all: 2
 - iptv_org_tw: 1
 
 ## First 80 final published rows
 
 - 央视频道 / CCTV-1 / zbds_iptv4_txt / http://61.136.172.236:9901/tsfile/live/0001_1.m3u8
-- 央视频道 / CCTV-1 / zbds_iptv4_txt / http://183.223.157.33:9901/tsfile/live/0001_1.m3u8?key=txiptv&playlive=1&authid=0
-- 央视频道 / CCTV-1 / zbds_iptv4_txt / http://59.39.89.130:60901/tsfile/live/0001_1.m3u8?key=txiptv&playlive=1&authid=0
-- 央视频道 / CCTV-1 / zbds_iptv4_txt / http://123.130.84.106:8154/tsfile/live/0001_1.m3u8
+- 央视频道 / CCTV-1 / zbds_iptv4_txt / http://112.46.85.60:8009/hls/501/index.m3u8
 - 央视频道 / CCTV-1 / guovin_ipv4 / http://198.204.228.26/live/cctv1hd.m3u8
 - 央视频道 / CCTV-1 / guovin_ipv4 / http://63.141.230.178:82/gslb/zbdq5.m3u8?id=cctv1hd
+- 央视频道 / CCTV-1 / guovin_ipv4 / http://198.204.240.250:82/live/cctv1.m3u8
+- 央视频道 / CCTV-1(1080p) / iptv_org_all / http://69.30.245.50/live/cctv1.m3u8
 - 央视频道 / CCTV-1综合 / migu_interface / http://play.kankanlive.com/live/1698234869325962.m3u8
 - 央视频道 / CCTV-2 / zbds_iptv4_txt / http://61.136.172.236:9901/tsfile/live/0002_1.m3u8
-- 央视频道 / CCTV-2 / zbds_iptv4_txt / http://61.136.172.236:9901/tsfile/live/0002_1.m3u8?key=txiptv&playlive=1&authid=0
 - 央视频道 / CCTV-2 / zbds_iptv4_txt / http://218.13.170.98:9901/tsfile/live/0002_1.m3u8
-- 央视频道 / CCTV-2 / zbds_iptv4_txt / http://123.130.84.106:8154/tsfile/live/0002_1.m3u8?key=txiptv&playlive=1&authid=0
-- 央视频道 / CCTV-2 / zbds_iptv4_txt / http://123.130.84.106:8154/tsfile/live/0002_1.m3u8
+- 央视频道 / CCTV-2 / zbds_iptv4_txt / http://112.46.85.60:8009/hls/502/index.m3u8
 - 央视频道 / CCTV-2 / guovin_ipv4 / http://69.30.245.50/live/cctv2.m3u8
+- 央视频道 / CCTV-2 / guovin_ipv4 / http://198.204.228.26/live/cctv2hd.m3u8
+- 央视频道 / CCTV-2 / guovin_ipv4 / http://63.141.230.178:82/gslb/zbdq5.m3u8?id=cctv2hd
 - 央视频道 / CCTV-2(720p) / iptv_org_all / http://74.91.26.218:82/live/cctv2hd.m3u8
-- 央视频道 / CCTV-3 / zbds_iptv4_txt / http://61.136.172.236:9901/tsfile/live/0003_1.m3u8
-- 央视频道 / CCTV-3 / zbds_iptv4_txt / http://112.46.85.60:8009/hls/3/index.m3u8
-- 央视频道 / CCTV-3 / zbds_iptv4_txt / http://123.130.84.106:8154/tsfile/live/0003_1.m3u8
-- 央视频道 / CCTV-3 / zbds_iptv4_txt / http://183.223.157.33:9901/tsfile/live/0003_1.m3u8?key=txiptv&playlive=1&authid=0
+- 央视频道 / CCTV-3 / zbds_iptv4_txt / http://182.150.23.74:808/hls/3/index.m3u8
+- 央视频道 / CCTV-3 / zbds_iptv4_txt / http://gmxw.7766.org:808/hls/91/index.m3u8
 - 央视频道 / CCTV-3 / guovin_ipv4 / http://198.204.228.26/live/cctv3hd.m3u8
 - 央视频道 / CCTV-3 / guovin_ipv4 / http://74.91.26.218:82/live/cctv3hd.m3u8
+- 央视频道 / CCTV-3 / guovin_ipv4 / http://63.141.230.178:82/gslb/zbdq5.m3u8?id=cctv3hd
+- 央视频道 / CCTV-3 / suxuang_ipv4 / http://112.27.235.94:8000/hls/3/index.m3u8
 - 央视频道 / CCTV-3(720p) / iptv_org_all / http://74.91.26.218:82/live/cctv3hd.m3u8
-- 央视频道 / CCTV-4 / zbds_iptv4_txt / http://183.223.157.33:9901/tsfile/live/0004_1.m3u8?key=txiptv&playlive=1&authid=0
-- 央视频道 / CCTV-4 / zbds_iptv4_txt / http://123.130.84.106:8154/tsfile/live/0004_1.m3u8
+- 央视频道 / CCTV-4 / zbds_iptv4_txt / http://112.46.85.60:8009/hls/4/index.m3u8
+- 央视频道 / CCTV-4 / zbds_iptv4_txt / http://183.11.239.36:808/hls/22/index.m3u8
+- 央视频道 / CCTV-4 / zbds_iptv4_txt / http://183.11.239.36:808/hls/67/index.m3u8
 - 央视频道 / CCTV-4 / guovin_ipv4 / http://107.150.60.122/live/cctv4hd.m3u8
 - 央视频道 / CCTV-4 / guovin_ipv4 / http://74.91.26.218:82/live/cctv4hd.m3u8
 - 央视频道 / CCTV-4 / guovin_ipv4 / http://63.141.230.178:82/gslb/zbdq5.m3u8?id=cctv4hd
-- 央视频道 / CCTV-4 / guovin_ipv4 / http://38.75.136.137:98/gslb/dsdqpub/cctv4k.m3u8?auth=testpub
-- 央视频道 / CCTV-4FHD / epg_cn / https://stream1.freetv.fun/396f01ea6d3a5491a320c53e767857f848b6f5b53273cde1932cb7f39b7f9bc0.m3u8
-- 央视频道 / CCTV-4FHD / epg_cn / https://stream1.freetv.fun/15a4180e12b35249c7b2bc9d2b5d2feed983b66d309ca216fc6d8782766a349f.m3u8
-- 央视频道 / CCTV-4FHD / epg_cn / https://stream1.freetv.fun/4b4bc06b934803fc5a121392d5f539f71c9a9d037c335ae60957418d7a1af2f3.m3u8
-- 央视频道 / CCTV-4FHD / epg_cn / https://stream1.freetv.fun/5ecad9013e2ea27f67c57feed0633c32297275f5be83a25917869edbbcbba0b0.m3u8
+- 央视频道 / CCTV-4FHD / epg_cn / https://stream1.freetv.fun/52decbc7648054b4c1ed13921b199ec4141528b82aec0e0e8488f5967ef9c91c.m3u8
 - 央视频道 / CCTV-4K / suxuang_ipv4 / http://vip1.xinketongxun.fun:8082/tsfile/live/1026_1.m3u8
+- 央视频道 / CCTV-4K(1080p) / iptv_org_all / http://198.204.240.250:82/live/cctv4k.m3u8
 - 央视频道 / CCTV-4中文國際歐洲 / epg_cn / https://stream1.freetv.fun/53004f637662dacde55985b1617344fb47c6df89d8326930439086eeb29d1bfc.m3u8
 - 央视频道 / CCTV-4中文國際歐洲 / epg_cn / https://stream1.freetv.fun/68a0a02e7fc9ee859f839cdd6980a4fe043cc197f98d26a1210dd9c15c0270bd.m3u8
 - 央视频道 / CCTV-5 / zbds_iptv4_txt / http://61.136.172.236:9901/tsfile/live/0005_1.m3u8
-- 央视频道 / CCTV-5 / zbds_iptv4_txt / http://183.223.157.33:9901/tsfile/live/0005_1.m3u8?key=txiptv&playlive=1&authid=0
 - 央视频道 / CCTV-5 / zbds_iptv4_txt / http://112.46.85.60:8009/hls/503/index.m3u8
+- 央视频道 / CCTV-5 / zbds_iptv4_txt / http://182.150.23.74:808/hls/5/index.m3u8
+- 央视频道 / CCTV-5 / zbds_iptv4_txt / http://gmxw.7766.org:808/hls/93/index.m3u8
 - 央视频道 / CCTV-5 / guovin_ipv4 / http://198.204.228.26/live/cctv5p.m3u8
 - 央视频道 / CCTV-5 / guovin_ipv4 / http://207.56.13.146:81/cdnlive/cctv5.m3u8
-- 央视频道 / CCTV-5 / guovin_ipv4 / http://38.75.136.137:98/gslb/dsdqpub/cctv5p.m3u8?auth=testpub
-- 央视频道 / CCTV-5(h265) / epg_cn / https://stream1.freetv.fun/22a6e6d951872b5258a1a09828c48f36b31f32d0ba4d03a1f273e6e51c6020bf.m3u8
-- 央视频道 / CCTV-5(h265) / epg_cn / https://stream1.freetv.fun/762e4eb8a1904130171a43168279c35f9ef47bba236ff3155648ec7ca1a43748.m3u8
-- 央视频道 / CCTV-5(h265) / epg_cn / https://stream1.freetv.fun/c2917f4d3177e5375a91f785860896ab330649df7f920352162fe4f1d3158387.m3u8
-- 央视频道 / CCTV-5(h265) / epg_cn / https://stream1.freetv.fun/0e67c24133bbf121a8f74e59353f4e2a8932983d3fedfee00fcf4e1dfd35bf11.m3u8
-- 央视频道 / CCTV-5(h265) / epg_cn / https://stream1.freetv.fun/860e0a5f39c5b6f419d019b18627cd322fc5fc5bdcc86e4564abb9cee8190b48.ctv
-- 央视频道 / CCTV-5(h265) / epg_cn / https://stream1.freetv.fun/40710de671d35439e7b352aad3066e07cdaeb78312280215f469628adb873a16.m3u8
+- 央视频道 / CCTV-5(h265) / epg_cn / https://stream1.freetv.fun/6c7fa647ebc9fcfaeed8147e4b300b9a678e48ea9bbfb57dc12d5dcdd70377d6.m3u8
 - 央视频道 / CCTV-5+ / zbds_iptv4_txt / http://61.136.172.236:9901/tsfile/live/0016_1.m3u8
-- 央视频道 / CCTV-5+ / zbds_iptv4_txt / http://183.223.157.33:9901/tsfile/live/0018_1.m3u8?key=txiptv&playlive=1&authid=0
-- 央视频道 / CCTV-5+ / zbds_iptv4_txt / http://drive.mxmy.net:8888/udp/239.3.1.130:8004
-- 央视频道 / CCTV-5+ / zbds_iptv4_txt / http://61.136.172.236:9901/tsfile/live/0016_1.m3u8?key=txiptv&playlive=1&authid=0
 - 央视频道 / CCTV-5+ / guovin_ipv4 / http://153.0.171.163:85/tsfile/live/1015_1.m3u8?key=txiptv&playlive=1&authid=0
 - 央视频道 / CCTV-5+ / guovin_ipv4 / http://38.75.136.137:98/gslb/dsdqbv/cctv5p.m3u8?auth=test20251009
-- 央视频道 / CCTV-5+(backup) / epg_cn / https://stream1.freetv.fun/83b1e6c293f5cf31391d1dde3bdf2dff9feef88eb40a923391f1595f180979e6.m3u8
-- 央视频道 / CCTV-5+(backup) / epg_cn / https://stream1.freetv.fun/5742f641e426b80a1db9052e46632c8b5a0f01b85bc6fc0e8b788ab958dd3c57.m3u8
-- 央视频道 / CCTV-5+(backup) / epg_cn / https://stream1.freetv.fun/532c3357b939dd37cc382d20f03ea82e513c2e9c5160a34292984b68144805af.m3u8
+- 央视频道 / CCTV-5+ / epg_cn / https://stream1.freetv.fun/82f6ed4d011a9b6e7d00a295f5aa7837bdcbb16ffe6b9895ce41502644fc4b8a.m3u8
 - 央视频道 / CCTV-6 / zbds_iptv4_txt / http://61.136.172.236:9901/tsfile/live/0006_1.m3u8
 - 央视频道 / CCTV-6 / zbds_iptv4_txt / http://59.39.89.130:60901/tsfile/live/0006_1.m3u8?key=txiptv&playlive=1&authid=0
-- 央视频道 / CCTV-6 / zbds_iptv4_txt / http://61.136.172.236:9901/tsfile/live/0006_1.m3u8?key=txiptv&playlive=1&authid=0
-- 央视频道 / CCTV-6 / zbds_iptv4_txt / http://123.130.84.106:8154/tsfile/live/0006_1.m3u8?key=txiptv&playlive=1&authid=0
-- 央视频道 / CCTV-6 / zbds_iptv4_txt / http://123.130.84.106:8154/tsfile/live/0006_1.m3u8
 - 央视频道 / CCTV-6 / guovin_ipv4 / http://69.30.245.50/live/cctv6.m3u8
+- 央视频道 / CCTV-6 / guovin_ipv4 / http://198.204.228.26/live/cctv6hd.m3u8
+- 央视频道 / CCTV-6 / guovin_ipv4 / http://74.91.26.218:82/live/cctv6hd.m3u8
+- 央视频道 / CCTV-6 / guovin_ipv4 / http://198.204.240.250:82/live/cctv6.m3u8
 - 央视频道 / CCTV-6(1080p) / iptv_org_all / http://69.30.245.50/live/cctv6.m3u8
-- 央视频道 / CCTV-7 / zbds_iptv4_txt / http://183.223.157.33:9901/tsfile/live/0007_1.m3u8?key=txiptv&playlive=1&authid=0
+- 央视频道 / CCTV-7 / zbds_iptv4_txt / http://112.46.85.60:8009/hls/504/index.m3u8
 - 央视频道 / CCTV-7 / zbds_iptv4_txt / http://drive.mxmy.net:8888/udp/239.3.1.61:8104
-- 央视频道 / CCTV-7 / zbds_iptv4_txt / http://123.130.84.106:8154/tsfile/live/0007_1.m3u8
 - 央视频道 / CCTV-7 / guovin_ipv4 / http://69.30.245.50/live/cctv7.m3u8
 - 央视频道 / CCTV-7 / guovin_ipv4 / http://74.91.26.218:82/live/cctv7hd.m3u8
-- 央视频道 / CCTV-7 / suxuang_ipv4 / http://112.27.235.94:8000/hls/8/index.m3u8
+- 央视频道 / CCTV-7 / guovin_ipv4 / http://63.141.230.178:82/gslb/zbdq5.m3u8?id=cctv7hd
 - 央视频道 / CCTV-7(720p) / iptv_org_all / http://74.91.26.218:82/live/cctv7hd.m3u8
 - 央视频道 / CCTV-8 / zbds_iptv4_txt / http://61.136.172.236:9901/tsfile/live/0008_1.m3u8
-- 央视频道 / CCTV-8 / zbds_iptv4_txt / http://183.223.157.33:9901/tsfile/live/0008_1.m3u8?key=txiptv&playlive=1&authid=0
+- 央视频道 / CCTV-8 / zbds_iptv4_txt / http://112.46.85.60:8009/hls/8/index.m3u8
 - 央视频道 / CCTV-8 / zbds_iptv4_txt / http://124.165.251.82:85/tsfile/live/0008_1.m3u8?key=txiptv&playlive=1&authid=0
-- 央视频道 / CCTV-8 / zbds_iptv4_txt / http://123.130.84.106:8154/tsfile/live/0008_1.m3u8
 - 央视频道 / CCTV-8 / guovin_ipv4 / http://207.56.13.146:81/cdnlive/cctv8.m3u8
+- 央视频道 / CCTV-8 / zbds_iptv4_txt / http://183.11.239.36:808/hls/96/index.m3u8
 - 央视频道 / CCTV-8 / guovin_ipv4 / http://63.141.230.178:82/gslb/zbdq5.m3u8?id=cctv8k
 - 央视频道 / CCTV-8(720p) / iptv_org_all / http://74.91.26.218:82/live/cctv8hd.m3u8
-- 央视频道 / CCTV-8K / epg_cn / https://stream1.freetv.fun/d49fa5e1ee3c25ee795d7d3b064d860b948e11d1110454cbb8cafb19417b2b55.m3u8
-- 央视频道 / CCTV-8K / epg_cn / https://stream1.freetv.fun/8a8bbc8fa9b1e55fc72f9810170c3d2c87c7089c474b8a6a45c17727d55090f1.m3u8
-- 央视频道 / CCTV-8K / epg_cn / https://stream1.freetv.fun/5af52507047ba30260277d68083ba3707139f6cab25e8200568c3c737ab9c9e1.m3u8
 - 央视频道 / CCTV-8K(1080p) / iptv_org_all / http://192.151.150.154/live/cctv8k.m3u8
+- 央视频道 / CCTV-9 / zbds_iptv4_txt / http://61.136.172.236:9901/tsfile/live/0009_1.m3u8
+- 央视频道 / CCTV-9 / zbds_iptv4_txt / http://61.136.172.236:9901/tsfile/live/0009_1.m3u8?key=txiptv&playlive=1&authid=0
+- 央视频道 / CCTV-9 / guovin_ipv4 / http://69.30.245.50/live/cctv9.m3u8
+- 央视频道 / CCTV-9 / guovin_ipv4 / http://198.204.228.26/live/cctv9hd.m3u8
+- 央视频道 / CCTV-9 / guovin_ipv4 / http://74.91.26.218:82/live/cctv9hd.m3u8
+- 央视频道 / CCTV-9 / guovin_ipv4 / http://192.151.150.154/live/cctv9hd.m3u8
+- 央视频道 / CCTV-10 / zbds_iptv4_txt / http://59.39.89.130:60901/tsfile/live/0010_1.m3u8?key=txiptv&playlive=1&authid=0
+- 央视频道 / CCTV-10 / zbds_iptv4_txt / http://61.136.172.236:9901/tsfile/live/0010_1.m3u8
+- 央视频道 / CCTV-10 / zbds_iptv4_txt / http://drive.mxmy.net:8888/udp/239.3.1.63:8116
+- 央视频道 / CCTV-10 / guovin_ipv4 / http://74.91.26.218:82/live/cctv10hd.m3u8
+- 央视频道 / CCTV-10 / guovin_ipv4 / http://69.30.245.50/live/cctv10.m3u8
+- 央视频道 / CCTV-10 / guovin_ipv4 / http://192.151.150.154/live/cctv10hd.m3u8
+- 央视频道 / CCTV-10(720p) / iptv_org_all / http://74.91.26.218:82/live/cctv10hd.m3u8
+- 央视频道 / CCTV-11 / zbds_iptv4_txt / http://61.136.172.236:9901/tsfile/live/0011_1.m3u8
+- 央视频道 / CCTV-11 / guovin_ipv4 / http://74.91.26.218:82/live/cctv11hd.m3u8
+- 央视频道 / CCTV-11 / guovin_ipv4 / http://63.141.230.178:82/gslb/zbdq5.m3u8?id=cctv11hd
