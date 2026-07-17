@@ -1,106 +1,106 @@
 # Published playlist recheck report
 
-Elapsed: 103.4s
-Rows before: 2414
-Rows after: 2123
-Removed rows: 291
-Failed unique URLs: 287
+Elapsed: 111.7s
+Rows before: 2527
+Rows after: 2388
+Removed rows: 139
+Failed unique URLs: 135
 
 ## Group deltas
 
 | Group | Before | After | Removed |
 |---|---:|---:|---:|
-| 央视频道 | 134 | 124 | 10 |
-| 卫视频道 | 201 | 190 | 11 |
-| 地方频道 | 480 | 412 | 68 |
-| 影视剧场 | 180 | 151 | 29 |
-| 少儿动漫 | 21 | 14 | 7 |
-| 体育纪实 | 69 | 66 | 3 |
-| 音乐综艺 | 51 | 51 | 0 |
-| 生活休闲 | 168 | 151 | 17 |
-| 综合娱乐 | 834 | 740 | 94 |
-| 港澳台频道 | 56 | 52 | 4 |
-| 海外华语频道 | 220 | 172 | 48 |
+| 央视频道 | 150 | 145 | 5 |
+| 卫视频道 | 205 | 176 | 29 |
+| 地方频道 | 520 | 489 | 31 |
+| 影视剧场 | 147 | 134 | 13 |
+| 少儿动漫 | 22 | 22 | 0 |
+| 体育纪实 | 68 | 65 | 3 |
+| 音乐综艺 | 50 | 49 | 1 |
+| 生活休闲 | 180 | 171 | 9 |
+| 综合娱乐 | 900 | 884 | 16 |
+| 港澳台频道 | 65 | 65 | 0 |
+| 海外华语频道 | 220 | 188 | 32 |
 
 ## First failed rows
 
-- 央视频道 / CCTV-1 / http://112.27.235.94:8000/hls/1/index.m3u8 / <HTTPError 404: 'Not Found'>
-- 央视频道 / CCTV-4FHD / https://stream1.freetv.fun/5ecad9013e2ea27f67c57feed0633c32297275f5be83a25917869edbbcbba0b0.m3u8 / TimeoutError('The read operation timed out') (core retry after first=TimeoutError('The read operation timed out'))
-- 央视频道 / CCTV-5+(backup) / https://stream1.freetv.fun/67b549dc083bdf78cda1f49a7a3acbf6e8572d3281e43c1abd02f4aed3ed65b8.m3u8 / TimeoutError('The read operation timed out') (core retry after first=TimeoutError('The read operation timed out'))
-- 央视频道 / CCTV-7 / http://183.11.239.36:808/hls/25/index.m3u8 / <HTTPError 404: 'Not Found'>
-- 央视频道 / CCTV-8K / https://stream1.freetv.fun/5af52507047ba30260277d68083ba3707139f6cab25e8200568c3c737ab9c9e1.m3u8 / TimeoutError('The read operation timed out') (core retry after first=TimeoutError('The read operation timed out'))
-- 央视频道 / CCTV-8K / https://stream1.freetv.fun/9693fde5d587d55b8daf3d42030662884e9309096841179d8f143f2f30d1dd33.m3u8 / TimeoutError('The read operation timed out') (core retry after first=TimeoutError('The read operation timed out'))
-- 央视频道 / CCTV-12 / http://112.46.85.60:8009/hls/507/index.m3u8 / <HTTPError 404: 'Not Found'>
-- 央视频道 / CCTV-16 / https://stream1.freetv.fun/4b78d1225c29d44c3b6eef01055fce7aacb945acad87a95f70433c6adefd5fdb.m3u8 / TimeoutError('The read operation timed out') (core retry after first=TimeoutError('The read operation timed out'))
-- 央视频道 / CCTV-16 / https://stream1.freetv.fun/4c78b45f76106ffb639387c5252b9f3f81639032f84ffeb6f4bc3833c02cd560.m3u8 / TimeoutError('The read operation timed out') (core retry after first=TimeoutError('The read operation timed out'))
-- 央视频道 / CCTV-17 / https://stream1.freetv.fun/2119264c0c850b60b9757c65a2726fa5ae83fc3951da15b9a945247f1d8d496c.m3u8 / TimeoutError('The read operation timed out') (core retry after first=TimeoutError('The read operation timed out'))
-- 卫视频道 / 东方卫视 / http://bp-resource-dfl.bestv.cn/155/3/video.m3u8 / TimeoutError('timed out') (core retry after first=TimeoutError('timed out'))
-- 卫视频道 / 湖南卫视 / http://antvlive.ab5c6921.cdnviet.com/antv/playlist.m3u8 / <HTTPError 502: 'Bad Gateway'>
-- 卫视频道 / 云南卫视 / http://222.169.85.8:9901/tsfile/live/0119_1.m3u8 / TimeoutError('timed out') (core retry after first=TimeoutError('timed out'))
-- 卫视频道 / 吉林卫视 / http://cssbyd.imwork.net:8082/hls/41/index.m3u8 / <HTTPError 404: 'Not Found'>
-- 卫视频道 / 宁夏卫视 / http://183.11.239.36:808/hls/106/index.m3u8 / <HTTPError 404: 'Not Found'>
-- 卫视频道 / 宁夏卫视 / http://222.169.85.8:9901/tsfile/live/0112_1.m3u8 / TimeoutError('timed out') (core retry after first=TimeoutError('timed out'))
-- 卫视频道 / 安徽卫视 / http://107.150.60.122/live/ahwshd.m3u8 / segment bad 200 video/mp2t bytes=4096 checked=1
-- 卫视频道 / 延边卫视 / http://gmxw.7766.org:808/hls/15/index.m3u8 / <HTTPError 404: 'Not Found'>
-- 卫视频道 / 新疆卫视 / http://222.169.85.8:9901/tsfile/live/0110_1.m3u8 / TimeoutError('timed out') (core retry after first=TimeoutError('timed out'))
-- 卫视频道 / 江西卫视 / http://222.169.85.8:9901/tsfile/live/0138_1.m3u8 / TimeoutError('timed out') (core retry after first=TimeoutError('timed out'))
+- 央视频道 / CCTV-3 / http://112.46.85.60:8009/hls/3/index.m3u8 / <HTTPError 404: 'Not Found'>
+- 央视频道 / CCTV-5+(backup) / https://stream1.freetv.fun/518f11d132212440db2e1a3b39daf7109482323163bedd6be790ac894d3f83e3.ctv / variant fail variants_checked=1 child bad 200
+- 央视频道 / CCTV-9 / http://112.46.85.60:8009/hls/509/index.m3u8 / <HTTPError 404: 'Not Found'>
+- 央视频道 / CCTV-15 / http://222.134.245.16:9901/tsfile/live/0015_1.m3u8?key=txiptv&playlive=1&authid=0 / <HTTPError 404: 'Not Found'> (core retry after first=TimeoutError('timed out'))
+- 央视频道 / CCTV-17 / https://live.264788.xyz/channel/cctv17?streamid=f9c36f1e95b5b35eac89cc89583e7c0a&livekey=01WgOR41rriMmMkzNsd0UoaxJRwetZdxIvtVk / variant fail variants_checked=1 child bad 200
+- 卫视频道 / 河北卫视 / http://63.141.230.178:82/gslb/zbdq5.m3u8?id=hewshd / segment bad 200 video/mp2t bytes=4096 checked=3
+- 卫视频道 / 河北卫视 / http://38.75.136.137:98/gslb/dsdqpub/hewshd.m3u8?auth=testpub / segment bad 200 video/mp2t bytes=4096 checked=3
+- 卫视频道 / 北京卫视 / http://222.134.245.16:9901/tsfile/live/0122_1.m3u8 / <HTTPError 404: 'Not Found'> (core retry after first=TimeoutError('timed out'))
+- 卫视频道 / 北京卫视 / http://207.56.13.146:81/cdnlive/bjws.m3u8 / segment bad 200 video/mp2t bytes=4096 checked=1
+- 卫视频道 / 浙江卫视 / http://ali-xwl.cztv.com/live/channel01720Plxw.m3u8 / bad marker/html
+- 卫视频道 / 云南卫视 / http://198.204.228.26/live/ynwshd.m3u8 / segment bad 200 video/mp2t bytes=4096 checked=2
+- 卫视频道 / 云南卫视 / http://107.150.60.122/live/ynwshd.m3u8 / segment bad 200 video/mp2t bytes=4096 checked=2
+- 卫视频道 / 云南卫视 / http://204.12.221.218:8181/3m1080p/ynws.m3u8 / segment bad 200 video/mp2t bytes=4096 checked=2
+- 卫视频道 / 云南卫视 / http://63.141.230.178:82/gslb/zbdq5.m3u8?id=ynwshd / segment bad 200 video/mp2t bytes=4096 checked=2
+- 卫视频道 / 兵团卫视 / http://183.11.239.36:808/hls/7/index.m3u8 / <HTTPError 404: 'Not Found'>
+- 卫视频道 / 内蒙古卫视 / http://222.134.245.16:9901/tsfile/live/0109_1.m3u8 / <HTTPError 404: 'Not Found'> (core retry after first=TimeoutError('timed out'))
+- 卫视频道 / 农林卫视 / http://120.76.248.139/live/bfgd/4200000122.m3u8 / URLError(TimeoutError('timed out')) (core retry after first=URLError(TimeoutError('timed out')))
+- 卫视频道 / 安徽卫视 / http://222.134.245.16:9901/tsfile/live/0130_1.m3u8 / <HTTPError 404: 'Not Found'> (core retry after first=TimeoutError('timed out'))
+- 卫视频道 / 安徽卫视 / http://183.11.239.36:808/hls/40/index.m3u8 / <HTTPError 404: 'Not Found'>
+- 卫视频道 / 安徽卫视 / http://63.141.230.178:82/gslb/zbdq5.m3u8?id=ahwshd / segment bad 200 video/mp2t bytes=4096 checked=3
+- 卫视频道 / 山西卫视 / http://119.39.9.8:9901/tsfile/live/0118_1.m3u8 / bad marker/html
+- 卫视频道 / 广西卫视 / http://222.134.245.16:9901/tsfile/live/0113_1.m3u8 / <HTTPError 404: 'Not Found'> (core retry after first=TimeoutError('timed out'))
+- 卫视频道 / 延边卫视 / https://srs.iyb983.cn/video/CYS/index.m3u8 / bad marker/html
+- 卫视频道 / 延边卫视 / https://srs.iyb983.cn:443/video/CYS/index.m3u8 / bad marker/html
+- 卫视频道 / 新疆卫视 / http://218.84.12.186:8001/hls/main/playlist.m3u8zxinjd / <HTTPError 404: 'Not Found'>
+- 卫视频道 / 新疆卫视 / http://218.84.12.186:8001/hls/main/playlist.m3u8?zxinjd / <HTTPError 404: 'Not Found'>
+- 卫视频道 / 新疆卫视 / http://183.11.239.36:808/hls/65/index.m3u8 / bad marker/html
+- 卫视频道 / 浙江卫视超清 / http://ali-xwl.cztv.com/live/channel01720Plxw.m3u8 / bad marker/html
 - 卫视频道 / 海南卫视 / http://111.221.137.234:44330/tsfile/live/0117_1.m3u8?key=txiptv&playlive=0&authid=0 / bad marker/html
-- 地方频道 / 上海纪实人文 / http://bp-resource-dfl.bestv.cn/155/3/video.m3u8 / TimeoutError('timed out') (core retry after first=TimeoutError('timed out'))
-- 地方频道 / 仁寿综合 / https://play.scrstv.com.cn/DT/live.m3u8?auth_key=60001724663204-0-0-c1cc4ded9841ac34f63cdbd3aec647ef / bad marker/html
-- 地方频道 / 北京衛視 / https://stream1.freetv.fun/217f4f75f9a74bf1809629bcbb3fa197c1ba1b4ba529514de80cde5171e972a0.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 北京衛視 / https://stream1.freetv.fun/48d851cb4a42f1fdd2084b5bf923535710af9055947b75dab028cfa39468579c.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 北京衛視 / https://stream1.freetv.fun/721daf352d921f071e67ab3acfe13bba448aee55da3df9c6ce08c04d08352a21.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 南京教科 / https://stream1.freetv.fun/b312dc715bcc0a19a1b938f7e5d87f4d2f3cf64dd0ed831858b9b39f8af53031.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 南京新聞綜合 / https://stream1.freetv.fun/4999ec1f17e1d02536cd56f03e18d8c71c70d4a64864dee94b942f6343f1ad17.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 吉林生活 / https://stream1.freetv.fun/a271b02d92c34f992634fce93db0f6b20e08356a63800b72273f60eaea156c72.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 吉林衛視 / https://stream1.freetv.fun/f845c6ed628a3f947bccdcffba4f8384f1d72236bebee05710123de7850c62b7.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 吉林衛視 / https://stream1.freetv.fun/d408673bca179f9b20ec03879d544e55d03a971c9d453b2207eeff4f50af4019.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 吉林衛視 / https://stream1.freetv.fun/657b3cc8f2106d0e0b52d0bc7f0e15db544b37b3e86bf5f486f351b9db61fa2e.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 吉林都市 / https://stream1.freetv.fun/5ce14554afc0c20c48ef23c61bb72fbcfcfcf136f48ee6e4463fd012bdac74d0.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 四川衛視 / https://stream1.freetv.fun/1f6ac7d82233ee734e6065f5c7b52d01bc04dcbbb40447cdd9d9509dc36318d6.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 四川衛視 / https://stream1.freetv.fun/46768cfbdeeb01f45bd96e1b3bab29a780bebd7e3b6c1e5a7eab69cc424751cb.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 四川衛視 / https://stream1.freetv.fun/5fc01c4dc275d1551552cc7cbf4c149f217b26e22b545014ef59e483c24acab6.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 四川衛視 / https://stream1.freetv.fun/94bdb63904c3947c03764c5d9745fe2799c44cb56692bc88427f071c1c2c6843.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 天津衛視 / https://stream1.freetv.fun/d71d3950e729c148bf850a61f908bb3d393fe2d4d246dabfc0d7e63221b05bc7.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 天津衛視 / https://stream1.freetv.fun/4bafa8b28ae13b03c0a8748b7290f2e013080913a8ce1db58a50237919388fb0.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 天津衛視 / https://stream1.freetv.fun/e7bc8916d500f0d6e0818c0a3fb5dfc4658e8245bc79e4c4cf35ac9dab436fec.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 天津衛視 / https://stream1.freetv.fun/2f6a1e8978e205359f62bc1bce793316a47a3e8de56bca3b69a320a38dee3dd7.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 安徽综艺体育 / http://112.27.235.94:8000/hls/25/index.m3u8 / <HTTPError 404: 'Not Found'>
-- 地方频道 / 山东教育 / http://183.11.239.36:808/hls/72/index.m3u8 / bad marker/html
-- 地方频道 / 延边2 / http://stream5.jlntv.cn/wq/playlist.m3u8 / variant fail variants_checked=1 child bad 200
-- 地方频道 / 江西新聞 / https://stream1.freetv.fun/0d7db83dd54e42980edfae0834dc9b3eef50c2326216576e61ac11a76670f1d3.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 江西衛視 / https://stream1.freetv.fun/1d56b395bdb00424c44f8dbff39c9b2606472caa25b9328fb7231f8a97643de7.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 江西衛視 / https://stream1.freetv.fun/b99cfef14e64a12c8ff2231565ad2189ac9d218dd8082417314419c630f6e238.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 江西衛視 / https://stream1.freetv.fun/a23196761b9fe5d83429723bb87563806a6582705f8af41b749fc8e1ed84d994.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 汪清综合 / http://stream5.jlntv.cn/wq/sd/live.m3u8 / bad marker/html
-- 地方频道 / 河北衛視 / https://stream1.freetv.fun/5e7dbe25adb110c1c7c8f626a76cbd0f8783afca37db292d083df1aa4038eda5.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 河北衛視 / https://stream1.freetv.fun/b6d7e54d6c1e48b22b610cdd9db9d9c1e209cfabadd2bc08c0a4c2717db86af4.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 河南交通广播 / https://stream.hndt.com/live/jiaotong/playlist.m3u8 / URLError(TimeoutError('timed out'))
-- 地方频道 / 河南新闻广播 / https://stream.hndt.com/live/xinwen/playlist.m3u8 / URLError(TimeoutError('timed out'))
-- 地方频道 / 河南衛視 / https://stream1.freetv.fun/6725cbfc8b48e39a9e353ee9da258c0dfb61c25b056e00548e693d11fbe836d5.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 河南衛視 / https://stream1.freetv.fun/07521fe2ef5c036aaebb05071822b7d1668fe16c0e0d4c016070ac5d7b9ae0ea.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 河南衛視 / https://stream1.freetv.fun/3f924dd8991e62f51321ff8ace4be7c1d0e7985af6e76c0327cfb916d440598d.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 浙江教育科技 / https://stream1.freetv.fun/3f41e71745381e4f3fd90b31d50e8ef2c755c29e2e27255445ed2f045d8586ac.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 浙江新聞 / https://stream1.freetv.fun/e5d695052a7933bcebadd46f6b7a5ac54458f494246b99846db0329b81e30fbd.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 浙江新聞 / https://stream1.freetv.fun/e49c3e942fdda148437c92e0082be0e8baed40698aae39e6d7674bc1b406b82f.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 浙江新聞 / https://stream1.freetv.fun/3ef7368bae31a5212384ea864cde6cec048d7a20a2d86b71b7d48779a48ef1ce.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 浙江新聞 / https://stream1.freetv.fun/cd74c48875883dfce0f48ffae57c5cfbf874adcbcdc50eaffa54f11d1948d480.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 浙江新聞 / https://stream1.freetv.fun/09a305d61fa22e3ae52b886681173e68bf20fb4a4b5b7df02295e7a0eb387a45.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 浙江民生休閒 / https://stream1.freetv.fun/d7aed8b4df920d57d796b43c9bbc06917dda6e92dc426da1b32fc6545816cafb.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 浙江民生休閒 / https://stream1.freetv.fun/8b45d878d25b2c5063a086981e0adbec0265605c14f3a2528b879a95cbdb6c2b.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 浙江民生休閒 / https://stream1.freetv.fun/2130faa277a337d517c89f25715b363358080cab18313acf891dba7f59965b1a.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 浙江經濟生活 / https://stream1.freetv.fun/4d8b9fe3035f2e18ad4cfd932ed099f54c0bc5196cba62f0bc4c77e3a9bb7a17.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 浙江經濟生活 / https://stream1.freetv.fun/8321a856fd181bf19451de0eb80cb852b4b4910a9e5861ea2ace4db33cebdf04.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 浙江經濟生活 / https://stream1.freetv.fun/1b07fc283d6e769e6271b0c63c290a190d8baf5600a0455cc25b82133e8de3e2.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 浙江衛視 / https://stream1.freetv.fun/8ae4105b374e16112c2c2c3185000d4c4e7c7b1aeabc1967c9cd333d60ad5a9c.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 浙江衛視 / https://stream1.freetv.fun/ba959dabad9d99bf7f65509f2656d479739085231a10f09b40a6b6e2f7b330a0.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 浙江衛視 / https://stream1.freetv.fun/8b4a55028be7ac7311d530c92ac4de1dd81d58bb514304db0ed6fff8a96bc41e.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 浙江錢江都市 / https://stream1.freetv.fun/beb59949dcf45099dd66ed89aa84c89f902ad796f85026c28fb3ad2925d545e2.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 浙江錢江都市 / https://stream1.freetv.fun/a03ce470c19585f2de2a1fc3826ff803380a1972e0046c15e9538efae86e13d8.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 浙江錢江都市 / https://stream1.freetv.fun/0c485cf589a8fb4285aa77c9bcd8026dd63366be5c50b2d6b4b25adff547b8b6.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 浙江錢江都市 / https://stream1.freetv.fun/05082d9d7e248c0872f00e2454fe815dfdc1312302b79a06e6db7e3daeec1c51.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 海南衛視 / https://stream1.freetv.fun/e754c3f8d6f2909714a353d09a483cda069e86f07c4aff6162c10e3d9dd786fa.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 深圳衛視 / https://stream1.freetv.fun/dc46384f8a29b592c93252869c2b1a12ac7b187bd3534f259f58131c599337e4.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 湖北衛視 / https://stream1.freetv.fun/2cadff68f8e06b03d10536121b2764ac658a8cb451d1901107c2039ac49a6757.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 湖北衛視 / https://stream1.freetv.fun/88d6f13a8da3ebe7564144ba0952c38f43591892dfa49ba1e9b6c3485f790c76.m3u8 / TimeoutError('The read operation timed out')
-- 地方频道 / 湖北衛視 / https://stream1.freetv.fun/805c2ebe5d692481c030954546fdb2305099e90124258469095522b6960df08e.m3u8 / TimeoutError('The read operation timed out')
+- 卫视频道 / 海南卫视 / http://120.76.248.139/live/bfgd/4200000473.m3u8 / URLError(TimeoutError('timed out')) (core retry after first=URLError(TimeoutError('timed out')))
+- 卫视频道 / 贵州卫视 / http://182.150.23.74:808/hls/26/index.m3u8 / bad marker/html
+- 卫视频道 / 黑龙江卫视 / http://198.204.228.26/live/hljwshd.m3u8 / segment bad 200 video/mp2t bytes=4096 checked=3
+- 卫视频道 / 黑龙江卫视 / http://107.150.60.122/live/hljwshd.m3u8 / segment bad 200 video/mp2t bytes=4096 checked=3
+- 卫视频道 / 黑龙江卫视 / http://204.12.221.218:8181/3m1080p/hljws.m3u8 / segment bad 200 video/mp2t bytes=4096 checked=3
+- 地方频道 / 北京新闻 / https://ls.qingting.fm/live/339/64k.m3u8 / bad marker/html
+- 地方频道 / 北京爱情故事，心动不打烊 / https://live.ottiptv.cc/yy/1382744423 / <HTTPError 502: 'Bad Gateway'>
+- 地方频道 / 北京纪实科教 / http://120.76.248.139/live/bfgd/4200000113.m3u8 / URLError(TimeoutError('timed out'))
+- 地方频道 / 南京十八生活 / http://nklive.nbs.cn/hls/1173a815-bfdb-4c3c-9f73-89ec37ae7716/index.m3u8 / TimeoutError('timed out')
+- 地方频道 / 安徽衛視 / https://stream1.freetv.fun/05da16d9a29c25a3c7389d02cc81dafcdda207d93176603cbd560ab0075312c6.m3u8 / variant fail variants_checked=1 segment bad 200 video/mp2t bytes=4096 checked=1
+- 地方频道 / 安徽衛視 / https://stream1.freetv.fun/98aef088ca444c3c14722ba4478c7d37c3976d8466516774ab8956b9294ac184.m3u8 / variant fail variants_checked=1 segment bad 200 video/mp2t bytes=4096 checked=1
+- 地方频道 / 安徽衛視 / https://stream1.freetv.fun/07f34ef59982ef7598025212875253649ec5e5833979d88fbd45def3d51d4c01.m3u8 / variant fail variants_checked=1 segment bad 200 video/mp2t bytes=4096 checked=1
+- 地方频道 / 山西衛視 / https://stream1.freetv.fun/9583a6cddbaf5f732564978bc22cecb76770106e18e003ad3ac6a9c20d3148f9.m3u8 / variant fail variants_checked=1 child bad 200
+- 地方频道 / 广东珠江 / http://107.150.60.122/live/gdzja.m3u8 / <HTTPError 404: 'Not Found'>
+- 地方频道 / 河北衛視 / https://stream1.freetv.fun/4ca8a4a550ab606e4a0419326b248590c5d03d2a63bd0cdc6914f681724f8fe5.m3u8 / variant fail variants_checked=1 segment bad 200 video/mp2t bytes=4096 checked=1
+- 地方频道 / 河北衛視 / https://stream1.freetv.fun/b6129199d32bae0643d0a5e5d81e78b59a7b056a606f0e01f1994f9898dca75d.m3u8 / variant fail variants_checked=1 segment bad 200 video/mp2t bytes=4096 checked=1
+- 地方频道 / 河北衛視 / https://stream1.freetv.fun/b1b70c0ba5ae4a14b5325b4ced18b94dd2423b228895e62c705cf91ef625219c.m3u8 / variant fail variants_checked=1 segment bad 200 video/mp2t bytes=4096 checked=1
+- 地方频道 / 河南衛視 / https://stream1.freetv.fun/3ba20cd120a608446b9b1fab73bdcb6ef31c97600e98c175c809f675e15f72c5.ctv / bad marker/html
+- 地方频道 / 河南都市 / http://1.94.31.214/php/hntv.php?id=hnds / bad marker/html
+- 地方频道 / 浙江国际 / http://ali-xwl.cztv.com/live/channel10720Plxw.m3u8 / bad marker/html
+- 地方频道 / 浙江钱江 / http://ali-xwl.cztv.com/live/channel02720Plxw.m3u8 / bad marker/html
+- 地方频道 / 浙江钱江都市 / http://ali-xwl.cztv.com/live/channel02720Plxw.m3u8 / bad marker/html
+- 地方频道 / 海南新闻 / http://ls.qingting.fm/live/1861.m3u8 / bad marker/html
+- 地方频道 / 海南衛視 / https://stream1.freetv.fun/c2050143891ad65886901531fce3a60bd082cf1d043bd0e8cdbef961ee74657e.ctv / bad marker/html
+- 地方频道 / 湖南张家界水绕四门 / https://gcalic.v.myalicdn.com/gc/zjjsrsm_1/index.m3u8 / bad marker/html
+- 地方频道 / 辽宁体育 / http://120.76.248.139/live/bfgd/4200000611.m3u8 / URLError(TimeoutError('timed out'))
+- 地方频道 / 辽宁公共 / http://120.76.248.139/live/bfgd/4200000077.m3u8 / URLError(TimeoutError('timed out'))
+- 地方频道 / 辽宁公共 / http://120.76.248.139/live/bfgd/4200000481.m3u8 / URLError(TimeoutError('timed out'))
+- 地方频道 / 辽宁影视剧 / http://120.76.248.139/live/bfgd/4200000070.m3u8 / URLError(TimeoutError('timed out'))
+- 地方频道 / 辽宁教育青少 / http://120.76.248.139/live/bfgd/4200000075.m3u8 / URLError(TimeoutError('timed out'))
+- 地方频道 / 辽宁生活 / http://120.76.248.139/live/bfgd/4200000073.m3u8 / URLError(TimeoutError('timed out'))
+- 地方频道 / 辽宁经济 / http://120.76.248.139/live/bfgd/4200000480.m3u8 / URLError(TimeoutError('timed out'))
+- 地方频道 / 辽宁经济 / http://120.76.248.139/live/bfgd/4200000076.m3u8 / URLError(TimeoutError('timed out'))
+- 地方频道 / 辽宁都市 / https://ls.qingting.fm/live/1099/64k.m3u8 / bad marker/html
+- 地方频道 / 辽宁都市 / http://120.76.248.139/live/bfgd/4200000610.m3u8 / URLError(TimeoutError('timed out'))
+- 地方频道 / 黑龙江少儿 / https://ls.qingting.fm/live/4972/64k.m3u8 / bad marker/html
+- 影视剧场 / 【周星驰】搞笑电影 / https://live.ottiptv.cc/yy/38670875 / TimeoutError('timed out')
+- 影视剧场 / 国内玄幻电影-林正英 / https://live.ottiptv.cc/yy/1354932444 / TimeoutError('timed out')
+- 影视剧场 / 国内经典动作电影 / https://live.ottiptv.cc/yy/1382851522 / TimeoutError('timed out')
+- 影视剧场 / 宫心计-港剧-古装 / https://live.ottiptv.cc/yy/1354933540 / bad marker/html
+- 影视剧场 / 寻秦记-穿越剧经典 / https://live.ottiptv.cc/yy/1382749900 / TimeoutError('timed out')
+- 影视剧场 / 射雕英雄传 / https://live.metshop.top/huya/23824164 / <HTTPError 403: 'Forbidden'>
+- 影视剧场 / 斗鱼电影HD3 / http://epg.112114.xyz/douyu/122402 / TimeoutError('timed out')
+- 影视剧场 / 电影搞笑喜剧 / http://live.metshop.top/huya/11342423?cdn=alicdn / RemoteDisconnected('Remote end closed connection without response')
+- 影视剧场 / 精彩动作电影享不停 / https://live.ottiptv.cc/yy/1382736809 / TimeoutError('timed out')
+- 影视剧场 / 绍兴文化影视 / https://t.freetv.fun/live/shao-xing-wen-hua-ying-shi-1.m3u8 / <HTTPError 404: 'Not Found'>
+- 影视剧场 / 绍兴文化影视 / https://stream1.freetv.fun/shao-xing-wen-hua-ying-shi-1.m3u8 / <HTTPError 404: 'Not Found'>
+- 影视剧场 / 绍兴文化影院 / http://live.shaoxing.com.cn/video/s10001-sxtv3/index.m3u8?zzhed / <HTTPError 404: 'Not Found'>
+- 影视剧场 / 陪你一起看好剧 / https://live.ottiptv.cc/yy/1354932359 / bad marker/html
+- 体育纪实 / 天元围棋 / http://120.76.248.139/live/bfgd/4200000633.m3u8 / URLError(TimeoutError('timed out'))
+- 体育纪实 / 奎屯汉语 / http://218.84.12.186:8001/hls/main/playlist.m3u8?zxinjd / <HTTPError 404: 'Not Found'>
