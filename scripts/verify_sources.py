@@ -4,26 +4,28 @@ from __future__ import annotations
 
 import concurrent.futures as cf
 import csv
-import gzip
+import zlib
 import html
 import ipaddress
 import json
 import os
 import re
-import socket
-import ssl
 import sys
+import threading
 import time
 from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
+from contextlib import contextmanager
 from typing import Iterable
-from urllib.parse import urljoin, urlparse
-from urllib.request import Request, urlopen
-from urllib.error import HTTPError, URLError
+from urllib.parse import urljoin, urlparse, urlsplit
+from urllib.request import Request
 
 from channel_utils import cctv_number, format_extinf
 from playlist_config import score_adjustments, source_priority as configured_source_priority
+from url_utils import is_publishable_http_url, normalize_stream_url, publishable_url_issue, split_stream_urls
+from network_safety import public_urlopen
+from media_probe import looks_media as probe_looks_media, probe_media
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -34,13 +36,18 @@ ROOT = Path(__file__).resolve().parents[1]
 TIMEOUT = int(os.getenv("IPTV_CHECK_TIMEOUT", "6"))
 FETCH_TIMEOUT = int(os.getenv("IPTV_FETCH_TIMEOUT", "20"))
 MAX_WORKERS = int(os.getenv("IPTV_FETCH_WORKERS", "64"))
-CHECK_WORKERS = int(os.getenv("IPTV_CHECK_WORKERS", "192"))
+CHECK_WORKERS = int(os.getenv("IPTV_CHECK_WORKERS", "128"))
+HOST_WORKERS = max(1, int(os.getenv("IPTV_CHECK_WORKERS_PER_HOST", "8")))
 MAX_VALID_PER_NAME = int(os.getenv("IPTV_MAX_VALID_PER_NAME", "5"))
 HLS_SEGMENT_CHECKS = int(os.getenv("IPTV_HLS_SEGMENT_CHECKS", "2"))
 HLS_VARIANT_CHECKS = int(os.getenv("IPTV_HLS_VARIANT_CHECKS", "2"))
 CORE_HLS_SEGMENT_CHECKS = int(os.getenv("IPTV_CORE_HLS_SEGMENT_CHECKS", str(max(3, HLS_SEGMENT_CHECKS))))
 CORE_RETRY_ATTEMPTS = int(os.getenv("IPTV_CORE_RETRY_ATTEMPTS", "1"))
 CORE_RETRY_TIMEOUT = int(os.getenv("IPTV_CORE_RETRY_TIMEOUT", "14"))
+HLS_PROGRESS_MIN_WAIT = float(os.getenv("IPTV_HLS_PROGRESS_MIN_WAIT", "3"))
+HLS_PROGRESS_MAX_WAIT = float(os.getenv("IPTV_HLS_PROGRESS_MAX_WAIT", "14"))
+HLS_PROGRESS_TARGET_MULTIPLIER = float(os.getenv("IPTV_HLS_PROGRESS_TARGET_MULTIPLIER", "1.25"))
+REQUIRE_VIDEO_TRACK = os.getenv("IPTV_REQUIRE_VIDEO_TRACK", "1").strip().lower() not in {"0", "false", "no", "off"}
 UA = "Player"
 SOURCE_CONFIG = ROOT / "config" / "sources.json"
 TRANSIENT_OUTPUTS = [
@@ -49,6 +56,8 @@ TRANSIENT_OUTPUTS = [
     "all-playable.m3u",
     "curated-source-map.csv",
     "published_recheck_results.csv",
+    "curated-candidate-pool.csv",
+    "alias-conflict-report.md",
 ]
 
 
@@ -104,6 +113,7 @@ class SourceStatus:
     ok: bool
     bytes: int = 0
     parsed: int = 0
+    truncated: bool = False
     error: str = ""
 
 @dataclass
@@ -111,6 +121,18 @@ class CheckResult:
     cand: Candidate
     ok: bool
     detail: str
+
+
+def order_source_statuses(statuses: Iterable[SourceStatus], sources: list[tuple[str, str]] | None = None) -> list[SourceStatus]:
+    """Return fetch results in configured source order, independent of thread completion order."""
+    configured = SOURCES if sources is None else sources
+    by_name = {status.name: status for status in statuses}
+    expected_names = [name for name, _url in configured]
+    if len(by_name) != len(expected_names) or set(by_name) != set(expected_names):
+        missing = sorted(set(expected_names) - set(by_name))
+        extra = sorted(set(by_name) - set(expected_names))
+        raise ValueError(f"source fetch result mismatch: missing={missing!r} extra={extra!r}")
+    return [by_name[name] for name in expected_names]
 
 
 def decode_bytes(data: bytes, content_type: str = "") -> str:
@@ -125,19 +147,66 @@ def decode_bytes(data: bytes, content_type: str = "") -> str:
     return data.decode("utf-8", errors="replace")
 
 
-def fetch_url(url: str, timeout: int = FETCH_TIMEOUT, max_bytes: int = 12_000_000) -> tuple[int, str, bytes, str]:
-    req = Request(url, headers={"User-Agent": UA, "Accept": "*/*", "Connection": "close"})
-    with urlopen(req, timeout=timeout, context=ssl.create_default_context()) as r:
+_HOST_SEMAPHORES: dict[str, threading.BoundedSemaphore] = {}
+_HOST_SEMAPHORES_LOCK = threading.Lock()
+
+
+@contextmanager
+def host_slot(url: str):
+    host = (urlparse(url).netloc or "unknown").lower()
+    with _HOST_SEMAPHORES_LOCK:
+        sem = _HOST_SEMAPHORES.setdefault(host, threading.BoundedSemaphore(HOST_WORKERS))
+    sem.acquire()
+    try:
+        yield
+    finally:
+        sem.release()
+
+
+@contextmanager
+def limited_urlopen(req: Request, timeout: int):
+    url = getattr(req, "full_url", str(req))
+    with host_slot(url):
+        with public_urlopen(req, timeout=timeout) as response:
+            yield response
+
+
+def _bounded_gzip_decompress(data: bytes, max_bytes: int) -> bytes:
+    """Strictly decompress one gzip member with an output-size ceiling."""
+    decoder = zlib.decompressobj(16 + zlib.MAX_WBITS)
+    output = decoder.decompress(data, max_bytes + 1)
+    if len(output) > max_bytes or decoder.unconsumed_tail:
+        raise ValueError("decompressed upstream playlist exceeded maximum fetch size")
+    flushed = decoder.flush(max_bytes + 1 - len(output))
+    output += flushed
+    if len(output) > max_bytes:
+        raise ValueError("decompressed upstream playlist exceeded maximum fetch size")
+    if not decoder.eof:
+        raise ValueError("truncated gzip upstream playlist")
+    if decoder.unused_data:
+        raise ValueError("unexpected trailing data after gzip upstream playlist")
+    return output
+
+
+def fetch_url(url: str, timeout: int = FETCH_TIMEOUT, max_bytes: int = 12_000_000) -> tuple[int, str, bytes, str, bool]:
+    req = Request(url, headers={"User-Agent": UA, "Accept": "*/*", "Connection": "close", "Accept-Encoding": "gzip"})
+    with limited_urlopen(req, timeout=timeout) as r:
         code = getattr(r, "status", 200)
         ctype = r.headers.get("Content-Type") or ""
-        data = r.read(max_bytes)
+        content_encoding = (r.headers.get("Content-Encoding") or "").lower()
+        data = r.read(max_bytes + 1)
         final = r.geturl()
-    if url.endswith(".gz") or "gzip" in (ctype.lower()):
-        try:
-            data = gzip.decompress(data)
-        except Exception:
-            pass
-    return code, ctype, data, final
+    truncated = len(data) > max_bytes
+    if truncated:
+        return code, ctype, data[:max_bytes], final, True
+    is_gzip = (
+        "gzip" in content_encoding
+        or "gzip" in ctype.lower()
+        or urlsplit(final).path.lower().endswith(".gz")
+    )
+    if is_gzip:
+        data = _bounded_gzip_decompress(data, max_bytes)
+    return code, ctype, data, final, False
 
 
 def normalize_name(name: str) -> str:
@@ -152,37 +221,6 @@ def normalize_name(name: str) -> str:
 
 
 
-def split_stream_urls(url: str) -> list[str]:
-    """Return clean candidate URLs from one messy upstream URL field.
-
-    Some public TXT/M3U rows concatenate backup URLs in a single field, for
-    example ``url1;http://url2`` or ``url1#https://url2``. Ku9 treats the whole
-    field as one URL and fails. Do not merely keep the first URL here: split the
-    field into independently checked candidates so a good backup URL is not
-    lost. Delimiters are only recognized when immediately followed by another
-    HTTP(S) URL, so normal query-string semicolons/fragments are preserved.
-    """
-    raw = html.unescape(url or "").strip().strip('"').strip("'").lstrip("\ufeff")
-    if not raw:
-        return []
-    parts: list[str] = []
-    for piece in re.split(r"[;#](?=https?://)", raw, flags=re.I):
-        parts.extend(re.split(r",(?=https?://)", piece, flags=re.I))
-    out: list[str] = []
-    seen: set[str] = set()
-    for piece in parts:
-        clean = piece.strip().strip('"').strip("'").lstrip("\ufeff").rstrip(",").strip()
-        if not clean or clean in seen:
-            continue
-        seen.add(clean)
-        out.append(clean)
-    return out
-
-
-def normalize_stream_url(url: str) -> str:
-    """Compatibility helper: return the first clean URL from a field."""
-    urls = split_stream_urls(url)
-    return urls[0] if urls else ""
 
 def infer_group(name: str, group: str = "") -> str:
     G_CCTV = "\u592e\u89c6\u9891\u9053"
@@ -252,7 +290,7 @@ def parse_m3u(text: str, source: str) -> list[Candidate]:
             continue
         elif re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", line):
             for url in split_stream_urls(line):
-                if url.startswith(("http://", "https://", "rtmp://")):
+                if is_publishable_http_url(url):
                     name = normalize_name(last_name or urlparse(url).path.rsplit("/", 1)[-1])
                     group = infer_group(name, last_group)
                     out.append(Candidate(source, group, name, url))
@@ -278,7 +316,7 @@ def parse_txt(text: str, source: str) -> list[Candidate]:
             continue
         name = normalize_name(name)
         for clean_url in split_stream_urls(url):
-            if clean_url.startswith(("http://", "https://", "rtmp://")):
+            if is_publishable_http_url(clean_url):
                 out.append(Candidate(source, infer_group(name, group), name, clean_url))
     return out
 
@@ -292,14 +330,16 @@ def parse_playlist(text: str, source: str) -> list[Candidate]:
 def fetch_source(item: tuple[str, str]) -> tuple[SourceStatus, list[Candidate]]:
     name, url = item
     try:
-        code, ctype, data, final = fetch_url(url)
+        code, ctype, data, final, truncated = fetch_url(url)
+        if truncated:
+            raise ValueError("upstream playlist exceeded maximum fetch size; refusing partial parse")
         text = decode_bytes(data, ctype)
         cands = parse_playlist(text, name)
-        warn = "" if cands else "WARN fetched but no supported HTTP/HTTPS/RTMP stream candidates"
-        st = SourceStatus(name, url, True, len(data), len(cands), warn)
+        warn = "" if cands else "WARN fetched but no publishable HTTP/HTTPS stream candidates"
+        st = SourceStatus(name=name, url=url, ok=True, bytes=len(data), parsed=len(cands), truncated=False, error=warn)
         return st, cands
     except Exception as e:
-        return SourceStatus(name, url, False, 0, 0, repr(e)[:240]), []
+        return SourceStatus(name=name, url=url, ok=False, bytes=0, parsed=0, truncated="maximum fetch size" in str(e), error=repr(e)[:240]), []
 
 
 def is_ipv6_url(url: str) -> bool:
@@ -312,7 +352,7 @@ def is_ipv6_url(url: str) -> bool:
 
 def http_get_small(url: str, max_bytes: int = 65536, timeout: int = TIMEOUT) -> tuple[int, str, bytes, str]:
     req = Request(url, headers={"User-Agent": UA, "Accept": "*/*", "Connection": "close"})
-    with urlopen(req, timeout=timeout, context=ssl.create_default_context()) as r:
+    with limited_urlopen(req, timeout=timeout) as r:
         code = getattr(r, "status", 200)
         ctype = (r.headers.get("Content-Type") or "").lower()
         data = r.read(max_bytes)
@@ -356,10 +396,16 @@ def looks_transient_failure(detail: str) -> bool:
 
 def looks_bad(data: bytes, text: str = "") -> bool:
     sample = (text or data[:4096].decode("utf-8", "ignore")).lower()
-    if any(m in sample for m in BAD_MARKERS):
-        return True
     if any(x in data[:256].lower() for x in BAD_HTML):
         return True
+    # A valid HLS manifest can legitimately contain tokens such as "404",
+    # "offline", or "nosignal" inside signed paths and channel identifiers.
+    # Media validation of its advertised segments is the authoritative check.
+    if "#extm3u" in sample:
+        return False
+    for marker in BAD_MARKERS:
+        if re.search(rf"(?<![a-z0-9]){re.escape(marker)}(?![a-z0-9])", sample):
+            return True
     return False
 
 
@@ -373,26 +419,57 @@ def unique_keep_order(items: Iterable[str]) -> list[str]:
     return out
 
 
-def parse_m3u8_items(text: str, base: str) -> tuple[list[str], list[str]]:
-    """Return child playlists and media segments from an HLS playlist.
+@dataclass
+class HLSManifest:
+    variants: list[str]
+    segments: list[str]
+    keys: list[str]
+    maps: list[str]
+    media_sequence: int | None
+    target_duration: float | None
+    endlist: bool
 
-    A previous version only tested the first child/segment. This parser returns
-    multiple candidates so the checker can verify more than one real media
-    fragment and reduce false positives from one lucky/stale segment.
-    """
-    if any(m in text.lower() for m in BAD_MARKERS):
-        return [], []
+
+def _quoted_uri(line: str) -> str:
+    match = re.search(r'URI="([^"]+)"', line, re.I)
+    return html.unescape(match.group(1).strip()) if match else ""
+
+
+def parse_hls_manifest(text: str, base: str) -> HLSManifest:
     lines = [x.strip() for x in text.splitlines() if x.strip()]
     variants: list[str] = []
     segments: list[str] = []
+    keys: list[str] = []
+    maps: list[str] = []
+    media_sequence: int | None = None
+    target_duration: float | None = None
+    endlist = any(line.upper() == "#EXT-X-ENDLIST" for line in lines)
     for i, line in enumerate(lines):
-        if line.startswith("#EXT-X-STREAM-INF"):
+        upper = line.upper()
+        if upper.startswith("#EXT-X-MEDIA-SEQUENCE:"):
+            try:
+                media_sequence = int(line.split(":", 1)[1].strip())
+            except (ValueError, IndexError):
+                pass
+        elif upper.startswith("#EXT-X-TARGETDURATION:"):
+            try:
+                target_duration = float(line.split(":", 1)[1].strip())
+            except (ValueError, IndexError):
+                pass
+        elif upper.startswith("#EXT-X-KEY:") and "METHOD=NONE" not in upper:
+            uri = _quoted_uri(line)
+            if uri:
+                keys.append(urljoin(base, uri))
+        elif upper.startswith("#EXT-X-MAP:"):
+            uri = _quoted_uri(line)
+            if uri:
+                maps.append(urljoin(base, uri))
+        elif upper.startswith("#EXT-X-STREAM-INF"):
             for nxt in lines[i + 1:]:
                 if not nxt.startswith("#"):
                     variants.append(urljoin(base, nxt))
                     break
-    for i, line in enumerate(lines):
-        if line.startswith("#EXTINF"):
+        elif upper.startswith("#EXTINF"):
             for nxt in lines[i + 1:]:
                 if not nxt.startswith("#"):
                     segments.append(urljoin(base, nxt))
@@ -402,51 +479,139 @@ def parse_m3u8_items(text: str, base: str) -> tuple[list[str], list[str]]:
             low = line.lower()
             if not line.startswith("#") and any(ext in low for ext in MEDIA_EXTS):
                 segments.append(urljoin(base, line))
-    return unique_keep_order(variants), unique_keep_order(segments)
+    return HLSManifest(
+        unique_keep_order(variants),
+        unique_keep_order(segments),
+        unique_keep_order(keys),
+        unique_keep_order(maps),
+        media_sequence,
+        target_duration,
+        endlist,
+    )
 
 
-def check_media_segments(segments: list[str], limit: int = HLS_SEGMENT_CHECKS, timeout: int = TIMEOUT) -> tuple[bool, str]:
+def parse_m3u8_items(text: str, base: str) -> tuple[list[str], list[str]]:
+    """Compatibility wrapper used by tests and older diagnostics."""
+    manifest = parse_hls_manifest(text, base)
+    return manifest.variants, manifest.segments
+
+
+def looks_media(data: bytes, ctype: str, require_video: bool = False) -> bool:
+    return probe_looks_media(data, ctype, require_video=require_video)
+
+
+def media_detail(data: bytes, ctype: str) -> str:
+    probe = probe_media(data, ctype)
+    return f"{probe.kind}/{probe.container}: {probe.reason}"
+
+
+def check_aux_resources(manifest: HLSManifest, timeout: int, require_video: bool = False) -> tuple[bool, str]:
+    for key_url in manifest.keys[:1]:
+        code, ctype, data, _final = http_get_small(key_url, max_bytes=1024, timeout=timeout)
+        if code >= 400 or not data or looks_bad(data):
+            return False, f"key bad {code} {ctype} bytes={len(data)}"
+    for map_url in manifest.maps[:1]:
+        # The initialization segment contains the track table for CMAF/fMP4.
+        # It is the authoritative place to reject audio-only HLS streams.
+        code, ctype, data, _final = http_get_small(map_url, max_bytes=65536, timeout=timeout)
+        if code >= 400 or not looks_media(data, ctype, require_video=require_video):
+            return False, f"map bad {code} {ctype} bytes={len(data)} {media_detail(data, ctype)}"
+    return True, f"keys={min(1, len(manifest.keys))} maps={min(1, len(manifest.maps))}"
+
+
+def check_media_segments(segments: list[str], limit: int = HLS_SEGMENT_CHECKS, timeout: int = TIMEOUT, require_video: bool | None = None) -> tuple[bool, str]:
     if not segments:
         return False, "no segment"
+    if require_video is None:
+        require_video = REQUIRE_VIDEO_TRACK
     checked = 0
-    for seg in segments[:max(1, limit)]:
-        c, ct, d, f = http_get_small(seg, max_bytes=4096, timeout=timeout)
+    # Probe the newest advertised segments. The head of a long/event playlist
+    # may be expired or cached and does not prove the current live edge works.
+    # Strict final publication probes download a larger sample so PAT/PMT or
+    # container track metadata is available, not just a TS sync byte.
+    sample_bytes = 32768 if require_video else 4096
+    for seg in segments[-max(1, limit):]:
+        code, ctype, data, _final = http_get_small(seg, max_bytes=sample_bytes, timeout=timeout)
         checked += 1
-        if c >= 400 or not looks_media(d, ct):
-            return False, f"segment bad {c} {ct} bytes={len(d)} checked={checked}"
-    return True, f"segments ok checked={checked}"
+        if code >= 400 or not looks_media(data, ctype, require_video=require_video):
+            return False, f"segment bad {code} {ctype} bytes={len(data)} checked={checked} {media_detail(data, ctype)}"
+    mode = "video" if require_video else "media"
+    return True, f"segments ok checked={checked} required={mode}"
+
+
+def progress_wait_seconds(target_duration: float | None) -> float:
+    """Wait long enough for one live segment without unbounded runner delay."""
+    target = target_duration if target_duration and target_duration > 0 else 4.0
+    return min(HLS_PROGRESS_MAX_WAIT, max(HLS_PROGRESS_MIN_WAIT, target * HLS_PROGRESS_TARGET_MULTIPLIER))
+
+
+def check_hls_progress(playlist_url: str, initial: HLSManifest, timeout: int, require_video: bool | None = None) -> tuple[bool, str]:
+    if require_video is None:
+        require_video = REQUIRE_VIDEO_TRACK
+    if initial.endlist:
+        return False, "VOD/endlist manifest is not a live channel"
+    if not initial.segments:
+        return False, "no initial segment for progress check"
+    wait_seconds = progress_wait_seconds(initial.target_duration)
+    time.sleep(wait_seconds)
+    code, ctype, data, final = http_get_small(playlist_url, timeout=timeout)
+    if code >= 400 or looks_bad(data):
+        return False, f"progress manifest bad {code}"
+    later = parse_hls_manifest(data.decode("utf-8", "ignore"), final)
+    sequence_advanced = (
+        initial.media_sequence is not None
+        and later.media_sequence is not None
+        and later.media_sequence > initial.media_sequence
+    )
+    segment_advanced = bool(later.segments and later.segments[-1] != initial.segments[-1])
+    if not (sequence_advanced or segment_advanced):
+        return False, f"manifest did not advance after {wait_seconds:.1f}s"
+    if not later.segments:
+        return False, f"manifest advanced after {wait_seconds:.1f}s but has no media segment"
+    # A changing manifest URL/sequence alone is not proof that the live edge is
+    # usable. Probe the newly advertised edge segment again; this rejects stale
+    # manifests that advance while their latest media objects are already 404,
+    # empty, HTML error pages, or audio-only payloads.
+    edge_ok, edge_detail = check_media_segments(later.segments, limit=1, timeout=timeout, require_video=require_video)
+    if not edge_ok:
+        return False, f"manifest advanced after {wait_seconds:.1f}s; new edge failed: {edge_detail}"
+    return True, f"manifest advanced after {wait_seconds:.1f}s; new edge ok"
 
 
 def parse_next_from_m3u8(text: str, base: str) -> tuple[str | None, str | None]:
-    # Compatibility helper for older report wording; new code uses parse_m3u8_items().
-    variants, segments = parse_m3u8_items(text, base)
-    if variants:
-        return "playlist", variants[0]
-    if segments:
-        return "segment", segments[0]
+    manifest = parse_hls_manifest(text, base)
+    if manifest.variants:
+        return "playlist", manifest.variants[0]
+    if manifest.segments:
+        return "segment", manifest.segments[0]
     return None, None
 
 
-def looks_media(data: bytes, ctype: str) -> bool:
-    if looks_bad(data):
-        return False
-    if len(data) < 188:
-        return False
-    if data[:1] == b"G" or data[:1] == b"\x47":
-        return True
-    if data[:4] in (b"\x00\x00\x00\x18", b"\x00\x00\x00 ") or b"ftyp" in data[:32]:
-        return True
-    if any(x in ctype for x in ("video", "audio", "octet-stream", "mp2t")):
-        return True
-    return False
+def _check_media_manifest(cand: Candidate, playlist_url: str, text: str, final: str, timeout: int, segment_limit: int, require_progress: bool, require_video: bool) -> CheckResult:
+    manifest = parse_hls_manifest(text, final)
+    aux_ok, aux_detail = check_aux_resources(manifest, timeout, require_video=require_video)
+    if not aux_ok:
+        return CheckResult(cand, False, aux_detail)
+    segments_ok, segment_detail = check_media_segments(manifest.segments, limit=segment_limit, timeout=timeout, require_video=require_video)
+    if not segments_ok:
+        return CheckResult(cand, False, segment_detail)
+    if require_progress:
+        progress_ok, progress_detail = check_hls_progress(final, manifest, timeout, require_video=require_video)
+        if not progress_ok:
+            return CheckResult(cand, False, f"{segment_detail}; {progress_detail}")
+        return CheckResult(cand, True, f"{segment_detail}; {aux_detail}; {progress_detail}")
+    return CheckResult(cand, True, f"{segment_detail}; {aux_detail}")
 
 
-def check_candidate(cand: Candidate, timeout: int = TIMEOUT) -> CheckResult:
+def check_candidate(cand: Candidate, timeout: int = TIMEOUT, core_override: bool | None = None, require_progress: bool = False, require_video: bool | None = None) -> CheckResult:
     url = cand.url.strip()
-    if not url.startswith(("http://", "https://")):
-        return CheckResult(cand, False, "unsupported scheme")
-    segment_limit = CORE_HLS_SEGMENT_CHECKS if is_core_family_candidate(cand) else HLS_SEGMENT_CHECKS
-    # For home Ku9 on common networks, IPv6-only URLs often fail; still test, but mark fail on network error.
+    issue = publishable_url_issue(url)
+    if issue:
+        return CheckResult(cand, False, f"invalid URL: {issue}")
+    is_core = is_core_family_candidate(cand) if core_override is None else core_override
+    if require_video is None:
+        require_video = REQUIRE_VIDEO_TRACK
+    segment_limit = CORE_HLS_SEGMENT_CHECKS if is_core else HLS_SEGMENT_CHECKS
     try:
         code, ctype, data, final = http_get_small(url, timeout=timeout)
         if code >= 400:
@@ -455,41 +620,53 @@ def check_candidate(cand: Candidate, timeout: int = TIMEOUT) -> CheckResult:
             return CheckResult(cand, False, "bad marker/html")
         text = data.decode("utf-8", "ignore")
         if "#EXTM3U" in text or "mpegurl" in ctype or url.lower().endswith((".m3u8", ".m3u")):
-            variants, segments = parse_m3u8_items(text, final)
-            if variants:
+            manifest = parse_hls_manifest(text, final)
+            if manifest.variants:
                 checked_variants = 0
                 last_detail = ""
-                for child in variants[:max(1, HLS_VARIANT_CHECKS)]:
+                for child in manifest.variants[:max(1, HLS_VARIANT_CHECKS)]:
                     checked_variants += 1
-                    c2, ct2, d2, f2 = http_get_small(child, timeout=timeout)
-                    if c2 >= 400 or looks_bad(d2):
-                        last_detail = f"child bad {c2}"
+                    code2, ctype2, data2, final2 = http_get_small(child, timeout=timeout)
+                    if code2 >= 400 or looks_bad(data2):
+                        last_detail = f"child bad {code2}"
                         continue
-                    t2 = d2.decode("utf-8", "ignore")
-                    _v2, child_segments = parse_m3u8_items(t2, f2)
-                    ok, detail = check_media_segments(child_segments, limit=segment_limit, timeout=timeout)
-                    last_detail = detail
-                    if ok:
-                        return CheckResult(cand, True, f"variant ok variants_checked={checked_variants} {detail}")
+                    result = _check_media_manifest(
+                        cand,
+                        child,
+                        data2.decode("utf-8", "ignore"),
+                        final2,
+                        timeout,
+                        segment_limit,
+                        require_progress,
+                        require_video,
+                    )
+                    last_detail = result.detail
+                    if result.ok:
+                        return CheckResult(cand, True, f"variant ok variants_checked={checked_variants} {result.detail}")
                 return CheckResult(cand, False, f"variant fail variants_checked={checked_variants} {last_detail}")
-            ok, detail = check_media_segments(segments, limit=segment_limit, timeout=timeout)
-            return CheckResult(cand, ok, detail)
-        else:
-            return CheckResult(cand, looks_media(data, ctype), f"direct {ctype} bytes={len(data)}")
-    except Exception as e:
-        return CheckResult(cand, False, repr(e)[:160])
+            return _check_media_manifest(cand, url, text, final, timeout, segment_limit, require_progress, require_video)
+        return CheckResult(cand, looks_media(data, ctype, require_video=require_video), f"direct {ctype} bytes={len(data)} {media_detail(data, ctype)} required={'video' if require_video else 'media'}")
+    except Exception as exc:
+        return CheckResult(cand, False, repr(exc)[:160])
 
 
-def check_candidate_resilient(cand: Candidate) -> CheckResult:
+def check_candidate_resilient(cand: Candidate, core_override: bool | None = None, require_progress: bool = False, require_video: bool | None = None) -> CheckResult:
     """Check a URL, with a slow retry for core family channels on transient failures."""
-    first = check_candidate(cand, timeout=TIMEOUT)
+    is_core = is_core_family_candidate(cand) if core_override is None else core_override
+    first = check_candidate(cand, timeout=TIMEOUT, core_override=is_core, require_progress=require_progress, require_video=require_video)
     if first.ok or CORE_RETRY_ATTEMPTS <= 0:
         return first
-    if not is_core_family_candidate(cand) or not looks_transient_failure(first.detail):
+    if not is_core or not looks_transient_failure(first.detail):
         return first
     last = first
     for attempt in range(1, CORE_RETRY_ATTEMPTS + 1):
-        retry = check_candidate(cand, timeout=max(TIMEOUT, CORE_RETRY_TIMEOUT))
+        retry = check_candidate(
+            cand,
+            timeout=max(TIMEOUT, CORE_RETRY_TIMEOUT),
+            core_override=is_core,
+            require_progress=require_progress,
+            require_video=require_video,
+        )
         if retry.ok:
             return CheckResult(cand, True, f"core retry ok attempt={attempt} first={first.detail}; {retry.detail}")
         last = retry
@@ -517,6 +694,22 @@ def prefer_score(c: Candidate) -> tuple[int, int, int, str]:
     return (score, len(c.url), len(c.source), c.source)
 
 
+def deduplicate_candidates(candidates: Iterable[Candidate]) -> dict[tuple[str, str], Candidate]:
+    """Normalize and deterministically retain the best source per name+URL."""
+    dedup: dict[tuple[str, str], Candidate] = {}
+    for raw in candidates:
+        name = normalize_name(raw.name)
+        url = normalize_stream_url(raw.url)
+        if not name or len(url) > 1000 or not is_publishable_http_url(url):
+            continue
+        candidate = Candidate(raw.source, infer_group(name, raw.group), name, url)
+        key = (name, url)
+        current = dedup.get(key)
+        if current is None or prefer_score(candidate) < prefer_score(current):
+            dedup[key] = candidate
+    return dedup
+
+
 def main() -> None:
     cleanup_transient_outputs()
     start = time.time()
@@ -531,39 +724,39 @@ def main() -> None:
             all_cands.extend(cands)
             print(f"source {'OK' if st.ok else 'FAIL'} {st.name}: parsed={st.parsed} bytes={st.bytes} {st.error}", flush=True)
 
+    statuses = order_source_statuses(statuses)
+
     # Deduplicate before expensive checking.
     # Full-check rule: every distinct stream URL is probed against a real media
     # playlist/segment. The same URL can appear under multiple channel names in
     # upstream lists; checking it once and reusing the result is equivalent for
     # playback validity and avoids thousands of duplicate network probes.
-    dedup: dict[tuple[str, str], Candidate] = {}
-    for c in all_cands:
-        name = normalize_name(c.name)
-        url = normalize_stream_url(c.url)
-        if not name or len(url) > 1000:
-            continue
-        dedup.setdefault((name, url), Candidate(c.source, infer_group(name, c.group), name, url))
+    # Fetch completion order is nondeterministic. Deterministically retain the
+    # configured best source so reports and downstream priority stay stable.
+    dedup = deduplicate_candidates(all_cands)
 
     url_to_candidates: dict[str, list[Candidate]] = {}
     for c in dedup.values():
         url_to_candidates.setdefault(c.url, []).append(c)
     to_check: list[Candidate] = []
+    core_by_url: dict[str, bool] = {}
     for url, arr in url_to_candidates.items():
-        # Pick the best representative only for logging/source priority. The
-        # check itself depends solely on URL; after probing, the result is copied
-        # back to every channel-name alias that used this URL.
+        # Pick the best representative only for logging/source priority. Core
+        # depth/retry is URL-level: if any alias is CCTV/satellite, a misleading
+        # ordinary alias must not downgrade verification for the shared URL.
         to_check.append(sorted(arr, key=lambda c: (prefer_score(c), c.name))[0])
+        core_by_url[url] = any(is_core_family_candidate(alias) for alias in arr)
     to_check.sort(key=lambda c: (prefer_score(c), c.name, c.url))
     print(
         f"Parsed candidates={len(all_cands)}, unique_name_url={len(dedup)}, "
         f"unique_urls={len(url_to_candidates)}, checking_all_unique_urls={len(to_check)}, "
-        f"workers={CHECK_WORKERS}, timeout={TIMEOUT}s",
+        f"workers={CHECK_WORKERS}, per_host={HOST_WORKERS}, timeout={TIMEOUT}s",
         flush=True,
     )
 
     checked_by_url: dict[str, CheckResult] = {}
     with cf.ThreadPoolExecutor(max_workers=CHECK_WORKERS) as ex:
-        futs = [ex.submit(check_candidate_resilient, c) for c in to_check]
+        futs = [ex.submit(check_candidate_resilient, c, core_by_url[c.url], False) for c in to_check]
         ok_count = 0
         for i, fut in enumerate(cf.as_completed(futs), 1):
             r = fut.result()
@@ -641,6 +834,12 @@ def main() -> None:
         "unique_name_url_candidates": len(dedup),
         "checked_candidates": len(to_check),
         "checked_all_unique": len(to_check) == len(url_to_candidates),
+        "first_pass_validation": {
+            "require_video_track": REQUIRE_VIDEO_TRACK,
+            "public_network_policy_enabled": True,
+            "hls_segment_checks": HLS_SEGMENT_CHECKS,
+            "core_hls_segment_checks": CORE_HLS_SEGMENT_CHECKS,
+        },
         "playable_channel_names": len(valid_by_name),
         "playable_unique_urls": ok_count,
         "playable_name_url_lines": len(all_valid),
@@ -653,13 +852,13 @@ def main() -> None:
     (ROOT / "full-check-summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
 
     with (ROOT / "sources_status.csv").open("w", encoding="utf-8", newline="") as f:
-        w = csv.writer(f)
-        w.writerow(["name", "url", "fetch_ok", "bytes", "parsed", "error"])
+        w = csv.writer(f, lineterminator="\n")
+        w.writerow(["name", "url", "fetch_ok", "bytes", "parsed", "truncated", "error"])
         for st in statuses:
-            w.writerow([st.name, st.url, st.ok, st.bytes, st.parsed, st.error])
+            w.writerow([st.name, st.url, st.ok, st.bytes, st.parsed, st.truncated, st.error])
 
     with (ROOT / "stream_check_results.csv").open("w", encoding="utf-8", newline="") as f:
-        w = csv.writer(f)
+        w = csv.writer(f, lineterminator="\n")
         w.writerow(["ok", "group", "name", "url", "source", "detail"])
         for r in sorted(results, key=lambda x: (not x.ok, x.cand.group, x.cand.name)):
             w.writerow([r.ok, r.cand.group, r.cand.name, r.cand.url, r.cand.source, r.detail])
@@ -689,11 +888,11 @@ def main() -> None:
         "",
         "## Source fetch status",
         "",
-        "| Source | Fetch | Parsed | Bytes | Error |",
-        "|---|---:|---:|---:|---|",
+        "| Source | Fetch | Parsed | Bytes | Truncated | Error |",
+        "|---|---:|---:|---:|---:|---|",
     ]
     for st in statuses:
-        report.append(f"| {st.name} | {'OK' if st.ok else 'FAIL'} | {st.parsed} | {st.bytes} | {st.error.replace('|','/')} |")
+        report.append(f"| {st.name} | {'OK' if st.ok else 'FAIL'} | {st.parsed} | {st.bytes} | {st.truncated} | {st.error.replace('|','/')} |")
     report += ["", "## Pre-curation playable lines by source", "", "| Source | Lines |", "|---|---:|"]
     for src, n in sorted(ok_sources.items(), key=lambda x: (-x[1], x[0])):
         report.append(f"| {src} | {n} |")

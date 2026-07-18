@@ -10,3 +10,5 @@ published_recheck_results.csv
 curated-source-map.csv
 local-network-report.md
 local-network-results.csv
+curated-candidate-pool.csv
+alias-conflict-report.md

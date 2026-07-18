@@ -3,23 +3,68 @@
 from __future__ import annotations
 
 from pathlib import Path
+import csv
 import json
+import re
+import socket
 import sys
 import tempfile
+import zlib
 from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from validate_playlist import validate_m3u_text, validate_text
-from verify_sources import SOURCES, Candidate, is_core_family_candidate, looks_transient_failure, parse_m3u, parse_txt, split_stream_urls, split_unquoted_last_comma
+from verify_sources import SOURCES, Candidate, CheckResult, HLSManifest, SourceStatus, deduplicate_candidates, is_core_family_candidate, looks_bad, looks_transient_failure, order_source_statuses, parse_hls_manifest, parse_m3u, parse_txt, progress_wait_seconds, split_stream_urls, split_unquoted_last_comma
 from playlist_config import get_group_order, load_guard, load_home_priority, load_priority, load_quality, source_priority
 from stability import stability_adjustment
 import stability as stability_module
+import verify_sources as verify_module
 import curate_ku9 as curate_module
 import audit_quality as quality_module
 import local_network_check as local_check_module
+import run_maintenance as maintenance_module
 from channel_utils import cctv_key as coverage_cctv_key, cctv_number, cctv_sort_key, cctv_variant_base, format_extinf, is_latin_noise_name
+from channel_identity import aliases_are_compatible, canonical_channel_key
+from validate_publish_bundle import BundleValidationError, Row as BundleRow, validate_publish_bundle
+from media_probe import looks_media as media_looks_playable, probe_media
+import network_safety as network_safety_module
+from network_safety import PublicRedirectHandler, PublicURLPolicyError, resolve_public_addresses, validate_public_url
+from url_utils import normalize_stream_url
+
+
+def test_workflow_is_pinned_and_refuses_stale_publication() -> None:
+    workflow = (ROOT / ".github" / "workflows" / "update.yml").read_text(encoding="utf-8")
+    action_refs = [line.strip() for line in workflow.splitlines() if line.strip().startswith("uses:")]
+    assert action_refs
+    assert all(re.fullmatch(r"uses: [A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[0-9a-f]{40}(?: # v\d+)?", line) for line in action_refs), action_refs
+    assert "stefanzweifel/git-auto-commit-action" not in workflow
+    assert 'remote_sha=$(git rev-parse "origin/$TARGET_BRANCH")' in workflow
+    assert 'if [ "$remote_sha" != "$SOURCE_SHA" ]; then' in workflow
+    assert 'git push origin "HEAD:$TARGET_BRANCH"' in workflow
+    assert "Refuse publication from a non-default branch" in workflow
+    assert "github.ref_name != github.event.repository.default_branch" in workflow
+    assert workflow.index("Refuse publication from a non-default branch") < workflow.index("Verify every unique IPTV stream URL")
+    assert 'IPTV_REQUIRE_VIDEO_TRACK: "0"' in workflow
+    assert 'IPTV_REQUIRE_VIDEO_TRACK: "1"' in workflow
+    assert "issues: write" in workflow
+    assert "notify_maintenance.py" in workflow
+    assert workflow.count("continue-on-error: true") >= 4
+    assert not workflow.rstrip().endswith(r"\n"), "workflow contains a literal trailing \\n token"
+    endpoint_checker = (ROOT / "scripts" / "check_publication_endpoints.py").read_text(encoding="utf-8")
+    assert "No television-compatible publication endpoint is current" in endpoint_checker
+    assert "publication_check=" not in endpoint_checker
+
+
+def test_source_statuses_follow_config_order() -> None:
+    configured = [("first", "https://one.test/list"), ("second", "https://two.test/list")]
+    completion_order = [
+        SourceStatus("second", configured[1][1], True),
+        SourceStatus("first", configured[0][1], False, error="timeout"),
+    ]
+    ordered = order_source_statuses(completion_order, configured)
+    assert [status.name for status in ordered] == ["first", "second"]
 
 
 def test_source_config_omits_disabled_unstable_sources() -> None:
@@ -54,6 +99,18 @@ def test_rules_config_contains_core_coverage() -> None:
     assert "辽宁卫视" in rules["coverage"]["important_satellite"]
     assert rules["coverage"].get("fail_on_missing_cctv") is True
     assert rules["coverage"].get("fail_on_missing_satellite") is True
+
+
+def test_classification_avoids_single_character_false_positives() -> None:
+    rules = json.loads((ROOT / "config" / "rules.json").read_text(encoding="utf-8-sig"))
+    assert "\u5267" not in rules["category_keywords"]["movie"]
+    assert "\u8d5b" not in rules["category_keywords"]["sport_doc"]
+    assert not {"\u623f", "\u5c55", "\u5b66"}.intersection(rules["category_keywords"]["life"])
+    assert curate_module.classify("\u4eac\u5267\u9891\u9053", "", "unit") == "\u97f3\u4e50\u7efc\u827a"
+    assert curate_module.classify("\u8d5b\u8f66\u9891\u9053", "", "unit") == "\u4f53\u80b2\u7eaa\u5b9e"
+    assert curate_module.classify("\u623f\u4ea7\u9891\u9053", "", "unit") == "\u751f\u6d3b\u4f11\u95f2"
+    assert curate_module.classify("\u661f\u5149\u5c55\u64ad", "", "unit") == "\u7efc\u5408\u5a31\u4e50"
+    assert curate_module.classify("\u5b66\u800c\u601d", "", "unit") == "\u7efc\u5408\u5a31\u4e50"
 
 
 def test_priority_and_guard_config_are_externalized() -> None:
@@ -176,7 +233,7 @@ def test_coverage_counts_exact_cctv_and_reports_variants() -> None:
     assert cctv_variant_base("CCTV-5+体育") == "CCTV-5+"
     assert is_latin_noise_name("DiscoveryAsia") is True
     assert is_latin_noise_name("BRTV北京卫视") is False
-    assert is_latin_noise_name("TVB翡翠台") is False
+    assert is_latin_noise_name("TVB中文") is False
 
 
 def test_format_extinf_escapes_quoted_attributes() -> None:
@@ -294,6 +351,7 @@ def test_split_stream_urls() -> None:
     assert split_stream_urls("http://a/live.m3u8?token=x;y") == [
         "http://a/live.m3u8?token=x;y",
     ]
+    assert normalize_stream_url("http://a/live.m3u8#") == "http://a/live.m3u8"
 
 
 def test_parse_m3u_name_and_split_urls() -> None:
@@ -329,6 +387,262 @@ def test_family_playlist_limits() -> None:
     ent_urls = [row.url for row in family_rows if row.name == "娱乐频道"]
     assert len(cctv_urls) == min(4, int((profile.get("group_channel_limits") or {}).get("央视频道", 4)))
     assert len(ent_urls) == 1
+
+
+def test_family_playlist_uses_canonical_identity_quota() -> None:
+    from recheck_published import Row, build_family_rows
+
+    rows = [
+        Row("\u592e\u89c6\u9891\u9053", "CCTV-1", "http://a/1.m3u8"),
+        Row("\u592e\u89c6\u9891\u9053", "CCTV-1(720p)", "http://a/2.m3u8"),
+        Row("\u592e\u89c6\u9891\u9053", "CCTV-1\u9ad8\u6e05", "http://a/3.m3u8"),
+        Row("\u592e\u89c6\u9891\u9053", "CCTV-1", "http://a/4.m3u8"),
+        Row("\u592e\u89c6\u9891\u9053", "CCTV-1\u8d85\u6e05", "http://a/5.m3u8"),
+    ]
+    family_rows = build_family_rows(["\u592e\u89c6\u9891\u9053"], rows)
+    assert len(family_rows) == 4
+    assert [row.url for row in family_rows] == [f"http://a/{i}.m3u8" for i in range(1, 5)]
+
+
+def test_source_dedup_is_deterministic() -> None:
+    low = Candidate("epg_cn", "\u592e\u89c6\u9891\u9053", "CCTV-1", "http://a/live.m3u8")
+    preferred = Candidate("zbds_iptv4_txt", "\u592e\u89c6\u9891\u9053", "CCTV-1", "http://a/live.m3u8")
+    first = deduplicate_candidates([low, preferred])
+    second = deduplicate_candidates([preferred, low])
+    assert first[("CCTV-1", "http://a/live.m3u8")].source == "zbds_iptv4_txt"
+    assert second == first
+
+
+def test_canonical_identity_collapses_resolution_and_official_aliases() -> None:
+    assert canonical_channel_key("\u6e56\u5357\u536b\u89c6") == canonical_channel_key("\u6e56\u5357\u536b\u89c64K")
+    assert canonical_channel_key("\u5357\u56fd\u90fd\u5e02") == canonical_channel_key("\u5357\u56fd\u90fd\u5e024K")
+    assert canonical_channel_key("CCTV-16") == canonical_channel_key("CCTV-16\u8d85\u6e05")
+    assert canonical_channel_key("CCTV-16") == canonical_channel_key("CCTV-16\u5965\u6797\u5339\u514b")
+    assert aliases_are_compatible(["CCTV-16", "CCTV-16\u5965\u6797\u5339\u514b"])
+
+
+
+def _psi_section(table_id: int, body: bytes) -> bytes:
+    section_length = len(body) + 4
+    return bytes([table_id, 0xB0 | ((section_length >> 8) & 0x0F), section_length & 0xFF]) + body + bytes(4)
+
+
+def _ts_packet(pid: int, section: bytes) -> bytes:
+    header = bytes([0x47, 0x40 | ((pid >> 8) & 0x1F), pid & 0xFF, 0x10])
+    payload = bytes([0]) + section
+    return header + payload + bytes([0xFF]) * (188 - len(header) - len(payload))
+
+
+def _sample_ts(stream_type: int) -> bytes:
+    pat = _psi_section(0x00, b"\x00\x01\xC1\x00\x00\x00\x01\xE0\x64")
+    pmt = _psi_section(
+        0x02,
+        b"\x00\x01\xC1\x00\x00\xE1\x00\xF0\x00"
+        + bytes([stream_type])
+        + b"\xE0\x65\xF0\x00",
+    )
+    return _ts_packet(0, pat) + _ts_packet(100, pmt)
+
+
+def test_strict_media_probe_requires_a_video_track() -> None:
+    video = _sample_ts(0x1B)
+    audio = _sample_ts(0x0F)
+    assert probe_media(video, "video/mp2t").kind == "video"
+    assert probe_media(audio, "video/mp2t").kind == "audio"
+    assert media_looks_playable(video, "video/mp2t", require_video=True)
+    assert not media_looks_playable(audio, "video/mp2t", require_video=True)
+    assert media_looks_playable(audio, "audio/aac", require_video=False)
+    init_video = b"\x00\x00\x00\x18ftypisom" + b"moovtrakmdiahdlrvideavc1"
+    init_audio = b"\x00\x00\x00\x18ftypisom" + b"moovtrakmdiahdlrsounmp4a"
+    assert probe_media(init_video, "video/mp4").kind == "video"
+    assert probe_media(init_audio, "audio/mp4").kind == "audio"
+
+
+def test_public_network_policy_blocks_private_and_redirect_targets() -> None:
+    original_getaddrinfo = network_safety_module.socket.getaddrinfo
+    try:
+        def fake_getaddrinfo(host, port, type=socket.SOCK_STREAM):
+            address = "93.184.216.34" if host == "public.test" else "127.0.0.1"
+            return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (address, port))]
+
+        network_safety_module.socket.getaddrinfo = fake_getaddrinfo
+        resolve_public_addresses.cache_clear()
+        assert validate_public_url("https://public.test/live.m3u8").startswith("https://")
+        try:
+            validate_public_url("http://private.test/live.m3u8")
+        except PublicURLPolicyError as exc:
+            assert "non-public" in str(exc)
+        else:
+            raise AssertionError("private DNS answer was accepted")
+        try:
+            PublicRedirectHandler().redirect_request(SimpleNamespace(full_url="https://public.test/live.m3u8"), None, 302, "Found", {}, "http://127.0.0.1/admin")
+        except PublicURLPolicyError:
+            pass
+        else:
+            raise AssertionError("private redirect target was accepted")
+    finally:
+        network_safety_module.socket.getaddrinfo = original_getaddrinfo
+        resolve_public_addresses.cache_clear()
+
+
+def test_fetch_url_handles_gzip_final_url() -> None:
+    payload = b"channel,http://example.test/live.m3u8\n"
+    compressed = zlib.compressobj(wbits=16 + zlib.MAX_WBITS)
+    blob = compressed.compress(payload) + compressed.flush()
+    original = verify_module.limited_urlopen
+
+    class Response:
+        status = 200
+        headers = {"Content-Type": "application/gzip", "Content-Encoding": "gzip"}
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return False
+
+        def read(self, limit):
+            return blob[:limit]
+
+        def geturl(self):
+            return "https://public.test/list.m3u.gz"
+
+    try:
+        verify_module.limited_urlopen = lambda _request, timeout: Response()
+        code, ctype, data, final, truncated = verify_module.fetch_url("https://public.test/list.m3u.gz")
+        assert code == 200
+        assert ctype == "application/gzip"
+        assert data == payload
+        assert final.endswith(".gz")
+        assert truncated is False
+    finally:
+        verify_module.limited_urlopen = original
+
+
+def test_strict_bounded_gzip_decompression() -> None:
+    payload = ("\u9891\u9053,http://example.test/live.m3u8\n" * 100).encode("utf-8")
+    compressed = zlib.compressobj(wbits=16 + zlib.MAX_WBITS)
+    blob = compressed.compress(payload) + compressed.flush()
+    assert verify_module._bounded_gzip_decompress(blob, len(payload)) == payload
+    for bad, limit, expected in [
+        (blob[:-3], len(payload), "truncated gzip"),
+        (blob, len(payload) - 1, "exceeded maximum"),
+        (blob + b"junk", len(payload), "trailing data"),
+    ]:
+        try:
+            verify_module._bounded_gzip_decompress(bad, limit)
+        except ValueError as exc:
+            assert expected in str(exc), str(exc)
+        else:
+            raise AssertionError(f"gzip case should fail: {expected}")
+
+
+def test_hls_error_words_inside_valid_urls_are_not_false_negatives() -> None:
+    text = "#EXTM3U\n#EXT-X-MEDIA-SEQUENCE:404\n#EXTINF:4,\nsegment-offline-404.ts?token=nosignal\n"
+    manifest = parse_hls_manifest(text, "https://unit.test/live/index.m3u8")
+    assert manifest.media_sequence == 404
+    assert manifest.segments == ["https://unit.test/live/segment-offline-404.ts?token=nosignal"]
+    assert not looks_bad(text.encode("utf-8"))
+    assert looks_bad(b"404 Not Found")
+
+
+def test_hls_progress_rechecks_new_live_edge_segment() -> None:
+    initial = HLSManifest([], ["http://unit.test/s1.ts"], [], [], 1, 1.0, False)
+    later_manifest = b"#EXTM3U\n#EXT-X-TARGETDURATION:1\n#EXT-X-MEDIA-SEQUENCE:2\n#EXTINF:1,\ns2.ts\n"
+    original_get = verify_module.http_get_small
+    original_sleep = verify_module.time.sleep
+    try:
+        calls = []
+
+        def failing_edge(url, max_bytes=4096, timeout=1):
+            calls.append(url)
+            if url.endswith("playlist.m3u8"):
+                return 200, "application/vnd.apple.mpegurl", later_manifest, url
+            return 404, "text/html", b"not found", url
+
+        verify_module.http_get_small = failing_edge
+        verify_module.time.sleep = lambda _seconds: None
+        ok, detail = verify_module.check_hls_progress("http://unit.test/playlist.m3u8", initial, 1, require_video=False)
+        assert not ok, detail
+        assert "new edge failed" in detail
+        assert calls == ["http://unit.test/playlist.m3u8", "http://unit.test/s2.ts"]
+
+        calls.clear()
+        media = _sample_ts(0x1B)
+
+        def working_edge(url, max_bytes=4096, timeout=1):
+            calls.append(url)
+            if url.endswith("playlist.m3u8"):
+                return 200, "application/vnd.apple.mpegurl", later_manifest, url
+            return 200, "video/mp2t", media, url
+
+        verify_module.http_get_small = working_edge
+        ok, detail = verify_module.check_hls_progress("http://unit.test/playlist.m3u8", initial, 1, require_video=False)
+        assert ok, detail
+        assert "new edge ok" in detail
+        assert calls == ["http://unit.test/playlist.m3u8", "http://unit.test/s2.ts"]
+    finally:
+        verify_module.http_get_small = original_get
+        verify_module.time.sleep = original_sleep
+
+
+def test_progress_wait_respects_target_duration() -> None:
+    assert progress_wait_seconds(None) >= verify_module.HLS_PROGRESS_MIN_WAIT
+    assert progress_wait_seconds(10.0) >= 10.0
+    assert progress_wait_seconds(999.0) == verify_module.HLS_PROGRESS_MAX_WAIT
+
+
+def test_media_segment_probe_uses_live_edge() -> None:
+    called = []
+    original = verify_module.http_get_small
+    try:
+        def fake(url, max_bytes=4096, timeout=1):
+            called.append(url)
+            return 200, "video/mp2t", _sample_ts(0x1B), url
+
+        verify_module.http_get_small = fake
+        ok, _detail = verify_module.check_media_segments(["s1", "s2", "s3", "s4"], limit=2, timeout=1, require_video=False)
+        assert ok
+        assert called == ["s3", "s4"]
+    finally:
+        verify_module.http_get_small = original
+
+
+def test_final_recheck_refills_failed_channel_urls() -> None:
+    import recheck_published as recheck
+
+    before = [
+        recheck.Row("\u592e\u89c6\u9891\u9053", "CCTV-1", "http://a/1.m3u8"),
+        recheck.Row("\u592e\u89c6\u9891\u9053", "CCTV-1", "http://a/2.m3u8"),
+        recheck.Row("\u592e\u89c6\u9891\u9053", "CCTV-1", "http://a/3.m3u8"),
+    ]
+    kept = before[:1]
+    pool = [
+        recheck.PoolCandidate("CCTV-1", recheck.Row("\u592e\u89c6\u9891\u9053", "CCTV-1", "http://a/4.m3u8"), "zbds_iptv4_txt"),
+        recheck.PoolCandidate("CCTV-1", recheck.Row("\u592e\u89c6\u9891\u9053", "CCTV-1", "http://a/5.m3u8"), "epg_cn"),
+        recheck.PoolCandidate("CCTV-1", recheck.Row("\u592e\u89c6\u9891\u9053", "CCTV-1", "http://a/6.m3u8"), "guovin_ipv4"),
+    ]
+    calls = []
+
+    def fake_checker(cand, core_override, require_progress):
+        calls.append((cand.url, core_override, require_progress))
+        ok = not cand.url.endswith("5.m3u8")
+        return CheckResult(cand, ok, "ok" if ok else "failed")
+
+    final_rows, results, summary, attempted, accepted = recheck.refill_missing_rows(
+        before,
+        kept,
+        {"http://a/2.m3u8": "failed", "http://a/3.m3u8": "failed"},
+        pool,
+        checker=fake_checker,
+    )
+    assert [row.url for row in final_rows] == ["http://a/1.m3u8", "http://a/4.m3u8", "http://a/6.m3u8"]
+    assert len(results) == 3
+    assert len(attempted) == 3
+    assert [item.row.url for item in accepted] == ["http://a/4.m3u8", "http://a/6.m3u8"]
+    assert summary["refilled_rows"] == 2
+    assert summary["unresolved_rows"] == 0
+    assert all(core and progress for _url, core, progress in calls)
 
 
 def test_core_retry_classification() -> None:
@@ -428,6 +742,385 @@ def test_validate_rejects_strict_quality_filtered_channel() -> None:
         raise AssertionError("strict quality filtered channel was not rejected")
 
 
+def _render_test_txt(groups, rows) -> str:
+    lines = []
+    for group in groups:
+        part = [row for row in rows if row.group == group]
+        if not part:
+            continue
+        if lines:
+            lines.append("")
+        lines.append(f"{group},#genre#")
+        lines.extend(f"{row.name},{row.url}" for row in part)
+    return "\n".join(lines) + "\n"
+
+
+def _render_test_m3u(rows) -> str:
+    lines = ["#EXTM3U"]
+    for row in rows:
+        lines.extend([format_extinf(row.name, row.group), row.url])
+    return "\n".join(lines) + "\n"
+
+
+def _write_test_publish_bundle(root: Path, full_rows=None, family_rows=None, group_order=None) -> tuple[list[BundleRow], list[BundleRow]]:
+    groups = list(group_order or get_group_order())
+    canonical_groups = get_group_order()
+    if full_rows is None:
+        full_rows = [
+            BundleRow(group, "CCTV-1" if i == 0 else f"\u5bb6\u5ead\u9891\u9053{i}", f"http://unit.test/{i}.m3u8")
+            for i, group in enumerate(canonical_groups)
+        ]
+    if family_rows is None:
+        family_rows = list(full_rows)
+    full_text = _render_test_txt(groups, full_rows)
+    family_text = _render_test_txt(groups, family_rows)
+    for name in ("live-curated.txt", "live.txt", "live-verified.txt", "ku9-live.txt"):
+        (root / name).write_text(full_text, encoding="utf-8", newline="\n")
+    for name in ("ku9-family.txt", "live-family.txt"):
+        (root / name).write_text(family_text, encoding="utf-8", newline="\n")
+    (root / "live.m3u").write_text(_render_test_m3u(full_rows), encoding="utf-8", newline="\n")
+    (root / "family.m3u").write_text(_render_test_m3u(family_rows), encoding="utf-8", newline="\n")
+    with (root / "curated-source-map.csv").open("w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["group", "name", "url", "source"])
+        for row in full_rows:
+            writer.writerow([row.group, row.name, row.url, "unit"])
+    with (root / "curated-candidate-pool.csv").open("w", encoding="utf-8", newline="") as f:
+        writer = csv.writer(f, lineterminator="\n")
+        writer.writerow(["selection_key", "group", "name", "url", "source"])
+        for row in full_rows:
+            writer.writerow([canonical_channel_key(row.name), row.group, row.name, row.url, "unit"])
+    (root / "alias-conflict-report.md").write_text("# test\n", encoding="utf-8")
+    (root / "sources_status.csv").write_text(
+        "name,url,fetch_ok,bytes,parsed,truncated,error\nunit,https://unit.test/source,True,100,1,False,\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    (root / "config").mkdir(exist_ok=True)
+    (root / "config" / "sources.json").write_text(
+        json.dumps([{"name": "unit", "url": "https://unit.test/source", "enabled": True}], indent=2) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    full_groups = dict(__import__("collections").Counter(row.group for row in full_rows))
+    family_groups = dict(__import__("collections").Counter(row.group for row in family_rows))
+    checked = len({row.url for row in full_rows})
+    summary = {
+        "sources_total": 1,
+        "sources_fetched_ok": 1,
+        "checked_all_unique": True,
+        "checked_candidates": checked,
+        "unique_candidates": checked,
+        "unique_name_url_candidates": len(full_rows),
+        "playable_unique_urls": checked,
+        "playable_name_url_lines": len(full_rows),
+        "playable_urls_found": len(full_rows),
+        "all_playable_lines": len(full_rows),
+        "curated_generated": True,
+        "curated_source_map_available": True,
+        "curated_source_map_generated": True,
+        "curated_source_map_artifact_only": True,
+        "curated_candidate_pool_generated": True,
+        "curated_candidate_pool_artifact_only": True,
+        "curated_published_lines": len(full_rows),
+        "final_primary_published_lines": len(full_rows),
+        "primary_published_lines": len(full_rows),
+        "curated_channel_names": len({row.name for row in full_rows}),
+        "curated_groups": full_groups,
+        "curated_sources": {"unit": len(full_rows)},
+        "coverage": {"missing_cctv": [], "missing_satellite": []},
+        "quality_audit": {
+            "status": "ok",
+            "rows": len(full_rows),
+            "unique_names": len({row.name for row in full_rows}),
+            "unique_urls": checked,
+            "groups": full_groups,
+            "strict_filter_residue": [],
+            "missing_cctv_quality": [],
+            "missing_satellite_quality": [],
+        },
+        "published_recheck": {
+            "core_progress_required": True,
+            "require_video_track": True,
+            "video_track_verified_unique_urls": checked,
+            "public_network_policy_enabled": True,
+            "checked_unique_urls": checked,
+            "initial_checked_unique_urls": checked,
+            "initial_failed_unique_urls": 0,
+            "refill_failed_unique_urls": 0,
+            "failed_unique_urls": 0,
+            "before_rows": len(full_rows),
+            "after_rows": len(full_rows),
+            "removed_rows": 0,
+            "refill": {
+                "enabled": True,
+                "attempted_unique_urls": 0,
+                "playable_unique_urls": 0,
+                "refilled_rows": 0,
+                "unresolved_rows": 0,
+            },
+        },
+        "stability": {"enabled": True, "updated_urls": checked, "tracked_urls_after": checked},
+        "family_playlist": {
+            "enabled": True,
+            "lines": len(family_rows),
+            "unique_names": len({row.name for row in family_rows}),
+            "unique_urls": len({row.url for row in family_rows}),
+            "groups": family_groups,
+        },
+    }
+    (root / "full-check-summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return list(full_rows), list(family_rows)
+
+
+def _assert_bundle_failure(root: Path, expected: str) -> None:
+    try:
+        validate_publish_bundle(root)
+    except BundleValidationError as exc:
+        assert expected in str(exc), str(exc)
+    else:
+        raise AssertionError(f"bundle unexpectedly passed; expected {expected!r}")
+
+
+def test_publish_bundle_validator_enforces_cross_file_invariants() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        _write_test_publish_bundle(root)
+        result = validate_publish_bundle(root)
+        assert result["status"] == "ok"
+        assert result["full_rows"] == len(get_group_order())
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        order = get_group_order()
+        _write_test_publish_bundle(root, group_order=[order[1], order[0], *order[2:]])
+        _assert_bundle_failure(root, "category order/coverage mismatch")
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        _write_test_publish_bundle(root)
+        for name in ("live-curated.txt", "live.txt", "live-verified.txt", "ku9-live.txt"):
+            text = (root / name).read_text(encoding="utf-8")
+            first = text.splitlines()[0]
+            (root / name).write_text(first + "\n" + text, encoding="utf-8")
+        _assert_bundle_failure(root, "category order/coverage mismatch")
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        _write_test_publish_bundle(root)
+        for name in ("live-curated.txt", "live.txt", "live-verified.txt", "ku9-live.txt"):
+            text = (root / name).read_text(encoding="utf-8")
+            (root / name).write_text("\u6c61\u67d3\u9891\u9053,http://unit.test/pre.m3u8\n" + text, encoding="utf-8")
+        _assert_bundle_failure(root, "before first category")
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        rows, _ = _write_test_publish_bundle(root)
+        first_line = f"{rows[0].name},{rows[0].url}"
+        for name in ("live-curated.txt", "live.txt", "live-verified.txt", "ku9-live.txt"):
+            text = (root / name).read_text(encoding="utf-8")
+            (root / name).write_text(text.replace(first_line, first_line + "\n" + first_line, 1), encoding="utf-8")
+        _assert_bundle_failure(root, "exact duplicate rows")
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        groups = get_group_order()
+        rows = [
+            BundleRow(group, "CCTV-1" if i == 0 else f"\u5bb6\u5ead\u9891\u9053{i}", "http://unit.test/shared.m3u8" if i < 2 else f"http://unit.test/{i}.m3u8")
+            for i, group in enumerate(groups)
+        ]
+        _write_test_publish_bundle(root, full_rows=rows)
+        _assert_bundle_failure(root, "incompatible channel identities")
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        groups = get_group_order()
+        rows = [
+            BundleRow(group, "CCTV-1" if i == 0 else ("CCTV-1(4K)" if i == 1 else f"\u5bb6\u5ead\u9891\u9053{i}"), f"http://unit.test/{i}.m3u8")
+            for i, group in enumerate(groups)
+        ]
+        _write_test_publish_bundle(root, full_rows=rows)
+        _assert_bundle_failure(root, "canonical channel identities span categories")
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        _write_test_publish_bundle(root)
+        m3u = (root / "live.m3u").read_text(encoding="utf-8").replace("http://unit.test/0.m3u8", "http://unit.test/changed.m3u8", 1)
+        (root / "live.m3u").write_text(m3u, encoding="utf-8")
+        _assert_bundle_failure(root, "live.m3u rows/order")
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        rows, _ = _write_test_publish_bundle(root)
+        family = [BundleRow(rows[0].group, rows[0].name, "http://unit.test/not-in-full.m3u8"), *rows[1:]]
+        _write_test_publish_bundle(root, full_rows=rows, family_rows=family)
+        _assert_bundle_failure(root, "not an ordered subset")
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        _write_test_publish_bundle(root)
+        (root / "sources_status.csv").write_text(
+            "name,url,fetch_ok,bytes,parsed,truncated,error\n", encoding="utf-8", newline="\n"
+        )
+        _assert_bundle_failure(root, "summary.sources_total/sources_status rows")
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        _write_test_publish_bundle(root)
+        summary_path = root / "full-check-summary.json"
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        summary["curated_published_lines"] += 1
+        summary_path.write_text(json.dumps(summary, ensure_ascii=False), encoding="utf-8")
+        _assert_bundle_failure(root, "summary.curated_published_lines")
+
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        _write_test_publish_bundle(root)
+        summary_path = root / "full-check-summary.json"
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        # checked_unique_urls includes failed refill attempts, so it may be
+        # greater than the final published unique URL count.
+        summary["published_recheck"]["checked_unique_urls"] += 2
+        summary["published_recheck"]["refill_failed_unique_urls"] += 2
+        summary["published_recheck"]["failed_unique_urls"] += 2
+        summary["published_recheck"]["refill"]["attempted_unique_urls"] += 2
+        summary["stability"]["updated_urls"] += 2
+        summary["stability"]["tracked_urls_after"] += 2
+        summary_path.write_text(json.dumps(summary, ensure_ascii=False), encoding="utf-8", newline="\n")
+        assert validate_publish_bundle(root)["status"] == "ok"
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        _write_test_publish_bundle(root)
+        status_path = root / "sources_status.csv"
+        status_path.write_text(
+            status_path.read_text(encoding="utf-8").replace("https://unit.test/source", "https://unit.test/changed", 1),
+            encoding="utf-8",
+            newline="\n",
+        )
+        _assert_bundle_failure(root, "source name/URL order does not match")
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        _write_test_publish_bundle(root)
+        status_path = root / "sources_status.csv"
+        status_path.write_text(
+            status_path.read_text(encoding="utf-8").replace(",False,\n", ",maybe,\n", 1),
+            encoding="utf-8",
+            newline="\n",
+        )
+        _assert_bundle_failure(root, "invalid truncated values")
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        _write_test_publish_bundle(root)
+        source_map_path = root / "curated-source-map.csv"
+        source_map_path.write_text(
+            source_map_path.read_text(encoding="utf-8").replace("group,name,url,source", "name,group,url,source", 1),
+            encoding="utf-8",
+            newline="\n",
+        )
+        _assert_bundle_failure(root, "header must be")
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        _write_test_publish_bundle(root)
+        pool_path = root / "curated-candidate-pool.csv"
+        pool_path.write_text(
+            pool_path.read_text(encoding="utf-8").replace("selection_key,group,name,url,source", "group,selection_key,name,url,source", 1),
+            encoding="utf-8",
+            newline="\n",
+        )
+        _assert_bundle_failure(root, "header must be")
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        _write_test_publish_bundle(root)
+        pool_path = root / "curated-candidate-pool.csv"
+        lines = pool_path.read_text(encoding="utf-8").splitlines()
+        parts = lines[1].split(",", 1)
+        lines[1] = "wrong-key," + parts[1]
+        pool_path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+        _assert_bundle_failure(root, "does not match canonical channel key")
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        _write_test_publish_bundle(root)
+        pool_path = root / "curated-candidate-pool.csv"
+        lines = pool_path.read_text(encoding="utf-8").splitlines()
+        pool_path.write_text("\n".join([lines[0], *lines[2:]]) + "\n", encoding="utf-8", newline="\n")
+        _assert_bundle_failure(root, "final published rows are missing from the candidate pool")
+
+    for field_path in (
+        ("curated_channel_names",),
+        ("quality_audit", "rows"),
+        ("published_recheck", "video_track_verified_unique_urls"),
+        ("family_playlist", "groups"),
+    ):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            _write_test_publish_bundle(root)
+            summary_path = root / "full-check-summary.json"
+            summary = json.loads(summary_path.read_text(encoding="utf-8"))
+            target = summary
+            for part in field_path[:-1]:
+                target = target[part]
+            del target[field_path[-1]]
+            summary_path.write_text(json.dumps(summary, ensure_ascii=False), encoding="utf-8", newline="\n")
+            _assert_bundle_failure(root, "missing required fields")
+
+
+
+
+def test_publish_size_hashes_current_worktree_not_stale_index() -> None:
+    source = (ROOT / "scripts" / "audit_publish_size.py").read_text(encoding="utf-8")
+    assert '"hash-object", "--"' in source
+    assert '"ls-files", "-s"' not in source
+
+
+def test_publication_checker_uses_exact_canonical_url() -> None:
+    from check_publication_endpoints import build_request
+
+    url = "https://cdn.jsdelivr.net/gh/example/repo/ku9-live.txt"
+    request = build_request(url)
+    assert request.full_url == url
+    assert "publication_check=" not in request.full_url
+    headers = {key.lower(): value for key, value in request.header_items()}
+    assert "cache-control" not in headers
+    assert "pragma" not in headers
+
+
+def test_generated_csv_writers_force_lf_line_endings() -> None:
+    for relative in [
+        "scripts/verify_sources.py",
+        "scripts/curate_ku9.py",
+        "scripts/recheck_published.py",
+        "scripts/local_network_check.py",
+        "scripts/stability.py",
+    ]:
+        source = (ROOT / relative).read_text(encoding="utf-8")
+        for line in source.splitlines():
+            if "csv.writer(" in line or "csv.DictWriter(" in line:
+                assert 'lineterminator="\\n"' in line, (relative, line)
+
+
+def test_local_maintenance_wrapper_is_fail_fast_and_complete() -> None:
+    commands = maintenance_module.pipeline_commands()
+    labels = [label for label, _command in commands]
+    scripts = [Path(command[-1]).name for _label, command in commands]
+    assert labels[-3:] == [
+        "validate complete publish bundle",
+        "guard against unsafe shrinkage",
+        "audit publish size",
+    ]
+    assert scripts == [script for _label, script in maintenance_module.STEPS]
+    assert scripts.index("guard_publish.py") < scripts.index("audit_publish_size.py")
+    assert maintenance_module.STEP_ENV_OVERRIDES["verify_sources.py"]["IPTV_REQUIRE_VIDEO_TRACK"] == "0"
+    assert maintenance_module.STEP_ENV_OVERRIDES["recheck_published.py"]["IPTV_REQUIRE_VIDEO_TRACK"] == "1"
+    assert maintenance_module.main(["--dry-run"]) == 0
+
+
 def test_recheck_source_map_helper() -> None:
     from recheck_published import Row, source_for
 
@@ -436,10 +1129,30 @@ def test_recheck_source_map_helper() -> None:
     assert source_for(row, {}) == "unknown"
 
 
+def test_recheck_summary_records_video_policy() -> None:
+    import recheck_published as recheck
+
+    original_root = recheck.ROOT
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            recheck.ROOT = Path(td)
+            (recheck.ROOT / recheck.SUMMARY_FILE).write_text("{}\n", encoding="utf-8", newline="\n")
+            rows = [recheck.Row("\u592e\u89c6\u9891\u9053", "CCTV-1", "http://unit.test/live.m3u8")]
+            recheck.update_summary(rows, rows, 1, {}, {}, 0.1, {}, {}, {}, {})
+            summary = json.loads((recheck.ROOT / recheck.SUMMARY_FILE).read_text(encoding="utf-8"))
+            assert summary["published_recheck"]["require_video_track"] is True
+            assert summary["published_recheck"]["video_track_verified_unique_urls"] == 1
+    finally:
+        recheck.ROOT = original_root
+
+
 def main() -> int:
     for test in [
+        test_workflow_is_pinned_and_refuses_stale_publication,
+        test_source_statuses_follow_config_order,
         test_source_config_omits_disabled_unstable_sources,
         test_rules_config_contains_core_coverage,
+        test_classification_avoids_single_character_false_positives,
         test_priority_and_guard_config_are_externalized,
         test_quality_filters_and_limits_are_enforced,
         test_home_priority_adjustment_and_writer,
@@ -454,12 +1167,30 @@ def main() -> int:
         test_parse_m3u_name_and_split_urls,
         test_parse_txt_split_urls,
         test_family_playlist_limits,
+        test_family_playlist_uses_canonical_identity_quota,
+        test_source_dedup_is_deterministic,
+        test_canonical_identity_collapses_resolution_and_official_aliases,
+        test_strict_media_probe_requires_a_video_track,
+        test_public_network_policy_blocks_private_and_redirect_targets,
+        test_fetch_url_handles_gzip_final_url,
+        test_strict_bounded_gzip_decompression,
+        test_hls_error_words_inside_valid_urls_are_not_false_negatives,
+        test_hls_progress_rechecks_new_live_edge_segment,
+        test_progress_wait_respects_target_duration,
+        test_media_segment_probe_uses_live_edge,
+        test_final_recheck_refills_failed_channel_urls,
         test_core_retry_classification,
         test_validate_rejects_malformed_url,
         test_validate_m3u_accepts_generated_shape,
         test_validate_m3u_rejects_polluted_url,
         test_validate_rejects_strict_quality_filtered_channel,
+        test_publish_bundle_validator_enforces_cross_file_invariants,
+        test_publish_size_hashes_current_worktree_not_stale_index,
+        test_publication_checker_uses_exact_canonical_url,
+        test_generated_csv_writers_force_lf_line_endings,
+        test_local_maintenance_wrapper_is_fail_fast_and_complete,
         test_recheck_source_map_helper,
+        test_recheck_summary_records_video_policy,
     ]:
         test()
         print(f"OK {test.__name__}")

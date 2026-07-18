@@ -11,7 +11,9 @@ import sys
 import time
 from collections import Counter
 from pathlib import Path
-from urllib.request import Request, urlopen
+from urllib.request import Request
+
+from network_safety import public_urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_URL = "https://hujianj.github.io/tv-live-auto-check/ku9-live.txt"
@@ -45,7 +47,7 @@ def load_playlist_text(args: argparse.Namespace) -> tuple[str, str]:
         path = Path(args.playlist)
         return path.read_text(encoding="utf-8"), str(path)
     req = Request(args.url, headers={"User-Agent": "Mozilla/5.0 local-network-check", "Accept": "*/*"})
-    with urlopen(req, timeout=args.timeout) as r:
+    with public_urlopen(req, timeout=args.timeout) as r:
         data = r.read()
         final_url = r.geturl()
     return data.decode("utf-8", "replace"), final_url
@@ -266,7 +268,7 @@ def write_outputs(result: dict[str, object], source: str, args: argparse.Namespa
             lines.append(f"- {item.get('channel')}: 0/{item.get('rows')} playable")
     report_path.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
     with csv_path.open("w", encoding="utf-8", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=["ok", "group", "name", "core_key", "url", "detail"])
+        writer = csv.DictWriter(f, fieldnames=["ok", "group", "name", "core_key", "url", "detail"], lineterminator="\n")
         writer.writeheader()
         writer.writerows(rows)
     print(json.dumps({k: result[k] for k in result if k != "rows"}, ensure_ascii=False, sort_keys=True))
