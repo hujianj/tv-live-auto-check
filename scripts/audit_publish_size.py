@@ -59,16 +59,26 @@ def git_command() -> str:
 
 
 def blob_ids(paths: list[str]) -> dict[str, str]:
+    """Return prospective Git blob IDs for the current working-tree bytes.
+
+    ``git ls-files -s`` reports the index/HEAD blob and is stale while a new
+    playlist is being audited before ``git add``.  ``git hash-object`` hashes
+    the files that would actually be committed, so identical aliases are
+    deduplicated correctly and changed files are not attributed to old blobs.
+    """
     try:
-        out = subprocess.check_output([git_command(), "ls-files", "-s", *paths], cwd=ROOT, text=True, encoding="utf-8")
+        out = subprocess.check_output(
+            [git_command(), "hash-object", "--", *paths],
+            cwd=ROOT,
+            text=True,
+            encoding="utf-8",
+        )
     except Exception:
         return {}
-    ids: dict[str, str] = {}
-    for line in out.splitlines():
-        parts = line.split(None, 3)
-        if len(parts) == 4:
-            ids[parts[3].replace("\\", "/")] = parts[1]
-    return ids
+    values = [line.strip() for line in out.splitlines() if line.strip()]
+    if len(values) != len(paths):
+        return {}
+    return {path.replace("\\", "/"): value for path, value in zip(paths, values)}
 
 
 def main() -> int:

@@ -7,12 +7,16 @@ from collections import defaultdict, Counter
 from validate_playlist import validate_text
 from playlist_config import get_group_order, load_home_priority, load_quality, load_rules, score_adjustments, source_priority as configured_source_priority
 from stability import load_history, stability_adjustment, stability_enabled
-from channel_utils import cctv_number, cctv_sort_key, chinese_count as shared_chinese_count, format_extinf
+from channel_utils import cctv_key, cctv_number, cctv_sort_key, chinese_count as shared_chinese_count, format_extinf
+from channel_identity import aliases_are_compatible, canonical_channel_key, is_audio_only_channel
+from url_utils import is_publishable_http_url, normalize_stream_url
 
 ROOT = Path(__file__).resolve().parents[1]
 IN = ROOT / "stream_check_results.csv"
 RULES_PATH = ROOT / "config" / "rules.json"
 CURATED_SOURCE_MAP = ROOT / "curated-source-map.csv"
+CURATED_CANDIDATE_POOL = ROOT / "curated-candidate-pool.csv"
+ALIAS_CONFLICT_REPORT = ROOT / "alias-conflict-report.md"
 
 G_CCTV = "\u592e\u89c6\u9891\u9053"
 G_SAT = "\u536b\u89c6\u9891\u9053"
@@ -71,17 +75,16 @@ def clean_name(name: str) -> str:
     name = (name or '').strip().replace(' ', '')
     # TXT playlist uses comma as delimiter; keep channel names delimiter-safe.
     name = name.replace(',', '\uFF0C')
-    # CCTV1/CCTV1??/CCTV-1 -> CCTV-1/CCTV-1??
+    # CCTV1/CCTV-1 -> CCTV-1, and collapse resolution aliases to the exact
+    # canonical name so one channel receives one shared line quota.
     name = re.sub(r'^CCTV[-_ ]?(\d+)(\+?)', r'CCTV-\1\2', name, flags=re.I)
-    return name[:80]
-
+    exact = cctv_key(name)
+    return (exact or name)[:80]
 
 
 def clean_url(url: str) -> str:
-    url = (url or '').strip().strip('"').strip("'").lstrip('\ufeff')
-    url = re.split(r'[;#](?=https?://)', url, maxsplit=1, flags=re.I)[0]
-    url = url.rstrip(',')
-    return url.strip()
+    return normalize_stream_url(url)
+
 
 def has_invalid_channel_name(name: str) -> bool:
     if not name:
@@ -107,6 +110,8 @@ def is_core_channel_name(name: str) -> bool:
 
 def strict_quality_drop_reason(name: str) -> str:
     n = name or ''
+    if QUALITY.get('drop_audio_only_channels', True) and is_audio_only_channel(n):
+        return 'audio-only:radio'
     low = n.lower()
     for token in STRICT_DROP_NAME_TOKENS:
         if token and token.lower() in low:
@@ -204,7 +209,11 @@ def classify(name: str, group: str, source: str) -> str:
         return G_SAT
     if any(k in name for k in HK_KEYS) or any(k in group for k in GROUP_KEYS['hk']):
         return G_HK
-    if any(p in name for p in PROVINCES) or any(k in group for k in GROUP_KEYS['local']):
+    if (
+        any(p in name for p in PROVINCES)
+        or any(k in group for k in GROUP_KEYS['local'])
+        or re.search(r'(?:\u65b0\u95fb\u7efc\u5408|\u65b0\u95fb\u9891\u9053|\u516c\u5171\u9891\u9053|\u7efc\u5408\u9891\u9053|\u516c\u5171\u53f0|\u7efc\u5408\u53f0)$', name)
+    ):
         return G_LOCAL
     # Merge former movie/entertainment and other miscellaneous channels into a few broad categories.
     if any(k in name for k in MOVIE_KEYS) or any(k in group for k in GROUP_KEYS['movie']):
@@ -352,6 +361,76 @@ def sort_key(item):
     return (gi, name, url_score(url, source))
 
 
+def alias_choice_score(row: tuple[str, str, str, str]):
+    group, name, url, source = row
+    exact = cctv_key(name)
+    group_rank = GROUP_ORDER.index(group) if group in GROUP_ORDER else 99
+    return (
+        0 if exact == name else 1,
+        0 if is_core_channel_name(name) else 1,
+        group_rank,
+        len(name),
+        url_score(url, source),
+        name,
+    )
+
+
+def resolve_url_aliases(rows: list[tuple[str, str, str, str]]) -> tuple[list[tuple[str, str, str, str]], list[dict]]:
+    """Enforce one unambiguous channel identity per published URL."""
+    by_url: dict[str, list[tuple[str, str, str, str]]] = defaultdict(list)
+    for row in rows:
+        by_url[row[2]].append(row)
+    resolved: list[tuple[str, str, str, str]] = []
+    conflicts: list[dict] = []
+    for url, aliases in by_url.items():
+        # First choose the best source for an identical name+URL pair.
+        by_name: dict[str, tuple[str, str, str, str]] = {}
+        for row in aliases:
+            current = by_name.get(row[1])
+            if current is None or alias_choice_score(row) < alias_choice_score(current):
+                by_name[row[1]] = row
+        unique_aliases = list(by_name.values())
+        names = [row[1] for row in unique_aliases]
+        if aliases_are_compatible(names):
+            resolved.append(min(unique_aliases, key=alias_choice_score))
+            continue
+        conflicts.append({
+            'url': url,
+            'aliases': [
+                {'group': group, 'name': name, 'source': source}
+                for group, name, _url, source in sorted(unique_aliases, key=alias_choice_score)
+            ],
+        })
+    return resolved, conflicts
+
+
+def write_alias_conflict_report(conflicts: list[dict], input_rows: int, resolved_rows: int) -> None:
+    lines = [
+        '# URL/channel identity conflict report',
+        '',
+        'A playable URL is excluded when upstream lists assign it to multiple incompatible channel identities.',
+        'This is intentionally conservative: media availability alone cannot prove the video content is the named channel.',
+        '',
+        f'Input eligible rows: {input_rows}',
+        f'Resolved unambiguous URL rows: {resolved_rows}',
+        f'Conflicting URLs excluded: {len(conflicts)}',
+        f'Alias rows excluded by conflicts: {sum(len(item["aliases"]) for item in conflicts)}',
+        '',
+        '## Conflicts',
+        '',
+    ]
+    if not conflicts:
+        lines.append('- none')
+    for item in conflicts[:300]:
+        labels = '; '.join(f"{alias['group']} / {alias['name']} / {alias['source']}" for alias in item['aliases'])
+        lines.append(f"- {item['url']} :: {labels}")
+    ALIAS_CONFLICT_REPORT.write_text('\n'.join(lines) + '\n', encoding='utf-8', newline='\n')
+
+
+def selection_key(name: str) -> str:
+    return canonical_channel_key(name)
+
+
 def main():
     rows = []
     drop_counts = Counter()
@@ -364,7 +443,7 @@ def main():
             url = clean_url(r.get('url', '') or '')
             group = r.get('group', '') or ''
             source = r.get('source', '') or ''
-            if has_invalid_channel_name(name) or not url.startswith(('http://', 'https://')):
+            if has_invalid_channel_name(name) or not is_publishable_http_url(url):
                 drop_counts['invalid_name_or_url'] += 1
                 continue
             if has_abnormal_channel_name(name):
@@ -393,21 +472,41 @@ def main():
                 continue
             rows.append((g, name, url, source))
 
+    resolved_rows, alias_conflicts = resolve_url_aliases(rows)
+    write_alias_conflict_report(alias_conflicts, len(rows), len(resolved_rows))
+    if alias_conflicts:
+        drop_counts['ambiguous_url_identity'] += sum(len(item['aliases']) for item in alias_conflicts)
+
     by = defaultdict(list)
-    seen = set()
-    for row in rows:
-        g, n, u, s = row
-        if (n, u) in seen:
-            continue
-        seen.add((n, u))
-        by[n].append(row)
+    for row in resolved_rows:
+        by[selection_key(row[1])].append(row)
+
+    # Normalize all URLs of one canonical channel to a single display name and
+    # group. This prevents resolution aliases from receiving separate quotas.
+    candidate_pool: list[tuple[str, str, str, str, str]] = []
+    normalized_by_key: dict[str, list[tuple[str, str, str, str]]] = {}
+    for key, arr in by.items():
+        representative = min(arr, key=alias_choice_score)
+        normalized = [
+            (representative[0], representative[1], url, source)
+            for _group, _name, url, source in arr
+        ]
+        normalized = sorted(normalized, key=lambda x: (url_score(x[2], x[3]), sort_key(x)))
+        normalized_by_key[key] = normalized
+        candidate_pool.extend((key, group, name, url, source) for group, name, url, source in normalized)
+
+    with CURATED_CANDIDATE_POOL.open('w', encoding='utf-8', newline='') as f:
+        w = csv.writer(f, lineterminator="\n")
+        w.writerow(['selection_key', 'group', 'name', 'url', 'source'])
+        for key, group, name, url, source in sorted(candidate_pool, key=lambda x: (GROUP_ORDER.index(x[1]) if x[1] in GROUP_ORDER else 99, x[0], url_score(x[3], x[4]))):
+            w.writerow([key, group, name, url, source])
 
     pub = []
     channel_limit_trimmed = 0
     channel_limit_stats = Counter()
-    for n, arr in by.items():
-        arr = sorted(arr, key=lambda x: (url_score(x[2], x[3]), sort_key(x)))
-        limit = max(1, per_channel_limit(arr[0][0], n))
+    for key, arr in normalized_by_key.items():
+        name = arr[0][1]
+        limit = max(1, per_channel_limit(arr[0][0], name))
         if len(arr) > limit:
             channel_limit_trimmed += len(arr) - limit
             channel_limit_stats[arr[0][0]] += len(arr) - limit
@@ -416,7 +515,7 @@ def main():
     pub, group_limit_trimmed = apply_group_limits(pub)
     pub.sort(key=sort_key)
     with CURATED_SOURCE_MAP.open('w', encoding='utf-8', newline='') as f:
-        w = csv.writer(f)
+        w = csv.writer(f, lineterminator="\n")
         w.writerow(['group', 'name', 'url', 'source'])
         for g, n, u, s in pub:
             w.writerow([g, n, u, s])
@@ -471,11 +570,22 @@ def main():
             'penalty': HOME_PRIORITY_PENALTY,
         },
         'curated_generated': True,
+        'curated_source_map_available': bool(pub),
+        'curated_source_map_generated': True,
+        'curated_source_map_artifact_only': True,
+        'curated_candidate_pool_generated': True,
+        'curated_candidate_pool_artifact_only': True,
         'curated_published_lines': len(pub),
         'curated_channel_names': published_unique_names,
         'curated_groups': dict(cnt),
         'curated_sources': dict(source_cnt),
         'per_group_unique_names': per_group_unique_names,
+        'alias_resolution': {
+            'conflicting_urls_excluded': len(alias_conflicts),
+            'conflicting_alias_rows_excluded': sum(len(item['aliases']) for item in alias_conflicts),
+            'report_file': ALIAS_CONFLICT_REPORT.name,
+            'candidate_pool_file': CURATED_CANDIDATE_POOL.name,
+        },
         'quality_limits_applied': {
             'config_file': 'config/quality.json',
             'channel_limit_trimmed_rows': channel_limit_trimmed,

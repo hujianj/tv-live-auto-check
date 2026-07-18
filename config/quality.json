@@ -38,7 +38,10 @@
     "澳門MACAU",
     "SimonAmstell",
     "BillBurr",
-    "Storm憋了一年大招"
+    "Storm憋了一年大招",
+    "MARSHALL",
+    "LiveABC",
+    "bside"
   ],
   "strict_drop_regex": [
     "(^|[^A-Za-z])(Animal[_ ]?Planet|Discovery(Asia)?|FashionTV|Foodnetwork|HGTV|History|NatGeo(_?Wild)?|CartoonNetwork|BabyTV|Animax|CBeebies|KidsTV|CampSpoopy)([^A-Za-z]|$)",
@@ -93,13 +96,13 @@
     "bonus": -8
   },
   "final_quality_audit": {
-    "min_exact_cctv_lines": 3,
-    "min_important_satellite_lines": 3,
-    "warn_exact_cctv_lines_below": 4,
-    "warn_important_satellite_lines_below": 4,
     "fail_on_strict_filter_residue": true,
     "fail_on_channel_limit_violation": true,
-    "fail_on_group_limit_violation": true
+    "fail_on_group_limit_violation": true,
+    "min_exact_cctv_unique_urls": 3,
+    "min_important_satellite_unique_urls": 3,
+    "warn_exact_cctv_unique_urls_below": 4,
+    "warn_important_satellite_unique_urls_below": 4
   },
   "family_profile": {
     "enabled": true,
@@ -138,5 +141,6 @@
     },
     "min_lines": 700,
     "max_lines": 1400
-  }
+  },
+  "drop_audio_only_channels": true
 }

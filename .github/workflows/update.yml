@@ -6,6 +6,8 @@ on:
     # Daily, Beijing time 04:20. Full stream verification probes every distinct URL.
     - cron: "20 20 * * *"
   push:
+    branches:
+      - main
     paths:
       - "scripts/*.py"
       - "config/*.json"
@@ -13,6 +15,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: iptv-autocheck-update-${{ github.ref }}
@@ -24,16 +27,25 @@ jobs:
     timeout-minutes: 180
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+      - name: Refuse publication from a non-default branch
+        if: ${{ github.ref_type != 'branch' || github.ref_name != github.event.repository.default_branch }}
+        run: |
+          echo "Only the default branch may run the publication pipeline."
+          echo "ref_type=${{ github.ref_type }} ref_name=${{ github.ref_name }} default=${{ github.event.repository.default_branch }}"
+          exit 1
+      - name: Record source revision
+        run: echo "SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.12"
-      - name: Unit test parser, URL splitting, and playlist validator
+      - name: Unit test parser, safety policy, media tracks, and publication validator
         run: python scripts/test_playlist_logic.py
       - name: Verify every unique IPTV stream URL
         env:
           IPTV_CHECK_WORKERS: "192"
+          IPTV_CHECK_WORKERS_PER_HOST: "8"
           IPTV_CHECK_TIMEOUT: "6"
           IPTV_FETCH_WORKERS: "64"
           IPTV_FETCH_TIMEOUT: "20"
@@ -42,89 +54,55 @@ jobs:
           IPTV_CORE_HLS_SEGMENT_CHECKS: "3"
           IPTV_CORE_RETRY_ATTEMPTS: "1"
           IPTV_CORE_RETRY_TIMEOUT: "14"
+          IPTV_HLS_PROGRESS_MIN_WAIT: "3"
+          IPTV_HLS_PROGRESS_MAX_WAIT: "14"
+          # Broad first pass proves live media bytes for every distinct URL.
+          # The smaller final set below receives strict video-track proof.
+          IPTV_REQUIRE_VIDEO_TRACK: "0"
         run: python scripts/verify_sources.py
       - name: Curate Ku9 channel order
         run: python scripts/curate_ku9.py
-      - name: Recheck every final published stream URL
+      - name: Recheck every final published stream URL with video-track proof
         env:
           IPTV_PUBLISHED_RECHECK_WORKERS: "64"
+          IPTV_PUBLISHED_REFILL_WORKERS: "24"
+          IPTV_PUBLISHED_REQUIRE_CORE_PROGRESS: "1"
+          IPTV_CHECK_WORKERS_PER_HOST: "8"
           IPTV_CHECK_TIMEOUT: "6"
           IPTV_HLS_VARIANT_CHECKS: "2"
           IPTV_HLS_SEGMENT_CHECKS: "2"
           IPTV_CORE_HLS_SEGMENT_CHECKS: "3"
           IPTV_CORE_RETRY_ATTEMPTS: "1"
           IPTV_CORE_RETRY_TIMEOUT: "14"
+          IPTV_HLS_PROGRESS_MIN_WAIT: "3"
+          IPTV_HLS_PROGRESS_MAX_WAIT: "14"
+          IPTV_REQUIRE_VIDEO_TRACK: "1"
         run: python scripts/recheck_published.py
       - name: Audit core channel coverage
         run: python scripts/audit_coverage.py
       - name: Audit final playlist quality
         run: python scripts/audit_quality.py
-      - name: Smoke test generated playlist
-        run: |
-          python scripts/validate_playlist.py live-curated.txt live.txt live-verified.txt ku9-live.txt live.m3u ku9-family.txt live-family.txt family.m3u
-          python - <<'PY'
-          import hashlib, json
-          from pathlib import Path
-          summary = json.loads(Path("full-check-summary.json").read_text(encoding="utf-8"))
-          assert summary["checked_all_unique"] is True, summary
-          assert summary["checked_candidates"] == summary["unique_candidates"], summary
-          assert summary["unique_name_url_candidates"] >= summary["unique_candidates"], summary
-          assert summary["playable_unique_urls"] > 100, summary
-          assert summary["playable_name_url_lines"] == summary["all_playable_lines"], summary
-          assert summary["playable_urls_found"] == summary["all_playable_lines"], summary
-          assert summary["playable_urls_found"] >= summary["primary_published_lines"], summary
-          assert summary["curated_generated"] is True, summary
-          assert summary["curated_published_lines"] == summary["primary_published_lines"], summary
-          assert summary["final_primary_published_lines"] == summary["curated_published_lines"], summary
-          family = summary.get("family_playlist") or {}
-          assert family.get("enabled") is True, family
-          assert family.get("lines", 0) > 500, family
-          assert family.get("lines", 0) <= summary["curated_published_lines"], (family, summary["curated_published_lines"])
-          assert Path("ku9-family.txt").exists(), "missing ku9-family.txt"
-          assert Path("live-family.txt").exists(), "missing live-family.txt"
-          assert Path("family.m3u").exists(), "missing family.m3u"
-          assert summary["curated_published_lines"] > 100, summary
-          assert sum(summary.get("curated_groups", {}).values()) == summary["curated_published_lines"], summary
-          assert sum(summary.get("curated_sources", {}).values()) == summary["curated_published_lines"], summary
-          assert summary.get("curated_source_map_available") is True, summary
-          coverage = summary.get("coverage") or {}
-          assert not coverage.get("missing_cctv"), coverage
-          assert not coverage.get("missing_satellite"), coverage
-          quality = summary.get("quality_audit") or {}
-          assert quality.get("status") == "ok", quality
-          assert not quality.get("strict_filter_residue"), quality
-          assert not quality.get("missing_cctv_quality"), quality
-          assert not quality.get("missing_satellite_quality"), quality
-          stability = summary.get("stability") or {}
-          assert stability.get("enabled") is True, stability
-          assert stability.get("updated_urls") == summary["published_recheck"]["checked_unique_urls"], (stability, summary["published_recheck"])
-          assert stability.get("tracked_urls_after", 0) >= summary["published_recheck"]["checked_unique_urls"], (stability, summary["published_recheck"])
-          files = ["live-curated.txt", "live.txt", "live-verified.txt", "ku9-live.txt"]
-          payloads = [Path(f).read_bytes() for f in files]
-          assert len({hashlib.sha256(x).hexdigest() for x in payloads}) == 1, "TV TXT outputs differ"
-          assert len(payloads[0]) > 10_000, f"playlist too small: {len(payloads[0])} bytes"
-          all_data = Path("live-all-playable.txt").read_bytes()
-          assert len(all_data) >= len(payloads[0]), (len(all_data), len(payloads[0]))
-          assert Path("final-publish-report.md").exists(), "missing final publish report"
-          assert Path(stability.get("history_file", "stability-history.tsv")).exists(), "missing stability history"
-          assert Path("stability-report.md").exists(), "missing stability report"
-          print("Generated full-check playlist smoke OK", len(payloads[0]), "bytes", summary)
-          PY
+      - name: Validate complete publish bundle
+        run: python scripts/validate_publish_bundle.py
       - name: Guard against shrunken or unsafe publish
         run: python scripts/guard_publish.py
       - name: Audit publish size and alias safety
         run: python scripts/audit_publish_size.py
       - name: Upload full diagnostic artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        continue-on-error: true
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: full-iptv-check-${{ github.run_id }}
           retention-days: 30
+          if-no-files-found: warn
           path: |
             stream_check_results.csv
             live-all-playable.txt
             all-playable.m3u
             curated-source-map.csv
+            curated-candidate-pool.csv
+            alias-conflict-report.md
             published_recheck_results.csv
             published-recheck-report.md
             final-publish-report.md
@@ -133,129 +111,76 @@ jobs:
             quality-audit-report.md
             publish-guard-report.md
             publish-size-report.md
-      - name: Commit verified playlist
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "chore: verify and publish playable IPTV playlist"
-          file_pattern: live.txt live-verified.txt live-curated.txt ku9-live.txt live.m3u ku9-family.txt live-family.txt family.m3u source-report.md check-report.md curated-report.md published-recheck-report.md final-publish-report.md stability-report.md stability-history.tsv coverage-report.md quality-audit-report.md publish-guard-report.md publish-size-report.md sources_status.csv full-check-summary.json
-      - name: Purge jsDelivr CDN
+      - name: Commit verified playlist without overwriting newer code
+        env:
+          TARGET_BRANCH: ${{ github.ref_name }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
-          set -e
-          for file in live-curated.txt live.txt ku9-live.txt live-verified.txt live.m3u ku9-family.txt live-family.txt family.m3u full-check-summary.json curated-report.md published-recheck-report.md final-publish-report.md stability-report.md stability-history.tsv coverage-report.md quality-audit-report.md publish-guard-report.md publish-size-report.md source-report.md check-report.md; do
+          set -euo pipefail
+          if [ "${{ github.ref_type }}" != "branch" ]; then
+            echo "Ref is not a branch; refusing to publish generated files."
+            exit 1
+          fi
+          if [ "$TARGET_BRANCH" != "$DEFAULT_BRANCH" ]; then
+            echo "Only the default branch may publish: target=$TARGET_BRANCH default=$DEFAULT_BRANCH"
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- live.txt live-verified.txt live-curated.txt ku9-live.txt live.m3u ku9-family.txt live-family.txt family.m3u source-report.md check-report.md curated-report.md published-recheck-report.md final-publish-report.md stability-report.md stability-history.tsv coverage-report.md quality-audit-report.md publish-guard-report.md publish-size-report.md sources_status.csv full-check-summary.json
+          if git diff --cached --quiet; then
+            echo "No verified publication changes to commit."
+            exit 0
+          fi
+          git fetch origin "$TARGET_BRANCH"
+          remote_sha=$(git rev-parse "origin/$TARGET_BRANCH")
+          if [ "$remote_sha" != "$SOURCE_SHA" ]; then
+            echo "Remote branch advanced during verification: source=$SOURCE_SHA remote=$remote_sha"
+            echo "Refusing to publish results generated from stale code/configuration."
+            exit 1
+          fi
+          git commit -m "chore: verify and publish playable IPTV playlist"
+          git push origin "HEAD:$TARGET_BRANCH"
+      - name: Purge subscription files from jsDelivr
+        run: |
+          set -u
+          for file in live-curated.txt live.txt ku9-live.txt live-verified.txt live.m3u ku9-family.txt live-family.txt family.m3u; do
             echo "Purging $file"
-            curl -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}/$file" || true
-            curl -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/$file" || true
+            (curl --retry 2 --max-time 20 -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}/$file" || true) &
+            (curl --retry 2 --max-time 20 -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/$file" || true) &
           done
-      - name: Smoke test GitHub Raw publication freshness
+          wait
+      - name: Verify Raw and at least one television-compatible publication endpoint
         run: |
-          python - <<'PY'
-          import hashlib, sys, time, urllib.request
-          from pathlib import Path
-          sys.path.insert(0, "scripts")
-          from validate_playlist import validate_text
-          expected = Path("live-curated.txt").read_bytes()
-          expected_hash = hashlib.sha256(expected).hexdigest()
-          expected_size = len(expected)
-          raw_url = "https://raw.githubusercontent.com/${{ github.repository }}/main/live-curated.txt"
-          def fetch(url):
-              with urllib.request.urlopen(url + f"?smoke={int(time.time())}", timeout=30) as r:
-                  return r.read()
-          last_hash = ""
-          last_size = 0
-          for i in range(30):
-              try:
-                  data = fetch(raw_url)
-                  last_hash = hashlib.sha256(data).hexdigest()
-                  last_size = len(data)
-                  text = data.decode("utf-8", "replace")
-                  assert last_hash == expected_hash, f"Raw hash {last_hash} != local hash {expected_hash}"
-                  validate_text(text, require_categories=True)
-                  print("GitHub Raw freshness smoke OK", last_size, last_hash)
-                  break
-              except Exception as e:
-                  print("GitHub Raw freshness smoke retry", i + 1, repr(e), "last_size", last_size, "last_hash", last_hash, "expected_size", expected_size, "expected_hash", expected_hash)
-                  time.sleep(10)
-          else:
-              raise SystemExit(f"GitHub Raw freshness smoke failed: last_size={last_size} last_hash={last_hash} expected_size={expected_size} expected_hash={expected_hash}")
-          PY
-      - name: Check Pages and jsDelivr cache state
-        run: |
-          python - <<'PY'
-          import hashlib, sys, time, urllib.request
-          from pathlib import Path
-          sys.path.insert(0, "scripts")
-          from validate_playlist import validate_text
-          expected = Path("live-curated.txt").read_bytes()
-          expected_hash = hashlib.sha256(expected).hexdigest()
-          expected_size = len(expected)
-          urls = [
-              ("pages", "https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/live-curated.txt", 6),
-              ("ghproxy_raw", "https://gh-proxy.com/raw.githubusercontent.com/${{ github.repository }}/main/live-curated.txt", 6),
-              ("gcore_jsdelivr_ku9_main", "https://gcore.jsdelivr.net/gh/${{ github.repository }}@main/ku9-live.txt", 3),
-              ("testingcf_jsdelivr_ku9_main", "https://testingcf.jsdelivr.net/gh/${{ github.repository }}@main/ku9-live.txt", 3),
-              ("jsdelivr_ku9_live_bare", "https://cdn.jsdelivr.net/gh/${{ github.repository }}/ku9-live.txt", 3),
-              ("jsdelivr_live_txt_bare", "https://cdn.jsdelivr.net/gh/${{ github.repository }}/live.txt", 3),
-              ("jsdelivr_main", "https://cdn.jsdelivr.net/gh/${{ github.repository }}@main/live-curated.txt", 3),
-              ("jsdelivr_live_txt", "https://cdn.jsdelivr.net/gh/${{ github.repository }}@main/live.txt", 3),
-              ("jsdelivr_ku9_live", "https://cdn.jsdelivr.net/gh/${{ github.repository }}@main/ku9-live.txt", 3),
-              ("jsdelivr_live_verified", "https://cdn.jsdelivr.net/gh/${{ github.repository }}@main/live-verified.txt", 3),
-              ("jsdelivr_unversioned", "https://cdn.jsdelivr.net/gh/${{ github.repository }}/live-curated.txt", 3),
-          ]
-          records = []
-          def fetch(url):
-              with urllib.request.urlopen(url + f"?cachecheck={int(time.time())}", timeout=30) as r:
-                  return r.read()
-          for name, url, retries in urls:
-              ok = False
-              last_size = 0
-              last_hash = ""
-              last_error = ""
-              for i in range(retries):
-                  try:
-                      data = fetch(url)
-                      last_size = len(data)
-                      last_hash = hashlib.sha256(data).hexdigest()
-                      text = data.decode("utf-8", "replace")
-                      validate_text(text, require_categories=True)
-                      if last_hash == expected_hash:
-                          print(f"{name} cache OK", last_size, last_hash)
-                          ok = True
-                          break
-                      print(f"{name} cache retry {i + 1}: size={last_size} hash={last_hash} expected_size={expected_size} expected_hash={expected_hash}")
-                      last_error = "stale hash"
-                  except Exception as e:
-                      print(f"{name} cache retry {i + 1}: {e!r}")
-                      last_error = repr(e)
-                  time.sleep(10)
-              records.append({
-                  "name": name,
-                  "url": url,
-                  "ok": ok,
-                  "size": last_size,
-                  "hash": last_hash,
-                  "expected_size": expected_size,
-                  "expected_hash": expected_hash,
-                  "error": last_error,
-              })
-              if not ok:
-                  print(f"WARNING: {name} is still stale or unreachable; generated playlist and GitHub Raw are already verified. url={url} last_size={last_size} last_hash={last_hash} expected_size={expected_size} expected_hash={expected_hash}")
-          lines = [
-              "# CDN alias health report",
-              "",
-              f"Expected size: {expected_size}",
-              f"Expected SHA256: {expected_hash}",
-              "",
-              "| Alias | OK | Size | SHA256 | URL | Error |",
-              "|---|---:|---:|---|---|---|",
-          ]
-          for r in records:
-              lines.append(f"| {r['name']} | {r['ok']} | {r['size']} | {r['hash']} | {r['url']} | {str(r['error']).replace('|', '/')} |")
-          Path("cdn-health-report.md").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
-          PY
+          set +e
+          python scripts/check_publication_endpoints.py \
+            --repo "${{ github.repository }}" \
+            --branch "${{ github.ref_name }}"
+          status=$?
+          if [ -f cdn-health-report.md ]; then
+            cat cdn-health-report.md >> "$GITHUB_STEP_SUMMARY"
+          fi
+          exit "$status"
       - name: Upload CDN health artifact
         if: always()
-        uses: actions/upload-artifact@v4
+        continue-on-error: true
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: cdn-health-${{ github.run_id }}
           retention-days: 30
-          path: cdn-health-report.md
+          if-no-files-found: warn
+          path: |
+            cdn-health-report.md
+            cdn-health-report.json
+      - name: Open or update maintenance failure issue
+        if: ${{ always() && (failure() || cancelled()) }}
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/notify_maintenance.py failure --message "The full verification, publication, or CDN endpoint gate did not pass."
+      - name: Close recovered maintenance failure issue
+        if: ${{ success() }}
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/notify_maintenance.py success

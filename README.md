@@ -4,22 +4,22 @@
 
 ## 推荐订阅地址
 
-电视端优先使用 GitHub Pages 地址：
+结合这台电视此前的实际测试，酷9长期订阅优先使用电视端可正常访问的 jsDelivr 固定地址：
 
 ```text
-https://hujianj.github.io/tv-live-auto-check/ku9-live.txt
+https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check/ku9-live.txt
 ```
 
-如果电视网络访问 GitHub Pages 显示“数据为空”或无法连接，使用 Raw 代理备用地址：
+jsDelivr 边缘节点可能在自动更新后短时间返回上一版，但固定地址不需要在电视上反复修改。需要立即确认最新版时，使用 Raw 代理地址：
 
 ```text
 https://gh-proxy.com/raw.githubusercontent.com/hujianj/tv-live-auto-check/main/ku9-live.txt
 ```
 
-兼容备用 CDN 地址如下。jsDelivr 边缘节点可能短时间返回旧版，因此只作为电视端兼容备用，不作为“是否已经更新到最新版”的判断依据：
+GitHub Pages 可作为电脑端或网络可访问设备的备用入口；此前这台电视访问 GitHub 域名曾出现“数据为空”，因此不再把它列为电视端第一选择：
 
 ```text
-https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check@main/ku9-live.txt
+https://hujianj.github.io/tv-live-auto-check/ku9-live.txt
 ```
 
 M3U 格式：
@@ -32,7 +32,7 @@ https://hujianj.github.io/tv-live-auto-check/live.m3u
 
 ## 自动维护逻辑
 
-GitHub Actions 每天北京时间 04:20 自动运行，也可以手动 `Run workflow`。
+GitHub Actions 每天北京时间 04:20 计划运行，也可以手动 `Run workflow`。GitHub 托管运行器可能延迟几十分钟启动，因此 04:20 是计划时间，不是精确执行时刻。
 
 流程：
 
@@ -57,7 +57,11 @@ live-all-playable.txt
 all-playable.m3u
 published_recheck_results.csv
 curated-source-map.csv
+curated-candidate-pool.csv
+alias-conflict-report.md
 ```
+
+`curated-source-map.csv` 和 `curated-candidate-pool.csv` 每次都会生成，但只存放在 Actions artifact 中，不是仓库内的公开订阅文件。`full-check-summary.json` 会用 `*_generated` 和 `*_artifact_only` 字段明确区分这两种语义。
 
 ## 频道分类与质量规则
 
@@ -146,12 +150,21 @@ config/sources.json
 ```powershell
 Get-ChildItem scripts\*.py | ForEach-Object { python -m py_compile $_.FullName }
 python scripts\test_playlist_logic.py
-python scripts\validate_playlist.py live-curated.txt live.txt live-verified.txt ku9-live.txt live.m3u
+python scripts\validate_playlist.py live-curated.txt live.txt live-verified.txt ku9-live.txt live.m3u ku9-family.txt live-family.txt family.m3u
 python scripts\audit_coverage.py
 python scripts\audit_quality.py
 python scripts\guard_publish.py
 python scripts\audit_publish_size.py
 ```
+
+完整流水线运行后还会生成 `curated-source-map.csv`、`curated-candidate-pool.csv` 和 `alias-conflict-report.md` 等瞬态文件，此时必须执行跨文件一致性校验：
+
+```powershell
+python scripts\validate_publish_bundle.py
+```
+
+该校验会核对 TXT/M3U 顺序、别名文件、家庭精简版、来源映射、分类顺序和 `full-check-summary.json` 统计；普通 clone 没有 Actions 瞬态文件时，应先运行完整维护流程。
+
 
 如果本地有最新的 `stream_check_results.csv`，可以重新整理当前检测结果：
 
@@ -160,7 +173,7 @@ python scripts\curate_ku9.py
 python scripts\recheck_published.py
 python scripts\audit_coverage.py
 python scripts\audit_quality.py
-python scripts\validate_playlist.py live-curated.txt live.txt live-verified.txt ku9-live.txt live.m3u
+python scripts\validate_playlist.py live-curated.txt live.txt live-verified.txt ku9-live.txt live.m3u ku9-family.txt live-family.txt family.m3u
 python scripts\guard_publish.py
 python scripts\audit_publish_size.py
 ```
@@ -196,10 +209,10 @@ local-network-results.csv
 
 ## CDN 说明
 
-- GitHub Pages / Raw / gh-proxy 更适合判断最新版。
-- jsDelivr 有时会滞后，项目会主动 purge，但第三方 CDN 边缘节点不保证立即刷新。
-- 如果电视端能打开 Pages，长期订阅优先用 Pages 地址。
-- 如果 Pages 不可用，再用 gh-proxy 备用。
+- GitHub Raw 是发布校验的权威基准，gh-proxy 适合立即查看最新版。
+- 这台电视已实测 jsDelivr 固定地址可用，因此长期订阅仍优先使用 jsDelivr。
+- jsDelivr 有时会滞后，项目会主动 purge 并校验电视实际请求的固定 URL，但第三方 CDN 仍不保证每个边缘节点立即刷新。
+- 这台电视访问 GitHub Pages 曾出现“数据为空”，因此 Pages 只作为电脑端备用，不再建议作为电视主地址。
 
 ## 家用精简版
 

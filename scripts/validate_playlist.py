@@ -11,6 +11,8 @@ from pathlib import Path
 
 from playlist_config import get_group_order, load_quality, load_rules
 from channel_utils import cctv_number, chinese_count as shared_chinese_count
+from channel_identity import is_audio_only_channel
+from url_utils import publishable_url_issue
 
 RULES = load_rules()
 QUALITY = load_quality()
@@ -78,26 +80,12 @@ def has_invalid_channel_name(name: str) -> bool:
 
 
 def has_invalid_url(url: str) -> bool:
-    if not url or not url.startswith(("http://", "https://")):
-        return True
-    if "\ufffd" in url:
-        return True
-    if any(ch.isspace() for ch in url):
-        return True
-    if url.rstrip() != url:
-        return True
-    if url.endswith(","):
-        return True
-    # Raw duplicate URL delimiters usually come from malformed upstream TXT rows,
-    # e.g. url1;http://url2 or url1#https://url2. They break many TV players.
-    if re.search(r"[;#](?=https?://)", url, re.I):
-        return True
-    if len(re.findall(r"https?://", url, re.I)) != 1:
-        return True
-    return False
+    return bool(publishable_url_issue(url))
 
 
 def strict_quality_drop_reason(name: str) -> str:
+    if QUALITY.get("drop_audio_only_channels", True) and is_audio_only_channel(name):
+        return "audio-only:radio"
     low = (name or "").lower()
     for token in STRICT_DROP_NAME_TOKENS:
         if token and token.lower() in low:

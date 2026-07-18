@@ -20,7 +20,7 @@
     "少儿动漫": 10,
     "体育纪实": 30,
     "音乐综艺": 15,
-    "生活休闲": 100,
+    "生活休闲": 70,
     "综合娱乐": 500,
     "港澳台频道": 40,
     "海外华语频道": 80
@@ -49,7 +49,9 @@
       "live-all-playable.txt",
       "all-playable.m3u",
       "published_recheck_results.csv",
-      "curated-source-map.csv"
+      "curated-source-map.csv",
+      "curated-candidate-pool.csv",
+      "alias-conflict-report.md"
     ]
   }
 }
