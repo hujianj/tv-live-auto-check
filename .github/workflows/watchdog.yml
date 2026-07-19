@@ -1,0 +1,44 @@
+﻿name: IPTV publication watchdog
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Twice daily, deliberately separated from the main 04:20 Beijing update.
+    - cron: "45 0,12 * * *"
+
+permissions:
+  actions: read
+  contents: read
+  issues: write
+
+concurrency:
+  group: iptv-publication-watchdog-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  watchdog:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout without write credentials
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - name: Audit workflow freshness and public publication
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: python scripts/watchdog_publication.py --repo "${{ github.repository }}" --branch main --workflow update.yml
+      - name: Upload watchdog summary
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: watchdog-${{ github.run_id }}
+          retention-days: 30
+          if-no-files-found: ignore
+          path: watchdog-report.*

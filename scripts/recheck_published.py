@@ -13,7 +13,14 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from validate_playlist import validate_file, validate_text
-from verify_sources import Candidate, CheckResult, REQUIRE_VIDEO_TRACK, check_candidate_resilient, is_core_family_candidate
+from verify_sources import (
+    Candidate,
+    CheckResult,
+    REQUIRE_VIDEO_TRACK,
+    check_candidate,
+    check_candidate_resilient,
+    is_core_family_candidate,
+)
 from stability import update_history
 from playlist_config import load_guard, load_quality, load_rules
 from channel_utils import format_extinf
@@ -38,11 +45,92 @@ CANDIDATE_POOL_FILE = "curated-candidate-pool.csv"
 
 MAX_WORKERS = int(os.getenv("IPTV_PUBLISHED_RECHECK_WORKERS", os.getenv("IPTV_CHECK_WORKERS", "64")))
 REFILL_WORKERS = max(1, int(os.getenv("IPTV_PUBLISHED_REFILL_WORKERS", "24")))
+FINAL_RETRY_WORKERS = max(1, int(os.getenv("IPTV_PUBLISHED_FINAL_RETRY_WORKERS", "16")))
+FINAL_RETRY_TIMEOUT = max(1, int(os.getenv("IPTV_PUBLISHED_FINAL_RETRY_TIMEOUT", "14")))
+FINAL_RETRY_ATTEMPTS = max(0, int(os.getenv("IPTV_PUBLISHED_FINAL_RETRY_ATTEMPTS", "1")))
 REQUIRE_CORE_PROGRESS = os.getenv("IPTV_PUBLISHED_REQUIRE_CORE_PROGRESS", "1").strip().lower() not in {"0", "false", "no"}
 
 
 def max_failed_url_ratio() -> float:
     return float(os.getenv("IPTV_PUBLISHED_RECHECK_MAX_FAILED_RATIO", str(load_guard().get("max_published_recheck_failed_url_ratio", 0.25))))
+
+
+def retry_failed_final_urls(
+    by_url: dict[str, "Row"],
+    results: dict[str, CheckResult],
+    core_urls: set[str],
+    *,
+    attempts: int = FINAL_RETRY_ATTEMPTS,
+    workers: int = FINAL_RETRY_WORKERS,
+    timeout: int = FINAL_RETRY_TIMEOUT,
+    checker=check_candidate,
+) -> dict[str, int]:
+    """Slowly retry every failed final URL before removal/refill decisions.
+
+    The broad 29k-URL pass remains fast. Only the much smaller final set pays
+    this extra low-concurrency retry cost, reducing false removals caused by a
+    transient CDN, DNS, or first-byte delay.
+    """
+    first_details = {url: result.detail for url, result in results.items() if not result.ok}
+    pending = list(first_details)
+    attempted: set[str] = set()
+    recovered: set[str] = set()
+    for attempt in range(1, attempts + 1):
+        if not pending:
+            break
+        batch = list(pending)
+        pending = []
+        print(
+            f"published_final_slow_retry attempt={attempt}/{attempts} urls={len(batch)} "
+            f"workers={min(workers, len(batch))} timeout={timeout}",
+            flush=True,
+        )
+        round_results: dict[str, CheckResult] = {}
+        with cf.ThreadPoolExecutor(max_workers=min(workers, len(batch))) as ex:
+            futs = {}
+            for url in batch:
+                row = by_url[url]
+                core = url in core_urls
+                future = ex.submit(
+                    checker,
+                    Candidate("published_final_slow_retry", row.group, row.name, row.url),
+                    timeout=timeout,
+                    core_override=core,
+                    require_progress=REQUIRE_CORE_PROGRESS and core,
+                    require_video=REQUIRE_VIDEO_TRACK,
+                )
+                futs[future] = url
+            for future in cf.as_completed(futs):
+                url = futs[future]
+                attempted.add(url)
+                round_results[url] = future.result()
+        for url in batch:
+            retry = round_results[url]
+            if retry.ok:
+                recovered.add(url)
+                results[url] = CheckResult(
+                    results[url].cand,
+                    True,
+                    f"final slow retry ok attempt={attempt} first={first_details[url]}; {retry.detail}",
+                )
+            else:
+                results[url] = CheckResult(
+                    results[url].cand,
+                    False,
+                    f"final slow retry failed attempt={attempt} first={first_details[url]}; last={retry.detail}",
+                )
+                pending.append(url)
+    return {
+        "configured_attempts": attempts,
+        "timeout_seconds": timeout,
+        "workers": workers,
+        "first_pass_failed_unique_urls": len(first_details),
+        # Legacy key retained for callers that only know the old retry schema.
+        "initial_failed_unique_urls": len(first_details),
+        "attempted_unique_urls": len(attempted),
+        "recovered_unique_urls": len(recovered),
+        "still_failed_unique_urls": sum(1 for result in results.values() if not result.ok),
+    }
 
 
 @dataclass(frozen=True)
@@ -410,7 +498,20 @@ def refill_missing_rows(
     return final_rows, results, summary, attempted, accepted
 
 
-def update_summary(before_rows: list[Row], after_rows: list[Row], checked_urls: int, initial_failed_urls: dict[str, str], all_failed_urls: dict[str, str], elapsed: float, source_map: dict[tuple[str, str], str], stability_summary: dict, family_summary: dict, refill_summary: dict) -> None:
+def update_summary(
+    before_rows: list[Row],
+    after_rows: list[Row],
+    checked_urls: int,
+    initial_failed_urls: dict[str, str],
+    all_failed_urls: dict[str, str],
+    elapsed: float,
+    source_map: dict[tuple[str, str], str],
+    stability_summary: dict,
+    family_summary: dict,
+    refill_summary: dict,
+    retry_summary: dict[str, int],
+    strict_progress_checked_unique: int,
+) -> None:
     path = ROOT / SUMMARY_FILE
     summary = json.loads(path.read_text(encoding="utf-8"))
     cnt = Counter(row.group for row in after_rows)
@@ -430,6 +531,8 @@ def update_summary(before_rows: list[Row], after_rows: list[Row], checked_urls: 
         "curated_source_map_artifact_only": True,
         "curated_candidate_pool_generated": True,
         "curated_candidate_pool_artifact_only": True,
+        "strict_video_checked_unique": checked_urls,
+        "strict_progress_checked_unique": strict_progress_checked_unique,
         "family_playlist": family_summary,
         "stability": stability_summary,
         "published_recheck": {
@@ -439,7 +542,16 @@ def update_summary(before_rows: list[Row], after_rows: list[Row], checked_urls: 
             "before_rows": len(before_rows),
             "after_rows": len(after_rows),
             "removed_rows": len(before_rows) - len(after_rows),
-            "initial_failed_unique_urls": len(initial_failed_urls),
+            # Keep each phase distinct. The old initial_failed field was
+            # accidentally populated after the slow retry, which made the
+            # report impossible to interpret.
+            "first_pass_failed_unique_urls": retry_summary.get("first_pass_failed_unique_urls", len(initial_failed_urls)),
+            "slow_retry_attempted_unique_urls": retry_summary.get("attempted_unique_urls", 0),
+            "slow_retry_recovered_unique_urls": retry_summary.get("recovered_unique_urls", 0),
+            "post_retry_failed_unique_urls": retry_summary.get("still_failed_unique_urls", len(initial_failed_urls)),
+            # Legacy alias: preserve compatibility, but define it as the
+            # post-retry remainder rather than the first-pass failure count.
+            "initial_failed_unique_urls": retry_summary.get("still_failed_unique_urls", len(initial_failed_urls)),
             "refill_failed_unique_urls": len(all_failed_urls) - len(initial_failed_urls),
             "failed_unique_urls": len(all_failed_urls),
             "core_progress_required": REQUIRE_CORE_PROGRESS,
@@ -453,6 +565,7 @@ def update_summary(before_rows: list[Row], after_rows: list[Row], checked_urls: 
             ),
             "public_network_policy_enabled": True,
             "refill": refill_summary,
+            "slow_retry": retry_summary,
             "elapsed_seconds": round(elapsed, 1),
         },
     })
@@ -471,7 +584,9 @@ def write_report(before_rows: list[Row], after_rows: list[Row], failed_urls: dic
         f"Rows before: {len(before_rows)}",
         f"Rows after: {len(after_rows)}",
         f"Removed rows: {len(before_rows) - len(after_rows)}",
-        f"Failed unique URLs in initial final recheck: {len(failed_urls)}",
+        f"Failed unique URLs after slow retry: {len(failed_urls)}",
+        f"Slow retry attempted unique URLs: {refill_summary.get('initial_retry', {}).get('attempted_unique_urls', 0)}",
+        f"Slow retry recovered unique URLs: {refill_summary.get('initial_retry', {}).get('recovered_unique_urls', 0)}",
         f"Core live-progress check required: {REQUIRE_CORE_PROGRESS}",
         f"Video track required: {REQUIRE_VIDEO_TRACK}",
         f"Video-track verified final unique URLs: {len({row.url for row in after_rows})}",
@@ -511,7 +626,9 @@ def write_final_report(groups: list[str], rows: list[Row], failed_urls: dict[str
         f"Rows: {len(rows)}",
         f"Unique channel names: {len({row.name for row in rows})}",
         f"Unique URLs: {len({row.url for row in rows})}",
-        f"Failed unique URLs in initial final recheck: {len(failed_urls)}",
+        f"Failed unique URLs after slow retry: {len(failed_urls)}",
+        f"Slow retry attempted unique URLs: {refill_summary.get('initial_retry', {}).get('attempted_unique_urls', 0)}",
+        f"Slow retry recovered unique URLs: {refill_summary.get('initial_retry', {}).get('recovered_unique_urls', 0)}",
         f"Refilled rows from checked candidate pool: {refill_summary.get('refilled_rows', 0)}",
         f"Unresolved refill rows: {refill_summary.get('unresolved_rows', 0)}",
         f"Core live-progress check required: {REQUIRE_CORE_PROGRESS}",
@@ -606,6 +723,8 @@ def main() -> int:
                 ok_count = sum(1 for result in results.values() if result.ok)
                 print(f"published_recheck {i}/{len(futs)} ok_urls={ok_count}", flush=True)
 
+    retry_summary = retry_failed_final_urls(by_url, results, core_urls)
+    print("Published final slow retry", json.dumps(retry_summary, ensure_ascii=False, sort_keys=True), flush=True)
     failed_urls = {url: result.detail for url, result in results.items() if not result.ok}
     kept_rows = [row for row in rows if row.url not in failed_urls]
     failed_ratio = len(failed_urls) / max(1, len(by_url))
@@ -619,6 +738,7 @@ def main() -> int:
             "playable_unique_urls": 0,
             "refilled_rows": 0,
             "unresolved_rows": len(rows) - len(kept_rows),
+            "initial_retry": retry_summary,
         }
         write_results_csv(rows, results)
         write_report(rows, kept_rows, failed_urls, elapsed, refill_summary)
@@ -649,6 +769,7 @@ def main() -> int:
         failed_urls,
         candidate_pool,
     )
+    refill_summary["initial_retry"] = retry_summary
     for candidate in accepted_refills:
         source_map[(candidate.row.name, candidate.row.url)] = candidate.source
 
@@ -664,8 +785,18 @@ def main() -> int:
     all_failed_urls.update(refill_failed_urls)
     stability_rows = rows + [candidate.row for candidate in attempted_refills]
     stability_summary = update_history(stability_rows, all_failed_urls, source_map)
-    checked_urls = len(by_url) + len(refill_results)
+    checked_url_set = set(by_url) | set(refill_results)
+    checked_urls = len(checked_url_set)
 
+    strict_progress_urls: set[str] = set()
+    if REQUIRE_CORE_PROGRESS:
+        strict_progress_urls.update(url for url in by_url if url in core_urls)
+        strict_progress_urls.update(
+            result.cand.url
+            for result in refill_results.values()
+            if is_core_row(result.cand)
+        )
+    strict_progress_checked_unique = len(strict_progress_urls)
     update_summary(
         rows,
         final_rows,
@@ -677,6 +808,8 @@ def main() -> int:
         stability_summary,
         family_summary,
         refill_summary,
+        retry_summary,
+        strict_progress_checked_unique,
     )
     write_report(rows, final_rows, failed_urls, elapsed, refill_summary)
     write_final_report(

@@ -28,6 +28,16 @@ import run_maintenance as maintenance_module
 from channel_utils import cctv_key as coverage_cctv_key, cctv_number, cctv_sort_key, cctv_variant_base, format_extinf, is_latin_noise_name
 from channel_identity import aliases_are_compatible, canonical_channel_key
 from validate_publish_bundle import BundleValidationError, Row as BundleRow, validate_publish_bundle
+from publication_config import PublicationConfigError, load_publication_config
+from publication_manifest import (
+    FINAL_PUBLICATION_FILES,
+    MANIFEST_FILE,
+    ManifestValidationError,
+    SIZE_AUDIT_FILES,
+    SUMMARY_FILE as MANIFEST_SUMMARY_FILE,
+    validate_manifest,
+    write_manifest,
+)
 from media_probe import looks_media as media_looks_playable, probe_media
 import network_safety as network_safety_module
 from network_safety import PublicRedirectHandler, PublicURLPolicyError, resolve_public_addresses, validate_public_url
@@ -45,16 +55,56 @@ def test_workflow_is_pinned_and_refuses_stale_publication() -> None:
     assert 'git push origin "HEAD:$TARGET_BRANCH"' in workflow
     assert "Refuse publication from a non-default branch" in workflow
     assert "github.ref_name != github.event.repository.default_branch" in workflow
-    assert workflow.index("Refuse publication from a non-default branch") < workflow.index("Verify every unique IPTV stream URL")
-    assert 'IPTV_REQUIRE_VIDEO_TRACK: "0"' in workflow
-    assert 'IPTV_REQUIRE_VIDEO_TRACK: "1"' in workflow
+    assert workflow.index("Refuse publication from a non-default branch") < workflow.index("Run complete maintenance pipeline")
+    assert "IPTV_REQUIRE_VIDEO_TRACK" in (ROOT / "scripts" / "run_maintenance.py").read_text(encoding="utf-8")
+    assert "IPTV_REQUIRE_VIDEO_TRACK" in (ROOT / "scripts" / "run_maintenance.py").read_text(encoding="utf-8")
     assert "issues: write" in workflow
     assert "notify_maintenance.py" in workflow
     assert workflow.count("continue-on-error: true") >= 4
     assert not workflow.rstrip().endswith(r"\n"), "workflow contains a literal trailing \\n token"
     endpoint_checker = (ROOT / "scripts" / "check_publication_endpoints.py").read_text(encoding="utf-8")
     assert "No television-compatible publication endpoint is current" in endpoint_checker
+    assert "Required primary television endpoint is not current" in endpoint_checker
     assert "publication_check=" not in endpoint_checker
+    assert "python scripts/run_maintenance.py" in workflow
+    assert "cancel-in-progress: false" in workflow
+    assert workflow.index("Run complete maintenance pipeline") < workflow.index("Commit verified playlist")
+    assert "cdn_pending" in workflow
+    assert "--publication-files" in workflow
+
+    fast_workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+    fast_refs = [line.strip() for line in fast_workflow.splitlines() if line.strip().startswith("uses:")]
+    assert fast_refs
+    assert all(re.fullmatch(r"uses: [A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[0-9a-f]{40}(?: # v\d+)?", line) for line in fast_refs), fast_refs
+    assert "contents: read" in fast_workflow
+    assert "persist-credentials: false" in fast_workflow
+    assert "validate_publication.py" in fast_workflow
+
+
+def test_publication_config_rejects_ambiguous_roles_and_unsafe_paths() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        (root / "config").mkdir()
+        config = json.loads((ROOT / "config" / "publication.json").read_text(encoding="utf-8-sig"))
+
+        def expect_rejected(mutator) -> None:
+            candidate = json.loads(json.dumps(config))
+            mutator(candidate)
+            (root / "config" / "publication.json").write_text(
+                json.dumps(candidate), encoding="utf-8", newline="\n"
+            )
+            try:
+                load_publication_config(root)
+            except PublicationConfigError:
+                return
+            raise AssertionError("invalid publication configuration was accepted")
+
+        expect_rejected(lambda value: value["endpoints"].append(dict(value["endpoints"][0])))
+        expect_rejected(lambda value: value["endpoints"][1].update({"required_primary": True}))
+        expect_rejected(lambda value: value["endpoints"][0].update({"path": "../live-curated.txt"}))
+        expect_rejected(lambda value: value["endpoints"][0].update({"template": "http://example.test/{path}"}))
+        expect_rejected(lambda value: value["endpoints"][0].update({"path": value["primary_text_file"]}))
+        expect_rejected(lambda value: value["endpoints"][3].update({"television_compatible": False}))
 
 
 def test_source_statuses_follow_config_order() -> None:
@@ -809,6 +859,10 @@ def _write_test_publish_bundle(root: Path, full_rows=None, family_rows=None, gro
         "sources_total": 1,
         "sources_fetched_ok": 1,
         "checked_all_unique": True,
+        "broad_media_probe_checked": checked,
+        "broad_checked_all_unique": True,
+        "strict_video_checked_unique": checked,
+        "strict_progress_checked_unique": checked,
         "checked_candidates": checked,
         "unique_candidates": checked,
         "unique_name_url_candidates": len(full_rows),
@@ -846,12 +900,23 @@ def _write_test_publish_bundle(root: Path, full_rows=None, family_rows=None, gro
             "public_network_policy_enabled": True,
             "checked_unique_urls": checked,
             "initial_checked_unique_urls": checked,
+            "first_pass_failed_unique_urls": 0,
+            "slow_retry_attempted_unique_urls": 0,
+            "slow_retry_recovered_unique_urls": 0,
+            "post_retry_failed_unique_urls": 0,
             "initial_failed_unique_urls": 0,
             "refill_failed_unique_urls": 0,
             "failed_unique_urls": 0,
             "before_rows": len(full_rows),
             "after_rows": len(full_rows),
             "removed_rows": 0,
+            "slow_retry": {
+                "first_pass_failed_unique_urls": 0,
+                "initial_failed_unique_urls": 0,
+                "attempted_unique_urls": 0,
+                "recovered_unique_urls": 0,
+                "still_failed_unique_urls": 0,
+            },
             "refill": {
                 "enabled": True,
                 "attempted_unique_urls": 0,
@@ -982,6 +1047,7 @@ def test_publish_bundle_validator_enforces_cross_file_invariants() -> None:
         # checked_unique_urls includes failed refill attempts, so it may be
         # greater than the final published unique URL count.
         summary["published_recheck"]["checked_unique_urls"] += 2
+        summary["strict_video_checked_unique"] += 2
         summary["published_recheck"]["refill_failed_unique_urls"] += 2
         summary["published_recheck"]["failed_unique_urls"] += 2
         summary["published_recheck"]["refill"]["attempted_unique_urls"] += 2
@@ -1079,8 +1145,8 @@ def test_publish_size_hashes_current_worktree_not_stale_index() -> None:
     assert '"ls-files", "-s"' not in source
 
 
-def test_publication_checker_uses_exact_canonical_url() -> None:
-    from check_publication_endpoints import build_request
+def test_publication_checker_uses_exact_canonical_url_and_requires_primary() -> None:
+    from check_publication_endpoints import EndpointResult, build_request, endpoint_matrix, publication_gate_failures
 
     url = "https://cdn.jsdelivr.net/gh/example/repo/ku9-live.txt"
     request = build_request(url)
@@ -1089,6 +1155,76 @@ def test_publication_checker_uses_exact_canonical_url() -> None:
     headers = {key.lower(): value for key, value in request.header_items()}
     assert "cache-control" not in headers
     assert "pragma" not in headers
+
+    endpoints = endpoint_matrix("example/repo", "main")
+    primary = [item for item in endpoints if item.required_primary]
+    assert [item.name for item in primary] == ["jsdelivr_primary"]
+    results = [
+        EndpointResult("github_raw", "https://raw.test/list", True, False, False, ok=True),
+        EndpointResult("ghproxy_raw", "https://proxy.test/list", False, True, False, ok=True),
+        EndpointResult("jsdelivr_cdn", url, False, True, True, ok=False, error="stale hash"),
+    ]
+    failures = publication_gate_failures(results)
+    assert any("Required primary television endpoint" in item for item in failures)
+    results[-1].ok = True
+    assert publication_gate_failures(results) == []
+
+
+def test_publication_manifest_covers_final_summary_without_self_hash() -> None:
+    assert MANIFEST_SUMMARY_FILE not in SIZE_AUDIT_FILES
+    assert MANIFEST_FILE not in FINAL_PUBLICATION_FILES
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        for name in FINAL_PUBLICATION_FILES:
+            path = root / name
+            if name == MANIFEST_SUMMARY_FILE:
+                path.write_text(
+                    json.dumps({"generated_utc": "2026-07-18T00:00:00Z", "final_primary_published_lines": 1}) + "\n",
+                    encoding="utf-8",
+                    newline="\n",
+                )
+            else:
+                path.write_text(f"fixture for {name}\n", encoding="utf-8", newline="\n")
+        manifest = write_manifest(root)
+        assert manifest["manifest_self_hash_excluded"] is True
+        assert MANIFEST_SUMMARY_FILE in manifest["files"]
+        assert validate_manifest(root)["status"] == "ok"
+        (root / MANIFEST_SUMMARY_FILE).write_text("{}\n", encoding="utf-8", newline="\n")
+        try:
+            validate_manifest(root)
+        except ManifestValidationError as exc:
+            assert "full-check-summary.json" in str(exc)
+        else:
+            raise AssertionError("mutating a finalized summary must invalidate the publication manifest")
+
+
+def test_final_recheck_slow_retry_recovers_non_core_failure() -> None:
+    import recheck_published as recheck
+
+    url = "http://example.test/live.m3u8"
+    row = recheck.Row("????", "????", url)
+    original = CheckResult(Candidate("fixture", row.group, row.name, row.url), False, "TimeoutError")
+    results = {url: original}
+    calls: list[dict] = []
+
+    def checker(candidate, **kwargs):
+        calls.append(kwargs)
+        return CheckResult(candidate, True, "video/h264")
+
+    summary = recheck.retry_failed_final_urls(
+        {url: row},
+        results,
+        set(),
+        attempts=1,
+        workers=1,
+        timeout=17,
+        checker=checker,
+    )
+    assert summary["attempted_unique_urls"] == 1
+    assert summary["recovered_unique_urls"] == 1
+    assert summary["still_failed_unique_urls"] == 0
+    assert results[url].ok is True
+    assert calls == [{"timeout": 17, "core_override": False, "require_progress": False, "require_video": True}]
 
 
 def test_generated_csv_writers_force_lf_line_endings() -> None:
@@ -1108,14 +1244,19 @@ def test_generated_csv_writers_force_lf_line_endings() -> None:
 def test_local_maintenance_wrapper_is_fail_fast_and_complete() -> None:
     commands = maintenance_module.pipeline_commands()
     labels = [label for label, _command in commands]
-    scripts = [Path(command[-1]).name for _label, command in commands]
-    assert labels[-3:] == [
-        "validate complete publish bundle",
+    scripts = [Path(command[1]).name for _label, command in commands]
+    assert labels[-4:] == [
         "guard against unsafe shrinkage",
-        "audit publish size",
+        "audit publish size and generate manifest",
+        "validate complete publish bundle",
+        "validate immutable public publication",
     ]
-    assert scripts == [script for _label, script in maintenance_module.STEPS]
+    assert scripts == [stage.script for stage in maintenance_module.STAGES]
+    assert commands[0][1][-1] == "--validate"
+    assert commands[-2][1][-1] == "--strict"
     assert scripts.index("guard_publish.py") < scripts.index("audit_publish_size.py")
+    assert scripts.index("audit_publish_size.py") < scripts.index("validate_publish_bundle.py")
+    assert scripts.index("validate_publish_bundle.py") < scripts.index("validate_publication.py")
     assert maintenance_module.STEP_ENV_OVERRIDES["verify_sources.py"]["IPTV_REQUIRE_VIDEO_TRACK"] == "0"
     assert maintenance_module.STEP_ENV_OVERRIDES["recheck_published.py"]["IPTV_REQUIRE_VIDEO_TRACK"] == "1"
     assert maintenance_module.main(["--dry-run"]) == 0
@@ -1138,7 +1279,7 @@ def test_recheck_summary_records_video_policy() -> None:
             recheck.ROOT = Path(td)
             (recheck.ROOT / recheck.SUMMARY_FILE).write_text("{}\n", encoding="utf-8", newline="\n")
             rows = [recheck.Row("\u592e\u89c6\u9891\u9053", "CCTV-1", "http://unit.test/live.m3u8")]
-            recheck.update_summary(rows, rows, 1, {}, {}, 0.1, {}, {}, {}, {})
+            recheck.update_summary(rows, rows, 1, {}, {}, 0.1, {}, {}, {}, {}, {"first_pass_failed_unique_urls": 0, "attempted_unique_urls": 0, "recovered_unique_urls": 0, "still_failed_unique_urls": 0}, 1)
             summary = json.loads((recheck.ROOT / recheck.SUMMARY_FILE).read_text(encoding="utf-8"))
             assert summary["published_recheck"]["require_video_track"] is True
             assert summary["published_recheck"]["video_track_verified_unique_urls"] == 1
@@ -1149,6 +1290,7 @@ def test_recheck_summary_records_video_policy() -> None:
 def main() -> int:
     for test in [
         test_workflow_is_pinned_and_refuses_stale_publication,
+        test_publication_config_rejects_ambiguous_roles_and_unsafe_paths,
         test_source_statuses_follow_config_order,
         test_source_config_omits_disabled_unstable_sources,
         test_rules_config_contains_core_coverage,
@@ -1186,7 +1328,9 @@ def main() -> int:
         test_validate_rejects_strict_quality_filtered_channel,
         test_publish_bundle_validator_enforces_cross_file_invariants,
         test_publish_size_hashes_current_worktree_not_stale_index,
-        test_publication_checker_uses_exact_canonical_url,
+        test_publication_checker_uses_exact_canonical_url_and_requires_primary,
+        test_publication_manifest_covers_final_summary_without_self_hash,
+        test_final_recheck_slow_retry_recovers_non_core_failure,
         test_generated_csv_writers_force_lf_line_endings,
         test_local_maintenance_wrapper_is_fail_fast_and_complete,
         test_recheck_source_map_helper,

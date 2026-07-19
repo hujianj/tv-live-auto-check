@@ -8,6 +8,7 @@ mapping, or summary metadata disagree with one another.
 """
 from __future__ import annotations
 
+import argparse
 import csv
 import html
 import json
@@ -165,7 +166,15 @@ def _require_fields(mapping: dict, fields: tuple[str, ...], label: str, errors: 
         errors.append(f"{label}: missing required fields {missing!r}")
 
 
-def _validate_summary(summary: dict, full_rows: list[Row], family_rows: list[Row], sources: list[str], errors: list[str]) -> None:
+def _validate_summary(
+    summary: dict,
+    full_rows: list[Row],
+    family_rows: list[Row],
+    sources: list[str],
+    errors: list[str],
+    *,
+    require_extended_schema: bool = True,
+) -> None:
     if not isinstance(summary, dict):
         errors.append("summary root must be a JSON object")
         return
@@ -199,6 +208,13 @@ def _validate_summary(summary: dict, full_rows: list[Row], family_rows: list[Row
         "stability",
         "family_playlist",
     )
+    if require_extended_schema:
+        required_top_level += (
+            "broad_media_probe_checked",
+            "broad_checked_all_unique",
+            "strict_video_checked_unique",
+            "strict_progress_checked_unique",
+        )
     _require_fields(summary, required_top_level, "summary", errors)
 
     full_groups = dict(Counter(row.group for row in full_rows))
@@ -206,10 +222,33 @@ def _validate_summary(summary: dict, full_rows: list[Row], family_rows: list[Row
     full_names = len({row.name for row in full_rows})
     full_urls = len({row.url for row in full_rows})
 
-    if summary.get("checked_all_unique") is not True:
+    if "broad_checked_all_unique" in summary:
+        if summary.get("broad_checked_all_unique") is not True:
+            errors.append("summary.broad_checked_all_unique must be true")
+        if summary.get("checked_all_unique") != summary.get("broad_checked_all_unique"):
+            errors.append("summary.checked_all_unique must be the legacy alias of broad_checked_all_unique")
+    elif summary.get("checked_all_unique") is not True:
         errors.append("summary.checked_all_unique must be true")
     if "checked_candidates" in summary and "unique_candidates" in summary:
         _check_equal(summary["checked_candidates"], summary["unique_candidates"], "summary checked/unique candidates", errors)
+    if "broad_media_probe_checked" in summary and "unique_candidates" in summary:
+        _check_equal(
+            summary["broad_media_probe_checked"],
+            summary["unique_candidates"],
+            "summary broad media probe/unique candidates",
+            errors,
+        )
+    for field in ("strict_video_checked_unique", "strict_progress_checked_unique"):
+        if field not in summary and not require_extended_schema:
+            continue
+        value = summary.get(field)
+        if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+            errors.append(f"summary.{field} must be a non-negative integer")
+    try:
+        if summary["strict_progress_checked_unique"] > summary["strict_video_checked_unique"]:
+            errors.append("summary.strict_progress_checked_unique exceeds strict_video_checked_unique")
+    except (KeyError, TypeError):
+        pass
     if "unique_name_url_candidates" in summary and "unique_candidates" in summary:
         try:
             if summary["unique_name_url_candidates"] < summary["unique_candidates"]:
@@ -292,26 +331,30 @@ def _validate_summary(summary: dict, full_rows: list[Row], family_rows: list[Row
     if not isinstance(recheck, dict):
         errors.append("summary.published_recheck must be an object")
         recheck = {}
-    _require_fields(
-        recheck,
-        (
-            "core_progress_required",
-            "require_video_track",
-            "video_track_verified_unique_urls",
-            "public_network_policy_enabled",
-            "checked_unique_urls",
-            "initial_checked_unique_urls",
-            "initial_failed_unique_urls",
-            "refill_failed_unique_urls",
-            "failed_unique_urls",
-            "before_rows",
-            "after_rows",
-            "removed_rows",
-            "refill",
-        ),
-        "summary.published_recheck",
-        errors,
+    required_recheck_fields = (
+        "core_progress_required",
+        "require_video_track",
+        "video_track_verified_unique_urls",
+        "public_network_policy_enabled",
+        "checked_unique_urls",
+        "initial_checked_unique_urls",
+        "initial_failed_unique_urls",
+        "refill_failed_unique_urls",
+        "failed_unique_urls",
+        "before_rows",
+        "after_rows",
+        "removed_rows",
+        "refill",
     )
+    if require_extended_schema:
+        required_recheck_fields += (
+            "first_pass_failed_unique_urls",
+            "slow_retry_attempted_unique_urls",
+            "slow_retry_recovered_unique_urls",
+            "post_retry_failed_unique_urls",
+            "slow_retry",
+        )
+    _require_fields(recheck, required_recheck_fields, "summary.published_recheck", errors)
     if recheck.get("core_progress_required") is not True:
         errors.append("summary.published_recheck.core_progress_required must be true")
     if recheck.get("require_video_track") is not True:
@@ -327,9 +370,20 @@ def _validate_summary(summary: dict, full_rows: list[Row], family_rows: list[Row
         )
     if "after_rows" in recheck:
         _check_equal(recheck["after_rows"], len(full_rows), "summary.published_recheck.after_rows", errors)
+    if "checked_unique_urls" in recheck and "strict_video_checked_unique" in summary:
+        _check_equal(
+            summary["strict_video_checked_unique"],
+            recheck["checked_unique_urls"],
+            "summary strict video/recheck checked URL counts",
+            errors,
+        )
     numeric_fields = (
         "checked_unique_urls",
         "initial_checked_unique_urls",
+        "first_pass_failed_unique_urls",
+        "slow_retry_attempted_unique_urls",
+        "slow_retry_recovered_unique_urls",
+        "post_retry_failed_unique_urls",
         "initial_failed_unique_urls",
         "refill_failed_unique_urls",
         "failed_unique_urls",
@@ -346,14 +400,48 @@ def _validate_summary(summary: dict, full_rows: list[Row], family_rows: list[Row
     try:
         if recheck["checked_unique_urls"] < recheck["initial_checked_unique_urls"]:
             errors.append("summary.published_recheck.checked_unique_urls is smaller than initial_checked_unique_urls")
-        if recheck["initial_failed_unique_urls"] > recheck["initial_checked_unique_urls"]:
-            errors.append("summary.published_recheck.initial_failed_unique_urls exceeds initial_checked_unique_urls")
-        if recheck["failed_unique_urls"] != recheck["initial_failed_unique_urls"] + recheck["refill_failed_unique_urls"]:
+        if "first_pass_failed_unique_urls" in recheck:
+            if recheck["first_pass_failed_unique_urls"] > recheck["initial_checked_unique_urls"]:
+                errors.append("summary.published_recheck.first_pass_failed_unique_urls exceeds initial_checked_unique_urls")
+            if recheck["slow_retry_attempted_unique_urls"] > recheck["first_pass_failed_unique_urls"]:
+                errors.append("summary.published_recheck slow retry attempted count exceeds first-pass failures")
+            if recheck["slow_retry_recovered_unique_urls"] > recheck["slow_retry_attempted_unique_urls"]:
+                errors.append("summary.published_recheck slow retry recovered count exceeds attempted count")
+            if recheck["post_retry_failed_unique_urls"] != (
+                recheck["first_pass_failed_unique_urls"] - recheck["slow_retry_recovered_unique_urls"]
+            ):
+                errors.append("summary.published_recheck post-retry failure count is inconsistent")
+            if recheck["initial_failed_unique_urls"] != recheck["post_retry_failed_unique_urls"]:
+                errors.append("summary.published_recheck legacy initial_failed count must equal post-retry failures")
+            failed_before_refill = recheck["post_retry_failed_unique_urls"]
+        else:
+            failed_before_refill = recheck["initial_failed_unique_urls"]
+        if recheck["failed_unique_urls"] != failed_before_refill + recheck["refill_failed_unique_urls"]:
             errors.append("summary.published_recheck failed URL counts are inconsistent")
         if recheck["removed_rows"] != recheck["before_rows"] - recheck["after_rows"]:
             errors.append("summary.published_recheck removed_rows is inconsistent")
     except (KeyError, TypeError):
         pass
+
+    slow_retry = recheck.get("slow_retry")
+    if slow_retry is None and not require_extended_schema:
+        slow_retry = {}
+    elif not isinstance(slow_retry, dict):
+        errors.append("summary.published_recheck.slow_retry must be an object")
+        slow_retry = {}
+    for nested, flat in (
+        ("first_pass_failed_unique_urls", "first_pass_failed_unique_urls"),
+        ("attempted_unique_urls", "slow_retry_attempted_unique_urls"),
+        ("recovered_unique_urls", "slow_retry_recovered_unique_urls"),
+        ("still_failed_unique_urls", "post_retry_failed_unique_urls"),
+    ):
+        if nested in slow_retry and flat in recheck:
+            _check_equal(
+                slow_retry[nested],
+                recheck[flat],
+                f"summary.published_recheck.slow_retry.{nested}",
+                errors,
+            )
 
     refill = recheck.get("refill")
     if not isinstance(refill, dict):
@@ -492,7 +580,18 @@ def _validate_candidate_pool(path: Path, full_rows: list[Row], sources: list[str
             f"{missing_selected[:10]!r}"
         )
 
-def validate_publish_bundle(root: Path = ROOT) -> dict:
+def validate_publish_bundle(
+    root: Path = ROOT,
+    *,
+    require_artifacts: bool = True,
+) -> dict:
+    """Validate either a complete workflow bundle or only committed outputs.
+
+    ``require_artifacts=True`` is the publication gate used inside the full
+    maintenance workflow, where artifact-only provenance files must exist.
+    ``False`` is intended for ordinary clones and read-only CI, where those
+    large diagnostic files are deliberately absent from Git.
+    """
     root = Path(root)
     errors: list[str] = []
     required = [
@@ -501,11 +600,10 @@ def validate_publish_bundle(root: Path = ROOT) -> dict:
         FULL_M3U_FILE,
         FAMILY_M3U_FILE,
         SUMMARY_FILE,
-        SOURCE_MAP_FILE,
-        CANDIDATE_POOL_FILE,
-        ALIAS_CONFLICT_REPORT,
         SOURCES_STATUS_FILE,
     ]
+    if require_artifacts:
+        required.extend((SOURCE_MAP_FILE, CANDIDATE_POOL_FILE, ALIAS_CONFLICT_REPORT))
     missing = [name for name in required if not (root / name).is_file()]
     if missing:
         raise BundleValidationError(f"missing publish bundle files: {missing!r}")
@@ -537,30 +635,55 @@ def validate_publish_bundle(root: Path = ROOT) -> dict:
     if not _ordered_subset(family_rows, full_rows):
         errors.append("family playlist is not an ordered subset of the full playlist")
 
-    source_rows: list[Row] = []
-    sources: list[str] = []
-    with (root / SOURCE_MAP_FILE).open(encoding="utf-8", newline="") as f:
-        source_reader = csv.DictReader(f)
-        expected_source_header = ["group", "name", "url", "source"]
-        if source_reader.fieldnames != expected_source_header:
-            errors.append(
-                f"{SOURCE_MAP_FILE}: header must be {expected_source_header!r}, got {source_reader.fieldnames!r}"
-            )
-        for item in source_reader:
-            source_rows.append(Row((item.get("group") or "").strip(), (item.get("name") or "").strip(), (item.get("url") or "").strip()))
-            sources.append((item.get("source") or "").strip())
-    if source_rows != full_rows:
-        errors.append("curated-source-map.csv rows/order do not exactly match full playlist")
-    if any(not source for source in sources):
-        errors.append("curated-source-map.csv contains an empty source")
-
-    _validate_candidate_pool(root / CANDIDATE_POOL_FILE, full_rows, sources, errors)
-
     try:
         summary = json.loads((root / SUMMARY_FILE).read_text(encoding="utf-8"))
     except Exception as exc:
         errors.append(f"{SUMMARY_FILE}: invalid JSON: {exc}")
         summary = {}
+
+    sources: list[str] = []
+    if require_artifacts:
+        source_rows: list[Row] = []
+        with (root / SOURCE_MAP_FILE).open(encoding="utf-8", newline="") as f:
+            source_reader = csv.DictReader(f)
+            expected_source_header = ["group", "name", "url", "source"]
+            if source_reader.fieldnames != expected_source_header:
+                errors.append(
+                    f"{SOURCE_MAP_FILE}: header must be {expected_source_header!r}, got {source_reader.fieldnames!r}"
+                )
+            for item in source_reader:
+                source_rows.append(
+                    Row(
+                        (item.get("group") or "").strip(),
+                        (item.get("name") or "").strip(),
+                        (item.get("url") or "").strip(),
+                    )
+                )
+                sources.append((item.get("source") or "").strip())
+        if source_rows != full_rows:
+            errors.append("curated-source-map.csv rows/order do not exactly match full playlist")
+        if any(not source for source in sources):
+            errors.append("curated-source-map.csv contains an empty source")
+        _validate_candidate_pool(root / CANDIDATE_POOL_FILE, full_rows, sources, errors)
+        if not (root / ALIAS_CONFLICT_REPORT).read_text(encoding="utf-8").strip():
+            errors.append(f"{ALIAS_CONFLICT_REPORT}: report is empty")
+    else:
+        curated_sources = summary.get("curated_sources") if isinstance(summary, dict) else None
+        if not isinstance(curated_sources, dict):
+            errors.append("summary.curated_sources must be an object")
+        else:
+            for source, count in curated_sources.items():
+                if not isinstance(source, str) or not source.strip():
+                    errors.append("summary.curated_sources contains an empty source name")
+                    continue
+                if not isinstance(count, int) or isinstance(count, bool) or count < 0:
+                    errors.append(f"summary.curated_sources[{source!r}] must be a non-negative integer")
+                    continue
+                sources.extend([source] * count)
+            if len(sources) != len(full_rows):
+                errors.append(
+                    "summary.curated_sources counts do not sum to the committed full playlist row count"
+                )
 
     with (root / SOURCES_STATUS_FILE).open(encoding="utf-8", newline="") as f:
         status_reader = csv.DictReader(f)
@@ -611,10 +734,18 @@ def validate_publish_bundle(root: Path = ROOT) -> dict:
         except Exception as exc:
             errors.append(f"config/sources.json: invalid JSON: {exc}")
 
-    _validate_summary(summary, full_rows, family_rows, sources, errors)
+    _validate_summary(
+        summary,
+        full_rows,
+        family_rows,
+        sources,
+        errors,
+        require_extended_schema=require_artifacts,
+    )
     _fail(errors)
     return {
         "status": "ok",
+        "mode": "strict" if require_artifacts else "committed-only",
         "full_rows": len(full_rows),
         "full_unique_names": len({row.name for row in full_rows}),
         "full_unique_urls": len({row.url for row in full_rows}),
@@ -623,12 +754,25 @@ def validate_publish_bundle(root: Path = ROOT) -> dict:
     }
 
 
-def main(argv: list[str]) -> int:
-    root = Path(argv[0]) if argv else ROOT
-    result = validate_publish_bundle(root)
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument(
+        "--strict",
+        action="store_true",
+        help="require artifact-only provenance files (default; publication workflow mode)",
+    )
+    mode.add_argument(
+        "--committed-only",
+        action="store_true",
+        help="validate only files intentionally committed to an ordinary clone",
+    )
+    parser.add_argument("root", nargs="?", type=Path, default=ROOT, help="repository root")
+    args = parser.parse_args(argv)
+    result = validate_publish_bundle(args.root, require_artifacts=not args.committed_only)
     print("publish bundle validation OK " + json.dumps(result, ensure_ascii=False, sort_keys=True))
     return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(main(sys.argv[1:]))
+    raise SystemExit(main())

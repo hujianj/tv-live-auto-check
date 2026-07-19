@@ -1,0 +1,116 @@
+﻿{
+  "schema_version": 1,
+  "primary_text_file": "ku9-live.txt",
+  "authoritative_raw_file": "live-curated.txt",
+  "playlist_files": [
+    "live-curated.txt",
+    "live.txt",
+    "live-verified.txt",
+    "ku9-live.txt",
+    "live.m3u",
+    "ku9-family.txt",
+    "live-family.txt",
+    "family.m3u"
+  ],
+  "publication_files": [
+    "live-curated.txt",
+    "live.txt",
+    "live-verified.txt",
+    "ku9-live.txt",
+    "live.m3u",
+    "ku9-family.txt",
+    "live-family.txt",
+    "family.m3u",
+    "stability-history.tsv",
+    "final-publish-report.md",
+    "stability-report.md",
+    "coverage-report.md",
+    "quality-audit-report.md",
+    "publish-guard-report.md",
+    "published-recheck-report.md",
+    "source-report.md",
+    "check-report.md",
+    "curated-report.md",
+    "sources_status.csv",
+    "full-check-summary.json",
+    "publish-size-report.md"
+  ],
+  "purge_files": [
+    "live-curated.txt",
+    "live.txt",
+    "ku9-live.txt",
+    "live-verified.txt",
+    "live.m3u",
+    "ku9-family.txt",
+    "live-family.txt",
+    "family.m3u"
+  ],
+  "endpoints": [
+    {
+      "name": "github_raw",
+      "template": "https://raw.githubusercontent.com/{repo}/{branch}/{path}",
+      "path": "live-curated.txt",
+      "retries": 4,
+      "timeout_seconds": 30,
+      "endpoint_deadline_seconds": 150,
+      "hard_raw": true,
+      "television_compatible": false,
+      "required_primary": false
+    },
+    {
+      "name": "github_pages",
+      "template": "https://{owner}.github.io/{name}/{path}",
+      "path": "live-curated.txt",
+      "retries": 3,
+      "timeout_seconds": 20,
+      "endpoint_deadline_seconds": 90,
+      "hard_raw": false,
+      "television_compatible": false,
+      "required_primary": false
+    },
+    {
+      "name": "ghproxy_raw",
+      "template": "https://gh-proxy.com/raw.githubusercontent.com/{repo}/{branch}/{path}",
+      "path": "live-curated.txt",
+      "retries": 3,
+      "timeout_seconds": 20,
+      "endpoint_deadline_seconds": 90,
+      "hard_raw": false,
+      "television_compatible": true,
+      "required_primary": false
+    },
+    {
+      "name": "jsdelivr_primary",
+      "template": "https://cdn.jsdelivr.net/gh/{repo}/{path}",
+      "path": "ku9-live.txt",
+      "retries": 4,
+      "timeout_seconds": 30,
+      "endpoint_deadline_seconds": 150,
+      "hard_raw": false,
+      "television_compatible": true,
+      "required_primary": true
+    },
+    {
+      "name": "jsdelivr_gcore",
+      "template": "https://gcore.jsdelivr.net/gh/{repo}@{branch}/{path}",
+      "path": "ku9-live.txt",
+      "retries": 3,
+      "timeout_seconds": 20,
+      "endpoint_deadline_seconds": 90,
+      "hard_raw": false,
+      "television_compatible": true,
+      "required_primary": false
+    },
+    {
+      "name": "jsdelivr_testingcf",
+      "template": "https://testingcf.jsdelivr.net/gh/{repo}@{branch}/{path}",
+      "path": "ku9-live.txt",
+      "retries": 3,
+      "timeout_seconds": 20,
+      "endpoint_deadline_seconds": 90,
+      "hard_raw": false,
+      "television_compatible": true,
+      "required_primary": false
+    }
+  ]
+}

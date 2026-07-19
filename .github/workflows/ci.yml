@@ -1,0 +1,90 @@
+name: Fast publication and code validation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "scripts/*.py"
+      - "config/*.json"
+      - ".github/workflows/*.yml"
+      - "live-curated.txt"
+      - "live.txt"
+      - "live-verified.txt"
+      - "ku9-live.txt"
+      - "live.m3u"
+      - "ku9-family.txt"
+      - "live-family.txt"
+      - "family.m3u"
+      - "stability-history.tsv"
+      - "full-check-summary.json"
+      - "final-publish-report.md"
+      - "stability-report.md"
+      - "coverage-report.md"
+      - "quality-audit-report.md"
+      - "publish-guard-report.md"
+      - "published-recheck-report.md"
+      - "publish-size-report.md"
+      - "publish-manifest.json"
+      - "source-report.md"
+      - "check-report.md"
+      - "curated-report.md"
+      - "sources_status.csv"
+  pull_request:
+    paths:
+      - "scripts/*.py"
+      - "config/*.json"
+      - ".github/workflows/*.yml"
+      - "live-curated.txt"
+      - "live.txt"
+      - "live-verified.txt"
+      - "ku9-live.txt"
+      - "live.m3u"
+      - "ku9-family.txt"
+      - "live-family.txt"
+      - "family.m3u"
+      - "stability-history.tsv"
+      - "full-check-summary.json"
+      - "final-publish-report.md"
+      - "stability-report.md"
+      - "coverage-report.md"
+      - "quality-audit-report.md"
+      - "publish-guard-report.md"
+      - "published-recheck-report.md"
+      - "publish-size-report.md"
+      - "publish-manifest.json"
+      - "source-report.md"
+      - "check-report.md"
+      - "curated-report.md"
+      - "sources_status.csv"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fast-validation-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout without write credentials
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - name: Compile Python sources
+        run: python -m compileall -q scripts
+      - name: Validate centralized publication configuration
+        run: python scripts/publication_config.py --validate
+      - name: Run unit tests
+        run: python scripts/test_playlist_logic.py
+      - name: Validate committed public publication bundle
+        run: python scripts/validate_publish_bundle.py --committed-only
+      - name: Validate committed public publication manifest
+        run: python scripts/validate_publication.py
