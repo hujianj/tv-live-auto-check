@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "max_attempts": 2,
+  "retry_delay_seconds": 20,
+  "retryable_scripts": [
+    "verify_sources.py",
+    "curate_ku9.py",
+    "recheck_published.py",
+    "audit_coverage.py",
+    "audit_quality.py",
+    "guard_publish.py",
+    "audit_publish_size.py"
+  ],
+  "fatal_scripts": [
+    "publication_config.py",
+    "test_playlist_logic.py",
+    "validate_publish_bundle.py",
+    "validate_publication.py"
+  ],
+  "max_candidates_per_source": 50000,
+  "max_total_candidates": 250000,
+  "max_unique_urls": 100000,
+  "max_source_bytes": 30000000,
+  "max_total_fetch_bytes": 180000000,
+  "max_pending_futures": 1024
+}

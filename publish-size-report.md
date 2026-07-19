@@ -1,9 +1,10 @@
 # Publish size and alias safety report
 
 Status: ok
-Working-tree public bytes: 2374382
-Unique public blob bytes: 1629373
-Max unique public blob bytes: 2500000
+Measurement scope: publication payload files only; summary, this report, and the manifest are checked separately
+Working-tree payload bytes: 2347256
+Unique payload blob bytes: 1602247
+Max unique payload blob bytes: 2500000
 TXT alias same hash: True
 Family TXT alias same hash: True
 Duplicate TXT working-tree bytes: 643590
@@ -21,7 +22,6 @@ Duplicate TXT working-tree bytes: 643590
 | live-family.txt | 95580 | 12566e2d2fbeb38e1599aecacbbc0b779100858f975478305edfc0b92e18309f | ae4b5664241764287ae688df529569210f5621c3 |
 | family.m3u | 173533 | f7417813abbe25c3968fd20ead61960c352b357405a40040ff6d4a08f62c85b6 | 0d102dd46f01bc2f02892873fe63cac8f0dc2fd4 |
 | stability-history.tsv | 685292 | ffd595ebec170c2b7de9651a6ac3be93c8752d0a40ad9b7717192af94bb880e0 | 5a392b2d6b1ace0aee930a2fdf1b7b7130809dfc |
-| full-check-summary.json | 27126 | 466026fc0e1faab45f7879abcd6f172c3c81e8dccf660f94433994badc1674e7 | 295897d45e7a01e0251b98249d42421019fff01c |
 | final-publish-report.md | 11687 | c633ea397e1d8ad7373c2db703cdb5a0c587dce633ceb5765973e826107275d1 | afe46d6007077443d97eb94d4f7f41e06a58966e |
 | stability-report.md | 8003 | 2919076817cde46069c4fed47bdd8ca5394380d0a532fbe32696615597191026 | 0618f98c962a4b5fb3fa7ece6b623d672053142d |
 | coverage-report.md | 1310 | 478f336478e33dc2ca04f2e26f1306d84072ffba11a23761c8e28bca23c2d1a2 | f51d43b7a31e5e209664623276ef3258afa042f1 |

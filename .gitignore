@@ -1,4 +1,4 @@
-﻿__pycache__/
+__pycache__/
 *.pyc
 .env
 .DS_Store
@@ -12,3 +12,9 @@ local-network-report.md
 local-network-results.csv
 curated-candidate-pool.csv
 alias-conflict-report.md
+artifacts/
+cdn-health-report.json
+cdn-health-report.md
+watchdog-report.json
+watchdog-report.md
+maintenance-run.json

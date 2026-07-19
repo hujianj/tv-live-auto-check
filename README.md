@@ -44,10 +44,12 @@ GitHub Actions 每天北京时间 04:20 计划运行，也可以手动 `Run work
 6. 只保留检测可播放的 URL。
 7. 按 `config/rules.json` 和 `config/quality.json` 做家用分类、过滤和限量。
 8. 生成 `live-curated.txt` / `live.txt` / `live-verified.txt` / `ku9-live.txt` / `live.m3u`。
-9. 对最终发布列表再做一次全量 URL 复测，复测失败的线路从本次发布中删除。
+9. 对最终发布列表再做一次全量 URL 复测；第一轮失败的所有最终 URL 会以更低并发和更长超时再试一次，确认失败后才删除并从候选池补线。
 10. 更新 `stability-history.tsv`，让历史更稳定的线路在下一轮排序更靠前。
-11. 运行核心频道覆盖审计、最终质量审计、防缩水发布守卫、发布体积审计。
-12. 自动提交新版直播源并检查 Raw / Pages / CDN 缓存状态。
+11. 运行核心频道覆盖审计、最终质量审计和防缩水发布守卫。
+12. 最终写入体积审计结果，再生成不包含自哈希的 `publish-manifest.json`，对所有其余发布文件的最终大小和 SHA256 做不可变校验。
+13. 完整跨文件校验和公开产物校验全部通过后才提交新版直播源。
+14. 发布后检查 GitHub Raw 和电视固定使用的主 jsDelivr URL；主 jsDelivr 仍旧时即使其他代理已更新也会判定维护失败。
 
 大体积诊断文件不会再进入 Git 历史，只作为 GitHub Actions artifact 保存 30 天：
 
@@ -62,6 +64,8 @@ alias-conflict-report.md
 ```
 
 `curated-source-map.csv` 和 `curated-candidate-pool.csv` 每次都会生成，但只存放在 Actions artifact 中，不是仓库内的公开订阅文件。`full-check-summary.json` 会用 `*_generated` 和 `*_artifact_only` 字段明确区分这两种语义。
+
+`publish-manifest.json` 是最终公开产物清单。它记录除自身以外的所有发布文件最终大小和 SHA256；清单自身不记录自己的哈希，从设计上避免 `full-check-summary.json` 过去那种“写回审计数据后自身大小和哈希立即失效”的循环依赖。另有只读、无仓库写凭据的轻量 CI，会在代码或公开产物被直接修改时运行单元测试和清单校验，不触发三万 URL 的昂贵全量检测。
 
 ## 频道分类与质量规则
 
@@ -155,15 +159,19 @@ python scripts\audit_coverage.py
 python scripts\audit_quality.py
 python scripts\guard_publish.py
 python scripts\audit_publish_size.py
+python scripts\validate_publication.py
 ```
 
 完整流水线运行后还会生成 `curated-source-map.csv`、`curated-candidate-pool.csv` 和 `alias-conflict-report.md` 等瞬态文件，此时必须执行跨文件一致性校验：
 
 ```powershell
 python scripts\validate_publish_bundle.py
+python scripts\validate_publication.py
 ```
 
-该校验会核对 TXT/M3U 顺序、别名文件、家庭精简版、来源映射、分类顺序和 `full-check-summary.json` 统计；普通 clone 没有 Actions 瞬态文件时，应先运行完整维护流程。
+必须保持顺序为 `guard_publish.py` → `audit_publish_size.py` → `validate_publish_bundle.py` → `validate_publication.py`，因为前两个脚本会定稿报告和 summary，后两个校验器必须检查最终不再修改的字节。
+
+完整跨文件校验会核对 TXT/M3U 顺序、别名文件、家庭精简版、来源映射、分类顺序和 `full-check-summary.json` 统计；普通 clone 没有 Actions 瞬态文件时，应先运行完整维护流程。
 
 
 如果本地有最新的 `stream_check_results.csv`，可以重新整理当前检测结果：
@@ -176,6 +184,8 @@ python scripts\audit_quality.py
 python scripts\validate_playlist.py live-curated.txt live.txt live-verified.txt ku9-live.txt live.m3u ku9-family.txt live-family.txt family.m3u
 python scripts\guard_publish.py
 python scripts\audit_publish_size.py
+python scripts\validate_publish_bundle.py
+python scripts\validate_publication.py
 ```
 
 ## 家庭网络检测
@@ -211,7 +221,8 @@ local-network-results.csv
 
 - GitHub Raw 是发布校验的权威基准，gh-proxy 适合立即查看最新版。
 - 这台电视已实测 jsDelivr 固定地址可用，因此长期订阅仍优先使用 jsDelivr。
-- jsDelivr 有时会滞后，项目会主动 purge 并校验电视实际请求的固定 URL，但第三方 CDN 仍不保证每个边缘节点立即刷新。
+- jsDelivr 有时会滞后，项目会主动 purge 并校验电视实际请求的固定 URL；主 `cdn.jsdelivr.net` 固定地址是硬门禁，不能再由 gh-proxy 或其他 jsDelivr 镜像替代通过。
+- 第三方 CDN 仍不保证全球每个边缘节点同时刷新，因此项目验证的是 GitHub Runner 实际命中的固定 URL 节点，并保留 Raw 代理作为即时备用。
 - 这台电视访问 GitHub Pages 曾出现“数据为空”，因此 Pages 只作为电脑端备用，不再建议作为电视主地址。
 
 ## 家用精简版

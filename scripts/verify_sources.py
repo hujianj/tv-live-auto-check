@@ -39,6 +39,12 @@ MAX_WORKERS = int(os.getenv("IPTV_FETCH_WORKERS", "64"))
 CHECK_WORKERS = int(os.getenv("IPTV_CHECK_WORKERS", "128"))
 HOST_WORKERS = max(1, int(os.getenv("IPTV_CHECK_WORKERS_PER_HOST", "8")))
 MAX_VALID_PER_NAME = int(os.getenv("IPTV_MAX_VALID_PER_NAME", "5"))
+MAX_CANDIDATES_PER_SOURCE = int(os.getenv("IPTV_MAX_CANDIDATES_PER_SOURCE", "50000"))
+MAX_TOTAL_CANDIDATES = int(os.getenv("IPTV_MAX_TOTAL_CANDIDATES", "250000"))
+MAX_UNIQUE_URLS = int(os.getenv("IPTV_MAX_UNIQUE_URLS", "100000"))
+MAX_SOURCE_BYTES = int(os.getenv("IPTV_MAX_SOURCE_BYTES", "30000000"))
+MAX_TOTAL_FETCH_BYTES = int(os.getenv("IPTV_MAX_TOTAL_FETCH_BYTES", "180000000"))
+MAX_PENDING_FUTURES = max(CHECK_WORKERS, int(os.getenv("IPTV_MAX_PENDING_FUTURES", "1024")))
 HLS_SEGMENT_CHECKS = int(os.getenv("IPTV_HLS_SEGMENT_CHECKS", "2"))
 HLS_VARIANT_CHECKS = int(os.getenv("IPTV_HLS_VARIANT_CHECKS", "2"))
 CORE_HLS_SEGMENT_CHECKS = int(os.getenv("IPTV_CORE_HLS_SEGMENT_CHECKS", str(max(3, HLS_SEGMENT_CHECKS))))
@@ -188,7 +194,7 @@ def _bounded_gzip_decompress(data: bytes, max_bytes: int) -> bytes:
     return output
 
 
-def fetch_url(url: str, timeout: int = FETCH_TIMEOUT, max_bytes: int = 12_000_000) -> tuple[int, str, bytes, str, bool]:
+def fetch_url(url: str, timeout: int = FETCH_TIMEOUT, max_bytes: int = MAX_SOURCE_BYTES) -> tuple[int, str, bytes, str, bool]:
     req = Request(url, headers={"User-Agent": UA, "Accept": "*/*", "Connection": "close", "Accept-Encoding": "gzip"})
     with limited_urlopen(req, timeout=timeout) as r:
         code = getattr(r, "status", 200)
@@ -335,11 +341,25 @@ def fetch_source(item: tuple[str, str]) -> tuple[SourceStatus, list[Candidate]]:
             raise ValueError("upstream playlist exceeded maximum fetch size; refusing partial parse")
         text = decode_bytes(data, ctype)
         cands = parse_playlist(text, name)
+        if len(cands) > MAX_CANDIDATES_PER_SOURCE:
+            raise ValueError(
+                f"resource budget exceeded: source parsed {len(cands)} candidates "
+                f"> limit {MAX_CANDIDATES_PER_SOURCE}"
+            )
         warn = "" if cands else "WARN fetched but no publishable HTTP/HTTPS stream candidates"
         st = SourceStatus(name=name, url=url, ok=True, bytes=len(data), parsed=len(cands), truncated=False, error=warn)
         return st, cands
     except Exception as e:
-        return SourceStatus(name=name, url=url, ok=False, bytes=0, parsed=0, truncated="maximum fetch size" in str(e), error=repr(e)[:240]), []
+        message = str(e)
+        return SourceStatus(
+            name=name,
+            url=url,
+            ok=False,
+            bytes=0,
+            parsed=0,
+            truncated="maximum fetch size" in message,
+            error=repr(e)[:240],
+        ), []
 
 
 def is_ipv6_url(url: str) -> bool:
@@ -710,6 +730,29 @@ def deduplicate_candidates(candidates: Iterable[Candidate]) -> dict[tuple[str, s
     return dedup
 
 
+
+def iter_bounded_check_results(candidates: list[Candidate], core_by_url: dict[str, bool]) -> Iterable[CheckResult]:
+    """Probe candidates without enqueuing every URL as a Future at once."""
+    iterator = iter(candidates)
+    pending: dict[cf.Future[CheckResult], Candidate] = {}
+    with cf.ThreadPoolExecutor(max_workers=CHECK_WORKERS) as executor:
+        while len(pending) < MAX_PENDING_FUTURES:
+            try:
+                cand = next(iterator)
+            except StopIteration:
+                break
+            pending[executor.submit(check_candidate_resilient, cand, core_by_url[cand.url], False)] = cand
+        while pending:
+            done, _ = cf.wait(pending, return_when=cf.FIRST_COMPLETED)
+            for future in done:
+                pending.pop(future, None)
+                yield future.result()
+                try:
+                    cand = next(iterator)
+                except StopIteration:
+                    continue
+                pending[executor.submit(check_candidate_resilient, cand, core_by_url[cand.url], False)] = cand
+
 def main() -> None:
     cleanup_transient_outputs()
     start = time.time()
@@ -725,6 +768,19 @@ def main() -> None:
             print(f"source {'OK' if st.ok else 'FAIL'} {st.name}: parsed={st.parsed} bytes={st.bytes} {st.error}", flush=True)
 
     statuses = order_source_statuses(statuses)
+    total_fetch_bytes = sum(status.bytes for status in statuses)
+    budget_failures = [status for status in statuses if status.truncated or "resource budget exceeded" in status.error]
+    if budget_failures:
+        names = ", ".join(status.name for status in budget_failures)
+        raise RuntimeError(f"upstream source resource budget exceeded: {names}")
+    if total_fetch_bytes > MAX_TOTAL_FETCH_BYTES:
+        raise RuntimeError(
+            f"total upstream fetch bytes {total_fetch_bytes} exceed budget {MAX_TOTAL_FETCH_BYTES}"
+        )
+    if len(all_cands) > MAX_TOTAL_CANDIDATES:
+        raise RuntimeError(
+            f"parsed candidate count {len(all_cands)} exceeds budget {MAX_TOTAL_CANDIDATES}"
+        )
 
     # Deduplicate before expensive checking.
     # Full-check rule: every distinct stream URL is probed against a real media
@@ -747,6 +803,10 @@ def main() -> None:
         to_check.append(sorted(arr, key=lambda c: (prefer_score(c), c.name))[0])
         core_by_url[url] = any(is_core_family_candidate(alias) for alias in arr)
     to_check.sort(key=lambda c: (prefer_score(c), c.name, c.url))
+    if len(to_check) > MAX_UNIQUE_URLS:
+        raise RuntimeError(
+            f"unique stream URL count {len(to_check)} exceeds budget {MAX_UNIQUE_URLS}"
+        )
     print(
         f"Parsed candidates={len(all_cands)}, unique_name_url={len(dedup)}, "
         f"unique_urls={len(url_to_candidates)}, checking_all_unique_urls={len(to_check)}, "
@@ -755,16 +815,13 @@ def main() -> None:
     )
 
     checked_by_url: dict[str, CheckResult] = {}
-    with cf.ThreadPoolExecutor(max_workers=CHECK_WORKERS) as ex:
-        futs = [ex.submit(check_candidate_resilient, c, core_by_url[c.url], False) for c in to_check]
-        ok_count = 0
-        for i, fut in enumerate(cf.as_completed(futs), 1):
-            r = fut.result()
-            checked_by_url[r.cand.url] = r
-            if r.ok:
-                ok_count += 1
-            if i % 100 == 0 or i == len(futs):
-                print(f"checked_url {i}/{len(futs)}, ok_urls={ok_count}", flush=True)
+    ok_count = 0
+    for i, result in enumerate(iter_bounded_check_results(to_check, core_by_url), 1):
+        checked_by_url[result.cand.url] = result
+        if result.ok:
+            ok_count += 1
+        if i % 100 == 0 or i == len(to_check):
+            print(f"checked_url {i}/{len(to_check)}, ok_urls={ok_count}", flush=True)
 
     results: list[CheckResult] = []
     for url, arr in url_to_candidates.items():
@@ -829,10 +886,30 @@ def main() -> None:
         "generated_beijing": generated_beijing.strftime("%Y-%m-%d %H:%M:%S Asia/Shanghai"),
         "sources_total": len(SOURCES),
         "sources_fetched_ok": sum(1 for s in statuses if s.ok),
+        "upstream_fetch_bytes": total_fetch_bytes,
+        "resource_budgets": {
+            "max_candidates_per_source": MAX_CANDIDATES_PER_SOURCE,
+            "max_total_candidates": MAX_TOTAL_CANDIDATES,
+            "max_unique_urls": MAX_UNIQUE_URLS,
+            "max_source_bytes": MAX_SOURCE_BYTES,
+            "max_total_fetch_bytes": MAX_TOTAL_FETCH_BYTES,
+            "max_pending_futures": MAX_PENDING_FUTURES,
+        },
         "parsed_candidates": len(all_cands),
         "unique_candidates": len(url_to_candidates),
         "unique_name_url_candidates": len(dedup),
+        # The first pass checks every distinct URL for real media bytes. It
+        # intentionally does not require a video track for every upstream
+        # candidate because that would make the 29k-URL pass much slower and
+        # would reject audio-only streams before curation. Keep the broad and
+        # strict meanings separate so reports cannot overclaim what was proved.
         "checked_candidates": len(to_check),
+        "broad_media_probe_checked": len(to_check),
+        "broad_checked_all_unique": len(to_check) == len(url_to_candidates),
+        "strict_video_checked_unique": 0,
+        "strict_progress_checked_unique": 0,
+        # Legacy field retained for consumers that only know the old schema;
+        # it now explicitly aliases the broad first-pass claim.
         "checked_all_unique": len(to_check) == len(url_to_candidates),
         "first_pass_validation": {
             "require_video_track": REQUIRE_VIDEO_TRACK,

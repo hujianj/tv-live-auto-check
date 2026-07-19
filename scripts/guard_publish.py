@@ -69,6 +69,26 @@ def warn(msg: str) -> None:
     print("GUARD WARN:", msg)
 
 
+def append_github_step_summary(markdown: str) -> None:
+    """Expose the guard decision directly on the Actions run page.
+
+    Local executions have no GITHUB_STEP_SUMMARY and remain unchanged. In CI,
+    the summary is written even when the guard rejects publication, so operators
+    do not need to download an artifact just to learn which rule failed.
+    """
+    target = os.getenv("GITHUB_STEP_SUMMARY")
+    if not target:
+        return
+    try:
+        with Path(target).open("a", encoding="utf-8", newline="\n") as handle:
+            handle.write(markdown)
+            if not markdown.endswith("\n"):
+                handle.write("\n")
+    except Exception as exc:
+        # A summary write must never change the publish decision.
+        print(f"GUARD WARN: cannot write GITHUB_STEP_SUMMARY: {exc!r}")
+
+
 def ratio(base: int, current: int) -> float | None:
     if base <= 0:
         return None
@@ -93,6 +113,7 @@ def write_guard_outputs(current: dict, baseline: dict, failures: list[str], warn
     failed_sources = [r["name"] for r in statuses if r.get("fetch_ok") != "True"]
     zero_parsed = [r["name"] for r in statuses if r.get("fetch_ok") == "True" and int(r.get("parsed") or 0) == 0]
     guard = {
+        "schema_version": 2,
         "status": "rejected" if failures else "ok",
         "baseline_lines": base_lines,
         "current_lines": cur_lines,
@@ -136,7 +157,20 @@ def write_guard_outputs(current: dict, baseline: dict, failures: list[str], warn
     if warnings:
         lines += ["", "## Warnings", ""]
         lines += [f"- {x}" for x in warnings]
-    (ROOT / "publish-guard-report.md").write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+    report = "\n".join(lines) + "\n"
+    (ROOT / "publish-guard-report.md").write_text(report, encoding="utf-8", newline="\n")
+    summary_lines = [
+        "## Publish guard decision",
+        "",
+        f"**Status:** `{guard['status']}`",
+        f"**Baseline lines:** `{base_lines}`; **current lines:** `{cur_lines}`",
+        f"**Failure count:** `{len(failures)}`; **warning count:** `{len(warnings)}`",
+    ]
+    if failures:
+        summary_lines += ["", "### Failed rules", "", *[f"- `{item}`" for item in failures]]
+    if warnings:
+        summary_lines += ["", "### Warnings", "", *[f"- `{item}`" for item in warnings]]
+    append_github_step_summary("\n".join(summary_lines) + "\n")
 
 
 def main() -> int:

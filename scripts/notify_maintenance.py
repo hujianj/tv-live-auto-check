@@ -6,33 +6,42 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import sys
+import time
 from datetime import datetime, timezone
-from urllib.parse import quote
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-TITLE = "[自动维护告警] IPTV 直播源维护流程失败"
+TITLE = "\u81ea\u52a8\u7ef4\u62a4\u544a\u8b66 IPTV \u76f4\u64ad\u6e90\u7ef4\u62a4\u6d41\u7a0b\u5931\u8d25"
 MARKER = "<!-- tv-live-auto-check-maintenance-alert -->"
 API = "https://api.github.com"
+RETRYABLE_HTTP = {408, 425, 429, 500, 502, 503, 504}
 
 
-def api_request(method: str, path: str, token: str, payload: dict | None = None):
+def api_request(method: str, path: str, token: str, payload: dict | None = None, retries: int = 3):
     data = None if payload is None else json.dumps(payload, ensure_ascii=False).encode("utf-8")
-    req = Request(
-        API + path,
-        data=data,
-        method=method,
-        headers={
-            "Accept": "application/vnd.github+json",
-            "Authorization": f"Bearer {token}",
-            "User-Agent": "tv-live-auto-check-maintenance",
-            "X-GitHub-Api-Version": "2022-11-28",
-            "Content-Type": "application/json; charset=utf-8",
-        },
-    )
-    with urlopen(req, timeout=30) as response:
-        raw = response.read()
-    return json.loads(raw.decode("utf-8")) if raw else None
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "Authorization": f"Bearer {token}",
+        "User-Agent": "tv-live-auto-check-maintenance",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Content-Type": "application/json; charset=utf-8",
+    }
+    last_error: Exception | None = None
+    for attempt in range(1, max(1, retries) + 1):
+        request = Request(API + path, data=data, method=method, headers=headers)
+        try:
+            with urlopen(request, timeout=30) as response:
+                raw = response.read(2_000_000)
+            return json.loads(raw.decode("utf-8")) if raw else None
+        except HTTPError as exc:
+            last_error = exc
+            if exc.code not in RETRYABLE_HTTP:
+                break
+        except Exception as exc:
+            last_error = exc
+        if attempt < max(1, retries):
+            time.sleep(float(attempt))
+    raise RuntimeError(f"GitHub API request failed after {max(1, retries)} attempts: {method} {path}: {last_error!r}")
 
 
 def find_open_issue(repo: str, token: str) -> dict | None:
@@ -61,45 +70,58 @@ def run_context() -> dict[str, str]:
     }
 
 
-def failure_body(context: dict[str, str], message: str) -> str:
-    return "\n".join(
-        [
-            MARKER,
-            "# IPTV 自动维护需要处理",
-            "",
-            "自动聚合、真实播放验证、发布或 CDN 健康检查未完整通过。",
-            "提交前失败不会覆盖线上订阅；如果仅发布后的 CDN 检查失败，GitHub Raw 可能已经更新，而电视兼容 CDN 入口可能仍在返回旧缓存。",
-            "",
-            f"- 最新失败时间（UTC）：{context['time']}",
-            f"- Workflow run：[{context['run_number'] or context['run_id']}]({context['run_url']})",
-            f"- 事件：`{context['event']}`",
-            f"- 分支：`{context['ref']}`",
-            f"- 源提交：`{context['sha']}`",
-            f"- 摘要：{message or '请打开失败 run 查看具体步骤和 artifact。'}",
-            "",
-            "下一次完整维护成功后，此 issue 会自动关闭。",
-        ]
-    ) + "\n"
+def status_label(status: str) -> str:
+    return {
+        "failure": "\u7ef4\u62a4\u6d41\u7a0b\u5931\u8d25",
+        "cdn_pending": "\u5df2\u53d1\u5e03\uff0cCDN \u540c\u6b65\u4e2d",
+    }[status]
 
 
-def failure_comment(context: dict[str, str], message: str) -> str:
+def issue_body(context: dict[str, str], status: str, message: str) -> str:
+    label = status_label(status)
+    detail = message or "\u8bf7\u67e5\u770b workflow artifact \u548c\u6b65\u9aa4\u65e5\u5fd7"
+    return "\n".join([
+        MARKER,
+        f"# IPTV {label}",
+        "",
+        f"\u5f53\u524d\u72b6\u6001: **{label}**",
+        "",
+        "\u8fd9\u4e2a Issue \u7531\u81ea\u52a8\u7ef4\u62a4\u6d41\u7a0b\u66f4\u65b0\u3002\u5982\u679c\u4ec5 CDN \u672a\u540c\u6b65\uff0cGitHub Raw \u4ecd\u662f\u6743\u5a01\u5730\u5740\uff0c\u4e0d\u4ee3\u8868\u672c\u6b21\u68c0\u6d4b\u548c\u63d0\u4ea4\u5931\u8d25\u3002",
+        "",
+        f"- \u68c0\u67e5\u65f6\u95f4 (UTC): {context['time']}",
+        f"- Workflow run: [{context['run_number'] or context['run_id']}]({context['run_url']})",
+        f"- \u4e8b\u4ef6: `{context['event']}`",
+        f"- \u5206\u652f: `{context['ref']}`",
+        f"- \u63d0\u4ea4: `{context['sha']}`",
+        f"- \u8be6\u7ec6\u4fe1\u606f: {detail}",
+        "",
+        "\u6062\u590d\u540e\uff0c\u6210\u529f\u8fd0\u884c\u4f1a\u81ea\u52a8\u5173\u95ed\u6b64 Issue\u3002",
+    ]) + "\n"
+
+
+def status_comment(context: dict[str, str], status: str, message: str) -> str:
+    label = status_label(status)
+    detail = message or "\u65e0"
     return (
-        f"再次失败：{context['time']} UTC；"
-        f"[run {context['run_number'] or context['run_id']}]({context['run_url']})；"
-        f"`{context['sha']}`；{message or '请查看失败步骤。'}"
+        f"\u72b6\u6001: **{label}**\n"
+        f"\u65f6\u95f4: {context['time']} UTC\n"
+        f"[Workflow run {context['run_number'] or context['run_id']}]({context['run_url']})\n"
+        f"\u63d0\u4ea4: `{context['sha']}`\n"
+        f"\u8be6\u7ec6: {detail}"
     )
 
 
 def success_comment(context: dict[str, str]) -> str:
     return (
-        f"已恢复：{context['time']} UTC 的完整维护与发布检查通过，"
-        f"[run {context['run_number'] or context['run_id']}]({context['run_url']})。自动关闭告警。"
+        f"\u81ea\u52a8\u7ef4\u62a4\u5df2\u6062\u590d: {context['time']} UTC\n"
+        f"[Workflow run {context['run_number'] or context['run_id']}]({context['run_url']})\n"
+        "GitHub Raw \u548c\u4e3b\u7535\u89c6\u8ba2\u9605\u7aef\u70b9\u5747\u5df2\u901a\u8fc7\u68c0\u67e5?\u73b0\u5173\u95ed\u6b64 Issue\u3002"
     )
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("status", choices=["failure", "success"])
+    parser.add_argument("status", choices=["failure", "cdn_pending", "success"])
     parser.add_argument("--message", default="")
     args = parser.parse_args(argv)
     token = os.getenv("GITHUB_TOKEN", "")
@@ -108,15 +130,15 @@ def main(argv: list[str] | None = None) -> int:
     if not token or not repo:
         raise SystemExit("GITHUB_TOKEN and GITHUB_REPOSITORY are required")
     issue = find_open_issue(repo, token)
-    if args.status == "failure":
-        body = failure_body(context, args.message)
+    if args.status in {"failure", "cdn_pending"}:
+        body = issue_body(context, args.status, args.message)
         if issue is None:
             created = api_request("POST", f"/repos/{repo}/issues", token, {"title": TITLE, "body": body})
             print(f"created maintenance issue #{created.get('number')}")
         else:
             number = int(issue["number"])
-            api_request("PATCH", f"/repos/{repo}/issues/{number}", token, {"body": body})
-            api_request("POST", f"/repos/{repo}/issues/{number}/comments", token, {"body": failure_comment(context, args.message)})
+            api_request("PATCH", f"/repos/{repo}/issues/{number}", token, {"title": TITLE, "body": body})
+            api_request("POST", f"/repos/{repo}/issues/{number}/comments", token, {"body": status_comment(context, args.status, args.message)})
             print(f"updated maintenance issue #{number}")
         return 0
     if issue is None:

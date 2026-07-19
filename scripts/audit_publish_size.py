@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import shutil
@@ -10,32 +9,20 @@ import subprocess
 from pathlib import Path
 
 from playlist_config import ROOT, load_guard
+from publication_manifest import (
+    FAMILY_TXT_ALIAS_FILES,
+    MANIFEST_FILE,
+    SIZE_AUDIT_FILES,
+    SIZE_REPORT_FILE,
+    SUMMARY_FILE,
+    TXT_ALIAS_FILES,
+    sha256_file,
+    validate_manifest,
+    write_manifest,
+)
 
-TXT_ALIAS_FILES = ["live-curated.txt", "live.txt", "live-verified.txt", "ku9-live.txt"]
-FAMILY_FILES = ["ku9-family.txt", "live-family.txt", "family.m3u"]
-PUBLIC_FILES = [
-    *TXT_ALIAS_FILES,
-    "live.m3u",
-    *FAMILY_FILES,
-    "stability-history.tsv",
-    "full-check-summary.json",
-    "final-publish-report.md",
-    "stability-report.md",
-    "coverage-report.md",
-    "quality-audit-report.md",
-    "publish-guard-report.md",
-    "published-recheck-report.md",
-    "source-report.md",
-    "check-report.md",
-    "curated-report.md",
-    "sources_status.csv",
-]
-REPORT = ROOT / "publish-size-report.md"
-SUMMARY = ROOT / "full-check-summary.json"
-
-
-def sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+REPORT = ROOT / SIZE_REPORT_FILE
+SUMMARY = ROOT / SUMMARY_FILE
 
 
 def tracked_files() -> set[str]:
@@ -90,22 +77,24 @@ def main() -> int:
     if forbidden_tracked:
         failures.append("large diagnostic artifacts are tracked: " + ", ".join(forbidden_tracked))
 
-    files = [p for p in PUBLIC_FILES if (ROOT / p).exists()]
+    # Self-referential control files are finalized later and covered by the
+    # non-self-hashing publication manifest instead of their own hash map.
+    files = [p for p in SIZE_AUDIT_FILES if (ROOT / p).exists()]
     sizes = {p: (ROOT / p).stat().st_size for p in files}
-    hashes = {p: sha256(ROOT / p) for p in files}
+    hashes = {p: sha256_file(ROOT / p) for p in files}
     blobs = blob_ids(files)
     unique_blob_ids: dict[str, int] = {}
     for p in files:
         blob = blobs.get(p) or hashes[p]
         unique_blob_ids.setdefault(blob, sizes[p])
-    unique_public_blob_bytes = sum(unique_blob_ids.values())
-    working_tree_public_bytes = sum(sizes.values())
+    unique_payload_blob_bytes = sum(unique_blob_ids.values())
+    working_tree_payload_bytes = sum(sizes.values())
 
     txt_hashes = {p: hashes[p] for p in TXT_ALIAS_FILES if p in hashes}
     txt_alias_same_hash = len(set(txt_hashes.values())) == 1
     if guard.get("require_txt_alias_same_hash", True) and not txt_alias_same_hash:
         failures.append("TXT alias files differ: " + repr(txt_hashes))
-    family_txt_hashes = {p: hashes[p] for p in ["ku9-family.txt", "live-family.txt"] if p in hashes}
+    family_txt_hashes = {p: hashes[p] for p in FAMILY_TXT_ALIAS_FILES if p in hashes}
     family_txt_alias_same_hash = len(set(family_txt_hashes.values())) <= 1
     if not family_txt_alias_same_hash:
         failures.append("family TXT alias files differ: " + repr(family_txt_hashes))
@@ -120,8 +109,8 @@ def main() -> int:
         if size > limit:
             failures.append(f"{filename} size {size} exceeds {label}={limit}")
     max_unique = int(guard.get("max_unique_public_blob_bytes", 2_500_000))
-    if unique_public_blob_bytes > max_unique:
-        failures.append(f"unique public blob bytes {unique_public_blob_bytes} exceeds max_unique_public_blob_bytes={max_unique}")
+    if unique_payload_blob_bytes > max_unique:
+        failures.append(f"unique payload blob bytes {unique_payload_blob_bytes} exceeds max_unique_public_blob_bytes={max_unique}")
 
     duplicate_txt_worktree_bytes = sum(sizes.get(p, 0) for p in TXT_ALIAS_FILES) - (sizes.get("ku9-live.txt", 0) if txt_alias_same_hash else 0)
     if txt_alias_same_hash and duplicate_txt_worktree_bytes > 0:
@@ -131,15 +120,18 @@ def main() -> int:
 
     result = {
         "status": "rejected" if failures else "ok",
+        "measurement_scope": "publication payload files; self-referential control files are verified by publish-manifest.json",
+        "excluded_control_files": [SUMMARY_FILE, SIZE_REPORT_FILE, MANIFEST_FILE],
+        "manifest_file": MANIFEST_FILE,
         "files": sizes,
         "txt_alias_same_hash": txt_alias_same_hash,
         "family_txt_alias_same_hash": family_txt_alias_same_hash,
         "txt_alias_hashes": txt_hashes,
         "family_txt_alias_hashes": family_txt_hashes,
-        "working_tree_public_bytes": working_tree_public_bytes,
-        "unique_public_blob_bytes": unique_public_blob_bytes,
+        "working_tree_payload_bytes": working_tree_payload_bytes,
+        "unique_payload_blob_bytes": unique_payload_blob_bytes,
         "duplicate_txt_worktree_bytes": duplicate_txt_worktree_bytes,
-        "max_unique_public_blob_bytes": max_unique,
+        "max_unique_payload_blob_bytes": max_unique,
         "forbidden_tracked_artifacts": forbidden_tracked,
         "failures": failures,
         "warnings": warnings,
@@ -153,9 +145,10 @@ def main() -> int:
         "# Publish size and alias safety report",
         "",
         f"Status: {result['status']}",
-        f"Working-tree public bytes: {working_tree_public_bytes}",
-        f"Unique public blob bytes: {unique_public_blob_bytes}",
-        f"Max unique public blob bytes: {max_unique}",
+        "Measurement scope: publication payload files only; summary, this report, and the manifest are checked separately",
+        f"Working-tree payload bytes: {working_tree_payload_bytes}",
+        f"Unique payload blob bytes: {unique_payload_blob_bytes}",
+        f"Max unique payload blob bytes: {max_unique}",
         f"TXT alias same hash: {txt_alias_same_hash}",
         f"Family TXT alias same hash: {family_txt_alias_same_hash}",
         f"Duplicate TXT working-tree bytes: {duplicate_txt_worktree_bytes}",
@@ -174,8 +167,20 @@ def main() -> int:
         lines += ["", "## Warnings", ""]
         lines += [f"- {x}" for x in warnings]
     REPORT.write_text("\n".join(lines) + "\n", encoding="utf-8", newline="\n")
+    if failures:
+        print("Publish size audit", json.dumps(result, ensure_ascii=False, sort_keys=True))
+        return 1
+
+    # This is the last generation write. Any later mutation to a release file
+    # is detected by validate_publication.py before commit.
+    write_manifest(ROOT)
+    manifest_result = validate_manifest(ROOT)
+    print(
+        "publication manifest OK: "
+        f"files={manifest_result['file_count']} bytes={manifest_result['manifest_bytes']}"
+    )
     print("Publish size audit", json.dumps(result, ensure_ascii=False, sort_keys=True))
-    return 1 if failures else 0
+    return 0
 
 
 if __name__ == "__main__":

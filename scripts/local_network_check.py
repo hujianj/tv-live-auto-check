@@ -16,7 +16,7 @@ from urllib.request import Request
 from network_safety import public_urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_URL = "https://hujianj.github.io/tv-live-auto-check/ku9-live.txt"
+DEFAULT_URL = "https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check/ku9-live.txt"
 REPORT = ROOT / "local-network-report.md"
 CSV_FILE = ROOT / "local-network-results.csv"
 HOME_PRIORITY_FILE = ROOT / "config" / "home-priority.json"
@@ -26,7 +26,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Check the published IPTV playlist from the current local/home network."
     )
-    parser.add_argument("--url", default=DEFAULT_URL, help="Remote playlist URL to fetch. Default: GitHub Pages ku9-live.txt")
+    parser.add_argument("--url", default=DEFAULT_URL, help="Remote playlist URL to fetch. Default: canonical jsDelivr ku9-live.txt used by the television")
     parser.add_argument("--playlist", help="Read a local playlist file instead of fetching --url")
     parser.add_argument("--core-only", action="store_true", help="Only check required CCTV and important satellite channels")
     parser.add_argument("--limit", type=int, default=0, help="Limit checked rows after filtering; useful for quick smoke tests")

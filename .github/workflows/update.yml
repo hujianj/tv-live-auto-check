@@ -3,8 +3,8 @@ name: Verify and publish IPTV auto-check playlist
 on:
   workflow_dispatch:
   schedule:
-    # Daily, Beijing time 04:20. Full stream verification probes every distinct URL.
-    - cron: "20 20 * * *"
+    # 04:20 and 16:20 Beijing time (20:20 and 08:20 UTC).
+    - cron: "20 8,20 * * *"
   push:
     branches:
       - main
@@ -17,9 +17,11 @@ permissions:
   contents: write
   issues: write
 
+# A full run can take 20–30 minutes. Never cancel a valid run because a manual
+# dispatch, watchdog, or code push arrived while it was doing real probes.
 concurrency:
   group: iptv-autocheck-update-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   verify:
@@ -40,9 +42,8 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.12"
-      - name: Unit test parser, safety policy, media tracks, and publication validator
-        run: python scripts/test_playlist_logic.py
-      - name: Verify every unique IPTV stream URL
+      - name: Run complete maintenance pipeline with bounded full retry
+        id: maintenance
         env:
           IPTV_CHECK_WORKERS: "192"
           IPTV_CHECK_WORKERS_PER_HOST: "8"
@@ -56,38 +57,13 @@ jobs:
           IPTV_CORE_RETRY_TIMEOUT: "14"
           IPTV_HLS_PROGRESS_MIN_WAIT: "3"
           IPTV_HLS_PROGRESS_MAX_WAIT: "14"
-          # Broad first pass proves live media bytes for every distinct URL.
-          # The smaller final set below receives strict video-track proof.
-          IPTV_REQUIRE_VIDEO_TRACK: "0"
-        run: python scripts/verify_sources.py
-      - name: Curate Ku9 channel order
-        run: python scripts/curate_ku9.py
-      - name: Recheck every final published stream URL with video-track proof
-        env:
           IPTV_PUBLISHED_RECHECK_WORKERS: "64"
           IPTV_PUBLISHED_REFILL_WORKERS: "24"
+          IPTV_PUBLISHED_FINAL_RETRY_WORKERS: "16"
+          IPTV_PUBLISHED_FINAL_RETRY_TIMEOUT: "14"
+          IPTV_PUBLISHED_FINAL_RETRY_ATTEMPTS: "1"
           IPTV_PUBLISHED_REQUIRE_CORE_PROGRESS: "1"
-          IPTV_CHECK_WORKERS_PER_HOST: "8"
-          IPTV_CHECK_TIMEOUT: "6"
-          IPTV_HLS_VARIANT_CHECKS: "2"
-          IPTV_HLS_SEGMENT_CHECKS: "2"
-          IPTV_CORE_HLS_SEGMENT_CHECKS: "3"
-          IPTV_CORE_RETRY_ATTEMPTS: "1"
-          IPTV_CORE_RETRY_TIMEOUT: "14"
-          IPTV_HLS_PROGRESS_MIN_WAIT: "3"
-          IPTV_HLS_PROGRESS_MAX_WAIT: "14"
-          IPTV_REQUIRE_VIDEO_TRACK: "1"
-        run: python scripts/recheck_published.py
-      - name: Audit core channel coverage
-        run: python scripts/audit_coverage.py
-      - name: Audit final playlist quality
-        run: python scripts/audit_quality.py
-      - name: Validate complete publish bundle
-        run: python scripts/validate_publish_bundle.py
-      - name: Guard against shrunken or unsafe publish
-        run: python scripts/guard_publish.py
-      - name: Audit publish size and alias safety
-        run: python scripts/audit_publish_size.py
+        run: python scripts/run_maintenance.py
       - name: Upload full diagnostic artifacts
         if: always()
         continue-on-error: true
@@ -111,7 +87,11 @@ jobs:
             quality-audit-report.md
             publish-guard-report.md
             publish-size-report.md
+            publish-manifest.json
+            full-check-summary.json
+            maintenance-run.json
       - name: Commit verified playlist without overwriting newer code
+        id: commit
         env:
           TARGET_BRANCH: ${{ github.ref_name }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
@@ -127,7 +107,8 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- live.txt live-verified.txt live-curated.txt ku9-live.txt live.m3u ku9-family.txt live-family.txt family.m3u source-report.md check-report.md curated-report.md published-recheck-report.md final-publish-report.md stability-report.md stability-history.tsv coverage-report.md quality-audit-report.md publish-guard-report.md publish-size-report.md sources_status.csv full-check-summary.json
+          mapfile -t publish_files < <(python scripts/publication_config.py --publication-files)
+          git add -- "${publish_files[@]}" publish-manifest.json
           if git diff --cached --quiet; then
             echo "No verified publication changes to commit."
             exit 0
@@ -142,24 +123,35 @@ jobs:
           git commit -m "chore: verify and publish playable IPTV playlist"
           git push origin "HEAD:$TARGET_BRANCH"
       - name: Purge subscription files from jsDelivr
+        if: ${{ steps.commit.outcome == 'success' }}
+        continue-on-error: true
         run: |
           set -u
-          for file in live-curated.txt live.txt ku9-live.txt live-verified.txt live.m3u ku9-family.txt live-family.txt family.m3u; do
+          purge_pids=()
+          while IFS= read -r file; do
+            [ -n "$file" ] || continue
             echo "Purging $file"
-            (curl --retry 2 --max-time 20 -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}/$file" || true) &
-            (curl --retry 2 --max-time 20 -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/$file" || true) &
+            (curl --retry 2 --max-time 20 -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}/$file") & purge_pids+=("$!")
+            (curl --retry 2 --max-time 20 -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/$file") & purge_pids+=("$!")
+          done < <(python scripts/publication_config.py --purge-files)
+          purge_failures=0
+          for pid in "${purge_pids[@]}"; do
+            if ! wait "$pid"; then purge_failures=$((purge_failures + 1)); fi
           done
-          wait
-      - name: Verify Raw and at least one television-compatible publication endpoint
+          echo "jsDelivr purge failures=$purge_failures" | tee -a "$GITHUB_STEP_SUMMARY"
+      - name: Verify Raw and all configured publication endpoints
+        id: cdn_health
+        if: ${{ steps.commit.outcome == 'success' }}
+        continue-on-error: true
         run: |
           set +e
           python scripts/check_publication_endpoints.py \
             --repo "${{ github.repository }}" \
-            --branch "${{ github.ref_name }}"
+            --branch "${{ github.ref_name }}" \
+            --global-deadline 240 \
+            --retry-wait 3
           status=$?
-          if [ -f cdn-health-report.md ]; then
-            cat cdn-health-report.md >> "$GITHUB_STEP_SUMMARY"
-          fi
+          if [ -f cdn-health-report.md ]; then cat cdn-health-report.md >> "$GITHUB_STEP_SUMMARY"; fi
           exit "$status"
       - name: Upload CDN health artifact
         if: always()
@@ -172,14 +164,20 @@ jobs:
           path: |
             cdn-health-report.md
             cdn-health-report.json
-      - name: Open or update maintenance failure issue
-        if: ${{ always() && (failure() || cancelled()) }}
+      - name: Notify hard maintenance failure
+        if: ${{ always() && (steps.maintenance.outcome == 'failure' || steps.commit.outcome == 'failure') }}
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/notify_maintenance.py failure --message "The full verification, publication, or CDN endpoint gate did not pass."
-      - name: Close recovered maintenance failure issue
-        if: ${{ success() }}
+        run: python scripts/notify_maintenance.py failure --message "The complete verification, publication, or commit gate did not pass."
+      - name: Notify CDN pending state
+        if: ${{ always() && steps.maintenance.outcome == 'success' && steps.commit.outcome == 'success' && steps.cdn_health.outcome == 'failure' }}
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/notify_maintenance.py cdn_pending --message "Git publication succeeded, but one or more configured public endpoints are still stale or unreachable; Raw remains authoritative."
+      - name: Close recovered maintenance issue
+        if: ${{ always() && steps.maintenance.outcome == 'success' && steps.commit.outcome == 'success' && steps.cdn_health.outcome == 'success' }}
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
