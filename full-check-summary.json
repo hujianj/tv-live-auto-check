@@ -1117,6 +1117,13 @@
   },
   "publish_size": {
     "status": "ok",
+    "measurement_scope": "publication payload files; self-referential control files are verified by publish-manifest.json",
+    "excluded_control_files": [
+      "full-check-summary.json",
+      "publish-size-report.md",
+      "publish-manifest.json"
+    ],
+    "manifest_file": "publish-manifest.json",
     "files": {
       "live-curated.txt": 214530,
       "live.txt": 214530,
@@ -1127,7 +1134,6 @@
       "live-family.txt": 95580,
       "family.m3u": 173533,
       "stability-history.tsv": 685292,
-      "full-check-summary.json": 27126,
       "final-publish-report.md": 11687,
       "stability-report.md": 8003,
       "coverage-report.md": 1310,
@@ -1151,10 +1157,10 @@
       "ku9-family.txt": "12566e2d2fbeb38e1599aecacbbc0b779100858f975478305edfc0b92e18309f",
       "live-family.txt": "12566e2d2fbeb38e1599aecacbbc0b779100858f975478305edfc0b92e18309f"
     },
-    "working_tree_public_bytes": 2374382,
-    "unique_public_blob_bytes": 1629373,
+    "working_tree_payload_bytes": 2347256,
+    "unique_payload_blob_bytes": 1602247,
     "duplicate_txt_worktree_bytes": 643590,
-    "max_unique_public_blob_bytes": 2500000,
+    "max_unique_payload_blob_bytes": 2500000,
     "forbidden_tracked_artifacts": [],
     "failures": [],
     "warnings": [
