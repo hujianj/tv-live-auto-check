@@ -1,35 +1,35 @@
 # IPTV source verification report
 
-Generated: 2026-07-18 14:04:02
-Generated UTC: 2026-07-18T14:04:02Z
-Generated Beijing: 2026-07-18 22:04:02 Asia/Shanghai
-Elapsed: 1349.1s
+Generated: 2026-07-19 09:34:22
+Generated UTC: 2026-07-19T09:34:22Z
+Generated Beijing: 2026-07-19 17:34:22 Asia/Shanghai
+Elapsed: 1456.1s
 Sources total: 29
 Sources fetched OK: 29
-Parsed candidates: 34782
-Unique name+URL candidates: 30282
-Unique stream URLs: 29381
-Checked unique stream URLs: 29381
+Parsed candidates: 35149
+Unique name+URL candidates: 30640
+Unique stream URLs: 29744
+Checked unique stream URLs: 29744
 Checked all unique URLs: True
-Playable channel names: 10218
-Playable unique URLs: 13151
-Playable name+URL lines: 13659
-Playable URLs found (legacy line count): 13659
-Pre-curated published playable lines: 11993
+Playable channel names: 10267
+Playable unique URLs: 13235
+Playable name+URL lines: 13745
+Playable URLs found (legacy line count): 13745
+Pre-curated published playable lines: 12045
 
 ## Source fetch status
 
 | Source | Fetch | Parsed | Bytes | Truncated | Error |
 |---|---:|---:|---:|---:|---|
-| iyouhun_zb | OK | 3589 | 301834 | False |  |
-| zbds_iptv4_txt | OK | 844 | 65630 | False |  |
-| migu_interface | OK | 307 | 91055 | False |  |
+| iyouhun_zb | OK | 3667 | 307175 | False |  |
+| zbds_iptv4_txt | OK | 848 | 66088 | False |  |
+| migu_interface | OK | 299 | 80900 | False |  |
 | guovin_all | OK | 1812 | 451112 | False |  |
 | guovin_ipv4 | OK | 409 | 92293 | False |  |
 | guovin_ipv6 | OK | 1693 | 433635 | False |  |
 | suxuang_ipv4 | OK | 1210 | 268671 | False |  |
 | suxuang_ipv6 | OK | 853 | 200521 | False |  |
-| zbds_iptv4_m3u | OK | 528 | 117331 | False |  |
+| zbds_iptv4_m3u | OK | 525 | 116954 | False |  |
 | burningc4_ipv4 | OK | 58 | 8021 | False |  |
 | vamoschuck_m3u | OK | 788 | 147124 | False |  |
 | zbds_iptv6_txt | OK | 2 | 268 | False |  |
@@ -39,43 +39,44 @@ Pre-curated published playable lines: 11993
 | kimentanm_aptv | OK | 119 | 21946 | False |  |
 | bigbiggrandg_gather | OK | 1954 | 329793 | False |  |
 | yang_gather | OK | 129 | 29341 | False |  |
-| iptv_org_all | OK | 13311 | 2835430 | False |  |
-| epg_cn | OK | 3400 | 1082471 | False |  |
-| epg_hk | OK | 70 | 22345 | False |  |
+| iptv_org_all | OK | 13368 | 2860191 | False |  |
+| epg_cn | OK | 3460 | 1101739 | False |  |
+| epg_hk | OK | 76 | 24187 | False |  |
 | epg_mo | OK | 19 | 6134 | False |  |
-| epg_tw | OK | 164 | 55600 | False |  |
+| epg_tw | OK | 174 | 58978 | False |  |
 | iptv_org_tw | OK | 23 | 4515 | False |  |
-| epg_sg | OK | 27 | 8454 | False |  |
-| epg_my | OK | 43 | 14018 | False |  |
+| epg_sg | OK | 27 | 8441 | False |  |
+| epg_my | OK | 45 | 14654 | False |  |
 | free_tv_world | OK | 1919 | 530377 | False |  |
 | mursor_yy | OK | 591 | 124828 | False |  |
-| mursor_bililive | OK | 755 | 149020 | False |  |
+| mursor_bililive | OK | 916 | 179879 | False |  |
 
 ## Pre-curation playable lines by source
 
 | Source | Lines |
 |---|---:|
-| iptv_org_all | 7110 |
-| epg_cn | 1307 |
-| bigbiggrandg_gather | 607 |
-| free_tv_world | 562 |
-| zbds_iptv4_txt | 549 |
-| iyouhun_zb | 517 |
-| mursor_yy | 457 |
-| guovin_all | 388 |
-| guovin_ipv4 | 243 |
-| suxuang_ipv4 | 100 |
-| migu_interface | 48 |
-| vamoschuck_m3u | 47 |
-| epg_tw | 13 |
-| suxuang_ipv6 | 9 |
+| iptv_org_all | 7083 |
+| epg_cn | 1267 |
+| bigbiggrandg_gather | 636 |
+| free_tv_world | 542 |
+| zbds_iptv4_txt | 535 |
+| iyouhun_zb | 531 |
+| mursor_yy | 478 |
+| guovin_all | 400 |
+| guovin_ipv4 | 246 |
+| suxuang_ipv4 | 171 |
+| migu_interface | 49 |
+| vamoschuck_m3u | 48 |
+| epg_tw | 10 |
+| iptv_org_tw | 10 |
+| suxuang_ipv6 | 10 |
 | epg_mo | 8 |
-| iptv_org_tw | 8 |
 | guovin_ipv6 | 7 |
 | kimentanm_aptv | 7 |
 | epg_sg | 3 |
 | yang_gather | 2 |
 | epg_hk | 1 |
+| epg_my | 1 |
 
 ## First 80 pre-curation playable channel candidates
 
