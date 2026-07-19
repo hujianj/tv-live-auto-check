@@ -1,10 +1,10 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 2641
-Unique channel names: 1597
-Unique canonical channel identities: 1597
-Unique URLs: 2641
+Rows: 2590
+Unique channel names: 1599
+Unique canonical channel identities: 1599
+Unique URLs: 2590
 Strict filter residue count: 0
 Latin/noise-like review count: 4
 Channel unique URL limit violations: 0
@@ -33,7 +33,7 @@ Minimum exact CCTV independent URLs: 3
 | CCTV-15 | 6 | 6 | OK |
 | CCTV-16 | 5 | 5 | OK |
 | CCTV-17 | 6 | 6 | OK |
-| CCTV-5+ | 5 | 5 | OK |
+| CCTV-5+ | 4 | 4 | OK |
 
 ## Important satellite quality
 
@@ -55,8 +55,8 @@ Minimum important satellite independent URLs: 3
 ## Family playlist audit
 
 Status: ok
-Rows: 1173
-Unique URLs: 1173
+Rows: 1162
+Unique URLs: 1162
 
 ## Warnings
 
