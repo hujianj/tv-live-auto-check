@@ -1,10 +1,10 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 2676
-Unique channel names: 1640
-Unique canonical channel identities: 1640
-Unique URLs: 2676
+Rows: 2641
+Unique channel names: 1597
+Unique canonical channel identities: 1597
+Unique URLs: 2641
 Strict filter residue count: 0
 Latin/noise-like review count: 4
 Channel unique URL limit violations: 0
@@ -55,8 +55,8 @@ Minimum important satellite independent URLs: 3
 ## Family playlist audit
 
 Status: ok
-Rows: 1182
-Unique URLs: 1182
+Rows: 1173
+Unique URLs: 1173
 
 ## Warnings
 

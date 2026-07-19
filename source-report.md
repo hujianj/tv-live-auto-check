@@ -1,9 +1,9 @@
 # IPTV source verification report
 
-Generated: 2026-07-19 09:34:22
-Generated UTC: 2026-07-19T09:34:22Z
-Generated Beijing: 2026-07-19 17:34:22 Asia/Shanghai
-Elapsed: 1456.1s
+Generated: 2026-07-19 10:25:05
+Generated UTC: 2026-07-19T10:25:05Z
+Generated Beijing: 2026-07-19 18:25:05 Asia/Shanghai
+Elapsed: 1407.5s
 Sources total: 29
 Sources fetched OK: 29
 Parsed candidates: 35149
@@ -11,11 +11,11 @@ Unique name+URL candidates: 30640
 Unique stream URLs: 29744
 Checked unique stream URLs: 29744
 Checked all unique URLs: True
-Playable channel names: 10267
-Playable unique URLs: 13235
-Playable name+URL lines: 13745
-Playable URLs found (legacy line count): 13745
-Pre-curated published playable lines: 12045
+Playable channel names: 10196
+Playable unique URLs: 13214
+Playable name+URL lines: 13727
+Playable URLs found (legacy line count): 13727
+Pre-curated published playable lines: 12005
 
 ## Source fetch status
 
@@ -55,19 +55,19 @@ Pre-curated published playable lines: 12045
 
 | Source | Lines |
 |---|---:|
-| iptv_org_all | 7083 |
-| epg_cn | 1267 |
-| bigbiggrandg_gather | 636 |
-| free_tv_world | 542 |
-| zbds_iptv4_txt | 535 |
-| iyouhun_zb | 531 |
-| mursor_yy | 478 |
-| guovin_all | 400 |
-| guovin_ipv4 | 246 |
-| suxuang_ipv4 | 171 |
-| migu_interface | 49 |
+| iptv_org_all | 7032 |
+| epg_cn | 1286 |
+| bigbiggrandg_gather | 654 |
+| free_tv_world | 551 |
+| zbds_iptv4_txt | 544 |
+| iyouhun_zb | 514 |
+| mursor_yy | 441 |
+| guovin_all | 399 |
+| guovin_ipv4 | 243 |
+| suxuang_ipv4 | 185 |
+| migu_interface | 48 |
 | vamoschuck_m3u | 48 |
-| epg_tw | 10 |
+| epg_tw | 11 |
 | iptv_org_tw | 10 |
 | suxuang_ipv6 | 10 |
 | epg_mo | 8 |
