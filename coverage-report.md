@@ -24,7 +24,7 @@ Fail on missing important satellite: True
 | CCTV-13 | 6 | 6 | OK |
 | CCTV-14 | 6 | 6 | OK |
 | CCTV-15 | 6 | 6 | OK |
-| CCTV-16 | 6 | 6 | OK |
+| CCTV-16 | 5 | 5 | OK |
 | CCTV-17 | 6 | 6 | OK |
 | CCTV-5+ | 4 | 4 | OK |
 
@@ -32,7 +32,7 @@ Fail on missing important satellite: True
 
 | Channel | Published rows | Unique URLs | Status |
 |---|---:|---:|---|
-| 辽宁卫视 | 5 | 5 | OK |
+| 辽宁卫视 | 6 | 6 | OK |
 | 河北卫视 | 6 | 6 | OK |
 | 河南卫视 | 6 | 6 | OK |
 | 北京卫视 | 6 | 6 | OK |
@@ -51,6 +51,6 @@ Fail on missing important satellite: True
 | CCTV-4 | 6 | 6 |
 | CCTV-5 | 5 | 5 |
 | CCTV-8 | 6 | 6 |
-| CCTV-9 | 1 | 1 |
-| CCTV-14 | 1 | 1 |
-| CCTV-5+ | 6 | 6 |
+| CCTV-11 | 1 | 1 |
+| CCTV-12 | 1 | 1 |
+| CCTV-5+ | 4 | 4 |
