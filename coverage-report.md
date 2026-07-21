@@ -26,7 +26,7 @@ Fail on missing important satellite: True
 | CCTV-15 | 6 | 6 | OK |
 | CCTV-16 | 5 | 5 | OK |
 | CCTV-17 | 6 | 6 | OK |
-| CCTV-5+ | 4 | 4 | OK |
+| CCTV-5+ | 5 | 5 | OK |
 
 ## Important satellite coverage
 
@@ -49,8 +49,9 @@ Fail on missing important satellite: True
 |---|---:|---:|
 | CCTV-1 | 1 | 1 |
 | CCTV-4 | 6 | 6 |
-| CCTV-5 | 5 | 5 |
-| CCTV-8 | 6 | 6 |
-| CCTV-11 | 1 | 1 |
-| CCTV-12 | 1 | 1 |
+| CCTV-5 | 6 | 6 |
+| CCTV-8 | 7 | 7 |
+| CCTV-9 | 1 | 1 |
+| CCTV-10 | 1 | 1 |
+| CCTV-13 | 1 | 1 |
 | CCTV-5+ | 4 | 4 |
