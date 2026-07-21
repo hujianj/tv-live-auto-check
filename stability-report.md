@@ -1,48 +1,48 @@
 # Stream stability report
 
 Enabled: True
-Tracked URLs before: 4827
-Tracked URLs after: 4846
-Updated URLs this run: 2807
-OK updates this run: 2661
-Fail updates this run: 146
+Tracked URLs before: 4846
+Tracked URLs after: 4874
+Updated URLs this run: 2752
+OK updates this run: 2627
+Fail updates this run: 125
 Trimmed URLs: 0
-Last updated Beijing: 2026-07-21T19:04:29+08:00
+Last updated Beijing: 2026-07-22T05:59:57+08:00
 
 ## Most stable tracked URLs
 
 | Adjustment | OK | Fail | Streak OK | Streak Fail | Channel | Source | URL |
 |---:|---:|---:|---:|---:|---|---|---|
-| -90 | 20 | 0 | 20 | 0 | 河北都市 | suxuang_ipv4 | http://1.94.31.214/php/hebei.php?id=hbds |
-| -90 | 19 | 0 | 19 | 0 | 河北公共 | suxuang_ipv4 | http://1.94.31.214/php/hebei.php?id=hbgg |
-| -90 | 20 | 0 | 20 | 0 | 河北影视 | suxuang_ipv4 | http://1.94.31.214/php/hebei.php?id=hbys |
-| -90 | 20 | 0 | 20 | 0 | 河北经济 | suxuang_ipv4 | http://1.94.31.214/php/hebei.php?id=jjsh |
-| -90 | 20 | 0 | 20 | 0 | 河北农民 | suxuang_ipv4 | http://1.94.31.214/php/hebei.php?id=nmpd |
-| -90 | 20 | 0 | 20 | 0 | 河北少儿 | suxuang_ipv4 | http://1.94.31.214/php/hebei.php?id=sekj |
-| -90 | 20 | 0 | 20 | 0 | 河南法治 | suxuang_ipv4 | http://1.94.31.214/php/hntv.php?id=hmfz |
-| -90 | 19 | 1 | 7 | 0 | 河南都市 | guovin_ipv4 | http://1.94.31.214/php/hntv.php?id=hnds |
-| -90 | 19 | 0 | 19 | 0 | 河南电视剧 | suxuang_ipv4 | http://1.94.31.214/php/hntv.php?id=hndsj |
-| -90 | 20 | 0 | 20 | 0 | 河南公共 | suxuang_ipv4 | http://1.94.31.214/php/hntv.php?id=hngg |
-| -90 | 14 | 0 | 14 | 0 | 河南梨园 | suxuang_ipv4 | http://1.94.31.214/php/hntv.php?id=hnly |
-| -90 | 20 | 0 | 20 | 0 | 河南卫视 | guovin_ipv4 | http://1.94.31.214/php/hntv.php?id=hnws |
-| -90 | 20 | 0 | 20 | 0 | 河南乡村 | suxuang_ipv4 | http://1.94.31.214/php/hntv.php?id=hnxc |
-| -90 | 19 | 1 | 11 | 0 | 河南新闻 | suxuang_ipv4 | http://1.94.31.214/php/hntv.php?id=hnxw |
-| -90 | 17 | 0 | 17 | 0 | 睛彩中原 | suxuang_ipv4 | http://1.94.31.214/php/hntv.php?id=jczy |
-| -90 | 17 | 0 | 17 | 0 | 文物宝库 | suxuang_ipv4 | http://1.94.31.214/php/hntv.php?id=wwbk |
-| -90 | 16 | 2 | 8 | 0 | 象视界 | suxuang_ipv4 | http://1.94.31.214/php/hntv.php?id=xsj |
+| -90 | 21 | 0 | 21 | 0 | 河北都市 | suxuang_ipv4 | http://1.94.31.214/php/hebei.php?id=hbds |
+| -90 | 20 | 0 | 20 | 0 | 河北公共 | suxuang_ipv4 | http://1.94.31.214/php/hebei.php?id=hbgg |
+| -90 | 21 | 0 | 21 | 0 | 河北影视 | suxuang_ipv4 | http://1.94.31.214/php/hebei.php?id=hbys |
+| -90 | 21 | 0 | 21 | 0 | 河北经济 | suxuang_ipv4 | http://1.94.31.214/php/hebei.php?id=jjsh |
+| -90 | 21 | 0 | 21 | 0 | 河北农民 | suxuang_ipv4 | http://1.94.31.214/php/hebei.php?id=nmpd |
+| -90 | 21 | 0 | 21 | 0 | 河北少儿 | suxuang_ipv4 | http://1.94.31.214/php/hebei.php?id=sekj |
+| -90 | 21 | 0 | 21 | 0 | 河南法治 | suxuang_ipv4 | http://1.94.31.214/php/hntv.php?id=hmfz |
+| -90 | 20 | 1 | 8 | 0 | 河南都市 | guovin_ipv4 | http://1.94.31.214/php/hntv.php?id=hnds |
+| -90 | 20 | 0 | 20 | 0 | 河南电视剧 | suxuang_ipv4 | http://1.94.31.214/php/hntv.php?id=hndsj |
+| -90 | 21 | 0 | 21 | 0 | 河南公共 | suxuang_ipv4 | http://1.94.31.214/php/hntv.php?id=hngg |
+| -90 | 15 | 0 | 15 | 0 | 河南梨园 | suxuang_ipv4 | http://1.94.31.214/php/hntv.php?id=hnly |
+| -90 | 21 | 0 | 21 | 0 | 河南卫视 | guovin_ipv4 | http://1.94.31.214/php/hntv.php?id=hnws |
+| -90 | 21 | 0 | 21 | 0 | 河南乡村 | suxuang_ipv4 | http://1.94.31.214/php/hntv.php?id=hnxc |
+| -90 | 20 | 1 | 12 | 0 | 河南新闻 | suxuang_ipv4 | http://1.94.31.214/php/hntv.php?id=hnxw |
+| -90 | 18 | 0 | 18 | 0 | 睛彩中原 | suxuang_ipv4 | http://1.94.31.214/php/hntv.php?id=jczy |
+| -90 | 15 | 1 | 7 | 0 | 武术世界 | suxuang_ipv4 | http://1.94.31.214/php/hntv.php?id=wspd |
+| -90 | 18 | 0 | 18 | 0 | 文物宝库 | suxuang_ipv4 | http://1.94.31.214/php/hntv.php?id=wwbk |
+| -90 | 17 | 2 | 9 | 0 | 象视界 | suxuang_ipv4 | http://1.94.31.214/php/hntv.php?id=xsj |
 | -90 | 11 | 0 | 11 | 0 | 快乐垂钓 | iyouhun_zb | http://101.6.130.52:1234/961930263 |
-| -90 | 16 | 1 | 7 | 0 | 安徽卫视 | guovin_ipv4 | http://107.150.60.122/live/ahwshd.m3u8 |
-| -90 | 20 | 0 | 20 | 0 | CCTV-4 | guovin_ipv4 | http://107.150.60.122/live/cctv4hd.m3u8 |
-| -90 | 20 | 0 | 20 | 0 | CHC动作电影 | guovin_ipv4 | http://107.150.60.122/live/chcdz.m3u8 |
-| -90 | 20 | 0 | 20 | 0 | CHC家庭影院 | guovin_ipv4 | http://107.150.60.122/live/chcjt.m3u8 |
-| -90 | 20 | 0 | 20 | 0 | 重庆卫视 | guovin_ipv4 | http://107.150.60.122/live/cqwshd.m3u8 |
-| -90 | 20 | 0 | 20 | 0 | 东方卫视 | guovin_ipv4 | http://107.150.60.122/live/dfwshd.m3u8 |
-| -90 | 19 | 0 | 19 | 0 | 第一剧场 | guovin_ipv4 | http://107.150.60.122/live/dyjc.m3u8 |
-| -90 | 20 | 0 | 20 | 0 | 广东新闻 | iyouhun_zb | http://107.150.60.122/live/gdxwa.m3u8 |
-| -90 | 20 | 0 | 20 | 0 | 广西国际 | guovin_ipv4 | http://107.150.60.122/live/gxgj.m3u8 |
-| -90 | 19 | 1 | 11 | 0 | 广西新闻 | guovin_ipv4 | http://107.150.60.122/live/gxxw.m3u8 |
-| -90 | 15 | 0 | 15 | 0 | 贵州卫视 | guovin_ipv4 | http://107.150.60.122/live/gzwshd.m3u8 |
-| -90 | 20 | 0 | 20 | 0 | 怀旧剧场 | guovin_ipv4 | http://107.150.60.122/live/hjjc.m3u8 |
+| -90 | 17 | 1 | 8 | 0 | 安徽卫视 | guovin_ipv4 | http://107.150.60.122/live/ahwshd.m3u8 |
+| -90 | 21 | 0 | 21 | 0 | CCTV-4 | guovin_ipv4 | http://107.150.60.122/live/cctv4hd.m3u8 |
+| -90 | 21 | 0 | 21 | 0 | CHC动作电影 | guovin_ipv4 | http://107.150.60.122/live/chcdz.m3u8 |
+| -90 | 21 | 0 | 21 | 0 | CHC家庭影院 | guovin_ipv4 | http://107.150.60.122/live/chcjt.m3u8 |
+| -90 | 21 | 0 | 21 | 0 | 重庆卫视 | guovin_ipv4 | http://107.150.60.122/live/cqwshd.m3u8 |
+| -90 | 21 | 0 | 21 | 0 | 东方卫视 | guovin_ipv4 | http://107.150.60.122/live/dfwshd.m3u8 |
+| -90 | 20 | 0 | 20 | 0 | 第一剧场 | guovin_ipv4 | http://107.150.60.122/live/dyjc.m3u8 |
+| -90 | 21 | 0 | 21 | 0 | 广东新闻 | iyouhun_zb | http://107.150.60.122/live/gdxwa.m3u8 |
+| -90 | 21 | 0 | 21 | 0 | 广西国际 | guovin_ipv4 | http://107.150.60.122/live/gxgj.m3u8 |
+| -90 | 20 | 1 | 12 | 0 | 广西新闻 | guovin_ipv4 | http://107.150.60.122/live/gxxw.m3u8 |
+| -90 | 16 | 0 | 16 | 0 | 贵州卫视 | guovin_ipv4 | http://107.150.60.122/live/gzwshd.m3u8 |
 
 ## Least stable tracked URLs
 
@@ -62,19 +62,19 @@ Last updated Beijing: 2026-07-21T19:04:29+08:00
 | 140 | 1 | 4 | 0 | 4 | 山东体育 | iyouhun_zb | TimeoutError('timed out') | http://123.130.84.106:8154/tsfile/live/1006_1.m3u8 |
 | 140 | 1 | 3 | 0 | 3 | 山东体育 | iyouhun_zb | TimeoutError('timed out') | http://123.130.84.106:8154/tsfile/live/1006_1.m3u8?key=txiptv&playlive=1&authid=0 |
 | 140 | 0 | 3 | 0 | 3 | CCTV-7 | zbds_iptv4_txt | <HTTPError 404: 'Not Found'> | http://183.11.239.36:808/hls/25/index.m3u8 |
-| 140 | 13 | 7 | 0 | 7 | 大湾区卫视 | zbds_iptv4_txt | final slow retry failed attempt=1 first=variant fail variants_checked=1 segments ok checked=3 required=video; manifest did not advance after 14.0s; last=variant | http://222.128.55.152:9080/live/dwq.m3u8 |
-| 140 | 3 | 8 | 0 | 6 | 江津经济生活(480p) | iptv_org_all | final slow retry failed attempt=1 first=segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PAT/PMT advertises audio but no video; last=segment bad  | http://222.179.155.21:1935/ch0.m3u8 |
-| 140 | 13 | 7 | 0 | 7 | 台湾古典音乐台 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct audio/mpeg bytes=65536 audio/audio: audio content type required=video; last=direct audio/mpeg bytes=65536 audio/a | http://59.120.88.155:8000/live.mp3 |
+| 140 | 13 | 8 | 0 | 8 | 大湾区卫视 | zbds_iptv4_txt | final slow retry failed attempt=1 first=variant fail variants_checked=1 segments ok checked=3 required=video; manifest did not advance after 14.0s; last=variant | http://222.128.55.152:9080/live/dwq.m3u8 |
+| 140 | 3 | 9 | 0 | 7 | 江津经济生活(480p) | iptv_org_all | final slow retry failed attempt=1 first=segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PAT/PMT advertises audio but no video; last=segment bad  | http://222.179.155.21:1935/ch0.m3u8 |
+| 140 | 13 | 8 | 0 | 8 | 台湾古典音乐台 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct audio/mpeg bytes=65536 audio/audio: audio content type required=video; last=direct audio/mpeg bytes=65536 audio/a | http://59.120.88.155:8000/live.mp3 |
 | 140 | 1 | 5 | 0 | 5 | 浙江卫视 | zbds_iptv4_txt | segments ok checked=3 required=video; manifest did not advance after 10.0s | http://ali-m-l.cztv.com/channels/lantian/channel001/1080p.m3u8 |
 | 140 | 12 | 6 | 0 | 6 | 浙江卫视 | zbds_iptv4_txt | segments ok checked=3 required=video; manifest did not advance after 10.0s | http://ali-m-l.cztv.com/channels/lantian/channel01/1080p.m3u8 |
-| 140 | 13 | 6 | 0 | 6 | CCTV-13 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=3 required=video; manifest did not advance after 10.0s; last=segments ok checked=3 required=video; m | http://ali-m-l.cztv.com/channels/lantian/channel21/1080p.m3u8 |
+| 140 | 13 | 7 | 0 | 7 | CCTV-13 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=3 required=video; manifest did not advance after 10.0s; last=segments ok checked=3 required=video; m | http://ali-m-l.cztv.com/channels/lantian/channel21/1080p.m3u8 |
 | 140 | 13 | 6 | 0 | 6 | 浙江卫视 | zbds_iptv4_txt | segments ok checked=3 required=video; manifest did not advance after 10.0s | http://ali-m-l.cztv.com:80/channels/lantian/channel001/1080p.m3u8 |
-| 140 | 13 | 7 | 0 | 7 | 「中」冷漠-你把爱情给了谁 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct video/mp4 bytes=31151 audio/mp4/fmp4: MP4 audio handler/sample entry observed required=video; last=direct video/m | http://antiserver.kuwo.cn/anti.s?rid=MUSIC_1210771&response=res&format=mp4&type=convert_url |
-| 140 | 13 | 7 | 0 | 7 | 「中」陈瑞-爱的痕迹 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct video/mp4 bytes=31151 audio/mp4/fmp4: MP4 audio handler/sample entry observed required=video; last=direct video/m | http://antiserver.kuwo.cn/anti.s?rid=MUSIC_1218815&response=res&format=mp4&type=convert_url |
-| 140 | 13 | 7 | 0 | 7 | 「中」陈瑞-爱得真伤的深 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct video/mp4 bytes=31151 audio/mp4/fmp4: MP4 audio handler/sample entry observed required=video; last=direct video/m | http://antiserver.kuwo.cn/anti.s?rid=MUSIC_1218839&response=res&format=mp4&type=convert_url |
-| 140 | 13 | 7 | 0 | 7 | 「中」冷漠-谁都不要说分手 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct audio/mpeg bytes=65536 audio/mpeg-audio: MPEG audio frame observed required=video; last=direct audio/mpeg bytes=6 | http://antiserver.kuwo.cn/anti.s?rid=MUSIC_12975393&response=res&format=mp4&type=convert_url |
-| 140 | 13 | 7 | 0 | 7 | 「中」凤凰传奇-自由飞翔 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct video/mp4 bytes=31151 audio/mp4/fmp4: MP4 audio handler/sample entry observed required=video; last=direct video/m | http://antiserver.kuwo.cn/anti.s?rid=MUSIC_18747906&response=res&format=mp4&type=convert_url |
-| 140 | 13 | 7 | 0 | 7 | 「中」冷漠-真不是闹着玩 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct audio/mpeg bytes=65536 audio/mpeg-audio: MPEG audio frame observed required=video; last=direct audio/mpeg bytes=6 | http://antiserver.kuwo.cn/anti.s?rid=MUSIC_22836669&response=res&format=mp4&type=convert_url |
-| 140 | 13 | 7 | 0 | 7 | 「中」凤凰传奇-策马奔腾 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct audio/mpeg bytes=65536 audio/mpeg-audio: MPEG audio frame observed required=video; last=direct audio/mpeg bytes=6 | http://antiserver.kuwo.cn/anti.s?rid=MUSIC_24042013&response=res&format=mp4&type=convert_url |
-| 140 | 13 | 7 | 0 | 7 | 「中」凤凰传奇-光芒 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct audio/mpeg bytes=65536 audio/mpeg-audio: MPEG audio frame observed required=video; last=direct audio/mpeg bytes=6 | http://antiserver.kuwo.cn/anti.s?rid=MUSIC_24042019&response=res&format=mp4&type=convert_url |
-| 140 | 13 | 7 | 0 | 7 | 「中」凤凰传奇-中国味道 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct audio/mpeg bytes=65536 audio/mpeg-audio: MPEG audio frame observed required=video; last=direct audio/mpeg bytes=6 | http://antiserver.kuwo.cn/anti.s?rid=MUSIC_24042021&response=res&format=mp4&type=convert_url |
+| 140 | 13 | 8 | 0 | 8 | 「中」冷漠-你把爱情给了谁 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct video/mp4 bytes=31151 audio/mp4/fmp4: MP4 audio handler/sample entry observed required=video; last=direct video/m | http://antiserver.kuwo.cn/anti.s?rid=MUSIC_1210771&response=res&format=mp4&type=convert_url |
+| 140 | 13 | 8 | 0 | 8 | 「中」陈瑞-爱的痕迹 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct video/mp4 bytes=31151 audio/mp4/fmp4: MP4 audio handler/sample entry observed required=video; last=direct video/m | http://antiserver.kuwo.cn/anti.s?rid=MUSIC_1218815&response=res&format=mp4&type=convert_url |
+| 140 | 13 | 8 | 0 | 8 | 「中」陈瑞-爱得真伤的深 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct video/mp4 bytes=31151 audio/mp4/fmp4: MP4 audio handler/sample entry observed required=video; last=direct video/m | http://antiserver.kuwo.cn/anti.s?rid=MUSIC_1218839&response=res&format=mp4&type=convert_url |
+| 140 | 13 | 8 | 0 | 8 | 「中」冷漠-谁都不要说分手 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct audio/mpeg bytes=65536 audio/mpeg-audio: MPEG audio frame observed required=video; last=direct audio/mpeg bytes=6 | http://antiserver.kuwo.cn/anti.s?rid=MUSIC_12975393&response=res&format=mp4&type=convert_url |
+| 140 | 13 | 8 | 0 | 8 | 「中」凤凰传奇-自由飞翔 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct video/mp4 bytes=31151 audio/mp4/fmp4: MP4 audio handler/sample entry observed required=video; last=direct video/m | http://antiserver.kuwo.cn/anti.s?rid=MUSIC_18747906&response=res&format=mp4&type=convert_url |
+| 140 | 13 | 8 | 0 | 8 | 「中」冷漠-真不是闹着玩 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct audio/mpeg bytes=65536 audio/mpeg-audio: MPEG audio frame observed required=video; last=direct audio/mpeg bytes=6 | http://antiserver.kuwo.cn/anti.s?rid=MUSIC_22836669&response=res&format=mp4&type=convert_url |
+| 140 | 13 | 8 | 0 | 8 | 「中」凤凰传奇-策马奔腾 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct audio/mpeg bytes=65536 audio/mpeg-audio: MPEG audio frame observed required=video; last=direct audio/mpeg bytes=6 | http://antiserver.kuwo.cn/anti.s?rid=MUSIC_24042013&response=res&format=mp4&type=convert_url |
+| 140 | 13 | 8 | 0 | 8 | 「中」凤凰传奇-光芒 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct audio/mpeg bytes=65536 audio/mpeg-audio: MPEG audio frame observed required=video; last=direct audio/mpeg bytes=6 | http://antiserver.kuwo.cn/anti.s?rid=MUSIC_24042019&response=res&format=mp4&type=convert_url |
+| 140 | 13 | 8 | 0 | 8 | 「中」凤凰传奇-中国味道 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct audio/mpeg bytes=65536 audio/mpeg-audio: MPEG audio frame observed required=video; last=direct audio/mpeg bytes=6 | http://antiserver.kuwo.cn/anti.s?rid=MUSIC_24042021&response=res&format=mp4&type=convert_url |
