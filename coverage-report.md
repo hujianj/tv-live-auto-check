@@ -24,7 +24,7 @@ Fail on missing important satellite: True
 | CCTV-13 | 6 | 6 | OK |
 | CCTV-14 | 6 | 6 | OK |
 | CCTV-15 | 6 | 6 | OK |
-| CCTV-16 | 5 | 5 | OK |
+| CCTV-16 | 6 | 6 | OK |
 | CCTV-17 | 6 | 6 | OK |
 | CCTV-5+ | 3 | 3 | OK |
 
@@ -36,7 +36,7 @@ Fail on missing important satellite: True
 | 河北卫视 | 6 | 6 | OK |
 | 河南卫视 | 6 | 6 | OK |
 | 北京卫视 | 6 | 6 | OK |
-| 东方卫视 | 5 | 5 | OK |
+| 东方卫视 | 6 | 6 | OK |
 | 浙江卫视 | 6 | 6 | OK |
 | 江苏卫视 | 6 | 6 | OK |
 | 湖南卫视 | 6 | 6 | OK |
@@ -48,8 +48,7 @@ Fail on missing important satellite: True
 | Core channel | Variant rows | Variant unique URLs |
 |---|---:|---:|
 | CCTV-1 | 1 | 1 |
-| CCTV-4 | 6 | 6 |
-| CCTV-5 | 7 | 7 |
+| CCTV-4 | 2 | 2 |
+| CCTV-5 | 6 | 6 |
 | CCTV-8 | 6 | 6 |
-| CCTV-9 | 1 | 1 |
-| CCTV-5+ | 6 | 6 |
+| CCTV-5+ | 5 | 5 |

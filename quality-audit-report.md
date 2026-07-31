@@ -1,12 +1,12 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 2610
-Unique channel names: 1589
-Unique canonical channel identities: 1589
-Unique URLs: 2610
+Rows: 2498
+Unique channel names: 1560
+Unique canonical channel identities: 1560
+Unique URLs: 2498
 Strict filter residue count: 0
-Latin/noise-like review count: 4
+Latin/noise-like review count: 6
 Channel unique URL limit violations: 0
 URL identity conflicts: 0
 
@@ -31,7 +31,7 @@ Minimum exact CCTV independent URLs: 3
 | CCTV-13 | 6 | 6 | OK |
 | CCTV-14 | 6 | 6 | OK |
 | CCTV-15 | 6 | 6 | OK |
-| CCTV-16 | 5 | 5 | OK |
+| CCTV-16 | 6 | 6 | OK |
 | CCTV-17 | 6 | 6 | OK |
 | CCTV-5+ | 3 | 3 | OK |
 
@@ -45,7 +45,7 @@ Minimum important satellite independent URLs: 3
 | 河北卫视 | 6 | 6 | OK |
 | 河南卫视 | 6 | 6 | OK |
 | 北京卫视 | 6 | 6 | OK |
-| 东方卫视 | 5 | 5 | OK |
+| 东方卫视 | 6 | 6 | OK |
 | 浙江卫视 | 6 | 6 | OK |
 | 江苏卫视 | 6 | 6 | OK |
 | 湖南卫视 | 6 | 6 | OK |
@@ -55,10 +55,10 @@ Minimum important satellite independent URLs: 3
 ## Family playlist audit
 
 Status: ok
-Rows: 1163
-Unique URLs: 1163
+Rows: 1164
+Unique URLs: 1164
 
 ## Warnings
 
 - core CCTV channels below independent URL warning target: CCTV-5+=3
-- latin/noise-like channel names remain for review: 4
+- latin/noise-like channel names remain for review: 6
