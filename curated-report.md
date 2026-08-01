@@ -2,44 +2,44 @@
 
 This report is generated immediately after curation and before the final published URL recheck. See `final-publish-report.md` for the TV-facing result after recheck.
 
-Pre-recheck candidate lines: 2715
-Published channel names: 1678
+Pre-recheck candidate lines: 2703
+Published channel names: 1665
 Stability history URLs loaded: 5000
 Home priority URLs loaded: ok=0, failed=0, enabled=True
 
 ## Quality filters and limits
 
-- Strict quality filter dropped rows: 466
-- Channel limit trimmed rows: 1399
-- Group limit trimmed rows: 207
+- Strict quality filter dropped rows: 474
+- Channel limit trimmed rows: 1501
+- Group limit trimmed rows: 182
 - Quality config: `config/quality.json`
 
 ### Drop counts
 
-- unwanted_overseas_english: 7024
-- unstable_or_wrong_alias: 828
-- strict_quality_filter: 466
-- foreign_channel: 355
-- ambiguous_url_identity: 260
+- unwanted_overseas_english: 7033
+- unstable_or_wrong_alias: 824
+- strict_quality_filter: 474
+- foreign_channel: 364
+- ambiguous_url_identity: 232
 - cgtn_url: 26
-- invalid_name_or_url: 3
+- invalid_name_or_url: 2
 
 ### Group limit trims
 
-- 海外华语频道: 190
-- 港澳台频道: 11
-- 影视剧场: 6
+- 海外华语频道: 176
+- 影视剧场: 3
+- 港澳台频道: 3
 
 ## Groups
-- 央视频道: 131
-- 卫视频道: 199
-- 地方频道: 796
+- 央视频道: 126
+- 卫视频道: 196
+- 地方频道: 767
 - 影视剧场: 180
-- 少儿动漫: 24
-- 体育纪实: 65
-- 音乐综艺: 35
-- 生活休闲: 99
-- 综合娱乐: 876
+- 少儿动漫: 26
+- 体育纪实: 68
+- 音乐综艺: 34
+- 生活休闲: 104
+- 综合娱乐: 892
 - 港澳台频道: 90
 - 海外华语频道: 220
 
@@ -47,93 +47,93 @@ Home priority URLs loaded: ok=0, failed=0, enabled=True
 
 | Source | Lines |
 |---|---:|
-| bigbiggrandg_gather | 438 |
-| iyouhun_zb | 401 |
-| epg_cn | 392 |
-| guovin_all | 360 |
-| zbds_iptv4_txt | 340 |
-| mursor_yy | 320 |
-| guovin_ipv4 | 210 |
-| suxuang_ipv4 | 179 |
-| migu_interface | 37 |
-| vamoschuck_m3u | 9 |
-| iptv_org_all | 8 |
+| epg_cn | 439 |
+| bigbiggrandg_gather | 437 |
+| iyouhun_zb | 381 |
+| guovin_all | 358 |
+| mursor_yy | 319 |
+| zbds_iptv4_txt | 297 |
+| guovin_ipv4 | 221 |
+| suxuang_ipv4 | 180 |
+| migu_interface | 35 |
+| vamoschuck_m3u | 10 |
+| iptv_org_all | 9 |
 | epg_mo | 7 |
-| epg_tw | 5 |
 | kimentanm_aptv | 3 |
 | guovin_ipv6 | 2 |
 | suxuang_ipv6 | 2 |
 | free_tv_world | 1 |
+| epg_tw | 1 |
 | iptv_org_tw | 1 |
 
 ## Top sources per group
 
 ### 央视频道
-- guovin_ipv4: 54
-- zbds_iptv4_txt: 33
-- epg_cn: 24
-- suxuang_ipv4: 8
+- guovin_ipv4: 58
+- epg_cn: 28
+- zbds_iptv4_txt: 18
+- suxuang_ipv4: 11
 - iptv_org_all: 5
-- iyouhun_zb: 4
-- migu_interface: 3
+- iyouhun_zb: 5
+- migu_interface: 1
 
 ### 卫视频道
-- guovin_ipv4: 106
-- zbds_iptv4_txt: 50
-- suxuang_ipv4: 21
+- guovin_ipv4: 112
+- zbds_iptv4_txt: 38
+- suxuang_ipv4: 23
 - guovin_all: 12
-- iyouhun_zb: 6
+- iyouhun_zb: 7
 - guovin_ipv6: 2
 - iptv_org_all: 1
 - migu_interface: 1
 
 ### 地方频道
-- guovin_all: 245
-- zbds_iptv4_txt: 216
-- iyouhun_zb: 163
-- epg_cn: 112
-- suxuang_ipv4: 25
-- guovin_ipv4: 11
+- guovin_all: 244
+- zbds_iptv4_txt: 185
+- iyouhun_zb: 144
+- epg_cn: 135
+- suxuang_ipv4: 23
+- guovin_ipv4: 12
 - migu_interface: 10
 - vamoschuck_m3u: 8
 
 ### 影视剧场
-- mursor_yy: 51
-- iyouhun_zb: 38
+- mursor_yy: 48
 - guovin_all: 34
-- suxuang_ipv4: 31
-- guovin_ipv4: 13
+- suxuang_ipv4: 30
+- iyouhun_zb: 24
+- zbds_iptv4_txt: 22
+- guovin_ipv4: 14
 - bigbiggrandg_gather: 5
-- zbds_iptv4_txt: 5
 - migu_interface: 2
 
 ### 少儿动漫
 - guovin_all: 8
 - mursor_yy: 8
-- epg_cn: 5
+- epg_cn: 7
 - iyouhun_zb: 2
 - zbds_iptv4_txt: 1
 
 ### 体育纪实
-- zbds_iptv4_txt: 30
-- iyouhun_zb: 16
+- zbds_iptv4_txt: 29
+- iyouhun_zb: 19
 - guovin_ipv4: 10
 - mursor_yy: 4
 - epg_cn: 3
-- guovin_all: 2
+- guovin_all: 3
 
 ### 音乐综艺
 - mursor_yy: 15
 - bigbiggrandg_gather: 11
 - guovin_ipv4: 3
 - kimentanm_aptv: 3
-- zbds_iptv4_txt: 2
 - iyouhun_zb: 1
+- zbds_iptv4_txt: 1
 
 ### 生活休闲
-- iyouhun_zb: 36
-- guovin_all: 28
-- epg_cn: 16
+- iyouhun_zb: 41
+- guovin_all: 26
+- epg_cn: 17
 - bigbiggrandg_gather: 8
 - mursor_yy: 5
 - guovin_ipv4: 3
@@ -141,27 +141,28 @@ Home priority URLs loaded: ok=0, failed=0, enabled=True
 - suxuang_ipv4: 1
 
 ### 综合娱乐
-- bigbiggrandg_gather: 396
-- epg_cn: 229
-- iyouhun_zb: 88
-- suxuang_ipv4: 81
+- bigbiggrandg_gather: 395
+- epg_cn: 245
+- iyouhun_zb: 94
+- suxuang_ipv4: 77
 - guovin_all: 24
 - migu_interface: 21
-- mursor_yy: 16
+- mursor_yy: 19
 - epg_mo: 7
 
 ### 港澳台频道
-- iyouhun_zb: 47
+- iyouhun_zb: 44
+- suxuang_ipv4: 15
 - bigbiggrandg_gather: 13
-- suxuang_ipv4: 12
 - guovin_all: 7
-- epg_cn: 3
-- guovin_ipv4: 3
+- epg_cn: 4
+- guovin_ipv4: 2
 - suxuang_ipv6: 2
 - epg_tw: 1
 
 ### 海外华语频道
-- mursor_yy: 219
+- mursor_yy: 218
+- iptv_org_all: 1
 - iptv_org_tw: 1
 
 
