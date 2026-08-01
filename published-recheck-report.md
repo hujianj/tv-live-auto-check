@@ -1,41 +1,44 @@
 # Published playlist recheck report
 
-Elapsed: 361.0s
-Rows before: 2715
-Rows after: 2605
-Removed rows: 110
+Elapsed: 376.4s
+Rows before: 2703
+Rows after: 2594
+Removed rows: 109
 Failed unique URLs after slow retry: 118
-Slow retry attempted unique URLs: 152
-Slow retry recovered unique URLs: 34
+Slow retry attempted unique URLs: 151
+Slow retry recovered unique URLs: 33
 Core live-progress check required: True
 Video track required: True
-Video-track verified final unique URLs: 2605
-Refill attempted unique URLs: 18
-Refill playable unique URLs: 8
-Refilled rows: 8
-Unresolved refill rows: 110
+Video-track verified final unique URLs: 2594
+Refill attempted unique URLs: 11
+Refill playable unique URLs: 9
+Refilled rows: 9
+Unresolved refill rows: 109
 
 ## Group deltas
 
 | Group | Before | After | Removed |
 |---|---:|---:|---:|
-| 央视频道 | 131 | 131 | 0 |
-| 卫视频道 | 199 | 183 | 16 |
-| 地方频道 | 796 | 759 | 37 |
-| 影视剧场 | 180 | 180 | 0 |
-| 少儿动漫 | 24 | 24 | 0 |
-| 体育纪实 | 65 | 65 | 0 |
-| 音乐综艺 | 35 | 25 | 10 |
-| 生活休闲 | 99 | 93 | 6 |
-| 综合娱乐 | 876 | 847 | 29 |
-| 港澳台频道 | 90 | 80 | 10 |
-| 海外华语频道 | 220 | 218 | 2 |
+| 央视频道 | 126 | 124 | 2 |
+| 卫视频道 | 196 | 180 | 16 |
+| 地方频道 | 767 | 732 | 35 |
+| 影视剧场 | 180 | 178 | 2 |
+| 少儿动漫 | 26 | 26 | 0 |
+| 体育纪实 | 68 | 68 | 0 |
+| 音乐综艺 | 34 | 24 | 10 |
+| 生活休闲 | 104 | 99 | 5 |
+| 综合娱乐 | 892 | 863 | 29 |
+| 港澳台频道 | 90 | 81 | 9 |
+| 海外华语频道 | 220 | 219 | 1 |
 
 ## First failed rows
 
+- 央视频道 / CCTV-1 / http://112.46.105.20:8009/hls/501/index.m3u8 / final slow retry failed attempt=1 first=URLError(TimeoutError('timed out')) (core retry after first=URLError(TimeoutError('timed out'))); last=URLError(TimeoutError('timed out'))
+- 央视频道 / CCTV-4K / https://stream1.freetv.fun/be485615e65d6f8fb8940553193e872e3b71f9f42cc10a4254745dad055d4e7f.m3u8 / final slow retry failed attempt=1 first=<HTTPError 403: 'Forbidden'>; last=<HTTPError 403: 'Forbidden'>
+- 央视频道 / CCTV-4K / https://stream1.freetv.fun/e168c6dffa66d0e2bd8966908352a688ca22cd4837ecfd9f5f61d52fd83c44df.m3u8 / final slow retry failed attempt=1 first=<HTTPError 403: 'Forbidden'>; last=<HTTPError 403: 'Forbidden'>
 - 央视频道 / CCTV-13 / http://ali-m-l.cztv.com/channels/lantian/channel21/1080p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=3 required=video; manifest did not advance after 10.0s; last=segments ok checked=3 required=video; manifest did not advance after 10.0s
-- 央视频道 / CCTV-16 / http://drive.mxmy.net:8888/udp/239.3.1.184:8001 / final slow retry failed attempt=1 first=direct application/octet-stream bytes=1316 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed required=video; last=direct application/octet-stream bytes=65536 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed required=video
-- 卫视频道 / 浙江卫视 / http://ali-vl.cztv.com/channels/lantian/channel001/360p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=3 required=video; manifest did not advance after 10.0s; last=URLError(TimeoutError('timed out'))
+- 央视频道 / CCTV-14 / http://drive.mxmy.net:8888/udp/239.3.1.65:8132 / final slow retry failed attempt=1 first=direct application/octet-stream bytes=65536 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed required=video; last=direct application/octet-stream bytes=40796 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed required=video
+- 卫视频道 / 江苏卫视 / http://112.46.85.60:8009/hls/33/index.m3u8 / final slow retry failed attempt=1 first=TimeoutError('timed out') (core retry after first=TimeoutError('timed out')); last=URLError(TimeoutError('timed out'))
 - 卫视频道 / 大湾区卫视 / http://222.128.55.152:9080/live/dwq.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segments ok checked=3 required=video; manifest did not advance after 14.0s; last=variant fail variants_checked=1 segments ok checked=3 required=video; manifest did not advance after 14.0s
 - 卫视频道 / 大湾区卫视 / https://stream1.freetv.fun/9e44565ab6186689007a295d8b94b2a970fafde637068b0e3837e5f84689a8f3.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segments ok checked=3 required=video; VOD/endlist manifest is not a live channel; last=variant fail variants_checked=1 segments ok checked=3 required=video; VOD/endlist manifest is not a live channel
 - 卫视频道 / 安多卫视 / https://stream1.freetv.fun/52d0df257c5c3cec42f2ae19268dbbc261256ff391b27bd83553bea941d0c186.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segments ok checked=3 required=video; VOD/endlist manifest is not a live channel; last=variant fail variants_checked=1 segments ok checked=3 required=video; VOD/endlist manifest is not a live channel
@@ -55,23 +58,21 @@ Unresolved refill rows: 110
 - 地方频道 / 三明新闻综合 / http://ls.qingting.fm/live/4885.m3u8 / final slow retry failed attempt=1 first=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
 - 地方频道 / 上海动感101 / http://ls.qingting.fm/live/274.m3u8 / final slow retry failed attempt=1 first=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
 - 地方频道 / 东丰综合 / http://stream3.jlntv.cn:80/aac_dfgb/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=variant fail variants_checked=1 segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
-- 地方频道 / 仁寿综合 / https://play.scrstv.com.cn/DT/live.m3u8?auth_key=60001724663204-0-0-c1cc4ded9841ac34f63cdbd3aec647ef / final slow retry failed attempt=1 first=URLError(TimeoutError('_ssl.c:993: The handshake operation timed out')); last=segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PAT/PMT advertises audio but no video
-- 地方频道 / 六安公共 / http://ls.qingting.fm/live/1794199.m3u8 / final slow retry failed attempt=1 first=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
+- 地方频道 / 仁寿综合 / https://play.scrstv.com.cn/DT/live.m3u8?auth_key=60001724663204-0-0-c1cc4ded9841ac34f63cdbd3aec647ef / final slow retry failed attempt=1 first=segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PAT/PMT advertises audio but no video; last=URLError(TimeoutError('timed out'))
+- 地方频道 / 六安公共 / http://ls.qingting.fm/live/1794199.m3u8 / final slow retry failed attempt=1 first=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=TimeoutError('timed out')
 - 地方频道 / 六安新闻综合 / http://ls.qingting.fm/live/267.m3u8 / final slow retry failed attempt=1 first=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
 - 地方频道 / 北京新闻 / https://satellitepull.cnr.cn/live/wxbjxwgb/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PAT/PMT advertises audio but no video; last=variant fail variants_checked=1 segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PAT/PMT advertises audio but no video
 - 地方频道 / 双辽综合 / http://stream3.jlntv.cn:80/aac_slgb/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=variant fail variants_checked=1 segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
 - 地方频道 / 吉林乡村 / https://satellitepull.cnr.cn/live/wxjlxcgb/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PAT/PMT advertises audio but no video; last=variant fail variants_checked=1 segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PAT/PMT advertises audio but no video
 - 地方频道 / 大宁综合 / http://live.daningtv.com/aac_dngb/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=variant fail variants_checked=1 segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
+- 地方频道 / 定襄综合 / http://lbyzztfe.live.sxmty.com/live/hls/645ff4c60e0a49f0a203abbd73dd8be9/0720e665f10f48e98c9639f4f492fb4a-1.m3u8?zshanxd / final slow retry failed attempt=1 first=URLError(TimeoutError('timed out')); last=URLError(TimeoutError('timed out'))
 - 地方频道 / 山东生活 / http://ls.qingting.fm/live/60260.m3u8 / final slow retry failed attempt=1 first=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
 - 地方频道 / 山东生活 / http://live.xmcdn.com/live/802/64.m3u8 / final slow retry failed attempt=1 first=segment bad 200 audio/x-aac bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 audio/x-aac bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
-- 地方频道 / 平遥新闻综合 / https://tntgjhjb.live.sxmty.com/live/hls/3a4585ac11ec4e1bb07b419101b370c3/baf63e2b313440c2a25d7859f9b73b05-1.m3u8?zshanxd / final slow retry failed attempt=1 first=URLError(TimeoutError('timed out')); last=URLError(TimeoutError('timed out'))
-- 地方频道 / 快乐垂钓 / http://drive.mxmy.net:8888/udp/239.3.1.164:8001 / final slow retry failed attempt=1 first=direct application/octet-stream bytes=65536 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed required=video; last=direct application/octet-stream bytes=65536 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed required=video
 - 地方频道 / 杭州综合 / http://live.xmcdn.com/live/1845/64.m3u8 / final slow retry failed attempt=1 first=segment bad 200 audio/x-aac bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 audio/x-aac bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
 - 地方频道 / 柳河综合 / http://stream3.jlntv.cn:80/aac_lhgb/sd/live.m3u8 / final slow retry failed attempt=1 first=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
 - 地方频道 / 桦甸综合 / http://stream9.jlntv.cn:80/aac_huadiangb/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=variant fail variants_checked=1 segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
 - 地方频道 / 梅河口综合 / http://stream3.jlntv.cn:80/aac_mhkgb/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=variant fail variants_checked=1 segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
-- 地方频道 / 汾西综合 / https://qmmqvzoz.live.sxmty.com/live/hls/f24f8a390c084386a564074c9260100c/be3fdf07606145739ab2c4b80fe0136a.m3u8?zshanxd / final slow retry failed attempt=1 first=URLError(TimeoutError('timed out')); last=URLError(TimeoutError('timed out'))
-- 地方频道 / 河北农民 / http://ls.qingting.fm/live/1650.m3u8 / final slow retry failed attempt=1 first=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
+- 地方频道 / 河北农民 / http://ls.qingting.fm/live/1650.m3u8 / final slow retry failed attempt=1 first=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 application/octet-stream bytes=32768 checked=1 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed
 - 地方频道 / 河北都市 / https://radio.pull.hebtv.com/live/hebnczx.m3u8 / final slow retry failed attempt=1 first=segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PAT/PMT advertises audio but no video; last=segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PAT/PMT advertises audio but no video
 - 地方频道 / 浙江动听 / http://ls.qingting.fm/live/4866.m3u8 / final slow retry failed attempt=1 first=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
 - 地方频道 / 浙江音乐调频•动听968 / https://satellitepull.cnr.cn/live/wxzj968/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PAT/PMT advertises audio but no video; last=variant fail variants_checked=1 segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PAT/PMT advertises audio but no video
@@ -85,31 +86,30 @@ Unresolved refill rows: 110
 - 地方频道 / 第一财经 / http://ls.qingting.fm/live/276.m3u8 / final slow retry failed attempt=1 first=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
 - 地方频道 / 第一财经 / http://satellitepull.cnr.cn/live/wx32dycjgb/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PAT/PMT advertises audio but no video; last=variant fail variants_checked=1 segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PAT/PMT advertises audio but no video
 - 地方频道 / 衡水公共 / http://ls.qingting.fm/live/2810.m3u8 / final slow retry failed attempt=1 first=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
-- 地方频道 / 辽宁影视剧 / http://120.76.248.139/live/bfgd/4200000070.m3u8 / final slow retry failed attempt=1 first=URLError(TimeoutError('timed out')); last=URLError(TimeoutError('timed out'))
-- 地方频道 / 通化县综合 / http://stream3.jlntv.cn:80/aac_thxgb/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segment bad 200 application/octet-stream bytes=25239 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=variant fail variants_checked=1 segment bad 200 application/octet-stream bytes=25239 checked=1 audio/mpeg-audio: MPEG audio frame observed
+- 地方频道 / 通化县综合 / http://stream3.jlntv.cn:80/aac_thxgb/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segment bad 200 application/octet-stream bytes=25386 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=variant fail variants_checked=1 segment bad 200 application/octet-stream bytes=25240 checked=1 audio/mpeg-audio: MPEG audio frame observed
 - 地方频道 / 都市剧场 / https://satellitepull.cnr.cn/live/wxcqxwgb/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PAT/PMT advertises audio but no video; last=variant fail variants_checked=1 segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PAT/PMT advertises audio but no video
-- 地方频道 / 镇江新闻综合 / http://cm-wshls.homecdn.com/live/2aa50.m3u8 / final slow retry failed attempt=1 first=URLError(TimeoutError('timed out')); last=URLError(TimeoutError('timed out'))
 - 地方频道 / 陕西公共 / http://ls.qingting.fm/live/1222.m3u8 / final slow retry failed attempt=1 first=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
 - 地方频道 / 靖宇综合 / http://stream9.jlntv.cn:80/aac_jygb/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=variant fail variants_checked=1 segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
 - 地方频道 / 靖江新闻综合 / http://ls.qingting.fm/live/23797.m3u8 / final slow retry failed attempt=1 first=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
+- 地方频道 / 黄山新闻综合 / http://hslive.hsnewsnet.com/lsdream/hve9Wjs/1000/live.m3u8?zanhd / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=<HTTPError 502: 'Bad Gateway'>
 - 地方频道 / 龙井综合 / http://stream9.jlntv.cn:80/aac_longjinggb/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=variant fail variants_checked=1 segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
+- 影视剧场 / 经典电影港片枪战 / https://live.ottiptv.cc/yy/1355076627 / final slow retry failed attempt=1 first=<HTTPError 404: 'Not Found'>; last=<HTTPError 404: 'Not Found'>
+- 影视剧场 / 老妖私影院 / https://live.ottiptv.cc/yy/1354952229 / final slow retry failed attempt=1 first=direct video/x-flv bytes=65536 audio/flv: FLV audio tags observed but no video tag required=video; last=direct video/x-flv bytes=65536 audio/flv: FLV audio tags observed but no video tag required=video
 - 音乐综艺 / 中广音乐网 / http://stream.rcs.revma.com/ks4vsmg3qtzuv / final slow retry failed attempt=1 first=direct audio/aac bytes=65536 audio/mpeg-audio: MPEG audio frame observed required=video; last=direct audio/aac bytes=65536 audio/mpeg-audio: MPEG audio frame observed required=video
 - 音乐综艺 / 亚洲经典音乐台 / http://live.xmcdn.com:80/live/1005/64.m3u8 / final slow retry failed attempt=1 first=segment bad 200 audio/x-aac bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 audio/x-aac bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
 - 音乐综艺 / 动感音乐台 / http://stream3.hndt.com/now/ufjjbZxV/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segment bad 200 audio/mpeg bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=variant fail variants_checked=1 segment bad 200 audio/mpeg bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
-- 音乐综艺 / 心灵音乐馆 / http://play-radio-stream3.hndt.com/now/AFqvb0VX/playlist.m3u8 / final slow retry failed attempt=1 first=<HTTPError 504: 'Gateway Time-out'>; last=<HTTPError 504: 'Gateway Time-out'>
 - 音乐综艺 / 怀集音乐台 / http://live.xmcdn.com:80/live/966/64.m3u8 / final slow retry failed attempt=1 first=segment bad 200 audio/x-aac bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 audio/x-aac bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
 - 音乐综艺 / 格莱美音乐台 / http://stream3.hndt.com/now/yorSd1X2/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segment bad 200 audio/mpeg bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=variant fail variants_checked=1 segment bad 200 audio/mpeg bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
 - 音乐综艺 / 民谣音乐台 / http://stream3.hndt.com/now/DTK5qc83/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segment bad 200 audio/mpeg bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=variant fail variants_checked=1 segment bad 200 audio/mpeg bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
 - 音乐综艺 / 清晨音乐台 / http://live.xmcdn.com:80/live/1011/64.m3u8 / final slow retry failed attempt=1 first=segment bad 200 audio/x-aac bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 audio/x-aac bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
-- 音乐综艺 / 潮流音乐台 / http://play-radio-stream3.hndt.com/now/Or5au0KN/playlist.m3u8 / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=TimeoutError('timed out')
+- 音乐综艺 / 潮流音乐台 / http://play-radio-stream3.hndt.com/now/Or5au0KN/playlist.m3u8 / final slow retry failed attempt=1 first=<HTTPError 504: 'Gateway Time-out'>; last=variant fail variants_checked=1 segment bad 200 audio/mpeg bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
+- 音乐综艺 / 老歌音乐台 / http://live.xmcdn.com:80/live/2628/64.m3u8 / final slow retry failed attempt=1 first=segment bad 200 audio/x-aac bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 audio/x-aac bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
 - 音乐综艺 / 音乐现场 / https://satellitepull.cnr.cn/live/wx32nmgyygb/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PAT/PMT advertises audio but no video; last=variant fail variants_checked=1 segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PAT/PMT advertises audio but no video
 - 生活休闲 / News98新闻台 / http://stream.rcs.revma.com/55tyxsy4qtzuv / final slow retry failed attempt=1 first=direct audio/aac bytes=65536 audio/mpeg-audio: MPEG audio frame observed required=video; last=direct audio/aac bytes=65536 audio/mpeg-audio: MPEG audio frame observed required=video
 - 生活休闲 / 中广新闻网 / http://stream.rcs.revma.com/78fm9wyy2tzuv / final slow retry failed attempt=1 first=direct audio/aac bytes=65536 audio/mpeg-audio: MPEG audio frame observed required=video; last=direct audio/aac bytes=65536 audio/mpeg-audio: MPEG audio frame observed required=video
-- 生活休闲 / 汕頭經濟生活 / https://stream1.freetv.fun/a4174d0d931366bf101a3e105129c2e30e102d88964eae4be5f6e5caf48133dd.ctv / final slow retry failed attempt=1 first=direct application/octet-stream bytes=65536 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed required=video; last=direct application/octet-stream bytes=65536 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed required=video
-- 生活休闲 / 汕頭經濟生活 / https://stream1.freetv.fun/15f32e2c1c3ac9ae3dc55c93d40d7e3335a691aeb928f97cc1fc5d9ee5e8d1d2.ctv / final slow retry failed attempt=1 first=direct application/octet-stream bytes=65536 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed required=video; last=direct application/octet-stream bytes=65536 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed required=video
+- 生活休闲 / 汕頭經濟生活 / https://stream1.freetv.fun/61fa28af24b2c2e5518954a50e0e9e743682c6ceafab6dfd7a5c12ee780ea748.ctv / final slow retry failed attempt=1 first=direct application/octet-stream bytes=63168 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed required=video; last=direct application/octet-stream bytes=65536 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed required=video
 - 生活休闲 / 江津经济生活(480p) / http://222.179.155.21:1935/ch0.m3u8 / final slow retry failed attempt=1 first=segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PAT/PMT advertises audio but no video; last=segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PAT/PMT advertises audio but no video
-- 生活休闲 / 溫州經濟科教 / https://stream1.freetv.fun/36ed29f1fdc3658a522ed7bd4d366157a3e92bfe877e970babb30fe7c907decb.ctv / final slow retry failed attempt=1 first=direct application/octet-stream bytes=65536 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed required=video; last=direct application/octet-stream bytes=65536 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed required=video
+- 生活休闲 / 溫州經濟科教 / https://stream1.freetv.fun/528b27d4d039b90b328e25fb49e44dbb2b2d796d863706272026c75e663c8e1c.ctv / final slow retry failed attempt=1 first=direct application/octet-stream bytes=65536 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed required=video; last=direct application/octet-stream bytes=0 unknown/: empty payload required=video
 - 综合娱乐 / C+頻道 / https://stream1.freetv.fun/d99c30d4bf43a0a78f63a6fb790551d4611e2d8b2966d44abe664662be0247cd.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segment bad 200 application/vnd.apple.mpegurl bytes=460 checked=1 audio/audio: audio content type; last=variant fail variants_checked=1 segment bad 200 application/vnd.apple.mpegurl bytes=460 checked=1 audio/audio: audio content type
 - 综合娱乐 / CRI粤语国际 / http://sk.cri.cn/hxfh.m3u8 / final slow retry failed attempt=1 first=segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PAT/PMT advertises audio but no video; last=segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PAT/PMT advertises audio but no video
 - 综合娱乐 / 「中」冷漠-你把爱情给了谁 / http://antiserver.kuwo.cn/anti.s?rid=MUSIC_1210771&response=res&format=mp4&type=convert_url / final slow retry failed attempt=1 first=direct video/mp4 bytes=31151 audio/mp4/fmp4: MP4 audio handler/sample entry observed required=video; last=direct video/mp4 bytes=31151 audio/mp4/fmp4: MP4 audio handler/sample entry observed required=video
-- 综合娱乐 / 「中」冷漠-古咖啡 / http://antiserver.kuwo.cn/anti.s?rid=MUSIC_3142984&response=res&format=mp4&type=convert_url / final slow retry failed attempt=1 first=direct video/mp4 bytes=31151 audio/mp4/fmp4: MP4 audio handler/sample entry observed required=video; last=direct video/mp4 bytes=31151 audio/mp4/fmp4: MP4 audio handler/sample entry observed required=video
