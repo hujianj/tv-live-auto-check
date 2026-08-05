@@ -1,10 +1,10 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 2543
-Unique channel names: 1560
-Unique canonical channel identities: 1560
-Unique URLs: 2543
+Rows: 2555
+Unique channel names: 1561
+Unique canonical channel identities: 1561
+Unique URLs: 2555
 Strict filter residue count: 0
 Latin/noise-like review count: 5
 Channel unique URL limit violations: 0
@@ -33,7 +33,7 @@ Minimum exact CCTV independent URLs: 3
 | CCTV-15 | 6 | 6 | OK |
 | CCTV-16 | 6 | 6 | OK |
 | CCTV-17 | 6 | 6 | OK |
-| CCTV-5+ | 5 | 5 | OK |
+| CCTV-5+ | 6 | 6 | OK |
 
 ## Important satellite quality
 
@@ -41,10 +41,10 @@ Minimum important satellite independent URLs: 3
 
 | Channel | Published rows | Unique URLs | Status |
 |---|---:|---:|---|
-| 辽宁卫视 | 5 | 5 | OK |
+| 辽宁卫视 | 6 | 6 | OK |
 | 河北卫视 | 6 | 6 | OK |
 | 河南卫视 | 6 | 6 | OK |
-| 北京卫视 | 5 | 5 | OK |
+| 北京卫视 | 6 | 6 | OK |
 | 东方卫视 | 6 | 6 | OK |
 | 浙江卫视 | 6 | 6 | OK |
 | 江苏卫视 | 6 | 6 | OK |
@@ -55,8 +55,8 @@ Minimum important satellite independent URLs: 3
 ## Family playlist audit
 
 Status: ok
-Rows: 1161
-Unique URLs: 1161
+Rows: 1180
+Unique URLs: 1180
 
 ## Warnings
 
