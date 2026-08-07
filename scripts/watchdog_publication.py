@@ -30,6 +30,21 @@ from validate_playlist import validate_text
 
 MARKER = "<!-- tv-live-auto-check-watchdog -->"
 ISSUE_TITLE = "\u81ea\u52a8\u76d1\u63a7\u544a\u8b66 IPTV \u81ea\u52a8\u7ef4\u62a4\u6216\u516c\u5f00\u8ba2\u9605\u5f02\u5e38"
+HARD_FAILURE_CONCLUSIONS = {"action_required", "failure", "startup_failure", "timed_out"}
+RUN_DETAIL_FIELDS = (
+    "id",
+    "run_number",
+    "event",
+    "status",
+    "conclusion",
+    "created_at",
+    "updated_at",
+    "run_started_at",
+    "head_sha",
+    "html_url",
+)
+MAX_ISSUE_BODY_CHARS = 30_000
+MAX_ISSUE_EVIDENCE_CHARS = 20_000
 
 
 class WatchdogError(RuntimeError):
@@ -61,6 +76,12 @@ def age_hours(value: str | None, now: datetime) -> float | None:
     if parsed is None:
         return None
     return max(0.0, (now - parsed).total_seconds() / 3600.0)
+
+
+def compact_run(run: dict[str, Any] | None) -> dict[str, Any] | None:
+    if run is None:
+        return None
+    return {key: run.get(key) for key in RUN_DETAIL_FIELDS if key in run}
 
 
 def api_request(url: str, token: str | None, method: str = "GET", payload: dict[str, Any] | None = None, timeout: int = 30, retries: int = 3) -> Any:
@@ -143,21 +164,39 @@ def inspect_runs(runs: list[dict[str, Any]], now: datetime, max_age_hours: float
     warnings: list[str] = []
     latest_success = next((run for run in completed if run.get("conclusion") == "success"), None)
     latest_completed = completed[0] if completed else None
-    consecutive = 0
+    latest_success_timestamp = (
+        latest_success.get("updated_at") or latest_success.get("created_at")
+        if latest_success
+        else None
+    )
+    latest_success_age = age_hours(latest_success_timestamp, now)
+    consecutive_hard_failures = 0
+    recent_non_hard: list[str] = []
     for run in completed:
-        if run.get("conclusion") == "success":
+        conclusion = str(run.get("conclusion") or "")
+        if conclusion == "success":
             break
-        consecutive += 1
+        if conclusion in HARD_FAILURE_CONCLUSIONS:
+            consecutive_hard_failures += 1
+        else:
+            recent_non_hard.append(f"#{run.get('run_number')}={conclusion or 'unknown'}")
     if latest_success is None:
         failures.append("update workflow has no successful completed run in the retained history")
     else:
-        success_age = age_hours(latest_success.get("updated_at") or latest_success.get("created_at"), now)
-        if success_age is None:
+        if latest_success_age is None:
             failures.append("latest successful update run has no parseable timestamp")
-        elif success_age > max_age_hours:
-            failures.append(f"latest successful update run is {success_age:.1f}h old (limit {max_age_hours:.1f}h)")
-    if consecutive >= max_consecutive_failures:
-        failures.append(f"update workflow has {consecutive} consecutive completed failures (limit {max_consecutive_failures - 1})")
+        elif latest_success_age > max_age_hours:
+            failures.append(f"latest successful update run is {latest_success_age:.1f}h old (limit {max_age_hours:.1f}h)")
+    if consecutive_hard_failures >= max_consecutive_failures:
+        failures.append(
+            f"update workflow has {consecutive_hard_failures} hard failures since the latest success "
+            f"(limit {max_consecutive_failures - 1})"
+        )
+    if recent_non_hard:
+        warnings.append(
+            "non-hard completed update runs since the latest success were not counted as failures: "
+            + ", ".join(recent_non_hard[:10])
+        )
     running_too_long: list[str] = []
     for run in running:
         started = parse_time(run.get("run_started_at") or run.get("created_at"))
@@ -171,12 +210,16 @@ def inspect_runs(runs: list[dict[str, Any]], now: datetime, max_age_hours: float
         failures.append(f"update workflow has overlong running jobs: {', '.join(running_too_long)}")
     details = {
         "workflow_runs_seen": len(runs),
-        "latest_completed": latest_completed,
-        "latest_success": latest_success,
-        "consecutive_completed_failures": consecutive,
-        "running_runs": running,
+        "latest_completed": compact_run(latest_completed),
+        "latest_success": compact_run(latest_success),
+        # Retain the legacy field for report consumers, but give it the corrected
+        # hard-failure meaning rather than counting cancelled/skipped runs.
+        "consecutive_completed_failures": consecutive_hard_failures,
+        "consecutive_hard_failures": consecutive_hard_failures,
+        "recent_non_hard_runs": recent_non_hard,
+        "running_runs": [compact_run(run) for run in running],
         "running_too_long": running_too_long,
-        "latest_success_age_hours": age_hours((latest_success or {}).get("updated_at") if latest_success else None, now),
+        "latest_success_age_hours": latest_success_age,
         "limits": {
             "max_age_hours": max_age_hours,
             "max_running_minutes": max_running_minutes,
@@ -186,7 +229,32 @@ def inspect_runs(runs: list[dict[str, Any]], now: datetime, max_age_hours: float
     return failures, warnings, details
 
 
-def inspect_publication(repo: str, branch: str, timeout: int, require_manifest: bool) -> tuple[list[str], list[str], dict[str, Any]]:
+def manifest_freshness(manifest: dict[str, Any], now: datetime, max_age_hours: float) -> tuple[list[str], dict[str, Any]]:
+    summary = manifest.get("source_summary") if isinstance(manifest.get("source_summary"), dict) else {}
+    generated_utc = str(summary.get("generated_utc") or "")
+    generated_age = age_hours(generated_utc, now)
+    failures: list[str] = []
+    if generated_age is None:
+        failures.append("public manifest has no parseable source_summary.generated_utc")
+    elif generated_age > max_age_hours:
+        failures.append(
+            f"public playlist generation is {generated_age:.1f}h old (limit {max_age_hours:.1f}h)"
+        )
+    return failures, {
+        "generated_utc": generated_utc,
+        "generated_age_hours": generated_age,
+        "max_age_hours": max_age_hours,
+    }
+
+
+def inspect_publication(
+    repo: str,
+    branch: str,
+    timeout: int,
+    require_manifest: bool,
+    now: datetime,
+    max_age_hours: float,
+) -> tuple[list[str], list[str], dict[str, Any]]:
     config = load_publication_config(ROOT)
     endpoints = endpoint_urls(repo, branch, ROOT)
     raw_spec = next(item for item in endpoints if item["name"] == "github_raw")
@@ -216,13 +284,21 @@ def inspect_publication(repo: str, branch: str, timeout: int, require_manifest: 
         manifest = json.loads(manifest_data.decode("utf-8"))
         if manifest.get("schema_version") != 1:
             failures.append(f"public manifest schema_version is {manifest.get('schema_version')!r}, expected 1")
+        freshness_failures, freshness_details = manifest_freshness(manifest, now, max_age_hours)
+        failures.extend(freshness_failures)
         files = manifest.get("files") if isinstance(manifest.get("files"), dict) else {}
         expected_primary = files.get(config["primary_text_file"], {})
         if "primary" in fetched:
             actual = hashlib.sha256(fetched["primary"]).hexdigest()
             if expected_primary.get("sha256") != actual or expected_primary.get("bytes") != len(fetched["primary"]):
                 failures.append("public manifest does not match the required primary television file")
-        result["manifest"] = {"url": manifest_url, "bytes": len(manifest_data), "sha256": hashlib.sha256(manifest_data).hexdigest(), **manifest_headers}
+        result["manifest"] = {
+            "url": manifest_url,
+            "bytes": len(manifest_data),
+            "sha256": hashlib.sha256(manifest_data).hexdigest(),
+            **manifest_headers,
+            **freshness_details,
+        }
     except Exception as exc:
         if require_manifest:
             failures.append(f"public publication manifest failed: {exc}")
@@ -280,6 +356,22 @@ def write_reports(result: HealthResult, now: datetime, markdown_path: Path, json
 
 
 def render_issue_body(result: HealthResult, now: datetime) -> str:
+    evidence = json.dumps(result.details, ensure_ascii=False, indent=2, default=str)
+    evidence_note = ""
+    if len(evidence) > MAX_ISSUE_EVIDENCE_CHARS:
+        evidence = json.dumps(
+            {
+                "truncated": True,
+                "reason": "detailed evidence exceeded the issue-body budget",
+                "original_characters": len(evidence),
+                "sha256": hashlib.sha256(evidence.encode("utf-8")).hexdigest(),
+                "full_evidence": "download watchdog-report.json from the workflow artifact",
+                "top_level_keys": sorted(str(key) for key in result.details),
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        evidence_note = "\n完整证据已保存到本次 workflow 的 `watchdog-report.json` artifact。\n"
     lines = [
         MARKER,
         "# IPTV 自动监控报警",
@@ -291,8 +383,24 @@ def render_issue_body(result: HealthResult, now: datetime) -> str:
     lines.extend(f"- {item}" for item in (result.failures or ["\u65e0"] ))
     if result.warnings:
         lines += ["", "## 警告", *[f"- {item}" for item in result.warnings]]
-    lines += ["", "## 详细证据", "", "```json", json.dumps(result.details, ensure_ascii=False, indent=2, default=str), "```", ""]
-    return "\n".join(lines)
+    lines += ["", "## 详细证据", evidence_note, "```json", evidence, "```", ""]
+    body = "\n".join(lines)
+    if len(body) > MAX_ISSUE_BODY_CHARS:
+        digest = hashlib.sha256(body.encode("utf-8")).hexdigest()
+        body = "\n".join(
+            [
+                MARKER,
+                "# IPTV 自动监控报警",
+                "",
+                f"检查时间 (UTC): {now.isoformat()}",
+                "",
+                "告警正文超过安全长度，完整证据请下载本次 workflow 的 `watchdog-report.json` artifact。",
+                f"原始正文字符数: {len(body)}",
+                f"原始正文 SHA256: `{digest}`",
+                "",
+            ]
+        )
+    return body
 
 
 def update_issue(repo: str, token: str, result: HealthResult, now: datetime, dry_run: bool = False) -> dict[str, Any]:
@@ -340,7 +448,14 @@ def main(argv: list[str] | None = None) -> int:
     runs_payload = api_request(f"{api_base}/actions/workflows/{args.workflow}/runs?branch={args.branch}&per_page=50", token, timeout=args.timeout)
     runs = list(runs_payload.get("workflow_runs", [])) if isinstance(runs_payload, dict) else []
     run_failures, run_warnings, run_details = inspect_runs(runs, now, args.max_age_hours, args.max_running_minutes, args.max_consecutive_failures)
-    pub_failures, pub_warnings, pub_details = inspect_publication(args.repo, args.branch, args.timeout, not args.allow_missing_manifest)
+    pub_failures, pub_warnings, pub_details = inspect_publication(
+        args.repo,
+        args.branch,
+        args.timeout,
+        not args.allow_missing_manifest,
+        now,
+        args.max_age_hours,
+    )
     result = HealthResult(run_failures + pub_failures, run_warnings + pub_warnings, {"runs": run_details, "publication": pub_details})
     write_reports(result, now, Path(args.report), Path(args.json_path))
     print(json.dumps({"status": "fail" if result.failures else "ok", "failures": result.failures, "warnings": result.warnings, "details": result.details}, ensure_ascii=False, indent=2, default=str))

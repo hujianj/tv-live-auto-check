@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from collections import Counter, defaultdict
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from channel_utils import cctv_key, is_latin_noise_name
 from channel_identity import aliases_are_compatible, canonical_channel_key
@@ -35,18 +36,32 @@ def parse_txt(path: Path = PLAYLIST) -> list[tuple[str, str, str]]:
     return rows
 
 
+def stream_host(url: str) -> str:
+    try:
+        return (urlsplit(url).hostname or "").lower()
+    except ValueError:
+        return ""
+
+
 def core_url_audit(rows: list[tuple[str, str, str]], rules: dict, audit_cfg: dict) -> dict:
     cctv_urls: dict[str, set[str]] = defaultdict(set)
+    cctv_hosts: dict[str, set[str]] = defaultdict(set)
     cctv_rows: Counter[str] = Counter()
     identity_urls: dict[str, set[str]] = defaultdict(set)
+    identity_hosts: dict[str, set[str]] = defaultdict(set)
     identity_rows: Counter[str] = Counter()
     for _group, name, url in rows:
         identity = canonical_channel_key(name)
         identity_urls[identity].add(url)
+        host = stream_host(url)
+        if host:
+            identity_hosts[identity].add(host)
         identity_rows[identity] += 1
         key = cctv_key(name)
         if key:
             cctv_urls[key].add(url)
+            if host:
+                cctv_hosts[key].add(host)
             cctv_rows[key] += 1
 
     required_cctv = list(rules.get("coverage", {}).get("required_cctv", []))
@@ -60,6 +75,7 @@ def core_url_audit(rows: list[tuple[str, str, str]], rules: dict, audit_cfg: dic
             "name": name,
             "published_rows": cctv_rows.get(name, 0),
             "unique_urls": len(cctv_urls.get(name, set())),
+            "unique_hosts": len(cctv_hosts.get(name, set())),
             "count": len(cctv_urls.get(name, set())),
         }
         for name in required_cctv
@@ -71,6 +87,7 @@ def core_url_audit(rows: list[tuple[str, str, str]], rules: dict, audit_cfg: dic
             "name": name,
             "published_rows": identity_rows.get(key, 0),
             "unique_urls": len(identity_urls.get(key, set())),
+            "unique_hosts": len(identity_hosts.get(key, set())),
             "count": len(identity_urls.get(key, set())),
         })
     return {
@@ -89,11 +106,15 @@ def build_audit(rows: list[tuple[str, str, str]]) -> tuple[dict, list[str], list
     audit_cfg = quality.get("final_quality_audit", {})
     group_order = get_group_order()
     group_counts = Counter(group for group, _, _ in rows)
+    host_counts: Counter[str] = Counter()
     by_identity: dict[str, list[tuple[str, str, str]]] = defaultdict(list)
     url_names: dict[str, set[str]] = defaultdict(set)
     strict_residue: list[dict] = []
     latin_noise: list[dict] = []
     for group, name, url in rows:
+        host = stream_host(url)
+        if host:
+            host_counts[host] += 1
         by_identity[canonical_channel_key(name)].append((group, name, url))
         url_names[url].add(name)
         reason = strict_quality_drop_reason(name)
@@ -107,6 +128,22 @@ def build_audit(rows: list[tuple[str, str, str]]) -> tuple[dict, list[str], list
     missing_satellite_quality = [x for x in core["important_satellite"] if x["unique_urls"] < core["min_satellite"]]
     weak_cctv = [x for x in core["required_cctv"] if core["min_cctv"] <= x["unique_urls"] < core["warn_cctv"]]
     weak_satellite = [x for x in core["important_satellite"] if core["min_satellite"] <= x["unique_urls"] < core["warn_satellite"]]
+    min_core_hosts = int(audit_cfg.get("min_core_unique_hosts", 2))
+    warn_core_hosts = int(audit_cfg.get("warn_core_unique_hosts_below", min_core_hosts))
+    core_items = core["required_cctv"] + core["important_satellite"]
+    missing_core_host_diversity = [x for x in core_items if x["unique_hosts"] < min_core_hosts]
+    weak_core_host_diversity = [x for x in core_items if min_core_hosts <= x["unique_hosts"] < warn_core_hosts]
+    host_total = sum(host_counts.values())
+    top_hosts = [
+        {"host": host, "rows": count, "share": (count / host_total if host_total else 0.0)}
+        for host, count in host_counts.most_common(10)
+    ]
+    top_host_share = top_hosts[0]["share"] if top_hosts else 0.0
+    top5_host_share = sum(item["share"] for item in top_hosts[:5])
+    max_top_host_share = float(audit_cfg.get("max_top_host_share", 0.50))
+    warn_top_host_share = float(audit_cfg.get("warn_top_host_share", max_top_host_share))
+    max_top5_host_share = float(audit_cfg.get("max_top5_host_share", 0.80))
+    warn_top5_host_share = float(audit_cfg.get("warn_top5_host_share", max_top5_host_share))
 
     channel_limit_violations: list[dict] = []
     identity_group_conflicts: list[dict] = []
@@ -149,12 +186,31 @@ def build_audit(rows: list[tuple[str, str, str]]) -> tuple[dict, list[str], list
         failures.append(f"canonical channel identities span multiple groups: {len(identity_group_conflicts)}")
     if url_identity_conflicts:
         failures.append(f"URLs assigned to incompatible channel identities: {len(url_identity_conflicts)}")
+    if missing_core_host_diversity:
+        failures.append(
+            "core channels below independent host minimum: "
+            + ", ".join(f"{x['name']}={x['unique_hosts']}" for x in missing_core_host_diversity)
+        )
+    fail_on_host_concentration = bool(audit_cfg.get("fail_on_host_concentration", False))
+    if fail_on_host_concentration and top_host_share > max_top_host_share:
+        failures.append(f"top stream host share {top_host_share:.1%} exceeds {max_top_host_share:.1%}")
+    if fail_on_host_concentration and top5_host_share > max_top5_host_share:
+        failures.append(f"top five stream host share {top5_host_share:.1%} exceeds {max_top5_host_share:.1%}")
     if weak_cctv:
         warnings.append("core CCTV channels below independent URL warning target: " + ", ".join(f"{x['name']}={x['unique_urls']}" for x in weak_cctv))
     if weak_satellite:
         warnings.append("important satellite channels below independent URL warning target: " + ", ".join(f"{x['name']}={x['unique_urls']}" for x in weak_satellite))
     if latin_noise:
         warnings.append(f"latin/noise-like channel names remain for review: {len(latin_noise)}")
+    if weak_core_host_diversity:
+        warnings.append(
+            "core channels below independent host warning target: "
+            + ", ".join(f"{x['name']}={x['unique_hosts']}" for x in weak_core_host_diversity)
+        )
+    if top_host_share > warn_top_host_share:
+        warnings.append(f"top stream host share is high: {top_host_share:.1%} > {warn_top_host_share:.1%}")
+    if top5_host_share > warn_top5_host_share:
+        warnings.append(f"top five stream host share is high: {top5_host_share:.1%} > {warn_top5_host_share:.1%}")
 
     result = {
         "status": "rejected" if failures else "ok",
@@ -171,6 +227,21 @@ def build_audit(rows: list[tuple[str, str, str]]) -> tuple[dict, list[str], list
         "missing_satellite_quality": missing_satellite_quality,
         "weak_cctv": weak_cctv,
         "weak_satellite": weak_satellite,
+        "host_diversity": {
+            "unique_hosts": len(host_counts),
+            "top_host_share": top_host_share,
+            "top5_host_share": top5_host_share,
+            "max_top_host_share": max_top_host_share,
+            "max_top5_host_share": max_top5_host_share,
+            "warn_top_host_share": warn_top_host_share,
+            "warn_top5_host_share": warn_top5_host_share,
+            "fail_on_host_concentration": fail_on_host_concentration,
+            "min_core_unique_hosts": min_core_hosts,
+            "warn_core_unique_hosts_below": warn_core_hosts,
+            "top_hosts": top_hosts,
+        },
+        "missing_core_host_diversity": missing_core_host_diversity,
+        "weak_core_host_diversity": weak_core_host_diversity,
         "strict_filter_residue": strict_residue[:80],
         "strict_filter_residue_count": len(strict_residue),
         "latin_noise_review_count": len(latin_noise),
@@ -264,29 +335,42 @@ def write_outputs(result: dict, family_result: dict | None = None) -> None:
         f"Latin/noise-like review count: {result['latin_noise_review_count']}",
         f"Channel unique URL limit violations: {result['channel_limit_violation_count']}",
         f"URL identity conflicts: {result['url_identity_conflict_count']}",
+        f"Unique stream hosts: {result['host_diversity']['unique_hosts']}",
+        f"Top stream host share: {result['host_diversity']['top_host_share']:.1%}",
+        f"Top five stream host share: {result['host_diversity']['top5_host_share']:.1%}",
         "",
         "## Core CCTV quality",
         "",
         f"Minimum exact CCTV independent URLs: {result['min_exact_cctv_unique_urls']}",
+        f"Minimum independent hosts per core channel: {result['host_diversity']['min_core_unique_hosts']}",
         "",
-        "| Channel | Published rows | Unique URLs | Status |",
-        "|---|---:|---:|---|",
+        "| Channel | Published rows | Unique URLs | Unique hosts | Status |",
+        "|---|---:|---:|---:|---|",
     ]
     for item in result["required_cctv"]:
-        status = "OK" if item["unique_urls"] >= result["min_exact_cctv_unique_urls"] else "LOW"
-        lines.append(f"| {item['name']} | {item['published_rows']} | {item['unique_urls']} | {status} |")
+        status = "OK" if (
+            item["unique_urls"] >= result["min_exact_cctv_unique_urls"]
+            and item["unique_hosts"] >= result["host_diversity"]["min_core_unique_hosts"]
+        ) else "LOW"
+        lines.append(f"| {item['name']} | {item['published_rows']} | {item['unique_urls']} | {item['unique_hosts']} | {status} |")
     lines += [
         "",
         "## Important satellite quality",
         "",
         f"Minimum important satellite independent URLs: {result['min_important_satellite_unique_urls']}",
         "",
-        "| Channel | Published rows | Unique URLs | Status |",
-        "|---|---:|---:|---|",
+        "| Channel | Published rows | Unique URLs | Unique hosts | Status |",
+        "|---|---:|---:|---:|---|",
     ]
     for item in result["important_satellite"]:
-        status = "OK" if item["unique_urls"] >= result["min_important_satellite_unique_urls"] else "LOW"
-        lines.append(f"| {item['name']} | {item['published_rows']} | {item['unique_urls']} | {status} |")
+        status = "OK" if (
+            item["unique_urls"] >= result["min_important_satellite_unique_urls"]
+            and item["unique_hosts"] >= result["host_diversity"]["min_core_unique_hosts"]
+        ) else "LOW"
+        lines.append(f"| {item['name']} | {item['published_rows']} | {item['unique_urls']} | {item['unique_hosts']} | {status} |")
+    lines += ["", "## Stream host concentration", "", "| Host | Rows | Share |", "|---|---:|---:|"]
+    for item in result["host_diversity"]["top_hosts"]:
+        lines.append(f"| {item['host']} | {item['rows']} | {item['share']:.1%} |")
     if family_result is not None:
         lines += ["", "## Family playlist audit", "", f"Status: {family_result['status']}", f"Rows: {family_result['rows']}", f"Unique URLs: {family_result['unique_urls']}"]
         if family_result["failures"]:
