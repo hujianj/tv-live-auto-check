@@ -1,35 +1,35 @@
 # IPTV source verification report
 
-Generated: 2026-08-06 11:09:27
-Generated UTC: 2026-08-06T11:09:27Z
-Generated Beijing: 2026-08-06 19:09:27 Asia/Shanghai
-Elapsed: 1229.1s
+Generated: 2026-08-07 01:14:57
+Generated UTC: 2026-08-07T01:14:57Z
+Generated Beijing: 2026-08-07 09:14:57 Asia/Shanghai
+Elapsed: 1179.5s
 Sources total: 29
 Sources fetched OK: 29
-Parsed candidates: 34427
-Unique name+URL candidates: 29954
-Unique stream URLs: 29058
-Checked unique stream URLs: 29058
+Parsed candidates: 33566
+Unique name+URL candidates: 29118
+Unique stream URLs: 28226
+Checked unique stream URLs: 28226
 Checked all unique URLs: True
-Playable channel names: 10449
-Playable unique URLs: 13124
-Playable name+URL lines: 13648
-Playable URLs found (legacy line count): 13648
-Pre-curated published playable lines: 12216
+Playable channel names: 10365
+Playable unique URLs: 13062
+Playable name+URL lines: 13586
+Playable URLs found (legacy line count): 13586
+Pre-curated published playable lines: 12139
 
 ## Source fetch status
 
 | Source | Fetch | Parsed | Bytes | Truncated | Error |
 |---|---:|---:|---:|---:|---|
 | iyouhun_zb | OK | 3779 | 311849 | False |  |
-| zbds_iptv4_txt | OK | 857 | 67671 | False |  |
-| migu_interface | OK | 351 | 112787 | False |  |
+| zbds_iptv4_txt | OK | 853 | 67402 | False |  |
+| migu_interface | OK | 338 | 105698 | False |  |
 | guovin_all | OK | 1812 | 451112 | False |  |
 | guovin_ipv4 | OK | 409 | 92293 | False |  |
 | guovin_ipv6 | OK | 1693 | 433635 | False |  |
 | suxuang_ipv4 | OK | 1210 | 268671 | False |  |
 | suxuang_ipv6 | OK | 853 | 200521 | False |  |
-| zbds_iptv4_m3u | OK | 528 | 118249 | False |  |
+| zbds_iptv4_m3u | OK | 524 | 116953 | False |  |
 | burningc4_ipv4 | OK | 58 | 8021 | False |  |
 | vamoschuck_m3u | OK | 788 | 147124 | False |  |
 | zbds_iptv6_txt | OK | 2 | 268 | False |  |
@@ -40,34 +40,34 @@ Pre-curated published playable lines: 12216
 | bigbiggrandg_gather | OK | 1954 | 329793 | False |  |
 | yang_gather | OK | 129 | 29341 | False |  |
 | iptv_org_all | OK | 13526 | 2918611 | False |  |
-| epg_cn | OK | 2457 | 781840 | False |  |
-| epg_hk | OK | 56 | 17772 | False |  |
+| epg_cn | OK | 2388 | 759889 | False |  |
+| epg_hk | OK | 54 | 17147 | False |  |
 | epg_mo | OK | 19 | 6134 | False |  |
-| epg_tw | OK | 144 | 50048 | False |  |
+| epg_tw | OK | 140 | 48701 | False |  |
 | iptv_org_tw | OK | 24 | 4800 | False |  |
-| epg_sg | OK | 18 | 5639 | False |  |
-| epg_my | OK | 29 | 9489 | False |  |
+| epg_sg | OK | 19 | 5952 | False |  |
+| epg_my | OK | 24 | 7740 | False |  |
 | free_tv_world | OK | 1919 | 530377 | False |  |
 | mursor_yy | OK | 591 | 124828 | False |  |
-| mursor_bililive | OK | 937 | 183974 | False |  |
+| mursor_bililive | OK | 176 | 35291 | False |  |
 
 ## Pre-curation playable lines by source
 
 | Source | Lines |
 |---|---:|
-| iptv_org_all | 7241 |
-| epg_cn | 1078 |
-| bigbiggrandg_gather | 652 |
-| iyouhun_zb | 584 |
-| free_tv_world | 566 |
-| mursor_yy | 527 |
-| zbds_iptv4_txt | 523 |
-| guovin_all | 406 |
-| suxuang_ipv4 | 238 |
+| iptv_org_all | 7227 |
+| epg_cn | 1075 |
+| bigbiggrandg_gather | 656 |
+| iyouhun_zb | 583 |
+| free_tv_world | 560 |
+| mursor_yy | 534 |
+| zbds_iptv4_txt | 453 |
+| guovin_all | 403 |
+| suxuang_ipv4 | 244 |
 | guovin_ipv4 | 232 |
-| migu_interface | 55 |
-| vamoschuck_m3u | 46 |
-| epg_tw | 22 |
+| migu_interface | 54 |
+| vamoschuck_m3u | 47 |
+| epg_tw | 25 |
 | iptv_org_tw | 10 |
 | guovin_ipv6 | 9 |
 | epg_mo | 8 |
@@ -75,7 +75,7 @@ Pre-curated published playable lines: 12216
 | kimentanm_aptv | 7 |
 | epg_sg | 2 |
 | epg_my | 1 |
-| zbds_iptv6_txt | 1 |
+| zbds_iptv6_m3u | 1 |
 
 ## First 80 pre-curation playable channel candidates
 
@@ -84,6 +84,9 @@ Pre-curated published playable lines: 12216
 - 央视频道 / CCTV-1 / guovin_ipv4
 - 央视频道 / CCTV-1 / guovin_ipv4
 - 央视频道 / CCTV-1 / guovin_ipv4
+- 央视频道 / CCTV-1 / guovin_ipv4
+- 央视频道 / CCTV-1 / guovin_ipv4
+- 央视频道 / CCTV-1(1080p) / iptv_org_all
 - 央视频道 / CCTV-1(720p) / iptv_org_all
 - 央视频道 / CCTV-10 / guovin_ipv4
 - 央视频道 / CCTV-10 / guovin_ipv4
@@ -139,6 +142,7 @@ Pre-curated published playable lines: 12216
 - 央视频道 / CCTV-4America(1080p) / iptv_org_all
 - 央视频道 / CCTV-4Asia(720p) / iptv_org_all
 - 央视频道 / CCTV-4Europe / iptv_org_all
+- 央视频道 / CCTV-4K(1080p) / iptv_org_all
 - 央视频道 / CCTV-4中文国际（美）Ⓢ / free_tv_world
 - 央视频道 / CCTV-5 / guovin_ipv4
 - 央视频道 / CCTV-5 / guovin_ipv4
@@ -153,9 +157,5 @@ Pre-curated published playable lines: 12216
 - 央视频道 / CCTV-6 / guovin_ipv4
 - 央视频道 / CCTV-6 / guovin_ipv4
 - 央视频道 / CCTV-6(1080p) / iptv_org_all
-- 央视频道 / CCTV-6[Geo-blocked] / iptv_org_all
-- 央视频道 / CCTV-7 / guovin_ipv4
-- 央视频道 / CCTV-7 / guovin_ipv4
-- 央视频道 / CCTV-7 / guovin_ipv4
 - 央视频道 / CCTV-7 / guovin_ipv4
 - 央视频道 / CCTV-7 / guovin_ipv4
