@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Run the complete IPTV maintenance pipeline with bounded full-run retries.
+"""Run the complete IPTV maintenance pipeline with bounded stage retries.
 
 This module is the single orchestration entry point used both locally and by
-GitHub Actions.  It records every stage in ``maintenance-run.json`` and retries
-the *entire* verification pipeline once when a network-dependent stage fails.
-Configuration, tests, and final publication-contract failures are fatal and are
-never hidden by retries.
+GitHub Actions. It records every stage in ``maintenance-run.json`` and resumes
+at the failed network stage when a bounded retry is warranted. Deterministic
+curation, audit, guard, and publication-contract failures are fatal and are
+never hidden by an expensive full-pipeline retry.
 """
 from __future__ import annotations
 
@@ -146,18 +146,28 @@ def write_report(report: dict[str, Any]) -> None:
     )
 
 
-def run_attempt(attempt: int, total: int, env: dict[str, str], config: dict[str, Any]) -> dict[str, Any]:
+def run_attempt(
+    attempt: int,
+    total: int,
+    env: dict[str, str],
+    config: dict[str, Any],
+    start_index: int = 0,
+) -> dict[str, Any]:
     attempt_started = time.monotonic()
     record: dict[str, Any] = {
         "attempt": attempt,
         "started_utc": utc_now(),
         "status": "running",
+        "start_stage_index": start_index + 1,
+        "start_stage": STAGES[start_index].label,
         "stages": [],
     }
-    for index, stage in enumerate(STAGES, 1):
+    for index in range(start_index, len(STAGES)):
+        stage = STAGES[index]
+        display_index = index + 1
         command = stage_command(stage)
         stage_started = time.monotonic()
-        print(f"\n[attempt {attempt}/{total} stage {index}/{len(STAGES)}] {stage.label}", flush=True)
+        print(f"\n[attempt {attempt}/{total} stage {display_index}/{len(STAGES)}] {stage.label}", flush=True)
         stage_env = env.copy()
         stage_env.update(STEP_ENV_OVERRIDES.get(stage.script, {}))
         completed = subprocess.run(command, cwd=ROOT, env=stage_env, check=False)
@@ -166,7 +176,7 @@ def run_attempt(attempt: int, total: int, env: dict[str, str], config: dict[str,
             "retryable" if stage.script in set(config["retryable_scripts"]) else "fatal"
         )
         stage_record = {
-            "index": index,
+            "index": display_index,
             "label": stage.label,
             "script": stage.script,
             "args": list(stage.args),
@@ -218,7 +228,7 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit("max attempts must be >=1 and retry delay must be >=0")
 
     if args.dry_run:
-        print(f"max_attempts={max_attempts} retry_delay_seconds={retry_delay}")
+        print(f"max_attempts_per_retryable_stage={max_attempts} retry_delay_seconds={retry_delay}")
         for index, stage in enumerate(STAGES, 1):
             classification = "retryable" if stage.script in set(config["retryable_scripts"]) else "fatal"
             print(f"{index:02d}. [{classification}] {stage.label}: {' '.join(stage_command(stage))}")
@@ -236,26 +246,35 @@ def main(argv: list[str] | None = None) -> int:
     env.setdefault("IPTV_MAX_SOURCE_BYTES", str(config["max_source_bytes"]))
     env.setdefault("IPTV_MAX_TOTAL_FETCH_BYTES", str(config["max_total_fetch_bytes"]))
     env.setdefault("IPTV_MAX_PENDING_FUTURES", str(config["max_pending_futures"]))
+    retryable_scripts = set(config["retryable_scripts"])
+    max_pipeline_passes = 1 + len(retryable_scripts) * (max_attempts - 1)
 
     report: dict[str, Any] = {
-        "schema_version": 1,
+        "schema_version": 2,
+        "retry_strategy": "resume_failed_network_stage",
         "started_utc": utc_now(),
         "status": "running",
         "max_attempts": max_attempts,
+        "max_attempts_per_retryable_stage": max_attempts,
+        "max_pipeline_passes": max_pipeline_passes,
         "retry_delay_seconds": retry_delay,
         "attempts": [],
     }
     write_report(report)
     started = time.monotonic()
+    start_index = 0
+    stage_failure_counts: dict[str, int] = {}
+    attempt = 1
 
-    for attempt in range(1, max_attempts + 1):
-        attempt_record = run_attempt(attempt, max_attempts, env, config)
+    while attempt <= max_pipeline_passes:
+        attempt_record = run_attempt(attempt, max_pipeline_passes, env, config, start_index)
         report["attempts"].append(attempt_record)
         if attempt_record["status"] == "ok":
             report.update(
                 {
                     "status": "ok",
                     "successful_attempt": attempt,
+                    "retry_failures_by_script": stage_failure_counts,
                     "finished_utc": utc_now(),
                     "elapsed_seconds": round(time.monotonic() - started, 3),
                 }
@@ -263,19 +282,30 @@ def main(argv: list[str] | None = None) -> int:
             write_report(report)
             append_step_summary(
                 f"## Maintenance pipeline\n\nStatus: **OK**  \n"
-                f"Successful attempt: {attempt}/{max_attempts}  \n"
+                f"Successful pass: {attempt}/{max_pipeline_passes}  \n"
                 f"Elapsed: {report['elapsed_seconds']}s\n"
             )
-            print(f"\nMAINTENANCE PIPELINE OK on attempt {attempt}/{max_attempts}")
+            print(f"\nMAINTENANCE PIPELINE OK on pass {attempt}/{max_pipeline_passes}")
             return 0
 
-        write_report(report)
         classification = str(attempt_record.get("failure_classification"))
-        if classification != "retryable" or attempt >= max_attempts:
+        failed_stage = attempt_record.get("failed_stage") or {}
+        failed_script = str(failed_stage.get("script") or "unknown")
+        stage_failure_counts[failed_script] = stage_failure_counts.get(failed_script, 0) + 1
+        attempt_record["failed_stage_attempt"] = stage_failure_counts[failed_script]
+        report["retry_failures_by_script"] = stage_failure_counts
+        write_report(report)
+        if classification != "retryable" or stage_failure_counts[failed_script] >= max_attempts:
             break
-        print(f"Retryable full-pipeline failure; waiting {retry_delay}s before complete retry.", flush=True)
+        start_index = max(0, int(failed_stage.get("index") or 1) - 1)
+        print(
+            f"Retryable network-stage failure; waiting {retry_delay}s before resuming at "
+            f"stage {start_index + 1}/{len(STAGES)} ({STAGES[start_index].label}).",
+            flush=True,
+        )
         if retry_delay:
             time.sleep(retry_delay)
+        attempt += 1
 
     last = report["attempts"][-1]
     report.update(
@@ -290,7 +320,7 @@ def main(argv: list[str] | None = None) -> int:
     write_report(report)
     append_step_summary(
         f"## Maintenance pipeline\n\nStatus: **FAILED**  \n"
-        f"Attempts: {len(report['attempts'])}/{max_attempts}  \n"
+        f"Pipeline passes: {len(report['attempts'])}/{max_pipeline_passes}  \n"
         f"Classification: {report['failure_classification']}  \n"
         f"Failed stage: {(report.get('failed_stage') or {}).get('label', 'unknown')}\n"
     )

@@ -25,6 +25,8 @@ import curate_ku9 as curate_module
 import audit_quality as quality_module
 import local_network_check as local_check_module
 import run_maintenance as maintenance_module
+import notify_maintenance as notify_module
+import watchdog_publication as watchdog_module
 from channel_utils import cctv_key as coverage_cctv_key, cctv_number, cctv_sort_key, cctv_variant_base, format_extinf, is_latin_noise_name
 from channel_identity import aliases_are_compatible, canonical_channel_key
 from validate_publish_bundle import BundleValidationError, Row as BundleRow, validate_publish_bundle
@@ -54,8 +56,11 @@ def test_workflow_is_pinned_and_refuses_stale_publication() -> None:
     assert 'if [ "$remote_sha" != "$SOURCE_SHA" ]; then' in workflow
     assert 'git push origin "HEAD:$TARGET_BRANCH"' in workflow
     assert "Refuse publication from a non-default branch" in workflow
+    assert "Skip stale queued run before expensive probes" in workflow
     assert "github.ref_name != github.event.repository.default_branch" in workflow
     assert workflow.index("Refuse publication from a non-default branch") < workflow.index("Run complete maintenance pipeline")
+    assert workflow.index("Skip stale queued run before expensive probes") < workflow.index("Run complete maintenance pipeline")
+    assert "steps.maintenance.outcome == 'success'" in workflow
     assert "IPTV_REQUIRE_VIDEO_TRACK" in (ROOT / "scripts" / "run_maintenance.py").read_text(encoding="utf-8")
     assert "IPTV_REQUIRE_VIDEO_TRACK" in (ROOT / "scripts" / "run_maintenance.py").read_text(encoding="utf-8")
     assert "issues: write" in workflow
@@ -67,7 +72,7 @@ def test_workflow_is_pinned_and_refuses_stale_publication() -> None:
     assert "Required primary television endpoint is not current" in endpoint_checker
     assert "publication_check=" not in endpoint_checker
     assert "python scripts/run_maintenance.py" in workflow
-    assert "cancel-in-progress: false" in workflow
+    assert "cancel-in-progress: ${{ github.event_name == 'push' }}" in workflow
     assert workflow.index("Run complete maintenance pipeline") < workflow.index("Commit verified playlist")
     assert "cdn_pending" in workflow
     assert "--publication-files" in workflow
@@ -181,6 +186,7 @@ def test_priority_and_guard_config_are_externalized() -> None:
     assert "stream_check_results.csv" in guard["publish_size"]["forbid_tracked_artifacts"]
     assert quality["channel_limits"]["core_max_urls_per_name"] >= quality["channel_limits"]["default_max_urls_per_name"]
     assert quality["group_max_rows"]["综合娱乐"] >= guard["min_groups"]["综合娱乐"]
+    assert quality["final_quality_audit"]["fail_on_host_concentration"] is False
     assert "Geo-blocked" in quality["strict_drop_name_tokens"]
     assert "澳門MACAU" in quality["strict_drop_name_tokens"]
     home_priority = load_home_priority()
@@ -312,6 +318,32 @@ def test_quality_audit_detects_core_and_strict_residue() -> None:
     assert any("strict filtered" in x for x in failures)
     assert result["missing_cctv_quality"]
     assert warnings
+
+
+def test_quality_audit_detects_host_single_point() -> None:
+    rows = [
+        ("\u592e\u89c6\u9891\u9053", "CCTV-1", "http://same.example/cctv1-a.m3u8"),
+        ("\u592e\u89c6\u9891\u9053", "CCTV-1", "http://same.example/cctv1-b.m3u8"),
+        ("\u592e\u89c6\u9891\u9053", "CCTV-1", "http://same.example/cctv1-c.m3u8"),
+    ]
+    result, failures, _warnings = quality_module.build_audit(rows)
+    assert result["host_diversity"]["unique_hosts"] == 1
+    cctv1 = next(item for item in result["required_cctv"] if item["name"] == "CCTV-1")
+    assert cctv1["unique_hosts"] == 1
+    assert any("independent host minimum" in item for item in failures)
+
+
+def test_quality_audit_warns_without_blocking_on_global_host_concentration() -> None:
+    rows = [
+        ("\u7efc\u5408\u5a31\u4e50", f"\u6d4b\u8bd5\u9891\u9053{index}", f"http://same.example/live-{index}.m3u8")
+        for index in range(20)
+    ]
+    result, failures, warnings = quality_module.build_audit(rows)
+    assert result["host_diversity"]["top_host_share"] == 1.0
+    assert result["host_diversity"]["fail_on_host_concentration"] is False
+    assert not any(item.startswith("top stream host share") for item in failures)
+    assert not any(item.startswith("top five stream host share") for item in failures)
+    assert any(item.startswith("top stream host share is high") for item in warnings)
 
 
 def test_local_network_parser_and_core_filter() -> None:
@@ -1259,7 +1291,158 @@ def test_local_maintenance_wrapper_is_fail_fast_and_complete() -> None:
     assert scripts.index("validate_publish_bundle.py") < scripts.index("validate_publication.py")
     assert maintenance_module.STEP_ENV_OVERRIDES["verify_sources.py"]["IPTV_REQUIRE_VIDEO_TRACK"] == "0"
     assert maintenance_module.STEP_ENV_OVERRIDES["recheck_published.py"]["IPTV_REQUIRE_VIDEO_TRACK"] == "1"
+    config = maintenance_module.load_config()
+    assert set(config["retryable_scripts"]) == {"verify_sources.py", "recheck_published.py"}
+    assert "audit_quality.py" in config["fatal_scripts"]
     assert maintenance_module.main(["--dry-run"]) == 0
+
+
+def test_maintenance_retry_resumes_at_failed_network_stage() -> None:
+    original_stages = maintenance_module.STAGES
+    original_run = maintenance_module.subprocess.run
+    calls: list[str] = []
+    try:
+        maintenance_module.STAGES = (
+            maintenance_module.Stage("already complete", "first.py"),
+            maintenance_module.Stage("retry network", "verify_sources.py"),
+            maintenance_module.Stage("downstream", "last.py"),
+        )
+
+        def fake_run(command, **_kwargs):
+            calls.append(Path(command[1]).name)
+            return SimpleNamespace(returncode=0)
+
+        maintenance_module.subprocess.run = fake_run
+        record = maintenance_module.run_attempt(
+            2,
+            2,
+            {},
+            {"retryable_scripts": ["verify_sources.py"]},
+            start_index=1,
+        )
+        assert record["status"] == "ok"
+        assert record["start_stage_index"] == 2
+        assert calls == ["verify_sources.py", "last.py"]
+    finally:
+        maintenance_module.STAGES = original_stages
+        maintenance_module.subprocess.run = original_run
+
+
+def test_maintenance_gives_each_network_stage_its_own_retry_budget() -> None:
+    original_run_attempt = maintenance_module.run_attempt
+    original_write_report = maintenance_module.write_report
+    original_append_summary = maintenance_module.append_step_summary
+    starts: list[int] = []
+    try:
+        def fake_attempt(attempt, total, _env, _config, start_index=0):
+            starts.append(start_index)
+            if attempt == 1:
+                stage = {"index": 3, "label": "verify", "script": "verify_sources.py", "returncode": 1, "classification": "retryable"}
+                return {"attempt": attempt, "status": "failed", "failure_classification": "retryable", "failed_stage": stage, "stages": [stage]}
+            if attempt == 2:
+                stage = {"index": 5, "label": "recheck", "script": "recheck_published.py", "returncode": 1, "classification": "retryable"}
+                return {"attempt": attempt, "status": "failed", "failure_classification": "retryable", "failed_stage": stage, "stages": [stage]}
+            return {"attempt": attempt, "status": "ok", "failure_classification": "none", "stages": []}
+
+        maintenance_module.run_attempt = fake_attempt
+        maintenance_module.write_report = lambda _report: None
+        maintenance_module.append_step_summary = lambda _text: None
+        assert maintenance_module.main(["--max-attempts", "2", "--retry-delay", "0"]) == 0
+        assert starts == [0, 2, 4]
+    finally:
+        maintenance_module.run_attempt = original_run_attempt
+        maintenance_module.write_report = original_write_report
+        maintenance_module.append_step_summary = original_append_summary
+
+
+def test_watchdog_counts_only_hard_failures() -> None:
+    now = watchdog_module.datetime(2026, 8, 7, tzinfo=watchdog_module.timezone.utc)
+    conclusions = ["cancelled", "failure", "skipped", "timed_out", "success"]
+    runs = [
+        {
+            "run_number": 10 - index,
+            "status": "completed",
+            "conclusion": conclusion,
+            "created_at": f"2026-08-07T0{5-index}:00:00Z",
+            "updated_at": f"2026-08-07T0{5-index}:10:00Z",
+        }
+        for index, conclusion in enumerate(conclusions)
+    ]
+    failures, warnings, details = watchdog_module.inspect_runs(runs, now, 36.0, 240.0, 3)
+    assert not any("hard failures" in item for item in failures)
+    assert details["consecutive_hard_failures"] == 2
+    assert details["consecutive_completed_failures"] == 2
+    assert warnings and "cancelled" in warnings[0] and "skipped" in warnings[0]
+
+
+def test_watchdog_rejects_stale_public_manifest() -> None:
+    now = watchdog_module.datetime(2026, 8, 7, 12, tzinfo=watchdog_module.timezone.utc)
+    fresh = {"source_summary": {"generated_utc": "2026-08-07T09:00:00Z"}}
+    stale = {"source_summary": {"generated_utc": "2026-08-05T00:00:00Z"}}
+    assert watchdog_module.manifest_freshness(fresh, now, 36.0)[0] == []
+    failures, details = watchdog_module.manifest_freshness(stale, now, 36.0)
+    assert failures and "generation" in failures[0]
+    assert details["generated_age_hours"] == 60.0
+
+
+def test_watchdog_compacts_api_runs_and_bounds_issue_body() -> None:
+    now = watchdog_module.datetime(2026, 8, 7, 12, tzinfo=watchdog_module.timezone.utc)
+    runs = []
+    for index in range(50):
+        runs.append({
+            "id": 1000 + index,
+            "run_number": 100 - index,
+            "event": "schedule",
+            "status": "completed",
+            "conclusion": "success" if index == 0 else "failure",
+            "created_at": "2026-08-07T10:00:00Z",
+            "updated_at": "2026-08-07T10:30:00Z",
+            "run_started_at": "2026-08-07T10:01:00Z",
+            "head_sha": "a" * 40,
+            "html_url": f"https://github.com/example/repo/actions/runs/{1000 + index}",
+            "repository": {"full_name": "example/repo", "payload": "x" * 20_000},
+            "head_repository": {"payload": "y" * 20_000},
+        })
+    failures, warnings, details = watchdog_module.inspect_runs(runs, now, 36.0, 240.0, 3)
+    assert failures == []
+    assert warnings == []
+    serialized = json.dumps(details, ensure_ascii=False)
+    assert "repository" not in serialized
+    assert len(serialized) < 10_000
+    assert details["latest_success_age_hours"] == 1.5
+
+    huge_result = watchdog_module.HealthResult(
+        ["publication failed"],
+        [],
+        {"runs": details, "unexpected": "z" * 100_000},
+    )
+    body = watchdog_module.render_issue_body(huge_result, now)
+    assert len(body) < watchdog_module.MAX_ISSUE_BODY_CHARS
+    assert "watchdog-report.json" in body
+    assert "original_characters" in body
+
+
+def test_maintenance_alert_includes_failed_stage() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        report = Path(td) / "maintenance-run.json"
+        report.write_text(
+            json.dumps({
+                "status": "failed",
+                "failure_classification": "retryable",
+                "attempts": [{"failed_stage": {"label": "verify", "script": "verify_sources.py", "returncode": 1}}],
+                "failed_stage": {
+                    "label": "verify every upstream URL",
+                    "script": "verify_sources.py",
+                    "returncode": 1,
+                    "classification": "retryable",
+                    "elapsed_seconds": 12.5,
+                },
+            }),
+            encoding="utf-8",
+        )
+        detail = notify_module.maintenance_failure_detail(str(report))
+        assert "verify_sources.py" in detail
+        assert "stage_elapsed=12.5s" in detail
 
 
 def test_recheck_source_map_helper() -> None:
@@ -1301,6 +1484,8 @@ def main() -> int:
         test_coverage_counts_exact_cctv_and_reports_variants,
         test_format_extinf_escapes_quoted_attributes,
         test_quality_audit_detects_core_and_strict_residue,
+        test_quality_audit_detects_host_single_point,
+        test_quality_audit_warns_without_blocking_on_global_host_concentration,
         test_local_network_parser_and_core_filter,
         test_stability_adjustment_prefers_proven_urls,
         test_stability_update_counts_unique_urls,
@@ -1333,6 +1518,12 @@ def main() -> int:
         test_final_recheck_slow_retry_recovers_non_core_failure,
         test_generated_csv_writers_force_lf_line_endings,
         test_local_maintenance_wrapper_is_fail_fast_and_complete,
+        test_maintenance_retry_resumes_at_failed_network_stage,
+        test_maintenance_gives_each_network_stage_its_own_retry_budget,
+        test_watchdog_counts_only_hard_failures,
+        test_watchdog_rejects_stale_public_manifest,
+        test_watchdog_compacts_api_runs_and_bounds_issue_body,
+        test_maintenance_alert_includes_failed_stage,
         test_recheck_source_map_helper,
         test_recheck_summary_records_video_policy,
     ]:

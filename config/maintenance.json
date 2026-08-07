@@ -4,16 +4,16 @@
   "retry_delay_seconds": 20,
   "retryable_scripts": [
     "verify_sources.py",
-    "curate_ku9.py",
-    "recheck_published.py",
-    "audit_coverage.py",
-    "audit_quality.py",
-    "guard_publish.py",
-    "audit_publish_size.py"
+    "recheck_published.py"
   ],
   "fatal_scripts": [
     "publication_config.py",
     "test_playlist_logic.py",
+    "curate_ku9.py",
+    "audit_coverage.py",
+    "audit_quality.py",
+    "guard_publish.py",
+    "audit_publish_size.py",
     "validate_publish_bundle.py",
     "validate_publication.py"
   ],

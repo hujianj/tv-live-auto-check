@@ -8,6 +8,7 @@ import json
 import os
 import time
 from datetime import datetime, timezone
+from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
@@ -115,7 +116,32 @@ def success_comment(context: dict[str, str]) -> str:
     return (
         f"\u81ea\u52a8\u7ef4\u62a4\u5df2\u6062\u590d: {context['time']} UTC\n"
         f"[Workflow run {context['run_number'] or context['run_id']}]({context['run_url']})\n"
-        "GitHub Raw \u548c\u4e3b\u7535\u89c6\u8ba2\u9605\u7aef\u70b9\u5747\u5df2\u901a\u8fc7\u68c0\u67e5?\u73b0\u5173\u95ed\u6b64 Issue\u3002"
+        "GitHub Raw \u548c\u4e3b\u7535\u89c6\u8ba2\u9605\u7aef\u70b9\u5747\u5df2\u901a\u8fc7\u68c0\u67e5\uff0c\u73b0\u5173\u95ed\u6b64 Issue\u3002"
+    )
+
+
+def maintenance_failure_detail(path: str) -> str:
+    """Return a compact failed-stage summary suitable for the alert issue."""
+    try:
+        report = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, ValueError, TypeError):
+        return ""
+    if report.get("status") != "failed":
+        return ""
+    stage = report.get("failed_stage") or {}
+    attempts = report.get("attempts") if isinstance(report.get("attempts"), list) else []
+    if not stage and attempts:
+        stage = attempts[-1].get("failed_stage") or {}
+    if not stage:
+        return ""
+    label = str(stage.get("label") or stage.get("script") or "unknown")
+    script = str(stage.get("script") or "unknown")
+    code = int(stage.get("returncode") or 1)
+    classification = str(stage.get("classification") or report.get("failure_classification") or "unknown")
+    elapsed = float(stage.get("elapsed_seconds") or 0.0)
+    return (
+        f"failed_stage={label} ({script}), exit={code}, classification={classification}, "
+        f"stage_elapsed={elapsed:.1f}s, pipeline_attempts={len(attempts)}"
     )
 
 
@@ -123,10 +149,15 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("status", choices=["failure", "cdn_pending", "success"])
     parser.add_argument("--message", default="")
+    parser.add_argument("--report", default="maintenance-run.json")
     args = parser.parse_args(argv)
     token = os.getenv("GITHUB_TOKEN", "")
     context = run_context()
     repo = context["repo"]
+    if args.status == "failure":
+        report_detail = maintenance_failure_detail(args.report)
+        if report_detail:
+            args.message = f"{args.message.rstrip()} {report_detail}".strip()
     if not token or not repo:
         raise SystemExit("GITHUB_TOKEN and GITHUB_REPOSITORY are required")
     issue = find_open_issue(repo, token)
