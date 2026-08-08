@@ -47,10 +47,9 @@ Fail on missing important satellite: True
 
 | Core channel | Variant rows | Variant unique URLs |
 |---|---:|---:|
-| CCTV-4 | 2 | 2 |
+| CCTV-4 | 4 | 4 |
 | CCTV-5 | 6 | 6 |
 | CCTV-6 | 1 | 1 |
-| CCTV-8 | 7 | 7 |
-| CCTV-9 | 1 | 1 |
-| CCTV-13 | 1 | 1 |
+| CCTV-8 | 6 | 6 |
+| CCTV-9 | 2 | 2 |
 | CCTV-5+ | 3 | 3 |
