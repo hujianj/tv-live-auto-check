@@ -26,7 +26,7 @@ Fail on missing important satellite: True
 | CCTV-15 | 6 | 6 | OK |
 | CCTV-16 | 6 | 6 | OK |
 | CCTV-17 | 6 | 6 | OK |
-| CCTV-5+ | 5 | 5 | OK |
+| CCTV-5+ | 4 | 4 | OK |
 
 ## Important satellite coverage
 
@@ -47,10 +47,10 @@ Fail on missing important satellite: True
 
 | Core channel | Variant rows | Variant unique URLs |
 |---|---:|---:|
-| CCTV-2 | 1 | 1 |
 | CCTV-4 | 2 | 2 |
 | CCTV-5 | 6 | 6 |
-| CCTV-8 | 6 | 6 |
-| CCTV-15 | 1 | 1 |
-| CCTV-17 | 1 | 1 |
+| CCTV-6 | 1 | 1 |
+| CCTV-8 | 7 | 7 |
+| CCTV-9 | 1 | 1 |
+| CCTV-13 | 1 | 1 |
 | CCTV-5+ | 3 | 3 |
