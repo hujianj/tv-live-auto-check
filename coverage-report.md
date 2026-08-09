@@ -50,4 +50,5 @@ Fail on missing important satellite: True
 | CCTV-4 | 5 | 5 |
 | CCTV-5 | 6 | 6 |
 | CCTV-8 | 6 | 6 |
+| CCTV-9 | 1 | 1 |
 | CCTV-5+ | 3 | 3 |
