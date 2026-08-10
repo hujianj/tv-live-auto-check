@@ -127,7 +127,38 @@ def ratio(base: int, current: int) -> float | None:
     return (base - current) / base
 
 
-def write_guard_outputs(current: dict, baseline: dict, failures: list[str], warnings: list[str], statuses: list[dict[str, str]]) -> None:
+def relative_guard_migration_reason(current: dict, baseline: dict) -> str:
+    """Allow one stricter verification-policy migration without weakening limits.
+
+    Relative drop guards compare like-for-like publications. The first run that
+    expands live-progress checks to all configured broadcast groups is not
+    comparable to an older core-only baseline. Absolute line/group minimums
+    remain enforced, and the newly published summary becomes the comparable
+    baseline for every subsequent run.
+    """
+    if not baseline:
+        return ""
+    current_recheck = current.get("published_recheck") or {}
+    baseline_recheck = baseline.get("published_recheck") or {}
+    if current_recheck.get("broadcast_progress_required") is not True:
+        return ""
+    current_groups = tuple(sorted(str(x) for x in current_recheck.get("progress_required_groups") or []))
+    baseline_groups = tuple(sorted(str(x) for x in baseline_recheck.get("progress_required_groups") or []))
+    if baseline_recheck.get("broadcast_progress_required") is not True:
+        return "baseline predates broadcast live-progress verification"
+    if current_groups != baseline_groups:
+        return f"broadcast live-progress groups changed: baseline={baseline_groups!r} current={current_groups!r}"
+    return ""
+
+
+def write_guard_outputs(
+    current: dict,
+    baseline: dict,
+    failures: list[str],
+    warnings: list[str],
+    statuses: list[dict[str, str]],
+    migration_reason: str = "",
+) -> None:
     groups = current.get("curated_groups") or {}
     base_groups = baseline.get("curated_groups") or {}
     cur_lines = int(current.get("curated_published_lines") or current.get("primary_published_lines") or 0)
@@ -157,6 +188,8 @@ def write_guard_outputs(current: dict, baseline: dict, failures: list[str], warn
         "core_failed_fail_threshold": guard_core_failed_fail_threshold(),
         "core_sources": sorted(CORE_SOURCES),
         "group_deltas": group_deltas,
+        "relative_baseline_comparable": not bool(migration_reason),
+        "relative_guard_migration_reason": migration_reason,
         "failed_sources": failed_sources,
         "zero_parsed_sources": zero_parsed,
         "recovery_failed_sources": health["recovery_failed"],
@@ -176,6 +209,8 @@ def write_guard_outputs(current: dict, baseline: dict, failures: list[str], warn
         f"Baseline lines: {base_lines}",
         f"Current lines: {cur_lines}",
         f"Total drop ratio: {guard['total_drop_ratio']:.1%}" if guard["total_drop_ratio"] is not None else "Total drop ratio: n/a",
+        f"Relative baseline comparable: {guard['relative_baseline_comparable']}",
+        f"Relative guard migration: {migration_reason or 'none'}",
         "",
         "## Group deltas",
         "",
@@ -229,6 +264,7 @@ def main() -> int:
     base_lines = int(baseline.get("curated_published_lines") or baseline.get("primary_published_lines") or 0)
     min_lines = guard_min_lines()
     max_drop_ratio = guard_max_total_drop_ratio()
+    migration_reason = relative_guard_migration_reason(current, baseline)
     def add_warn(msg: str) -> None:
         warnings.append(msg)
         warn(msg)
@@ -236,11 +272,14 @@ def main() -> int:
     if cur_lines < min_lines:
         fail(f"curated lines {cur_lines} < minimum {min_lines}", failures)
     if base_lines > 0:
-        drop = (base_lines - cur_lines) / base_lines
-        if drop > max_drop_ratio:
-            fail(f"curated lines dropped {drop:.1%}: baseline={base_lines} current={cur_lines}", failures)
+        if migration_reason:
+            add_warn(f"relative drop guards skipped for one policy migration: {migration_reason}")
         else:
-            print(f"GUARD OK total lines baseline={base_lines} current={cur_lines} drop={drop:.1%}")
+            drop = (base_lines - cur_lines) / base_lines
+            if drop > max_drop_ratio:
+                fail(f"curated lines dropped {drop:.1%}: baseline={base_lines} current={cur_lines}", failures)
+            else:
+                print(f"GUARD OK total lines baseline={base_lines} current={cur_lines} drop={drop:.1%}")
     else:
         add_warn("no baseline full-check-summary.json found; total drop guard skipped")
     groups = current.get("curated_groups") or {}
@@ -250,7 +289,7 @@ def main() -> int:
         if cur < minimum:
             fail(f"group {group} count {cur} < minimum {minimum}", failures)
         base = int(base_groups.get(group, 0)) if base_groups else 0
-        if base >= minimum:
+        if base >= minimum and not migration_reason:
             drop = (base - cur) / base
             max_group_drop = MAX_GROUP_DROP_RATIOS.get(group, 0.45)
             if drop > max_group_drop:
@@ -280,7 +319,7 @@ def main() -> int:
             add_warn(f"recovery sources unavailable (non-blocking): {health['recovery_failed']}")
         if health["recovery_zero_parsed"]:
             add_warn(f"recovery sources fetched but parsed no supported streams (non-blocking): {health['recovery_zero_parsed']}")
-    write_guard_outputs(current, baseline, failures, warnings, statuses)
+    write_guard_outputs(current, baseline, failures, warnings, statuses, migration_reason)
     if failures:
         print("Publish guard rejected this run; keeping previous published playlist unchanged.")
         return 1
