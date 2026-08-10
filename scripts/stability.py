@@ -46,6 +46,11 @@ def now_beijing() -> str:
     return datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=8))).replace(microsecond=0).isoformat()
 
 
+def current_beijing_week() -> str:
+    today = datetime.now(timezone.utc).astimezone(timezone(timedelta(hours=8))).date()
+    return (today - timedelta(days=today.weekday())).isoformat()
+
+
 def load_history() -> dict:
     path = history_path()
     if not stability_enabled():
@@ -117,6 +122,12 @@ def stability_adjustment(url: str, history: dict | None = None) -> int:
     fail = int(entry.get("fail") or 0)
     streak_ok = int(entry.get("streak_ok") or 0)
     streak_fail = int(entry.get("streak_fail") or 0)
+    counter_cap = max(1, int(cfg.get("evidence_counter_cap", 20)))
+    streak_cap = max(1, int(cfg.get("streak_cap", 10)))
+    ok = min(counter_cap, ok)
+    fail = min(counter_cap, fail)
+    streak_ok = min(streak_cap, streak_ok)
+    streak_fail = min(streak_cap, streak_fail)
     score = (
         ok * int(cfg.get("ok_bonus", -3))
         + fail * int(cfg.get("fail_penalty", 10))
@@ -137,6 +148,29 @@ def source_for(row, source_map: dict[tuple[str, str], str]) -> str:
 def _text(value: object, limit: int = 0) -> str:
     text = str(value or "").replace("\r", " ").replace("\n", " ").replace("\t", " ").strip()
     return text[:limit] if limit > 0 else text
+
+
+def update_evidence(entry: dict, is_fail: bool, error: str = "") -> None:
+    """Update bounded recent evidence without letting old counts dominate forever."""
+    cfg = stability_config()
+    counter_cap = max(1, int(cfg.get("evidence_counter_cap", 20)))
+    streak_cap = max(1, int(cfg.get("streak_cap", 10)))
+    ok = min(counter_cap, int(entry.get("ok") or 0))
+    fail = min(counter_cap, int(entry.get("fail") or 0))
+    if is_fail:
+        entry["ok"] = max(0, ok - 1)
+        entry["fail"] = min(counter_cap, fail + 1)
+        entry["streak_fail"] = min(streak_cap, int(entry.get("streak_fail") or 0) + 1)
+        entry["streak_ok"] = 0
+        entry["last_status"] = "fail"
+        entry["last_error"] = str(error or "")[:160]
+    else:
+        entry["ok"] = min(counter_cap, ok + 1)
+        entry["fail"] = max(0, fail - 1)
+        entry["streak_ok"] = min(streak_cap, int(entry.get("streak_ok") or 0) + 1)
+        entry["streak_fail"] = 0
+        entry["last_status"] = "ok"
+        entry.pop("last_error", None)
 
 
 def write_history(history: dict) -> None:
@@ -176,6 +210,7 @@ def update_history(rows: Iterable, failed_urls: dict[str, str], source_map: dict
         representative_by_url.setdefault(row.url, row)
     seen_urls = set(representative_by_url)
     timestamp = now_beijing()
+    seen_period = current_beijing_week()
     before_count = len(urls)
     ok_updates = 0
     fail_updates = 0
@@ -189,21 +224,12 @@ def update_history(rows: Iterable, failed_urls: dict[str, str], source_map: dict
             urls[row.url] = entry
             new_urls += 1
         is_fail = row.url in failed
+        update_evidence(entry, is_fail, str(failed_urls.get(row.url, "")))
         if is_fail:
-            entry["fail"] = int(entry.get("fail") or 0) + 1
-            entry["streak_fail"] = int(entry.get("streak_fail") or 0) + 1
-            entry["streak_ok"] = 0
-            entry["last_status"] = "fail"
-            entry["last_error"] = str(failed_urls.get(row.url, ""))[:160]
             fail_updates += 1
         else:
-            entry["ok"] = int(entry.get("ok") or 0) + 1
-            entry["streak_ok"] = int(entry.get("streak_ok") or 0) + 1
-            entry["streak_fail"] = 0
-            entry["last_status"] = "ok"
-            entry.pop("last_error", None)
             ok_updates += 1
-        entry["last_seen"] = timestamp
+        entry["last_seen"] = seen_period
         entry["last_name"] = row.name[:80]
         source = source_for(row, source_map)
         if source != "unknown":
@@ -235,6 +261,9 @@ def update_history(rows: Iterable, failed_urls: dict[str, str], source_map: dict
         "tracked_urls_before": before_count,
         "tracked_urls_after": len(urls),
         "max_entries": max_entries,
+        "evidence_counter_cap": max(1, int(cfg.get("evidence_counter_cap", 20))),
+        "streak_cap": max(1, int(cfg.get("streak_cap", 10))),
+        "last_seen_granularity": "beijing_week_start",
         "new_urls": new_urls,
         "updated_urls": len(seen_urls),
         "ok_updates": ok_updates,

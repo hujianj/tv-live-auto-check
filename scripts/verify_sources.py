@@ -13,6 +13,7 @@ import re
 import sys
 import threading
 import time
+from collections import deque
 from dataclasses import dataclass
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
@@ -157,9 +158,13 @@ _HOST_SEMAPHORES: dict[str, threading.BoundedSemaphore] = {}
 _HOST_SEMAPHORES_LOCK = threading.Lock()
 
 
+def stream_host_key(url: str) -> str:
+    return (urlparse(url).netloc or "unknown").lower()
+
+
 @contextmanager
 def host_slot(url: str):
-    host = (urlparse(url).netloc or "unknown").lower()
+    host = stream_host_key(url)
     with _HOST_SEMAPHORES_LOCK:
         sem = _HOST_SEMAPHORES.setdefault(host, threading.BoundedSemaphore(HOST_WORKERS))
     sem.acquire()
@@ -730,6 +735,28 @@ def deduplicate_candidates(candidates: Iterable[Candidate]) -> dict[tuple[str, s
     return dedup
 
 
+def interleave_candidates_by_host(candidates: Iterable[Candidate]) -> list[Candidate]:
+    """Round-robin initial hosts while preserving priority within each host.
+
+    Host semaphores are acquired inside worker threads. Without host-fair
+    submission, a priority-sorted burst from one host can occupy the whole
+    executor with threads waiting on the same semaphore while unrelated hosts
+    sit in the queue.
+    """
+    buckets: dict[str, deque[Candidate]] = {}
+    for candidate in candidates:
+        buckets.setdefault(stream_host_key(candidate.url), deque()).append(candidate)
+    active = deque(buckets)
+    ordered: list[Candidate] = []
+    while active:
+        host = active.popleft()
+        bucket = buckets[host]
+        ordered.append(bucket.popleft())
+        if bucket:
+            active.append(host)
+    return ordered
+
+
 
 def iter_bounded_check_results(candidates: list[Candidate], core_by_url: dict[str, bool]) -> Iterable[CheckResult]:
     """Probe candidates without enqueuing every URL as a Future at once."""
@@ -803,6 +830,7 @@ def main() -> None:
         to_check.append(sorted(arr, key=lambda c: (prefer_score(c), c.name))[0])
         core_by_url[url] = any(is_core_family_candidate(alias) for alias in arr)
     to_check.sort(key=lambda c: (prefer_score(c), c.name, c.url))
+    to_check = interleave_candidates_by_host(to_check)
     if len(to_check) > MAX_UNIQUE_URLS:
         raise RuntimeError(
             f"unique stream URL count {len(to_check)} exceeds budget {MAX_UNIQUE_URLS}"
@@ -894,6 +922,12 @@ def main() -> None:
             "max_source_bytes": MAX_SOURCE_BYTES,
             "max_total_fetch_bytes": MAX_TOTAL_FETCH_BYTES,
             "max_pending_futures": MAX_PENDING_FUTURES,
+        },
+        "probe_scheduling": {
+            "strategy": "round_robin_initial_host",
+            "initial_host_count": len({stream_host_key(candidate.url) for candidate in to_check}),
+            "workers": CHECK_WORKERS,
+            "workers_per_host": HOST_WORKERS,
         },
         "parsed_candidates": len(all_cands),
         "unique_candidates": len(url_to_candidates),

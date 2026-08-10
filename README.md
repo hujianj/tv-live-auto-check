@@ -45,7 +45,7 @@ GitHub Actions 每天北京时间 04:20 和 16:20 各计划运行一次，也可
 7. 按 `config/rules.json` 和 `config/quality.json` 做家用分类、过滤和限量。
 8. 生成 `live-curated.txt` / `live.txt` / `live-verified.txt` / `ku9-live.txt` / `live.m3u`。
 9. 对最终发布列表再做一次全量 URL 复测；第一轮失败的所有最终 URL 会以更低并发和更长超时再试一次，确认失败后才删除并从候选池补线。
-10. 更新 `stability-history.tsv`，让历史更稳定的线路在下一轮排序更靠前。
+10. 更新有界的 `stability-history.tsv`，让近期更稳定的线路在下一轮排序更靠前；成功/失败证据和连续次数会封顶并互相衰减，`last_seen` 只按北京时间周起始日更新，避免状态无限增长和每轮全表时间戳改写。
 11. 运行核心频道覆盖审计、最终质量审计和防缩水发布守卫。
 12. 最终写入体积审计结果，再生成不包含自哈希的 `publish-manifest.json`，对所有其余发布文件的最终大小和 SHA256 做不可变校验。
 13. 完整跨文件校验和公开产物校验全部通过后才提交新版直播源。
@@ -234,9 +234,9 @@ local-network-results.csv
 自动维护流程现在会同时生成完整列表和家用精简列表：
 
 ```text
-完整主列表：https://hujianj.github.io/tv-live-auto-check/ku9-live.txt
-家用精简版：https://hujianj.github.io/tv-live-auto-check/ku9-family.txt
-家用精简版 M3U：https://hujianj.github.io/tv-live-auto-check/family.m3u
+完整主列表：https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check/ku9-live.txt
+家用精简版：https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check/ku9-family.txt
+家用精简版 M3U：https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check/family.m3u
 ```
 
 精简版从最终复测通过的列表里再筛选生成，不跳过真实播放检测；它会保留 CCTV、卫视、地方台优先顺序，并减少综合娱乐、海外等低频分类的数量，方便家人在电视上找台。
@@ -249,4 +249,4 @@ local-network-results.csv
 python scripts\local_network_check.py --core-only --workers 24 --timeout 15 --write-home-priority
 ```
 
-会更新 `config/home-priority.json`，后续自动整理会优先家里实际可播的 URL，并降权家里失败的 URL。
+会更新 `config/home-priority.json`，后续自动整理会优先家里实际可播的 URL，并降权家里失败的 URL。家庭网络结果默认只生效 14 天；过期后自动维护会忽略旧结果，避免一次临时断网永久压低原本可用的线路。需要继续使用时，从家里网络重新执行上述命令并提交新结果。
