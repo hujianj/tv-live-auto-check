@@ -7,7 +7,7 @@
 结合这台电视此前的实际测试，酷9长期订阅优先使用电视端可正常访问的 jsDelivr 固定地址：
 
 ```text
-https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check/ku9-live.txt
+https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check@main/ku9-live.txt
 ```
 
 jsDelivr 边缘节点可能在自动更新后短时间返回上一版，但固定地址不需要在电视上反复修改。需要立即确认最新版时，使用 Raw 代理地址：
@@ -227,7 +227,8 @@ local-network-results.csv
 
 - GitHub Raw 是发布校验的权威基准，gh-proxy 适合立即查看最新版。
 - 这台电视已实测 jsDelivr 固定地址可用，因此长期订阅仍优先使用 jsDelivr。
-- jsDelivr 有时会滞后，项目会主动 purge 并校验电视实际请求的固定 URL；主 `cdn.jsdelivr.net` 固定地址是硬门禁，不能再由 gh-proxy 或其他 jsDelivr 镜像替代通过。
+- 长期地址显式包含 `@main`，避免省略分支时额外的默认分支映射缓存；它仍是固定地址，不会随提交变化。
+- jsDelivr 有时会滞后，项目会等待 Git 发布传播后主动 purge，并在失败时再次 purge/复验电视实际请求的固定 URL；主 `cdn.jsdelivr.net` 固定地址是硬门禁，不能再由 gh-proxy 或其他 jsDelivr 镜像替代通过。
 - 第三方 CDN 仍不保证全球每个边缘节点同时刷新，因此项目验证的是 GitHub Runner 实际命中的固定 URL 节点，并保留 Raw 代理作为即时备用。
 - 这台电视访问 GitHub Pages 曾出现“数据为空”，因此 Pages 只作为电脑端备用，不再建议作为电视主地址。
 
@@ -236,9 +237,9 @@ local-network-results.csv
 自动维护流程现在会同时生成完整列表和家用精简列表：
 
 ```text
-完整主列表：https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check/ku9-live.txt
-家用精简版：https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check/ku9-family.txt
-家用精简版 M3U：https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check/family.m3u
+完整主列表：https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check@main/ku9-live.txt
+家用精简版：https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check@main/ku9-family.txt
+家用精简版 M3U：https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check@main/family.m3u
 ```
 
 精简版从最终复测通过的列表里再筛选生成，不跳过真实播放检测；它会保留 CCTV、卫视、地方台优先顺序，并减少综合娱乐、海外等低频分类的数量，方便家人在电视上找台。
