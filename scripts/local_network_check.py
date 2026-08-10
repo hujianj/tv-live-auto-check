@@ -15,6 +15,7 @@ from pathlib import Path
 from urllib.request import Request
 
 from network_safety import public_urlopen
+from playlist_config import MAX_HOME_PRIORITY_AGE_HOURS
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_URL = "https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check/ku9-live.txt"
@@ -188,7 +189,10 @@ def write_home_priority(result: dict[str, object], source: str, args: argparse.N
             existing = {}
     max_age_hours = max(
         1,
-        int(getattr(args, "home_priority_max_age_hours", existing.get("max_age_hours", 14 * 24))),
+        min(
+            MAX_HOME_PRIORITY_AGE_HOURS,
+            int(getattr(args, "home_priority_max_age_hours", existing.get("max_age_hours", 14 * 24))),
+        ),
     )
     generated_utc = datetime.now(timezone.utc)
     expires_utc = generated_utc + timedelta(hours=max_age_hours)
