@@ -1,17 +1,17 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 2552
-Unique channel names: 1550
-Unique canonical channel identities: 1550
-Unique URLs: 2552
+Rows: 1992
+Unique channel names: 1318
+Unique canonical channel identities: 1318
+Unique URLs: 1992
 Strict filter residue count: 0
-Latin/noise-like review count: 2
+Latin/noise-like review count: 0
 Channel unique URL limit violations: 0
 URL identity conflicts: 0
-Unique stream hosts: 151
-Top stream host share: 32.9%
-Top five stream host share: 61.4%
+Unique stream hosts: 141
+Top stream host share: 22.0%
+Top five stream host share: 55.9%
 
 ## Core CCTV quality
 
@@ -22,7 +22,7 @@ Minimum independent hosts per core channel: 2
 |---|---:|---:|---:|---|
 | CCTV-1 | 6 | 6 | 6 | OK |
 | CCTV-2 | 6 | 6 | 6 | OK |
-| CCTV-3 | 6 | 6 | 5 | OK |
+| CCTV-3 | 6 | 6 | 6 | OK |
 | CCTV-4 | 6 | 6 | 6 | OK |
 | CCTV-5 | 6 | 6 | 5 | OK |
 | CCTV-6 | 6 | 6 | 6 | OK |
@@ -48,7 +48,7 @@ Minimum important satellite independent URLs: 3
 | 辽宁卫视 | 6 | 6 | 6 | OK |
 | 河北卫视 | 6 | 6 | 6 | OK |
 | 河南卫视 | 5 | 5 | 5 | OK |
-| 北京卫视 | 6 | 6 | 5 | OK |
+| 北京卫视 | 5 | 5 | 4 | OK |
 | 东方卫视 | 6 | 6 | 5 | OK |
 | 浙江卫视 | 5 | 5 | 4 | OK |
 | 江苏卫视 | 6 | 6 | 6 | OK |
@@ -60,24 +60,19 @@ Minimum important satellite independent URLs: 3
 
 | Host | Rows | Share |
 |---|---:|---:|
-| stream1.freetv.fun | 840 | 32.9% |
-| live.ottiptv.cc | 369 | 14.5% |
-| cloud.video.taobao.com | 187 | 7.3% |
-| l.cztvcloud.com | 100 | 3.9% |
-| vodcdn.video.taobao.com | 72 | 2.8% |
-| vd3.bdstatic.com | 55 | 2.2% |
-| cdn.jdshipin.com | 51 | 2.0% |
-| 38.75.136.137 | 40 | 1.6% |
-| t.freetv.fun | 40 | 1.6% |
-| live.metshop.top | 39 | 1.5% |
+| stream1.freetv.fun | 439 | 22.0% |
+| live.ottiptv.cc | 360 | 18.1% |
+| cloud.video.taobao.com | 187 | 9.4% |
+| vodcdn.video.taobao.com | 72 | 3.6% |
+| l.cztvcloud.com | 55 | 2.8% |
+| vd3.bdstatic.com | 48 | 2.4% |
+| 38.75.136.137 | 40 | 2.0% |
+| 63.141.230.178 | 39 | 2.0% |
+| cdn.jdshipin.com | 38 | 1.9% |
+| 107.150.60.122 | 35 | 1.8% |
 
 ## Family playlist audit
 
 Status: ok
-Rows: 1180
-Unique URLs: 1180
-
-## Warnings
-
-- latin/noise-like channel names remain for review: 2
-- top stream host share is high: 32.9% > 30.0%
+Rows: 1012
+Unique URLs: 1012

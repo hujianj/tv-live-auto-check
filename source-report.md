@@ -1,77 +1,84 @@
 # IPTV source verification report
 
-Generated: 2026-08-10 12:04:47
-Generated UTC: 2026-08-10T12:04:47Z
-Generated Beijing: 2026-08-10 20:04:47 Asia/Shanghai
-Elapsed: 606.2s
-Sources total: 29
+Generated: 2026-08-10 14:10:18
+Generated UTC: 2026-08-10T14:10:18Z
+Generated Beijing: 2026-08-10 22:10:18 Asia/Shanghai
+Elapsed: 633.3s
+Sources configured: 37 (enabled=28, recovery=6, disabled=3)
+Sources probed: 34
 Sources fetched OK: 29
-Parsed candidates: 33160
-Unique name+URL candidates: 29142
-Unique stream URLs: 28328
-Checked unique stream URLs: 28328
+Sources contributing candidates: 28
+Parsed candidates: 32953
+Unique name+URL candidates: 28933
+Unique stream URLs: 28119
+Checked unique stream URLs: 28119
 Checked all unique URLs: True
-Playable channel names: 10333
-Playable unique URLs: 13019
-Playable name+URL lines: 13512
-Playable URLs found (legacy line count): 13512
-Pre-curated published playable lines: 12038
+Playable channel names: 10236
+Playable unique URLs: 12900
+Playable name+URL lines: 13393
+Playable URLs found (legacy line count): 13393
+Pre-curated published playable lines: 11936
 
 ## Source fetch status
 
-| Source | Fetch | Parsed | Bytes | Truncated | Error |
-|---|---:|---:|---:|---:|---|
-| iyouhun_zb | OK | 3563 | 285049 | False |  |
-| zbds_iptv4_txt | OK | 737 | 59860 | False |  |
-| migu_interface | OK | 0 | 469 | False | WARN fetched but no publishable HTTP/HTTPS stream candidates |
-| guovin_all | OK | 1694 | 422313 | False |  |
-| guovin_ipv4 | OK | 421 | 94354 | False |  |
-| guovin_ipv6 | OK | 1424 | 366747 | False |  |
-| suxuang_ipv4 | OK | 1210 | 268671 | False |  |
-| suxuang_ipv6 | OK | 853 | 200521 | False |  |
-| zbds_iptv4_m3u | OK | 391 | 86429 | False |  |
-| burningc4_ipv4 | OK | 58 | 8021 | False |  |
-| vamoschuck_m3u | OK | 788 | 147124 | False |  |
-| zbds_iptv6_txt | OK | 2 | 268 | False |  |
-| zbds_iptv6_m3u | OK | 1 | 282 | False |  |
-| fanmingming_ipv6_raw | OK | 82 | 25215 | False |  |
-| fanmingming_ipv6_mirror | OK | 82 | 25215 | False |  |
-| kimentanm_aptv | OK | 119 | 21945 | False |  |
-| bigbiggrandg_gather | OK | 1954 | 329793 | False |  |
-| yang_gather | OK | 129 | 28939 | False |  |
-| iptv_org_all | OK | 13524 | 2925601 | False |  |
-| epg_cn | OK | 2458 | 781495 | False |  |
-| epg_hk | OK | 65 | 20656 | False |  |
-| epg_mo | OK | 19 | 6134 | False |  |
-| epg_tw | OK | 120 | 42232 | False |  |
-| iptv_org_tw | OK | 24 | 4800 | False |  |
-| epg_sg | OK | 18 | 5635 | False |  |
-| epg_my | OK | 21 | 6743 | False |  |
-| free_tv_world | OK | 1919 | 530377 | False |  |
-| mursor_yy | OK | 591 | 124828 | False |  |
-| mursor_bililive | OK | 893 | 174743 | False |  |
+| Source | Mode | Fetch | Contributes | Parsed | Bytes | Truncated | Error |
+|---|---|---:|---:|---:|---:|---:|---|
+| iyouhun_zb | enabled | OK | YES | 3563 | 285049 | False |  |
+| zbds_iptv4_txt | enabled | OK | YES | 737 | 59860 | False |  |
+| migu_interface | recovery | OK | NO | 0 | 469 | False | WARN fetched but no publishable HTTP/HTTPS stream candidates |
+| guovin_all | enabled | OK | YES | 1694 | 422313 | False |  |
+| guovin_ipv4 | enabled | OK | YES | 421 | 94354 | False |  |
+| guovin_ipv6 | enabled | OK | YES | 1424 | 366747 | False |  |
+| suxuang_ipv4 | enabled | OK | YES | 1210 | 268671 | False |  |
+| suxuang_ipv6 | enabled | OK | YES | 853 | 200521 | False |  |
+| zbds_iptv4_m3u | enabled | OK | YES | 391 | 86429 | False |  |
+| burningc4_ipv4 | enabled | OK | YES | 58 | 8021 | False |  |
+| vamoschuck_m3u | enabled | OK | YES | 788 | 147124 | False |  |
+| zbds_iptv6_txt | enabled | OK | YES | 2 | 268 | False |  |
+| zbds_iptv6_m3u | enabled | OK | YES | 1 | 282 | False |  |
+| fanmingming_ipv6_raw | enabled | OK | YES | 82 | 25215 | False |  |
+| fanmingming_ipv6_mirror | enabled | OK | YES | 82 | 25215 | False |  |
+| kimentanm_aptv | enabled | OK | YES | 119 | 21945 | False |  |
+| bigbiggrandg_gather | enabled | OK | YES | 1954 | 329793 | False |  |
+| yang_gather | enabled | OK | YES | 129 | 28939 | False |  |
+| iptv_org_all | enabled | OK | YES | 13524 | 2925601 | False |  |
+| epg_cn | enabled | OK | YES | 2448 | 778341 | False |  |
+| epg_hk | enabled | OK | YES | 64 | 20341 | False |  |
+| epg_mo | enabled | OK | YES | 19 | 6134 | False |  |
+| epg_tw | enabled | OK | YES | 120 | 42232 | False |  |
+| iptv_org_tw | enabled | OK | YES | 24 | 4800 | False |  |
+| epg_sg | enabled | OK | YES | 18 | 5635 | False |  |
+| epg_my | enabled | OK | YES | 21 | 6743 | False |  |
+| free_tv_world | enabled | OK | YES | 1919 | 530377 | False |  |
+| mursor_yy | enabled | OK | YES | 591 | 124828 | False |  |
+| mursor_bililive | enabled | OK | YES | 697 | 136454 | False |  |
+| freetv_huya | recovery | FAIL | NO | 0 | 0 | False | TimeoutError('The read operation timed out') |
+| pizazz_ai_txt | recovery | FAIL | NO | 0 | 0 | False | <HTTPError 404: 'Not Found'> |
+| pizazz_ai_m3u | recovery | FAIL | NO | 0 | 0 | False | <HTTPError 404: 'Not Found'> |
+| gitee_dsy | recovery | FAIL | NO | 0 | 0 | False | <HTTPError 404: 'Not Found'> |
+| freetv_douyu | recovery | FAIL | NO | 0 | 0 | False | TimeoutError('The read operation timed out') |
 
 ## Pre-curation playable lines by source
 
 | Source | Lines |
 |---|---:|
-| iptv_org_all | 7274 |
-| epg_cn | 1031 |
-| bigbiggrandg_gather | 658 |
-| free_tv_world | 586 |
-| iyouhun_zb | 571 |
-| mursor_yy | 532 |
-| zbds_iptv4_txt | 466 |
-| guovin_all | 356 |
-| guovin_ipv4 | 228 |
-| suxuang_ipv4 | 228 |
-| vamoschuck_m3u | 50 |
-| epg_tw | 14 |
+| iptv_org_all | 7194 |
+| epg_cn | 1018 |
+| bigbiggrandg_gather | 654 |
+| free_tv_world | 589 |
+| iyouhun_zb | 567 |
+| mursor_yy | 536 |
+| zbds_iptv4_txt | 454 |
+| guovin_all | 358 |
+| guovin_ipv4 | 235 |
+| suxuang_ipv4 | 224 |
+| vamoschuck_m3u | 49 |
+| epg_tw | 15 |
 | iptv_org_tw | 10 |
 | epg_mo | 8 |
 | suxuang_ipv6 | 8 |
 | kimentanm_aptv | 7 |
-| guovin_ipv6 | 4 |
+| guovin_ipv6 | 3 |
 | epg_hk | 2 |
 | epg_sg | 2 |
 | yang_gather | 2 |
