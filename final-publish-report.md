@@ -2,58 +2,58 @@
 
 This report describes the final playlist after curation and after the second full published-URL recheck.
 
-Rows: 2536
-Unique channel names: 1540
-Unique URLs: 2536
-Failed unique URLs after slow retry: 84
-Slow retry attempted unique URLs: 137
-Slow retry recovered unique URLs: 53
-Refilled rows from checked candidate pool: 4
-Unresolved refill rows: 80
+Rows: 2552
+Unique channel names: 1550
+Unique URLs: 2552
+Failed unique URLs after slow retry: 93
+Slow retry attempted unique URLs: 109
+Slow retry recovered unique URLs: 16
+Refilled rows from checked candidate pool: 2
+Unresolved refill rows: 91
 Core live-progress check required: True
-Final recheck elapsed: 300.4s
+Final recheck elapsed: 375.4s
 Source map available: True
 Stability tracked URLs after update: 5000
-Stability OK/fail updates: 2536/87
-Strict quality filter dropped rows before recheck: 463
-Channel limit trimmed rows before recheck: 1617
-Group limit trimmed rows before recheck: 213
-Family compact playlist: 1182 rows / 884 names / 1182 URLs
+Stability OK/fail updates: 2552/96
+Strict quality filter dropped rows before recheck: 461
+Channel limit trimmed rows before recheck: 1628
+Group limit trimmed rows before recheck: 204
+Family compact playlist: 1180 rows / 883 names / 1180 URLs
 
 ## Groups
 
 | Group | Rows |
 |---|---:|
 | 央视频道 | 128 |
-| 卫视频道 | 183 |
-| 地方频道 | 700 |
-| 影视剧场 | 180 |
+| 卫视频道 | 181 |
+| 地方频道 | 707 |
+| 影视剧场 | 179 |
 | 少儿动漫 | 25 |
-| 体育纪实 | 68 |
-| 音乐综艺 | 24 |
-| 生活休闲 | 92 |
-| 综合娱乐 | 835 |
+| 体育纪实 | 71 |
+| 音乐综艺 | 23 |
+| 生活休闲 | 91 |
+| 综合娱乐 | 847 |
 | 港澳台频道 | 81 |
-| 海外华语频道 | 220 |
+| 海外华语频道 | 219 |
 
 ## Family compact playlist
 
 - TXT files: ku9-family.txt, live-family.txt
 - M3U file: family.m3u
-- Rows: 1182
-- Unique names: 884
-- Unique URLs: 1182
+- Rows: 1180
+- Unique names: 883
+- Unique URLs: 1180
 
 | Group | Rows |
 |---|---:|
 | 央视频道 | 88 |
-| 卫视频道 | 148 |
+| 卫视频道 | 147 |
 | 地方频道 | 320 |
 | 影视剧场 | 90 |
 | 少儿动漫 | 15 |
-| 体育纪实 | 48 |
-| 音乐综艺 | 20 |
-| 生活休闲 | 60 |
+| 体育纪实 | 49 |
+| 音乐综艺 | 19 |
+| 生活休闲 | 59 |
 | 综合娱乐 | 260 |
 | 港澳台频道 | 53 |
 | 海外华语频道 | 80 |
@@ -62,14 +62,14 @@ Family compact playlist: 1182 rows / 884 names / 1182 URLs
 
 | Source | Rows |
 |---|---:|
-| epg_cn | 399 |
+| epg_cn | 413 |
 | bigbiggrandg_gather | 393 |
-| iyouhun_zb | 378 |
-| zbds_iptv4_txt | 345 |
-| mursor_yy | 322 |
-| guovin_all | 310 |
-| guovin_ipv4 | 177 |
-| suxuang_ipv4 | 169 |
+| iyouhun_zb | 380 |
+| zbds_iptv4_txt | 350 |
+| mursor_yy | 319 |
+| guovin_all | 309 |
+| guovin_ipv4 | 174 |
+| suxuang_ipv4 | 171 |
 | vamoschuck_m3u | 13 |
 | epg_tw | 11 |
 | epg_mo | 7 |
@@ -83,35 +83,35 @@ Family compact playlist: 1182 rows / 884 names / 1182 URLs
 ## Top sources per group
 
 ### 央视频道
-- zbds_iptv4_txt: 72
-- guovin_ipv4: 30
+- zbds_iptv4_txt: 73
+- guovin_ipv4: 29
 - epg_cn: 24
 - iptv_org_all: 1
 - suxuang_ipv4: 1
 
 ### 卫视频道
-- guovin_ipv4: 96
+- guovin_ipv4: 94
 - zbds_iptv4_txt: 64
 - suxuang_ipv4: 19
 - iyouhun_zb: 4
 
 ### 地方频道
-- guovin_all: 210
-- iyouhun_zb: 169
-- zbds_iptv4_txt: 148
-- epg_cn: 128
+- guovin_all: 209
+- iyouhun_zb: 168
+- zbds_iptv4_txt: 152
+- epg_cn: 132
 - suxuang_ipv4: 23
-- guovin_ipv4: 12
+- guovin_ipv4: 13
 - vamoschuck_m3u: 9
 - mursor_yy: 1
 
 ### 影视剧场
-- mursor_yy: 50
-- suxuang_ipv4: 32
+- mursor_yy: 49
+- suxuang_ipv4: 31
 - guovin_all: 29
-- iyouhun_zb: 23
+- iyouhun_zb: 25
 - zbds_iptv4_txt: 22
-- guovin_ipv4: 18
+- guovin_ipv4: 17
 - bigbiggrandg_gather: 5
 - vamoschuck_m3u: 1
 
@@ -124,14 +124,14 @@ Family compact playlist: 1182 rows / 884 names / 1182 URLs
 
 ### 体育纪实
 - zbds_iptv4_txt: 34
-- iyouhun_zb: 17
+- iyouhun_zb: 20
 - guovin_ipv4: 8
 - mursor_yy: 4
 - epg_cn: 3
 - guovin_all: 2
 
 ### 音乐综艺
-- mursor_yy: 14
+- mursor_yy: 13
 - guovin_ipv4: 3
 - kimentanm_aptv: 3
 - bigbiggrandg_gather: 2
@@ -139,22 +139,22 @@ Family compact playlist: 1182 rows / 884 names / 1182 URLs
 - zbds_iptv4_txt: 1
 
 ### 生活休闲
-- iyouhun_zb: 37
+- iyouhun_zb: 36
 - guovin_all: 29
-- epg_cn: 12
+- epg_cn: 11
 - bigbiggrandg_gather: 6
-- mursor_yy: 4
+- mursor_yy: 5
 - vamoschuck_m3u: 2
 - iptv_org_all: 1
 - suxuang_ipv4: 1
 
 ### 综合娱乐
 - bigbiggrandg_gather: 376
-- epg_cn: 217
-- iyouhun_zb: 86
-- suxuang_ipv4: 77
+- epg_cn: 228
+- iyouhun_zb: 85
+- suxuang_ipv4: 80
 - guovin_all: 25
-- mursor_yy: 21
+- mursor_yy: 20
 - epg_tw: 11
 - guovin_ipv4: 8
 
@@ -169,7 +169,7 @@ Family compact playlist: 1182 rows / 884 names / 1182 URLs
 - mursor_yy: 1
 
 ### 海外华语频道
-- mursor_yy: 219
+- mursor_yy: 218
 - iptv_org_tw: 1
 
 ## First 80 final published rows
@@ -190,8 +190,8 @@ Family compact playlist: 1182 rows / 884 names / 1182 URLs
 - 央视频道 / CCTV-3 / zbds_iptv4_txt / http://113.57.140.161:10081/newlive/live/hls/3/live.m3u8
 - 央视频道 / CCTV-3 / zbds_iptv4_txt / http://112.30.73.119:9901/tsfile/live/0003_2.m3u8?key=txiptv&playlive=0&authid=0
 - 央视频道 / CCTV-3 / zbds_iptv4_txt / http://113.101.119.74:8090/hls/115/index.m3u8
+- 央视频道 / CCTV-3 / zbds_iptv4_txt / http://112.30.73.119:9901/tsfile/live/0003_1.m3u8?key=txiptv&playlive=1&authid=0
 - 央视频道 / CCTV-3 / guovin_ipv4 / http://74.91.26.218:82/live/cctv3hd.m3u8
-- 央视频道 / CCTV-3 / guovin_ipv4 / http://63.141.230.178:82/gslb/zbdq5.m3u8?id=cctv3hd
 - 央视频道 / CCTV-4 / zbds_iptv4_txt / http://113.101.119.74:8090/hls/116/index.m3u8
 - 央视频道 / CCTV-4 / zbds_iptv4_txt / http://113.57.140.161:10081/newlive/live/hls/4/live.m3u8
 - 央视频道 / CCTV-4 / zbds_iptv4_txt / http://219.147.245.238:25480/newlive/live/hls/4/live.m3u8

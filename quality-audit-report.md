@@ -1,17 +1,17 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 2536
-Unique channel names: 1540
-Unique canonical channel identities: 1540
-Unique URLs: 2536
+Rows: 2552
+Unique channel names: 1550
+Unique canonical channel identities: 1550
+Unique URLs: 2552
 Strict filter residue count: 0
 Latin/noise-like review count: 2
 Channel unique URL limit violations: 0
 URL identity conflicts: 0
-Unique stream hosts: 150
-Top stream host share: 32.7%
-Top five stream host share: 61.5%
+Unique stream hosts: 151
+Top stream host share: 32.9%
+Top five stream host share: 61.4%
 
 ## Core CCTV quality
 
@@ -22,7 +22,7 @@ Minimum independent hosts per core channel: 2
 |---|---:|---:|---:|---|
 | CCTV-1 | 6 | 6 | 6 | OK |
 | CCTV-2 | 6 | 6 | 6 | OK |
-| CCTV-3 | 6 | 6 | 6 | OK |
+| CCTV-3 | 6 | 6 | 5 | OK |
 | CCTV-4 | 6 | 6 | 6 | OK |
 | CCTV-5 | 6 | 6 | 5 | OK |
 | CCTV-6 | 6 | 6 | 6 | OK |
@@ -49,7 +49,7 @@ Minimum important satellite independent URLs: 3
 | 河北卫视 | 6 | 6 | 6 | OK |
 | 河南卫视 | 5 | 5 | 5 | OK |
 | 北京卫视 | 6 | 6 | 5 | OK |
-| 东方卫视 | 6 | 6 | 6 | OK |
+| 东方卫视 | 6 | 6 | 5 | OK |
 | 浙江卫视 | 5 | 5 | 4 | OK |
 | 江苏卫视 | 6 | 6 | 6 | OK |
 | 湖南卫视 | 6 | 6 | 5 | OK |
@@ -60,24 +60,24 @@ Minimum important satellite independent URLs: 3
 
 | Host | Rows | Share |
 |---|---:|---:|
-| stream1.freetv.fun | 829 | 32.7% |
-| live.ottiptv.cc | 372 | 14.7% |
-| cloud.video.taobao.com | 187 | 7.4% |
-| l.cztvcloud.com | 99 | 3.9% |
+| stream1.freetv.fun | 840 | 32.9% |
+| live.ottiptv.cc | 369 | 14.5% |
+| cloud.video.taobao.com | 187 | 7.3% |
+| l.cztvcloud.com | 100 | 3.9% |
 | vodcdn.video.taobao.com | 72 | 2.8% |
 | vd3.bdstatic.com | 55 | 2.2% |
-| cdn.jdshipin.com | 52 | 2.1% |
-| t.freetv.fun | 41 | 1.6% |
-| 63.141.230.178 | 40 | 1.6% |
-| 38.75.136.137 | 39 | 1.5% |
+| cdn.jdshipin.com | 51 | 2.0% |
+| 38.75.136.137 | 40 | 1.6% |
+| t.freetv.fun | 40 | 1.6% |
+| live.metshop.top | 39 | 1.5% |
 
 ## Family playlist audit
 
 Status: ok
-Rows: 1182
-Unique URLs: 1182
+Rows: 1180
+Unique URLs: 1180
 
 ## Warnings
 
 - latin/noise-like channel names remain for review: 2
-- top stream host share is high: 32.7% > 30.0%
+- top stream host share is high: 32.9% > 30.0%
