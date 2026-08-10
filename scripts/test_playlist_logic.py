@@ -191,6 +191,10 @@ def test_priority_and_guard_config_are_externalized() -> None:
     assert 1 <= priority["stability"]["streak_cap"] <= priority["stability"]["evidence_counter_cap"]
     assert guard["min_lines"] >= 1800
     assert guard["min_groups"]["央视频道"] >= 90
+    assert guard["min_groups"]["卫视频道"] >= 120
+    assert guard["min_groups"]["地方频道"] >= 250
+    assert guard["min_groups"]["海外华语频道"] == 0
+    assert guard["max_group_drop_ratios"]["海外华语频道"] == 1.0
     assert 0 < guard["max_published_recheck_failed_url_ratio"] <= 0.5
     assert "zbds_iptv4_txt" in guard["core_sources"]
     assert guard["publish_size"]["max_unique_public_blob_bytes"] >= 2_000_000
