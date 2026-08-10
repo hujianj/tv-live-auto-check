@@ -1081,6 +1081,34 @@ def test_publish_bundle_validator_enforces_cross_file_invariants() -> None:
 
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
+        required_groups = [
+            group
+            for group, minimum in load_guard()["min_groups"].items()
+            if int(minimum) > 0
+        ]
+        rows = [
+            BundleRow(group, "CCTV-1" if index == 0 else f"核心频道{index}", f"http://unit.test/core-{index}.m3u8")
+            for index, group in enumerate(required_groups)
+        ]
+        _write_test_publish_bundle(root, full_rows=rows, family_rows=rows)
+        assert validate_publish_bundle(root)["status"] == "ok"
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        required_groups = [
+            group
+            for group, minimum in load_guard()["min_groups"].items()
+            if int(minimum) > 0
+        ]
+        rows = [
+            BundleRow(group, "CCTV-1" if index == 0 else f"核心频道{index}", f"http://unit.test/core-{index}.m3u8")
+            for index, group in enumerate(required_groups[:-1])
+        ]
+        _write_test_publish_bundle(root, full_rows=rows, family_rows=rows)
+        _assert_bundle_failure(root, "missing required groups")
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
         order = get_group_order()
         _write_test_publish_bundle(root, group_order=[order[1], order[0], *order[2:]])
         _assert_bundle_failure(root, "category order/coverage mismatch")

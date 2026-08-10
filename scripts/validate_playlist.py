@@ -9,7 +9,7 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-from playlist_config import get_group_order, load_quality, load_rules
+from playlist_config import get_group_order, load_guard, load_quality, load_rules
 from channel_utils import cctv_number, chinese_count as shared_chinese_count
 from channel_identity import is_audio_only_channel
 from url_utils import publishable_url_issue
@@ -28,6 +28,11 @@ G_ENT = "\u7efc\u5408\u5a31\u4e50"
 G_HK = "\u6e2f\u6fb3\u53f0\u9891\u9053"
 G_OVERSEA = "\u6d77\u5916\u534e\u8bed\u9891\u9053"
 GROUP_ORDER = get_group_order()
+REQUIRED_GROUPS = [
+    str(group)
+    for group, minimum in load_guard().get("min_groups", {}).items()
+    if int(minimum) > 0
+]
 
 BAD_NAME_TOKENS = RULES["bad_name_tokens"]
 UNWANTED_OVERSEAS_TOKENS = RULES["drop_latin_tokens"]
@@ -138,7 +143,7 @@ def validate_channel_semantics(group: str, name: str, url: str, lineno: int, lin
 
 
 def validate_categories(groups: list[str], bad: list[tuple[int, str, str]]) -> None:
-    missing = [g for g in GROUP_ORDER if g not in groups]
+    missing = [g for g in REQUIRED_GROUPS if g not in groups]
     for g in missing:
         bad.append((0, "missing category", f"{g},#genre#"))
     for old in OBSOLETE_CATEGORIES:

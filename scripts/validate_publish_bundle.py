@@ -19,7 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from channel_identity import aliases_are_compatible, canonical_channel_key
-from playlist_config import get_group_order
+from playlist_config import get_group_order, load_guard
 from validate_playlist import split_unquoted_last_comma, validate_file
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -114,8 +114,21 @@ def parse_m3u_document(text: str) -> list[Row]:
 
 def _validate_document_invariants(label: str, groups: list[str], rows: list[Row], errors: list[str]) -> None:
     expected_groups = get_group_order()
-    if groups != expected_groups:
-        errors.append(f"{label}: category order/coverage mismatch: actual={groups!r} expected={expected_groups!r}")
+    row_groups = {row.group for row in rows}
+    expected_present_groups = [group for group in expected_groups if group in row_groups]
+    if groups != expected_present_groups:
+        errors.append(
+            f"{label}: category order/coverage mismatch: actual={groups!r} "
+            f"expected_present={expected_present_groups!r}"
+        )
+    required_groups = [
+        str(group)
+        for group, minimum in load_guard().get("min_groups", {}).items()
+        if int(minimum) > 0
+    ]
+    missing_required_groups = [group for group in required_groups if group not in row_groups]
+    if missing_required_groups:
+        errors.append(f"{label}: missing required groups: {missing_required_groups!r}")
     duplicates = [row for row, count in Counter(rows).items() if count > 1]
     if duplicates:
         errors.append(f"{label}: exact duplicate rows found: {duplicates[:10]!r}")
