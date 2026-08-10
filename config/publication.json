@@ -81,7 +81,7 @@
     },
     {
       "name": "jsdelivr_primary",
-      "template": "https://cdn.jsdelivr.net/gh/{repo}/{path}",
+      "template": "https://cdn.jsdelivr.net/gh/{repo}@{branch}/{path}",
       "path": "ku9-live.txt",
       "retries": 4,
       "timeout_seconds": 30,

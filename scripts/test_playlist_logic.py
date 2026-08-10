@@ -1326,7 +1326,7 @@ def test_publish_size_hashes_current_worktree_not_stale_index() -> None:
 def test_publication_checker_uses_exact_canonical_url_and_requires_primary() -> None:
     from check_publication_endpoints import EndpointResult, build_request, endpoint_matrix, publication_gate_failures
 
-    url = "https://cdn.jsdelivr.net/gh/example/repo/ku9-live.txt"
+    url = "https://cdn.jsdelivr.net/gh/example/repo@main/ku9-live.txt"
     request = build_request(url)
     assert request.full_url == url
     assert "publication_check=" not in request.full_url
@@ -1337,6 +1337,7 @@ def test_publication_checker_uses_exact_canonical_url_and_requires_primary() -> 
     endpoints = endpoint_matrix("example/repo", "main")
     primary = [item for item in endpoints if item.required_primary]
     assert [item.name for item in primary] == ["jsdelivr_primary"]
+    assert [item.url for item in primary] == [url]
     results = [
         EndpointResult("github_raw", "https://raw.test/list", True, False, False, ok=True),
         EndpointResult("ghproxy_raw", "https://proxy.test/list", False, True, False, ok=True),
