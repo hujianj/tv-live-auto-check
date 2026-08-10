@@ -211,6 +211,16 @@ def test_source_lifecycle_separates_recovery_from_enabled_failures() -> None:
         ])
         expect_invalid([{"name": "off", "url": "https://off.test/list", "enabled": False}])
 
+    current_policy = {
+        "published_recheck": {
+            "broadcast_progress_required": True,
+            "progress_required_groups": ["央视频道", "卫视频道", "地方频道"],
+        }
+    }
+    old_policy = {"published_recheck": {"core_progress_required": True}}
+    assert "predates" in guard_module.relative_guard_migration_reason(current_policy, old_policy)
+    assert guard_module.relative_guard_migration_reason(current_policy, current_policy) == ""
+
 
 def test_rules_config_contains_core_coverage() -> None:
     rules = json.loads((ROOT / "config" / "rules.json").read_text(encoding="utf-8-sig"))
