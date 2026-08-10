@@ -195,6 +195,21 @@
       "戏曲"
     ]
   },
+  "overseas_source_names": [
+    "iptv_org_all",
+    "iptv_org_tw",
+    "epg_sg",
+    "epg_my",
+    "free_tv_world"
+  ],
+  "overseas_group_tokens": [
+    "china",
+    "chinese",
+    "mandarin",
+    "cantonese",
+    "singapore",
+    "malaysia"
+  ],
   "foreign_name_tokens": [
     "CGTN",
     "CCTVPLUS",

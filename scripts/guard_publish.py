@@ -60,6 +60,38 @@ def read_sources_status() -> list[dict[str, str]]:
         return list(csv.DictReader(f))
 
 
+def classify_source_health(statuses: list[dict[str, str]]) -> dict[str, list[str]]:
+    """Split source failures by lifecycle mode before applying hard gates.
+
+    Legacy status files have no mode column and are treated as enabled. A
+    recovery source is deliberately observable, but its outage must not block
+    a publication that was built from enabled sources.
+    """
+    result = {
+        "enabled_failed": [],
+        "recovery_failed": [],
+        "enabled_zero_parsed": [],
+        "recovery_zero_parsed": [],
+        "disabled_reported": [],
+        "invalid_mode": [],
+    }
+    for row in statuses:
+        name = (row.get("name") or "").strip()
+        mode = (row.get("mode") or "enabled").strip()
+        if mode not in {"enabled", "recovery", "disabled"}:
+            result["invalid_mode"].append(name or "<empty>")
+            continue
+        if mode == "disabled":
+            result["disabled_reported"].append(name or "<empty>")
+            continue
+        target = "enabled" if mode == "enabled" else "recovery"
+        if row.get("fetch_ok") != "True":
+            result[f"{target}_failed"].append(name or "<empty>")
+        elif int(row.get("parsed") or 0) == 0:
+            result[f"{target}_zero_parsed"].append(name or "<empty>")
+    return result
+
+
 def fail(msg: str, failures: list[str]) -> None:
     failures.append(msg)
     print("GUARD FAIL:", msg)
@@ -110,10 +142,11 @@ def write_guard_outputs(current: dict, baseline: dict, failures: list[str], warn
             "delta": cur - base,
             "drop_ratio": ratio(base, cur),
         }
-    failed_sources = [r["name"] for r in statuses if r.get("fetch_ok") != "True"]
-    zero_parsed = [r["name"] for r in statuses if r.get("fetch_ok") == "True" and int(r.get("parsed") or 0) == 0]
+    health = classify_source_health(statuses)
+    failed_sources = health["enabled_failed"]
+    zero_parsed = health["enabled_zero_parsed"]
     guard = {
-        "schema_version": 2,
+        "schema_version": 3,
         "status": "rejected" if failures else "ok",
         "baseline_lines": base_lines,
         "current_lines": cur_lines,
@@ -126,6 +159,10 @@ def write_guard_outputs(current: dict, baseline: dict, failures: list[str], warn
         "group_deltas": group_deltas,
         "failed_sources": failed_sources,
         "zero_parsed_sources": zero_parsed,
+        "recovery_failed_sources": health["recovery_failed"],
+        "recovery_zero_parsed_sources": health["recovery_zero_parsed"],
+        "disabled_reported_sources": health["disabled_reported"],
+        "invalid_mode_sources": health["invalid_mode"],
         "failures": failures,
         "warnings": warnings,
     }
@@ -150,7 +187,17 @@ def write_guard_outputs(current: dict, baseline: dict, failures: list[str], warn
         drop = item["drop_ratio"]
         drop_text = f"{drop:.1%}" if drop is not None else "n/a"
         lines.append(f"| {group} | {item['baseline']} | {item['current']} | {item['delta']} | {drop_text} | {minimum} |")
-    lines += ["", "## Source health", "", f"- Failed sources: {', '.join(failed_sources) if failed_sources else 'none'}", f"- Fetched but zero parsed: {', '.join(zero_parsed) if zero_parsed else 'none'}"]
+    lines += [
+        "", "## Source health", "",
+        f"- Enabled source failures: {', '.join(failed_sources) if failed_sources else 'none'}",
+        f"- Enabled sources fetched but zero parsed: {', '.join(zero_parsed) if zero_parsed else 'none'}",
+        f"- Recovery source failures (non-blocking): {', '.join(health['recovery_failed']) if health['recovery_failed'] else 'none'}",
+        f"- Recovery sources fetched but zero parsed (non-blocking): {', '.join(health['recovery_zero_parsed']) if health['recovery_zero_parsed'] else 'none'}",
+    ]
+    if health["disabled_reported"]:
+        lines.append(f"- Disabled sources unexpectedly reported: {', '.join(health['disabled_reported'])}")
+    if health["invalid_mode"]:
+        lines.append(f"- Invalid source modes: {', '.join(health['invalid_mode'])}")
     if failures:
         lines += ["", "## Failures", ""]
         lines += [f"- {x}" for x in failures]
@@ -214,7 +261,12 @@ def main() -> int:
         fail("checked_candidates != unique_candidates", failures)
     statuses = read_sources_status()
     if statuses:
-        failed_sources = [r["name"] for r in statuses if r.get("fetch_ok") != "True"]
+        health = classify_source_health(statuses)
+        if health["invalid_mode"]:
+            fail(f"invalid source lifecycle modes: {health['invalid_mode']}", failures)
+        if health["disabled_reported"]:
+            fail(f"disabled sources were unexpectedly probed: {health['disabled_reported']}", failures)
+        failed_sources = health["enabled_failed"]
         core_failed = sorted(CORE_SOURCES.intersection(failed_sources))
         if len(core_failed) >= guard_core_failed_fail_threshold():
             fail(f"multiple core sources failed: {core_failed}", failures)
@@ -222,9 +274,12 @@ def main() -> int:
             add_warn(f"one core source failed: {core_failed}")
         if len(failed_sources) > guard_max_failed_sources():
             fail(f"too many upstream fetch failures: {len(failed_sources)} {failed_sources[:10]}", failures)
-        zero_parsed = [r["name"] for r in statuses if r.get("fetch_ok") == "True" and int(r.get("parsed") or 0) == 0]
-        if zero_parsed:
-            add_warn(f"fetched but parsed no supported streams: {zero_parsed}")
+        if health["enabled_zero_parsed"]:
+            add_warn(f"enabled sources fetched but parsed no supported streams: {health['enabled_zero_parsed']}")
+        if health["recovery_failed"]:
+            add_warn(f"recovery sources unavailable (non-blocking): {health['recovery_failed']}")
+        if health["recovery_zero_parsed"]:
+            add_warn(f"recovery sources fetched but parsed no supported streams (non-blocking): {health['recovery_zero_parsed']}")
     write_guard_outputs(current, baseline, failures, warnings, statuses)
     if failures:
         print("Publish guard rejected this run; keeping previous published playlist unchanged.")

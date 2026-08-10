@@ -87,6 +87,7 @@ jobs:
           IPTV_PUBLISHED_FINAL_RETRY_TIMEOUT: "14"
           IPTV_PUBLISHED_FINAL_RETRY_ATTEMPTS: "1"
           IPTV_PUBLISHED_REQUIRE_CORE_PROGRESS: "1"
+          IPTV_PUBLISHED_REQUIRE_BROADCAST_PROGRESS: "1"
         run: python scripts/run_maintenance.py
       - name: Upload full diagnostic artifacts
         if: ${{ always() && steps.preflight.outputs.stale != 'true' }}
@@ -158,7 +159,11 @@ jobs:
         run: |
           set +e
           run_endpoint_check() {
-            python scripts/check_publication_endpoints.py \
+            # Thread cancellation cannot forcibly stop a resolver that is
+            # stuck below Python's socket timeout. Keep the job bounded at
+            # the process level as a final watchdog around the checker.
+            timeout --signal=TERM --kill-after=15s 270s \
+              python scripts/check_publication_endpoints.py \
               --repo "${{ github.repository }}" \
               --branch "${{ github.ref_name }}" \
               --global-deadline 240 \
@@ -205,10 +210,16 @@ jobs:
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/notify_maintenance.py cdn_pending --message "Git publication succeeded, but one or more configured public endpoints are still stale or unreachable; Raw remains authoritative."
-      - name: Close recovered maintenance issue
+        run: python scripts/notify_maintenance.py cdn_pending --scope cdn --message "Git publication succeeded, but one or more configured public endpoints are still stale or unreachable; Raw remains authoritative."
+      - name: Close recovered media or publication issue
+        if: ${{ always() && steps.maintenance.outcome == 'success' && steps.commit.outcome == 'success' }}
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/notify_maintenance.py success --scope maintenance
+      - name: Close recovered CDN issue
         if: ${{ always() && steps.maintenance.outcome == 'success' && steps.commit.outcome == 'success' && steps.cdn_health.outcome == 'success' }}
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/notify_maintenance.py success
+        run: python scripts/notify_maintenance.py success --scope cdn

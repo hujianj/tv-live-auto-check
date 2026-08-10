@@ -29,10 +29,12 @@ import run_maintenance as maintenance_module
 import notify_maintenance as notify_module
 import watchdog_publication as watchdog_module
 import purge_jsdelivr as purge_jsdelivr_module
+import guard_publish as guard_module
 from channel_utils import cctv_key as coverage_cctv_key, cctv_number, cctv_sort_key, cctv_variant_base, format_extinf, is_latin_noise_name
 from channel_identity import aliases_are_compatible, canonical_channel_key
 from validate_publish_bundle import BundleValidationError, Row as BundleRow, validate_publish_bundle
 from publication_config import PublicationConfigError, load_publication_config
+from source_config import load_source_specs
 from publication_manifest import (
     FINAL_PUBLICATION_FILES,
     MANIFEST_FILE,
@@ -90,6 +92,19 @@ def test_workflow_is_pinned_and_refuses_stale_publication() -> None:
     assert "--pre-wait 30" in workflow
     assert "run_endpoint_check" in workflow
     assert workflow.index("Purge subscription files after Git propagation") < workflow.index("Verify Raw and all configured publication endpoints")
+    assert "notify_maintenance.py success --scope maintenance" in workflow
+    assert "notify_maintenance.py success --scope cdn" in workflow
+
+    cdn_workflow = (ROOT / ".github" / "workflows" / "cdn-reconcile.yml").read_text(encoding="utf-8")
+    cdn_refs = [line.strip() for line in cdn_workflow.splitlines() if line.strip().startswith("uses:")]
+    assert cdn_refs
+    assert all(re.fullmatch(r"uses: [A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[0-9a-f]{40}(?: # v\d+)?", line) for line in cdn_refs), cdn_refs
+    assert "workflow_run:" in cdn_workflow
+    assert "--required-only" in cdn_workflow
+    assert "timeout --signal=TERM --kill-after=10s 150s" in cdn_workflow
+    assert "timeout-minutes: 25" in cdn_workflow
+    assert "notify_maintenance.py cdn_pending --scope cdn" in cdn_workflow
+    assert "notify_maintenance.py success --scope cdn" in cdn_workflow
 
     fast_workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
     fast_refs = [line.strip() for line in fast_workflow.splitlines() if line.strip().startswith("uses:")]
@@ -165,6 +180,38 @@ def test_source_config_omits_disabled_unstable_sources() -> None:
     assert "freetv_huya" not in names
 
 
+def test_source_lifecycle_separates_recovery_from_enabled_failures() -> None:
+    health = guard_module.classify_source_health([
+        {"name": "core", "mode": "enabled", "fetch_ok": "False", "parsed": "0"},
+        {"name": "optional", "mode": "recovery", "fetch_ok": "False", "parsed": "0"},
+        {"name": "empty", "mode": "recovery", "fetch_ok": "True", "parsed": "0"},
+        {"name": "legacy", "fetch_ok": "True", "parsed": "1"},
+    ])
+    assert health["enabled_failed"] == ["core"]
+    assert health["recovery_failed"] == ["optional"]
+    assert health["recovery_zero_parsed"] == ["empty"]
+    assert health["invalid_mode"] == []
+    assert guard_module.classify_source_health([{"name": "bad", "mode": "wat", "fetch_ok": "False", "parsed": "0"}])["invalid_mode"] == ["bad"]
+
+    with tempfile.TemporaryDirectory() as td:
+        path = Path(td) / "sources.json"
+
+        def expect_invalid(items) -> None:
+            path.write_text(json.dumps(items), encoding="utf-8", newline="\n")
+            try:
+                load_source_specs(path)
+            except ValueError:
+                return
+            raise AssertionError(f"invalid source lifecycle configuration was accepted: {items!r}")
+
+        expect_invalid([{"name": "one", "url": "https://one.test/list", "enabled": True, "auto_recover": True}])
+        expect_invalid([
+            {"name": "one", "url": "https://same.test/list", "enabled": True},
+            {"name": "two", "url": "https://same.test/list", "enabled": False, "auto_recover": True},
+        ])
+        expect_invalid([{"name": "off", "url": "https://off.test/list", "enabled": False}])
+
+
 def test_rules_config_contains_core_coverage() -> None:
     rules = json.loads((ROOT / "config" / "rules.json").read_text(encoding="utf-8-sig"))
     def walk_strings(obj):
@@ -201,6 +248,8 @@ def test_classification_avoids_single_character_false_positives() -> None:
     assert curate_module.classify("\u623f\u4ea7\u9891\u9053", "", "unit") == "\u751f\u6d3b\u4f11\u95f2"
     assert curate_module.classify("\u661f\u5149\u5c55\u64ad", "", "unit") == "\u7efc\u5408\u5a31\u4e50"
     assert curate_module.classify("\u5b66\u800c\u601d", "", "unit") == "\u7efc\u5408\u5a31\u4e50"
+    assert curate_module.classify("\u6211\u7231\u6211\u5bb6", "Entertainment", "mursor_yy") == "\u7efc\u5408\u5a31\u4e50"
+    assert curate_module.classify("\u534e\u8bed\u9891\u9053", "Chinese TV", "iptv_org_all") == "\u6d77\u5916\u534e\u8bed\u9891\u9053"
 
 
 def test_priority_and_guard_config_are_externalized() -> None:
@@ -230,6 +279,8 @@ def test_priority_and_guard_config_are_externalized() -> None:
     assert quality["final_quality_audit"]["fail_on_host_concentration"] is False
     assert "Geo-blocked" in quality["strict_drop_name_tokens"]
     assert "澳門MACAU" in quality["strict_drop_name_tokens"]
+    assert "KroneHit" in quality["strict_drop_name_tokens"]
+    assert set(quality["live_progress_groups"]) == {"央视频道", "卫视频道", "地方频道"}
     home_priority = load_home_priority()
     assert home_priority.get("enabled") is True
     assert "home_ok_urls" in home_priority
@@ -241,6 +292,8 @@ def test_priority_and_guard_config_are_externalized() -> None:
 
 
 def test_quality_filters_and_limits_are_enforced() -> None:
+    assert curate_module.strict_quality_drop_reason("音乐_AT_KroneHit")
+    assert curate_module.strict_quality_drop_reason("🚨(广)MusicChannel")
     assert curate_module.strict_quality_drop_reason("纪录|Discovery")
     assert curate_module.strict_quality_drop_reason("吉林市新闻综合[Geo-blocked]")
     assert not curate_module.strict_quality_drop_reason("BRTV北京卫视(1080p)")
@@ -432,6 +485,8 @@ def test_quality_audit_warns_without_blocking_on_global_host_concentration() -> 
 
 
 def test_local_network_parser_and_core_filter() -> None:
+    assert "@main/ku9-live.txt" in local_check_module.DEFAULT_URL
+    assert local_check_module.DEFAULT_URL == local_check_module.default_subscription_url()
     text = """央视频道,#genre#
 CCTV-1,http://a/cctv1.m3u8
 CCTV-4K,http://a/cctv4k.m3u8
@@ -849,6 +904,9 @@ def test_core_retry_classification() -> None:
     assert is_core_family_candidate(Candidate("unit", "央视频道", "CCTV-1", "http://a/live.m3u8"))
     assert is_core_family_candidate(Candidate("unit", "卫视频道", "辽宁卫视", "http://a/live.m3u8"))
     assert not is_core_family_candidate(Candidate("unit", "综合娱乐", "电影频道", "http://a/live.m3u8"))
+    import recheck_published as recheck
+    assert recheck.requires_live_progress(recheck.Row("地方频道", "沈阳新闻", "http://a/live.m3u8"))
+    assert not recheck.requires_live_progress(recheck.Row("综合娱乐", "电影频道", "http://a/live.m3u8"))
     assert looks_transient_failure("TimeoutError('timed out')")
     assert looks_transient_failure("RemoteDisconnected('Remote end closed connection without response')")
     assert not looks_transient_failure("<HTTPError 404: 'Not Found'>")
@@ -962,7 +1020,7 @@ def _render_test_m3u(rows) -> str:
     return "\n".join(lines) + "\n"
 
 
-def _write_test_publish_bundle(root: Path, full_rows=None, family_rows=None, group_order=None) -> tuple[list[BundleRow], list[BundleRow]]:
+def _write_test_publish_bundle(root: Path, full_rows=None, family_rows=None, group_order=None, source_specs=None) -> tuple[list[BundleRow], list[BundleRow]]:
     groups = list(group_order or get_group_order())
     canonical_groups = get_group_order()
     if full_rows is None:
@@ -991,14 +1049,25 @@ def _write_test_publish_bundle(root: Path, full_rows=None, family_rows=None, gro
         for row in full_rows:
             writer.writerow([canonical_channel_key(row.name), row.group, row.name, row.url, "unit"])
     (root / "alias-conflict-report.md").write_text("# test\n", encoding="utf-8")
-    (root / "sources_status.csv").write_text(
-        "name,url,fetch_ok,bytes,parsed,truncated,error\nunit,https://unit.test/source,True,100,1,False,\n",
-        encoding="utf-8",
-        newline="\n",
-    )
+    source_specs = source_specs or [{"name": "unit", "url": "https://unit.test/source", "enabled": True}]
+    status_lines = ["name,url,mode,contributed,fetch_ok,bytes,parsed,truncated,error"]
+    for spec in source_specs:
+        enabled = spec.get("enabled", True)
+        recovery = spec.get("auto_recover", False)
+        mode = "enabled" if enabled else ("recovery" if recovery else "disabled")
+        if mode == "disabled":
+            continue
+        contributed = mode == "enabled"
+        status_lines.append(
+            ",".join([
+                spec["name"], spec["url"], mode, str(contributed), str(contributed),
+                "100" if contributed else "0", "1" if contributed else "0", "False", "" if contributed else "temporary failure",
+            ])
+        )
+    (root / "sources_status.csv").write_text("\n".join(status_lines) + "\n", encoding="utf-8", newline="\n")
     (root / "config").mkdir(exist_ok=True)
     (root / "config" / "sources.json").write_text(
-        json.dumps([{"name": "unit", "url": "https://unit.test/source", "enabled": True}], indent=2) + "\n",
+        json.dumps(source_specs, indent=2) + "\n",
         encoding="utf-8",
         newline="\n",
     )
@@ -1006,8 +1075,13 @@ def _write_test_publish_bundle(root: Path, full_rows=None, family_rows=None, gro
     family_groups = dict(__import__("collections").Counter(row.group for row in family_rows))
     checked = len({row.url for row in full_rows})
     summary = {
-        "sources_total": 1,
-        "sources_fetched_ok": 1,
+        "sources_configured_total": len(source_specs),
+        "sources_enabled_total": sum(spec.get("enabled", True) is True for spec in source_specs),
+        "sources_recovery_total": sum(spec.get("auto_recover", False) is True for spec in source_specs),
+        "sources_disabled_total": sum(spec.get("enabled", True) is False and spec.get("auto_recover", False) is False for spec in source_specs),
+        "sources_total": sum(spec.get("enabled", True) is True or spec.get("auto_recover", False) is True for spec in source_specs),
+        "sources_fetched_ok": sum(spec.get("enabled", True) is True for spec in source_specs),
+        "sources_contributing": sum(spec.get("enabled", True) is True for spec in source_specs),
         "checked_all_unique": True,
         "broad_media_probe_checked": checked,
         "broad_checked_all_unique": True,
@@ -1045,6 +1119,8 @@ def _write_test_publish_bundle(root: Path, full_rows=None, family_rows=None, gro
         },
         "published_recheck": {
             "core_progress_required": True,
+            "broadcast_progress_required": True,
+            "progress_required_groups": sorted(["央视频道", "卫视频道", "地方频道"]),
             "require_video_track": True,
             "video_track_verified_unique_urls": checked,
             "public_network_policy_enabled": True,
@@ -1209,6 +1285,25 @@ def test_publish_bundle_validator_enforces_cross_file_invariants() -> None:
 
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
+        _write_test_publish_bundle(
+            root,
+            source_specs=[
+                {"name": "unit", "url": "https://unit.test/source", "enabled": True},
+                {"name": "recover", "url": "https://unit.test/recover", "enabled": False, "auto_recover": True},
+                {"name": "disabled", "url": "https://unit.test/disabled", "enabled": False},
+            ],
+        )
+        assert validate_publish_bundle(root)["status"] == "ok"
+        status_path = root / "sources_status.csv"
+        status_path.write_text(
+            status_path.read_text(encoding="utf-8").replace(",recovery,False,False,0,0,False,temporary failure", ",enabled,False,False,0,0,False,temporary failure", 1),
+            encoding="utf-8",
+            newline="\n",
+        )
+        _assert_bundle_failure(root, "mode=")
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
         _write_test_publish_bundle(root)
         summary_path = root / "full-check-summary.json"
         summary = json.loads(summary_path.read_text(encoding="utf-8"))
@@ -1254,7 +1349,7 @@ def test_publish_bundle_validator_enforces_cross_file_invariants() -> None:
             encoding="utf-8",
             newline="\n",
         )
-        _assert_bundle_failure(root, "invalid truncated values")
+        _assert_bundle_failure(root, "truncated must be True or False")
 
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
@@ -1335,6 +1430,8 @@ def test_publication_checker_uses_exact_canonical_url_and_requires_primary() -> 
     assert "pragma" not in headers
 
     endpoints = endpoint_matrix("example/repo", "main")
+    required = endpoint_matrix("example/repo", "main", required_only=True)
+    assert [item.name for item in required] == ["github_raw", "jsdelivr_primary"]
     primary = [item for item in endpoints if item.required_primary]
     assert [item.name for item in primary] == ["jsdelivr_primary"]
     assert [item.url for item in primary] == [url]
@@ -1592,6 +1689,34 @@ def test_maintenance_alert_includes_failed_stage() -> None:
         assert "stage_elapsed=12.5s" in detail
 
 
+def test_maintenance_alert_scopes_are_isolated() -> None:
+    context = {
+        "repo": "example/repo",
+        "run_id": "1",
+        "run_number": "1",
+        "sha": "a" * 40,
+        "event": "schedule",
+        "ref": "main",
+        "run_url": "https://github.com/example/repo/actions/runs/1",
+        "time": "2026-08-10T00:00:00Z",
+    }
+    failure_body = notify_module.issue_body(context, "failure", "failed")
+    cdn_body = notify_module.issue_body(context, "cdn_pending", "stale")
+    assert notify_module.SCOPES["maintenance"]["marker"] in failure_body
+    assert notify_module.SCOPES["cdn"]["marker"] in cdn_body
+    assert notify_module.SCOPES["cdn"]["marker"] not in failure_body
+    assert notify_module.SCOPES["maintenance"]["marker"] not in cdn_body
+
+    original_api = notify_module.api_request
+    try:
+        legacy_failure = {"number": 9, "body": "<!-- tv-live-auto-check-maintenance-alert -->\n维护流程失败"}
+        notify_module.api_request = lambda method, path, token, payload=None: [legacy_failure] if method == "GET" else None
+        assert notify_module.find_open_issue("example/repo", "token", "maintenance") == legacy_failure
+        assert notify_module.find_open_issue("example/repo", "token", "cdn") is None
+    finally:
+        notify_module.api_request = original_api
+
+
 def test_recheck_source_map_helper() -> None:
     from recheck_published import Row, source_for
 
@@ -1612,6 +1737,7 @@ def test_recheck_summary_records_video_policy() -> None:
             recheck.update_summary(rows, rows, 1, {}, {}, 0.1, {}, {}, {}, {}, {"first_pass_failed_unique_urls": 0, "attempted_unique_urls": 0, "recovered_unique_urls": 0, "still_failed_unique_urls": 0}, 1)
             summary = json.loads((recheck.ROOT / recheck.SUMMARY_FILE).read_text(encoding="utf-8"))
             assert summary["published_recheck"]["require_video_track"] is True
+            assert summary["published_recheck"]["broadcast_progress_required"] is True
             assert summary["published_recheck"]["video_track_verified_unique_urls"] == 1
     finally:
         recheck.ROOT = original_root
@@ -1624,6 +1750,7 @@ def main() -> int:
         test_jsdelivr_purge_covers_fixed_and_branch_cache_keys,
         test_source_statuses_follow_config_order,
         test_source_config_omits_disabled_unstable_sources,
+        test_source_lifecycle_separates_recovery_from_enabled_failures,
         test_rules_config_contains_core_coverage,
         test_classification_avoids_single_character_false_positives,
         test_priority_and_guard_config_are_externalized,
@@ -1673,6 +1800,7 @@ def main() -> int:
         test_watchdog_rejects_stale_public_manifest,
         test_watchdog_compacts_api_runs_and_bounds_issue_body,
         test_maintenance_alert_includes_failed_stage,
+        test_maintenance_alert_scopes_are_isolated,
         test_recheck_source_map_helper,
         test_recheck_summary_records_video_policy,
     ]:
