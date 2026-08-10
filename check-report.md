@@ -1,9 +1,9 @@
 # IPTV source verification report
 
-Generated: 2026-08-10 11:41:36
-Generated UTC: 2026-08-10T11:41:36Z
-Generated Beijing: 2026-08-10 19:41:36 Asia/Shanghai
-Elapsed: 592.4s
+Generated: 2026-08-10 12:04:47
+Generated UTC: 2026-08-10T12:04:47Z
+Generated Beijing: 2026-08-10 20:04:47 Asia/Shanghai
+Elapsed: 606.2s
 Sources total: 29
 Sources fetched OK: 29
 Parsed candidates: 33160
@@ -11,11 +11,11 @@ Unique name+URL candidates: 29142
 Unique stream URLs: 28328
 Checked unique stream URLs: 28328
 Checked all unique URLs: True
-Playable channel names: 10332
-Playable unique URLs: 12999
-Playable name+URL lines: 13487
-Playable URLs found (legacy line count): 13487
-Pre-curated published playable lines: 12027
+Playable channel names: 10333
+Playable unique URLs: 13019
+Playable name+URL lines: 13512
+Playable URLs found (legacy line count): 13512
+Pre-curated published playable lines: 12038
 
 ## Source fetch status
 
@@ -55,23 +55,23 @@ Pre-curated published playable lines: 12027
 
 | Source | Lines |
 |---|---:|
-| iptv_org_all | 7288 |
-| epg_cn | 1015 |
+| iptv_org_all | 7274 |
+| epg_cn | 1031 |
 | bigbiggrandg_gather | 658 |
-| free_tv_world | 580 |
-| iyouhun_zb | 565 |
-| mursor_yy | 539 |
-| zbds_iptv4_txt | 458 |
-| guovin_all | 360 |
-| guovin_ipv4 | 230 |
+| free_tv_world | 586 |
+| iyouhun_zb | 571 |
+| mursor_yy | 532 |
+| zbds_iptv4_txt | 466 |
+| guovin_all | 356 |
+| guovin_ipv4 | 228 |
 | suxuang_ipv4 | 228 |
 | vamoschuck_m3u | 50 |
-| epg_tw | 13 |
+| epg_tw | 14 |
 | iptv_org_tw | 10 |
 | epg_mo | 8 |
 | suxuang_ipv6 | 8 |
 | kimentanm_aptv | 7 |
-| guovin_ipv6 | 3 |
+| guovin_ipv6 | 4 |
 | epg_hk | 2 |
 | epg_sg | 2 |
 | yang_gather | 2 |
@@ -86,7 +86,6 @@ Pre-curated published playable lines: 12027
 - 央视频道 / CCTV-1 / guovin_ipv4
 - 央视频道 / CCTV-1 / guovin_ipv4
 - 央视频道 / CCTV-1 / guovin_ipv4
-- 央视频道 / CCTV-1(1080p) / iptv_org_all
 - 央视频道 / CCTV-1(720p) / iptv_org_all
 - 央视频道 / CCTV-10 / guovin_ipv4
 - 央视频道 / CCTV-10 / guovin_ipv4
@@ -111,7 +110,6 @@ Pre-curated published playable lines: 12027
 - 央视频道 / CCTV-13 / guovin_ipv4
 - 央视频道 / CCTV-13 / guovin_ipv4
 - 央视频道 / CCTV-13 / guovin_ipv6
-- 央视频道 / CCTV-13(1080p) / iptv_org_all
 - 央视频道 / CCTV-14 / guovin_ipv4
 - 央视频道 / CCTV-14 / guovin_ipv4
 - 央视频道 / CCTV-14 / guovin_ipv4
@@ -159,3 +157,5 @@ Pre-curated published playable lines: 12027
 - 央视频道 / CCTV-5 / guovin_ipv4
 - 央视频道 / CCTV-5 / guovin_ipv4
 - 央视频道 / CCTV-5 / guovin_ipv4
+- 央视频道 / CCTV-5+ / guovin_ipv4
+- 央视频道 / CCTV-5+ / iptv_org_all
