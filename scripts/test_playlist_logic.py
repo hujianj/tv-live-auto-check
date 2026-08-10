@@ -28,6 +28,7 @@ import local_network_check as local_check_module
 import run_maintenance as maintenance_module
 import notify_maintenance as notify_module
 import watchdog_publication as watchdog_module
+import purge_jsdelivr as purge_jsdelivr_module
 from channel_utils import cctv_key as coverage_cctv_key, cctv_number, cctv_sort_key, cctv_variant_base, format_extinf, is_latin_noise_name
 from channel_identity import aliases_are_compatible, canonical_channel_key
 from validate_publish_bundle import BundleValidationError, Row as BundleRow, validate_publish_bundle
@@ -85,6 +86,10 @@ def test_workflow_is_pinned_and_refuses_stale_publication() -> None:
     assert workflow.index("Run complete maintenance pipeline") < workflow.index("Commit verified playlist")
     assert "cdn_pending" in workflow
     assert "--publication-files" in workflow
+    assert workflow.count("purge_jsdelivr.py") >= 2
+    assert "--pre-wait 30" in workflow
+    assert "run_endpoint_check" in workflow
+    assert workflow.index("Purge subscription files after Git propagation") < workflow.index("Verify Raw and all configured publication endpoints")
 
     fast_workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
     fast_refs = [line.strip() for line in fast_workflow.splitlines() if line.strip().startswith("uses:")]
@@ -129,6 +134,27 @@ def test_source_statuses_follow_config_order() -> None:
     ]
     ordered = order_source_statuses(completion_order, configured)
     assert [status.name for status in ordered] == ["first", "second"]
+
+
+def test_jsdelivr_purge_covers_fixed_and_branch_cache_keys() -> None:
+    urls = purge_jsdelivr_module.build_purge_urls(
+        "owner/repository",
+        "main",
+        ["ku9-live.txt", "live.m3u"],
+    )
+    assert urls == [
+        "https://purge.jsdelivr.net/gh/owner/repository/ku9-live.txt",
+        "https://purge.jsdelivr.net/gh/owner/repository@main/ku9-live.txt",
+        "https://purge.jsdelivr.net/gh/owner/repository/live.m3u",
+        "https://purge.jsdelivr.net/gh/owner/repository@main/live.m3u",
+    ]
+    for repo, branch in (("owner", "main"), ("owner/repo", "../main")):
+        try:
+            purge_jsdelivr_module.build_purge_urls(repo, branch, ["ku9-live.txt"])
+        except ValueError:
+            pass
+        else:
+            raise AssertionError((repo, branch))
 
 
 def test_source_config_omits_disabled_unstable_sources() -> None:
@@ -1594,6 +1620,7 @@ def main() -> int:
     for test in [
         test_workflow_is_pinned_and_refuses_stale_publication,
         test_publication_config_rejects_ambiguous_roles_and_unsafe_paths,
+        test_jsdelivr_purge_covers_fixed_and_branch_cache_keys,
         test_source_statuses_follow_config_order,
         test_source_config_omits_disabled_unstable_sources,
         test_rules_config_contains_core_coverage,
