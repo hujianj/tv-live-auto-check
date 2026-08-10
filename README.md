@@ -249,4 +249,4 @@ local-network-results.csv
 python scripts\local_network_check.py --core-only --workers 24 --timeout 15 --write-home-priority
 ```
 
-会更新 `config/home-priority.json`，后续自动整理会优先家里实际可播的 URL，并降权家里失败的 URL。家庭网络结果默认只生效 14 天；过期后自动维护会忽略旧结果，避免一次临时断网永久压低原本可用的线路。需要继续使用时，从家里网络重新执行上述命令并提交新结果。
+会更新 `config/home-priority.json`，后续自动整理会优先家里实际可播的 URL，并降权家里失败的 URL。家庭网络结果默认只生效 14 天，程序硬上限为 30 天；过期后自动维护会忽略旧结果，避免一次临时断网永久压低原本可用的线路。需要继续使用时，从家里网络重新执行上述命令并提交新结果。
