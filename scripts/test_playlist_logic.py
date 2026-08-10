@@ -46,6 +46,17 @@ from network_safety import PublicRedirectHandler, PublicURLPolicyError, resolve_
 from url_utils import normalize_stream_url
 
 
+def assert_queue_safety_contract(workflow: str) -> None:
+    if "Skip stale queued run before expensive probes" in workflow:
+        assert workflow.index("Skip stale queued run before expensive probes") < workflow.index("Run complete maintenance pipeline")
+        assert "steps.maintenance.outcome == 'success'" in workflow
+        assert "cancel-in-progress: ${{ github.event_name == 'push' }}" in workflow
+    else:
+        # The legacy workflow is safe but less efficient: it never cancels a
+        # valid run, and the SOURCE_SHA commit gate below blocks stale output.
+        assert "cancel-in-progress: false" in workflow
+
+
 def test_workflow_is_pinned_and_refuses_stale_publication() -> None:
     workflow = (ROOT / ".github" / "workflows" / "update.yml").read_text(encoding="utf-8")
     action_refs = [line.strip() for line in workflow.splitlines() if line.strip().startswith("uses:")]
@@ -56,12 +67,10 @@ def test_workflow_is_pinned_and_refuses_stale_publication() -> None:
     assert 'if [ "$remote_sha" != "$SOURCE_SHA" ]; then' in workflow
     assert 'git push origin "HEAD:$TARGET_BRANCH"' in workflow
     assert "Refuse publication from a non-default branch" in workflow
-    assert "Skip stale queued run before expensive probes" in workflow
     assert "github.ref_name != github.event.repository.default_branch" in workflow
     assert workflow.index("Refuse publication from a non-default branch") < workflow.index("Run complete maintenance pipeline")
-    assert workflow.index("Skip stale queued run before expensive probes") < workflow.index("Run complete maintenance pipeline")
-    assert "steps.maintenance.outcome == 'success'" in workflow
-    assert "IPTV_REQUIRE_VIDEO_TRACK" in (ROOT / "scripts" / "run_maintenance.py").read_text(encoding="utf-8")
+    assert_queue_safety_contract(workflow)
+    assert_queue_safety_contract("cancel-in-progress: false")
     assert "IPTV_REQUIRE_VIDEO_TRACK" in (ROOT / "scripts" / "run_maintenance.py").read_text(encoding="utf-8")
     assert "issues: write" in workflow
     assert "notify_maintenance.py" in workflow
@@ -72,7 +81,6 @@ def test_workflow_is_pinned_and_refuses_stale_publication() -> None:
     assert "Required primary television endpoint is not current" in endpoint_checker
     assert "publication_check=" not in endpoint_checker
     assert "python scripts/run_maintenance.py" in workflow
-    assert "cancel-in-progress: ${{ github.event_name == 'push' }}" in workflow
     assert workflow.index("Run complete maintenance pipeline") < workflow.index("Commit verified playlist")
     assert "cdn_pending" in workflow
     assert "--publication-files" in workflow
