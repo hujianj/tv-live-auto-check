@@ -1,9 +1,9 @@
 # IPTV source verification report
 
-Generated: 2026-08-10 11:16:09
-Generated UTC: 2026-08-10T11:16:08Z
-Generated Beijing: 2026-08-10 19:16:08 Asia/Shanghai
-Elapsed: 628.2s
+Generated: 2026-08-10 11:41:36
+Generated UTC: 2026-08-10T11:41:36Z
+Generated Beijing: 2026-08-10 19:41:36 Asia/Shanghai
+Elapsed: 592.4s
 Sources total: 29
 Sources fetched OK: 29
 Parsed candidates: 33160
@@ -11,11 +11,11 @@ Unique name+URL candidates: 29142
 Unique stream URLs: 28328
 Checked unique stream URLs: 28328
 Checked all unique URLs: True
-Playable channel names: 10294
-Playable unique URLs: 12964
-Playable name+URL lines: 13453
-Playable URLs found (legacy line count): 13453
-Pre-curated published playable lines: 11991
+Playable channel names: 10332
+Playable unique URLs: 12999
+Playable name+URL lines: 13487
+Playable URLs found (legacy line count): 13487
+Pre-curated published playable lines: 12027
 
 ## Source fetch status
 
@@ -55,17 +55,17 @@ Pre-curated published playable lines: 11991
 
 | Source | Lines |
 |---|---:|
-| iptv_org_all | 7272 |
-| epg_cn | 1018 |
-| bigbiggrandg_gather | 659 |
-| free_tv_world | 582 |
-| iyouhun_zb | 569 |
-| mursor_yy | 508 |
-| zbds_iptv4_txt | 461 |
-| guovin_all | 358 |
-| guovin_ipv4 | 231 |
-| suxuang_ipv4 | 230 |
-| vamoschuck_m3u | 47 |
+| iptv_org_all | 7288 |
+| epg_cn | 1015 |
+| bigbiggrandg_gather | 658 |
+| free_tv_world | 580 |
+| iyouhun_zb | 565 |
+| mursor_yy | 539 |
+| zbds_iptv4_txt | 458 |
+| guovin_all | 360 |
+| guovin_ipv4 | 230 |
+| suxuang_ipv4 | 228 |
+| vamoschuck_m3u | 50 |
 | epg_tw | 13 |
 | iptv_org_tw | 10 |
 | epg_mo | 8 |
@@ -86,6 +86,7 @@ Pre-curated published playable lines: 11991
 - 央视频道 / CCTV-1 / guovin_ipv4
 - 央视频道 / CCTV-1 / guovin_ipv4
 - 央视频道 / CCTV-1 / guovin_ipv4
+- 央视频道 / CCTV-1(1080p) / iptv_org_all
 - 央视频道 / CCTV-1(720p) / iptv_org_all
 - 央视频道 / CCTV-10 / guovin_ipv4
 - 央视频道 / CCTV-10 / guovin_ipv4
@@ -158,4 +159,3 @@ Pre-curated published playable lines: 11991
 - 央视频道 / CCTV-5 / guovin_ipv4
 - 央视频道 / CCTV-5 / guovin_ipv4
 - 央视频道 / CCTV-5 / guovin_ipv4
-- 央视频道 / CCTV-5+ / guovin_ipv4

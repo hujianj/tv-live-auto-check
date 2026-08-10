@@ -1,17 +1,17 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 2541
-Unique channel names: 1539
-Unique canonical channel identities: 1539
-Unique URLs: 2541
+Rows: 2536
+Unique channel names: 1540
+Unique canonical channel identities: 1540
+Unique URLs: 2536
 Strict filter residue count: 0
 Latin/noise-like review count: 2
 Channel unique URL limit violations: 0
 URL identity conflicts: 0
-Unique stream hosts: 149
-Top stream host share: 32.9%
-Top five stream host share: 61.3%
+Unique stream hosts: 150
+Top stream host share: 32.7%
+Top five stream host share: 61.5%
 
 ## Core CCTV quality
 
@@ -60,24 +60,24 @@ Minimum important satellite independent URLs: 3
 
 | Host | Rows | Share |
 |---|---:|---:|
-| stream1.freetv.fun | 835 | 32.9% |
-| live.ottiptv.cc | 363 | 14.3% |
+| stream1.freetv.fun | 829 | 32.7% |
+| live.ottiptv.cc | 372 | 14.7% |
 | cloud.video.taobao.com | 187 | 7.4% |
-| l.cztvcloud.com | 100 | 3.9% |
+| l.cztvcloud.com | 99 | 3.9% |
 | vodcdn.video.taobao.com | 72 | 2.8% |
 | vd3.bdstatic.com | 55 | 2.2% |
-| cdn.jdshipin.com | 52 | 2.0% |
-| t.freetv.fun | 40 | 1.6% |
-| live.metshop.top | 40 | 1.6% |
-| 63.141.230.178 | 39 | 1.5% |
+| cdn.jdshipin.com | 52 | 2.1% |
+| t.freetv.fun | 41 | 1.6% |
+| 63.141.230.178 | 40 | 1.6% |
+| 38.75.136.137 | 39 | 1.5% |
 
 ## Family playlist audit
 
 Status: ok
-Rows: 1178
-Unique URLs: 1178
+Rows: 1182
+Unique URLs: 1182
 
 ## Warnings
 
 - latin/noise-like channel names remain for review: 2
-- top stream host share is high: 32.9% > 30.0%
+- top stream host share is high: 32.7% > 30.0%
