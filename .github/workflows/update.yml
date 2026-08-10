@@ -147,35 +147,34 @@ jobs:
           fi
           git commit -m "chore: verify and publish playable IPTV playlist"
           git push origin "HEAD:$TARGET_BRANCH"
-      - name: Purge subscription files from jsDelivr
+      - name: Purge subscription files after Git propagation
         if: ${{ steps.commit.outcome == 'success' }}
         continue-on-error: true
-        run: |
-          set -u
-          purge_pids=()
-          while IFS= read -r file; do
-            [ -n "$file" ] || continue
-            echo "Purging $file"
-            (curl --retry 2 --max-time 20 -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}/$file") & purge_pids+=("$!")
-            (curl --retry 2 --max-time 20 -fsS "https://purge.jsdelivr.net/gh/${{ github.repository }}@main/$file") & purge_pids+=("$!")
-          done < <(python scripts/publication_config.py --purge-files)
-          purge_failures=0
-          for pid in "${purge_pids[@]}"; do
-            if ! wait "$pid"; then purge_failures=$((purge_failures + 1)); fi
-          done
-          echo "jsDelivr purge failures=$purge_failures" | tee -a "$GITHUB_STEP_SUMMARY"
+        run: python scripts/purge_jsdelivr.py --repo "${{ github.repository }}" --branch "${{ github.ref_name }}" --pre-wait 30
       - name: Verify Raw and all configured publication endpoints
         id: cdn_health
         if: ${{ steps.commit.outcome == 'success' }}
         continue-on-error: true
         run: |
           set +e
-          python scripts/check_publication_endpoints.py \
-            --repo "${{ github.repository }}" \
-            --branch "${{ github.ref_name }}" \
-            --global-deadline 240 \
-            --retry-wait 3
+          run_endpoint_check() {
+            python scripts/check_publication_endpoints.py \
+              --repo "${{ github.repository }}" \
+              --branch "${{ github.ref_name }}" \
+              --global-deadline 240 \
+              --retry-wait 3
+          }
+          run_endpoint_check
           status=$?
+          if [ "$status" -ne 0 ]; then
+            echo "Canonical endpoint check is not current; delay, purge, and verify once more." | tee -a "$GITHUB_STEP_SUMMARY"
+            python scripts/purge_jsdelivr.py \
+              --repo "${{ github.repository }}" \
+              --branch "${{ github.ref_name }}" \
+              --pre-wait 30
+            run_endpoint_check
+            status=$?
+          fi
           if [ -f cdn-health-report.md ]; then cat cdn-health-report.md >> "$GITHUB_STEP_SUMMARY"; fi
           exit "$status"
       - name: Upload CDN health artifact
