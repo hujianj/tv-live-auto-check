@@ -62,7 +62,7 @@ def is_latin_noise_name(name: str) -> bool:
     upper = n.upper()
     if cctv_key(n) or re.match(r"^CCTV[-_ ]?\d+", upper):
         return False
-    if re.match(r"^(TVB|TVBS|RTHK|VIUTV|PHOENIX)", upper):
+    if re.match(r"^(TVB|TVBS|RTHK|VIUTV|PHOENIX|ELEVEN)", upper):
         return False
     return bool(re.search(r"[A-Za-z]{5,}", n))
 

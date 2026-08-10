@@ -10,14 +10,15 @@ import socket
 import sys
 import tempfile
 import zlib
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 from validate_playlist import validate_m3u_text, validate_text
-from verify_sources import SOURCES, Candidate, CheckResult, HLSManifest, SourceStatus, deduplicate_candidates, is_core_family_candidate, looks_bad, looks_transient_failure, order_source_statuses, parse_hls_manifest, parse_m3u, parse_txt, progress_wait_seconds, split_stream_urls, split_unquoted_last_comma
-from playlist_config import get_group_order, load_guard, load_home_priority, load_priority, load_quality, source_priority
+from verify_sources import SOURCES, Candidate, CheckResult, HLSManifest, SourceStatus, deduplicate_candidates, interleave_candidates_by_host, is_core_family_candidate, looks_bad, looks_transient_failure, order_source_statuses, parse_hls_manifest, parse_m3u, parse_txt, progress_wait_seconds, split_stream_urls, split_unquoted_last_comma
+from playlist_config import apply_home_priority_freshness, get_group_order, load_guard, load_home_priority, load_priority, load_quality, source_priority
 from stability import stability_adjustment
 import stability as stability_module
 import verify_sources as verify_module
@@ -186,6 +187,8 @@ def test_priority_and_guard_config_are_externalized() -> None:
     assert priority["score_adjustments"]["verify"]["ipv6"] > 0
     assert priority["stability"]["enabled"] is True
     assert priority["stability"]["max_entries"] <= 5000
+    assert 1 <= priority["stability"]["evidence_counter_cap"] <= 100
+    assert 1 <= priority["stability"]["streak_cap"] <= priority["stability"]["evidence_counter_cap"]
     assert guard["min_lines"] >= 1800
     assert guard["min_groups"]["央视频道"] >= 90
     assert 0 < guard["max_published_recheck_failed_url_ratio"] <= 0.5
@@ -211,6 +214,7 @@ def test_quality_filters_and_limits_are_enforced() -> None:
     assert curate_module.strict_quality_drop_reason("纪录|Discovery")
     assert curate_module.strict_quality_drop_reason("吉林市新闻综合[Geo-blocked]")
     assert not curate_module.strict_quality_drop_reason("BRTV北京卫视(1080p)")
+    assert not is_latin_noise_name("ELEVEN体育1")
     assert curate_module.per_channel_limit(curate_module.G_CCTV, "CCTV-1") >= 6
     assert curate_module.per_channel_limit(curate_module.G_ENT, "普通娱乐") <= 3
 
@@ -283,6 +287,35 @@ def test_home_priority_adjustment_and_writer() -> None:
         assert data["home_ok_urls"] == ["http://ok/1.m3u8", "http://ok/2.m3u8"]
         assert data["home_failed_urls"] == ["http://bad/1.m3u8"]
         assert data["mode"] == "core-only"
+        assert data["max_age_hours"] == 14 * 24
+        assert data["generated_at_utc"].endswith("Z")
+        assert data["expires_at_utc"].endswith("Z")
+
+    now = datetime(2026, 8, 10, tzinfo=timezone.utc)
+    fresh_data = {
+        "home_ok_urls": ["http://ok/live.m3u8"],
+        "home_failed_urls": ["http://bad/live.m3u8"],
+        "max_age_hours": 24,
+        "generated_at_utc": (now - timedelta(hours=2)).isoformat().replace("+00:00", "Z"),
+        "expires_at_utc": (now + timedelta(hours=22)).isoformat().replace("+00:00", "Z"),
+    }
+    fresh = apply_home_priority_freshness(fresh_data, now)
+    assert fresh["_fresh"] is True
+    assert fresh["_configured"] is True
+    assert fresh["_active"] is True
+    assert fresh["home_ok_urls"] == ["http://ok/live.m3u8"]
+    expired_data = dict(fresh_data)
+    expired_data["expires_at_utc"] = (now - timedelta(seconds=1)).isoformat().replace("+00:00", "Z")
+    expired = apply_home_priority_freshness(expired_data, now)
+    assert expired["_fresh"] is False
+    assert expired["_configured"] is True
+    assert expired["_active"] is False
+    assert expired["_stale_reason"] == "expires_at_utc reached"
+    assert expired["home_ok_urls"] == []
+    assert expired["home_failed_urls"] == []
+    missing_timestamp = apply_home_priority_freshness({"home_ok_urls": ["http://ok/live.m3u8"]}, now)
+    assert missing_timestamp["_fresh"] is False
+    assert missing_timestamp["home_ok_urls"] == []
 
 
 def test_coverage_counts_exact_cctv_and_reports_variants() -> None:
@@ -414,6 +447,26 @@ def test_stability_update_counts_unique_urls() -> None:
             history = stability_module.load_history()
             assert history["urls"]["http://a/live.m3u8"]["ok"] == 1
             assert history["urls"]["http://b/live.m3u8"]["fail"] == 1
+
+            stable_row = [SimpleNamespace(group="央视频道", name="CCTV-1", url="http://stable/live.m3u8")]
+            cap = int(load_priority()["stability"]["evidence_counter_cap"])
+            streak_cap = int(load_priority()["stability"]["streak_cap"])
+            for _ in range(cap + streak_cap + 3):
+                stability_module.update_history(stable_row, {}, {})
+            history = stability_module.load_history()
+            stable = history["urls"]["http://stable/live.m3u8"]
+            assert stable["ok"] == cap
+            assert stable["fail"] == 0
+            assert stable["streak_ok"] == streak_cap
+            before = (tmp_path / "history.tsv").read_bytes()
+            stability_module.update_history(stable_row, {}, {})
+            assert (tmp_path / "history.tsv").read_bytes() == before
+            stability_module.update_history(stable_row, {"http://stable/live.m3u8": "timeout"}, {})
+            after_failure = stability_module.load_history()["urls"]["http://stable/live.m3u8"]
+            assert after_failure["ok"] == cap - 1
+            assert after_failure["fail"] == 1
+            assert after_failure["streak_ok"] == 0
+            assert after_failure["streak_fail"] == 1
         finally:
             stability_module.history_path = old_history_path  # type: ignore[assignment]
             stability_module.report_path = old_report_path  # type: ignore[assignment]
@@ -501,6 +554,19 @@ def test_source_dedup_is_deterministic() -> None:
     second = deduplicate_candidates([preferred, low])
     assert first[("CCTV-1", "http://a/live.m3u8")].source == "zbds_iptv4_txt"
     assert second == first
+
+
+def test_probe_scheduler_round_robins_initial_hosts() -> None:
+    candidates = [
+        Candidate("s", "g", "a1", "https://a.test/1.m3u8"),
+        Candidate("s", "g", "a2", "https://a.test/2.m3u8"),
+        Candidate("s", "g", "a3", "https://a.test/3.m3u8"),
+        Candidate("s", "g", "b1", "https://b.test/1.m3u8"),
+        Candidate("s", "g", "b2", "https://b.test/2.m3u8"),
+        Candidate("s", "g", "c1", "https://c.test/1.m3u8"),
+    ]
+    ordered = interleave_candidates_by_host(candidates)
+    assert [item.name for item in ordered] == ["a1", "b1", "c1", "a2", "b2", "a3"]
 
 
 def test_canonical_identity_collapses_resolution_and_official_aliases() -> None:
@@ -1504,6 +1570,7 @@ def main() -> int:
         test_family_playlist_limits,
         test_family_playlist_uses_canonical_identity_quota,
         test_source_dedup_is_deterministic,
+        test_probe_scheduler_round_robins_initial_hosts,
         test_canonical_identity_collapses_resolution_and_official_aliases,
         test_strict_media_probe_requires_a_video_track,
         test_public_network_policy_blocks_private_and_redirect_targets,

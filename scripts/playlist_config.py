@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timezone
 from functools import lru_cache
 from pathlib import Path
 
@@ -46,11 +47,60 @@ def load_quality() -> dict:
     return load_json_config("quality.json")
 
 
+def _parse_utc_timestamp(value: object) -> datetime | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return None
+    return parsed.astimezone(timezone.utc)
+
+
+def apply_home_priority_freshness(data: dict, now: datetime | None = None) -> dict:
+    """Disable one-shot home-network hints after their bounded lifetime."""
+    result = dict(data)
+    ok_urls = list(result.get("home_ok_urls") or [])
+    failed_urls = list(result.get("home_failed_urls") or [])
+    active = bool(ok_urls or failed_urls)
+    now_utc = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
+    max_age_hours = max(1, int(result.get("max_age_hours", 14 * 24)))
+    generated = _parse_utc_timestamp(result.get("generated_at_utc"))
+    expires = _parse_utc_timestamp(result.get("expires_at_utc"))
+    age_hours = max(0.0, (now_utc - generated).total_seconds() / 3600.0) if generated else None
+    stale_reason = ""
+    if active:
+        if generated is None:
+            stale_reason = "missing or invalid generated_at_utc"
+        elif expires is not None and now_utc >= expires:
+            stale_reason = "expires_at_utc reached"
+        elif expires is None and age_hours is not None and age_hours >= max_age_hours:
+            stale_reason = "max_age_hours reached"
+    if stale_reason:
+        result["home_ok_urls"] = []
+        result["home_failed_urls"] = []
+    result["max_age_hours"] = max_age_hours
+    result["_configured"] = active
+    result["_configured_ok_urls"] = len(ok_urls)
+    result["_configured_failed_urls"] = len(failed_urls)
+    result["_active"] = active and not bool(stale_reason)
+    result["_fresh"] = not bool(stale_reason)
+    result["_stale_reason"] = stale_reason
+    result["_age_hours"] = round(age_hours, 3) if age_hours is not None else None
+    return result
+
+
 def load_home_priority() -> dict:
     path = CONFIG_DIR / "home-priority.json"
     if not path.exists():
         return {}
-    return json.loads(path.read_text(encoding="utf-8-sig"))
+    data = json.loads(path.read_text(encoding="utf-8-sig"))
+    if not isinstance(data, dict):
+        raise ValueError("home-priority.json must contain a JSON object")
+    return apply_home_priority_freshness(data)
 
 
 def get_group_order() -> list[str]:
