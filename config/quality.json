@@ -41,7 +41,9 @@
     "Storm憋了一年大招",
     "MARSHALL",
     "LiveABC",
-    "bside"
+    "bside",
+    "KroneHit",
+    "MusicChannel"
   ],
   "strict_drop_regex": [
     "(^|[^A-Za-z])(Animal[_ ]?Planet|Discovery(Asia)?|FashionTV|Foodnetwork|HGTV|History|NatGeo(_?Wild)?|CartoonNetwork|BabyTV|Animax|CBeebies|KidsTV|CampSpoopy)([^A-Za-z]|$)",
@@ -85,6 +87,11 @@
     "湖南卫视",
     "广东卫视",
     "深圳卫视"
+  ],
+  "live_progress_groups": [
+    "央视频道",
+    "卫视频道",
+    "地方频道"
   ],
   "quality_source_bonus": {
     "official_domain_contains": [

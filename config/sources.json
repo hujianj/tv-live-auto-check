@@ -14,7 +14,9 @@
   {
     "name": "migu_interface",
     "url": "https://develop202.github.io/migu_video/interface.txt",
-    "enabled": true
+    "enabled": false,
+    "auto_recover": true,
+    "note": "当前抓取成功但没有 HTTP/HTTPS 播放列表候选；保留自动恢复探测，恢复后才参与检测。"
   },
   {
     "name": "guovin_all",
@@ -157,25 +159,29 @@
     "name": "freetv_huya",
     "url": "https://live.freetv.top/huyayqk.m3u",
     "enabled": false,
-    "note": "近期 GitHub Actions 上持续 timeout，且属于轮播娱乐补充源，先禁用以减少波动和耗时。"
+    "auto_recover": true,
+    "note": "近期 timeout；作为轮播娱乐补充源低成本自动复查，恢复并解析出候选后才参与检测。"
   },
   {
     "name": "pizazz_ai_txt",
     "url": "https://raw.githubusercontent.com/PizazzGY/TV/master/output/user_result.txt",
     "enabled": false,
-    "note": "历史上游源，最近检测为 404；保留记录，避免重复排查。"
+    "auto_recover": true,
+    "note": "历史上游源，最近 404；自动复查，恢复并解析出候选后才参与检测。"
   },
   {
     "name": "pizazz_ai_m3u",
     "url": "https://raw.githubusercontent.com/PizazzGY/TV/master/output/user_result.m3u",
     "enabled": false,
-    "note": "历史上游源，最近检测为 404；保留记录，避免重复排查。"
+    "auto_recover": true,
+    "note": "历史上游源，最近 404；自动复查，恢复并解析出候选后才参与检测。"
   },
   {
     "name": "gitee_dsy",
     "url": "https://gitee.com/xxy002/zhiboyuan/raw/master/dsy",
     "enabled": false,
-    "note": "历史上游源，最近检测为 404 或不可稳定抓取；保留记录。"
+    "auto_recover": true,
+    "note": "历史上游源，最近 404 或不稳定；自动复查，恢复并解析出候选后才参与检测。"
   },
   {
     "name": "jacktv_oversea",
@@ -193,6 +199,7 @@
     "name": "freetv_douyu",
     "url": "https://live.freetv.top/douyuyqk.m3u",
     "enabled": false,
-    "note": "斗鱼一起看，最近在 GitHub Actions 上 timeout；先停用减少耗时和波动。"
+    "auto_recover": true,
+    "note": "斗鱼一起看近期 timeout；自动复查，恢复并解析出候选后才参与检测。"
   }
 ]

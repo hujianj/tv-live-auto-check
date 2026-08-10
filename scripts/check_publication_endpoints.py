@@ -59,8 +59,8 @@ class EndpointResult:
     path: str = ""
 
 
-def endpoint_matrix(repo: str, branch: str) -> list[Endpoint]:
-    return [
+def endpoint_matrix(repo: str, branch: str, required_only: bool = False) -> list[Endpoint]:
+    endpoints = [
         Endpoint(
             name=str(item["name"]),
             url=str(item["url"]),
@@ -74,6 +74,9 @@ def endpoint_matrix(repo: str, branch: str) -> list[Endpoint]:
         )
         for item in endpoint_urls(repo, branch, ROOT)
     ]
+    if required_only:
+        endpoints = [item for item in endpoints if item.hard_raw or item.required_primary]
+    return endpoints
 
 
 def build_request(url: str) -> Request:
@@ -216,13 +219,18 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--timeout", type=int, default=0, help="override per-request timeout; 0 uses config")
     parser.add_argument("--retry-wait", type=float, default=5.0)
     parser.add_argument("--global-deadline", type=int, default=240)
+    parser.add_argument(
+        "--required-only",
+        action="store_true",
+        help="check only authoritative Raw and the required primary television endpoint",
+    )
     args = parser.parse_args(argv)
 
     expected = Path(args.expected).read_bytes()
     validate_text(expected.decode("utf-8", "strict"), require_categories=True)
     expected_hash = hashlib.sha256(expected).hexdigest()
     max_bytes = max(2_000_000, len(expected) * 3)
-    endpoints = endpoint_matrix(args.repo, args.branch)
+    endpoints = endpoint_matrix(args.repo, args.branch, required_only=args.required_only)
     results_by_index: dict[int, EndpointResult] = {}
     started = time.monotonic()
     executor = cf.ThreadPoolExecutor(max_workers=len(endpoints))

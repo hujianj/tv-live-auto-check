@@ -36,7 +36,7 @@ GitHub Actions 每天北京时间 04:20 和 16:20 各计划运行一次，也可
 
 流程：
 
-1. 读取 `config/sources.json` 中启用的所有上游源。
+1. 读取 `config/sources.json` 中 `enabled` 源和允许自动恢复探测的 `auto_recover` 源；永久禁用源不参与本轮。
 2. 抓取 TXT / M3U / M3U8 聚合列表。
 3. 解析频道名、分类和播放 URL。
 4. 对同一 URL 去重，避免重复检测。
@@ -54,6 +54,16 @@ GitHub Actions 每天北京时间 04:20 和 16:20 各计划运行一次，也可
 防缩水守卫把央视、卫视和地方频道作为硬保护分类，并同时保护整表总量；影视、少儿、体育、音乐、生活、综合娱乐、港澳台和海外华语属于可选分类，真实复测不可播时允许减少甚至归零，不能为了维持历史行数继续发布死源。
 
 只有 `verify_sources.py` 和 `recheck_published.py` 两个真实网络检测阶段允许有限重试；重试从失败阶段继续，不再重新跑已经成功的全量上游检测。分类、质量审计、防缩水、体积和清单校验属于确定性阶段，失败会立即停止发布并在告警 Issue 中写明失败脚本、退出码、分类和耗时。排队期间如果 `main` 已更新，旧运行会在昂贵检测前自动跳过；新的代码 push 会取消正在使用旧代码检测的运行，但计划和手动运行只排队、不互相取消。
+
+上游源有三种生命周期状态：
+
+- `enabled: true`：正常抓取、解析、全量媒体检测，并参与发布；这类源的抓取失败仍受发布守卫约束。
+- `enabled: false, auto_recover: true`：只做低成本恢复探测；只有成功解析出候选频道后，才加入本轮媒体检测和发布。抓取失败或解析为空只产生非阻断告警，不会因临时 404/超时阻止主列表更新。
+- `enabled: false, auto_recover: false`：永久禁用，不会被自动加入发布流程。
+
+严格维护运行生成的新版 `sources_status.csv` 会记录 `mode` 和 `contributed`，并由发布包校验器核对配置顺序、状态语义和汇总计数。旧版 7 列表头只在 `--committed-only` 迁移兼容路径接受，不能通过完整发布门禁。
+
+维护 workflow 完成后，独立的 `.github/workflows/cdn-reconcile.yml` 会只对 GitHub Raw 和电视主 jsDelivr 地址执行多轮 purge/check；它不会重复 2.8 万条媒体 URL 检测。CDN 暂时滞后与媒体检测失败使用不同告警 Issue，CDN 恢复时不会误关闭媒体检测告警。
 
 大体积诊断文件不会再进入 Git 历史，只作为 GitHub Actions artifact 保存 30 天：
 
@@ -150,6 +160,8 @@ config/sources.json
 - `name` 建议只用英文、数字、下划线，后续报告、优先级和守卫都依赖这个稳定标识。
 - `url` 可以是 TXT / M3U / M3U8 聚合源地址。
 - 暂时不用或长期失败的源建议保留但设为 `enabled: false`，并在 `note` 写明原因。
+- 临时失败但希望自动复查的源设为 `enabled: false, auto_recover: true`；恢复后必须先解析出候选频道才会参与媒体检测，不能仅凭源地址返回 HTTP 200 就发布。
+- `enabled` 与 `auto_recover` 不能同时为 `true`；永久禁用源应同时保持两者为 `false`。
 - 如果新源很重要，把它加入 `config/guard.json` 的 `core_sources`。
 - 如果新源需要更高优先级，修改 `config/priority.json`，不要直接改脚本排序逻辑。
 

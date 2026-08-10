@@ -43,6 +43,8 @@ SPORT_DOC_KEYS = RULES['category_keywords']['sport_doc']
 MUSIC_SHOW_KEYS = RULES['category_keywords']['music_show']
 LIFE_KEYS = RULES['category_keywords']['life']
 GROUP_KEYS = RULES['group_keywords']
+OVERSEAS_SOURCE_NAMES = {str(x) for x in RULES.get('overseas_source_names', [])}
+OVERSEAS_GROUP_TOKENS = tuple(str(x).lower() for x in RULES.get('overseas_group_tokens', []))
 FOREIGN_LANG = re.compile(RULES['foreign_lang_regex'], re.I)
 FOREIGN_NAME_TOKENS = RULES['foreign_name_tokens']
 FOREIGN_CN_TOKENS = RULES['foreign_cn_tokens']
@@ -226,8 +228,17 @@ def classify(name: str, group: str, source: str) -> str:
         return G_MUSIC_SHOW
     if any(k in name for k in LIFE_KEYS):
         return G_LIFE
-    if re.search(r'[A-Za-z]{4,}', group or ''):
-        return G_OVERSEA if chinese_count(name) > 0 else G_ENT
+    # An English upstream group label does not prove that a Chinese-titled
+    # stream is overseas. Rotation sources commonly use generic Latin group
+    # names for mainland films and shows. Only explicit overseas collections
+    # plus an overseas-language group marker may select the overseas bucket.
+    group_lower = (group or '').lower()
+    if (
+        source in OVERSEAS_SOURCE_NAMES
+        and chinese_count(name) > 0
+        and any(token in group_lower for token in OVERSEAS_GROUP_TOKENS)
+    ):
+        return G_OVERSEA
     return G_ENT
 
 

@@ -1,0 +1,92 @@
+name: Reconcile IPTV primary CDN
+
+on:
+  workflow_run:
+    workflows:
+      - Verify and publish IPTV auto-check playlist
+    types:
+      - completed
+  schedule:
+    # CDN propagation is independent of media-source maintenance. A small
+    # hourly reconciler closes the gap without repeating the full URL scan.
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: iptv-primary-cdn-reconcile-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout current publication
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+          ref: main
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - name: Reconcile authoritative Raw and primary television CDN
+        id: reconcile
+        continue-on-error: true
+        env:
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          set +e
+          status=1
+          for delay in 0 60 120 180; do
+            if [ "$delay" -gt 0 ]; then
+              echo "Waiting ${delay}s before the next CDN purge/check round."
+              sleep "$delay"
+            fi
+            python scripts/purge_jsdelivr.py \
+              --repo "${GITHUB_REPOSITORY}" \
+              --branch main \
+              --pre-wait 0
+            timeout --signal=TERM --kill-after=10s 150s \
+              python scripts/check_publication_endpoints.py \
+              --repo "${GITHUB_REPOSITORY}" \
+              --branch main \
+              --required-only \
+              --global-deadline 120 \
+              --retry-wait 5
+            status=$?
+            if [ "$status" -eq 0 ]; then
+              exit 0
+            fi
+          done
+          exit "$status"
+      - name: Upload CDN reconciliation evidence
+        if: always()
+        continue-on-error: true
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: cdn-reconcile-${{ github.run_id }}
+          retention-days: 30
+          if-no-files-found: warn
+          path: |
+            cdn-health-report.md
+            cdn-health-report.json
+      - name: Notify CDN pending state
+        if: steps.reconcile.outcome == 'failure'
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/notify_maintenance.py cdn_pending --scope cdn --message "独立 CDN 收敛任务在多轮 purge/check 后仍未追上 GitHub Raw；旧版列表仍可用，下一轮将继续复验。"
+      - name: Close recovered CDN issue
+        if: steps.reconcile.outcome == 'success'
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: python scripts/notify_maintenance.py success --scope cdn
+      - name: Mark unreconciled CDN as failed
+        if: steps.reconcile.outcome == 'failure'
+        run: exit 1

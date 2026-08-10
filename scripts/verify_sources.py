@@ -26,6 +26,7 @@ from channel_utils import cctv_number, format_extinf
 from playlist_config import score_adjustments, source_priority as configured_source_priority
 from url_utils import is_publishable_http_url, normalize_stream_url, publishable_url_issue, split_stream_urls
 from network_safety import public_urlopen
+from source_config import SourceSpec, configured_source_pairs, load_source_specs, probe_source_specs
 from media_probe import looks_media as probe_looks_media, probe_media
 
 try:
@@ -70,26 +71,16 @@ TRANSIENT_OUTPUTS = [
 
 def load_sources(path: Path = SOURCE_CONFIG) -> list[tuple[str, str]]:
     """Load enabled upstream playlist sources from config/sources.json."""
-    data = json.loads(path.read_text(encoding="utf-8-sig"))
-    out: list[tuple[str, str]] = []
-    seen: set[str] = set()
-    for item in data:
-        if item.get("enabled") is False:
-            continue
-        name = str(item.get("name") or "").strip()
-        url = str(item.get("url") or "").strip()
-        if not name or not url:
-            raise ValueError(f"invalid source config item: {item!r}")
-        if name in seen:
-            raise ValueError(f"duplicate source name in {path}: {name}")
-        seen.add(name)
-        out.append((name, url))
+    out = configured_source_pairs(path)
     if not out:
         raise ValueError(f"no enabled source in {path}")
     return out
 
 
 SOURCES = load_sources()
+SOURCE_SPECS = load_source_specs()
+PROBE_SPECS = probe_source_specs()
+PROBE_SOURCES = [(spec.name, spec.url) for spec in PROBE_SPECS]
 
 BAD_MARKERS = ("nosignal", "no-signal", "no_signal", "notfound", "404", "offline")
 BAD_HTML = (b"<html", b"<!doctype html", b"<head", b"<body")
@@ -122,6 +113,8 @@ class SourceStatus:
     parsed: int = 0
     truncated: bool = False
     error: str = ""
+    mode: str = "enabled"
+    contributed: bool = False
 
 @dataclass
 class CheckResult:
@@ -338,8 +331,8 @@ def parse_playlist(text: str, source: str) -> list[Candidate]:
     return parse_txt(text, source)
 
 
-def fetch_source(item: tuple[str, str]) -> tuple[SourceStatus, list[Candidate]]:
-    name, url = item
+def fetch_source(spec: SourceSpec) -> tuple[SourceStatus, list[Candidate]]:
+    name, url = spec.name, spec.url
     try:
         code, ctype, data, final, truncated = fetch_url(url)
         if truncated:
@@ -352,7 +345,17 @@ def fetch_source(item: tuple[str, str]) -> tuple[SourceStatus, list[Candidate]]:
                 f"> limit {MAX_CANDIDATES_PER_SOURCE}"
             )
         warn = "" if cands else "WARN fetched but no publishable HTTP/HTTPS stream candidates"
-        st = SourceStatus(name=name, url=url, ok=True, bytes=len(data), parsed=len(cands), truncated=False, error=warn)
+        st = SourceStatus(
+            name=name,
+            url=url,
+            ok=True,
+            bytes=len(data),
+            parsed=len(cands),
+            truncated=False,
+            error=warn,
+            mode=spec.mode,
+            contributed=bool(cands),
+        )
         return st, cands
     except Exception as e:
         message = str(e)
@@ -364,6 +367,8 @@ def fetch_source(item: tuple[str, str]) -> tuple[SourceStatus, list[Candidate]]:
             parsed=0,
             truncated="maximum fetch size" in message,
             error=repr(e)[:240],
+            mode=spec.mode,
+            contributed=False,
         ), []
 
 
@@ -783,18 +788,29 @@ def iter_bounded_check_results(candidates: list[Candidate], core_by_url: dict[st
 def main() -> None:
     cleanup_transient_outputs()
     start = time.time()
-    print(f"Fetching {len(SOURCES)} sources...", flush=True)
+    print(
+        f"Fetching {len(PROBE_SPECS)} sources "
+        f"(enabled={sum(1 for spec in SOURCE_SPECS if spec.enabled)}, "
+        f"recovery={sum(1 for spec in SOURCE_SPECS if spec.auto_recover)}, "
+        f"disabled={sum(1 for spec in SOURCE_SPECS if not spec.should_probe)})...",
+        flush=True,
+    )
     statuses: list[SourceStatus] = []
     all_cands: list[Candidate] = []
-    with cf.ThreadPoolExecutor(max_workers=min(MAX_WORKERS, len(SOURCES))) as ex:
-        futs = [ex.submit(fetch_source, item) for item in SOURCES]
+    with cf.ThreadPoolExecutor(max_workers=min(MAX_WORKERS, len(PROBE_SPECS))) as ex:
+        futs = [ex.submit(fetch_source, spec) for spec in PROBE_SPECS]
         for fut in cf.as_completed(futs):
             st, cands = fut.result()
             statuses.append(st)
-            all_cands.extend(cands)
-            print(f"source {'OK' if st.ok else 'FAIL'} {st.name}: parsed={st.parsed} bytes={st.bytes} {st.error}", flush=True)
+            if st.contributed:
+                all_cands.extend(cands)
+            print(
+                f"source {'OK' if st.ok else 'FAIL'} {st.name} mode={st.mode} "
+                f"contributed={st.contributed}: parsed={st.parsed} bytes={st.bytes} {st.error}",
+                flush=True,
+            )
 
-    statuses = order_source_statuses(statuses)
+    statuses = order_source_statuses(statuses, PROBE_SOURCES)
     total_fetch_bytes = sum(status.bytes for status in statuses)
     budget_failures = [status for status in statuses if status.truncated or "resource budget exceeded" in status.error]
     if budget_failures:
@@ -912,8 +928,13 @@ def main() -> None:
         "generated": time.strftime("%Y-%m-%d %H:%M:%S"),
         "generated_utc": generated_utc.isoformat().replace("+00:00", "Z"),
         "generated_beijing": generated_beijing.strftime("%Y-%m-%d %H:%M:%S Asia/Shanghai"),
-        "sources_total": len(SOURCES),
+        "sources_configured_total": len(SOURCE_SPECS),
+        "sources_enabled_total": sum(1 for spec in SOURCE_SPECS if spec.enabled),
+        "sources_recovery_total": sum(1 for spec in SOURCE_SPECS if spec.auto_recover),
+        "sources_disabled_total": sum(1 for spec in SOURCE_SPECS if not spec.should_probe),
+        "sources_total": len(PROBE_SPECS),
         "sources_fetched_ok": sum(1 for s in statuses if s.ok),
+        "sources_contributing": sum(1 for s in statuses if s.contributed),
         "upstream_fetch_bytes": total_fetch_bytes,
         "resource_budgets": {
             "max_candidates_per_source": MAX_CANDIDATES_PER_SOURCE,
@@ -964,9 +985,9 @@ def main() -> None:
 
     with (ROOT / "sources_status.csv").open("w", encoding="utf-8", newline="") as f:
         w = csv.writer(f, lineterminator="\n")
-        w.writerow(["name", "url", "fetch_ok", "bytes", "parsed", "truncated", "error"])
+        w.writerow(["name", "url", "mode", "contributed", "fetch_ok", "bytes", "parsed", "truncated", "error"])
         for st in statuses:
-            w.writerow([st.name, st.url, st.ok, st.bytes, st.parsed, st.truncated, st.error])
+            w.writerow([st.name, st.url, st.mode, st.contributed, st.ok, st.bytes, st.parsed, st.truncated, st.error])
 
     with (ROOT / "stream_check_results.csv").open("w", encoding="utf-8", newline="") as f:
         w = csv.writer(f, lineterminator="\n")
@@ -984,8 +1005,10 @@ def main() -> None:
         f"Generated UTC: {generated_utc.isoformat().replace('+00:00', 'Z')}",
         f"Generated Beijing: {generated_beijing.strftime('%Y-%m-%d %H:%M:%S Asia/Shanghai')}",
         f"Elapsed: {time.time()-start:.1f}s",
-        f"Sources total: {len(SOURCES)}",
+        f"Sources configured: {len(SOURCE_SPECS)} (enabled={sum(1 for spec in SOURCE_SPECS if spec.enabled)}, recovery={sum(1 for spec in SOURCE_SPECS if spec.auto_recover)}, disabled={sum(1 for spec in SOURCE_SPECS if not spec.should_probe)})",
+        f"Sources probed: {len(PROBE_SPECS)}",
         f"Sources fetched OK: {sum(1 for s in statuses if s.ok)}",
+        f"Sources contributing candidates: {sum(1 for s in statuses if s.contributed)}",
         f"Parsed candidates: {len(all_cands)}",
         f"Unique name+URL candidates: {len(dedup)}",
         f"Unique stream URLs: {len(url_to_candidates)}",
@@ -999,11 +1022,11 @@ def main() -> None:
         "",
         "## Source fetch status",
         "",
-        "| Source | Fetch | Parsed | Bytes | Truncated | Error |",
-        "|---|---:|---:|---:|---:|---|",
+        "| Source | Mode | Fetch | Contributes | Parsed | Bytes | Truncated | Error |",
+        "|---|---|---:|---:|---:|---:|---:|---|",
     ]
     for st in statuses:
-        report.append(f"| {st.name} | {'OK' if st.ok else 'FAIL'} | {st.parsed} | {st.bytes} | {st.truncated} | {st.error.replace('|','/')} |")
+        report.append(f"| {st.name} | {st.mode} | {'OK' if st.ok else 'FAIL'} | {'YES' if st.contributed else 'NO'} | {st.parsed} | {st.bytes} | {st.truncated} | {st.error.replace('|','/')} |")
     report += ["", "## Pre-curation playable lines by source", "", "| Source | Lines |", "|---|---:|"]
     for src, n in sorted(ok_sources.items(), key=lambda x: (-x[1], x[0])):
         report.append(f"| {src} | {n} |")

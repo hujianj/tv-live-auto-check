@@ -16,9 +16,25 @@ from urllib.request import Request
 
 from network_safety import public_urlopen
 from playlist_config import MAX_HOME_PRIORITY_AGE_HOURS
+from publication_config import endpoint_urls
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_URL = "https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check/ku9-live.txt"
+DEFAULT_REPOSITORY = "hujianj/tv-live-auto-check"
+DEFAULT_BRANCH = "main"
+
+
+def default_subscription_url(
+    repo: str = DEFAULT_REPOSITORY,
+    branch: str = DEFAULT_BRANCH,
+) -> str:
+    endpoints = endpoint_urls(repo, branch, ROOT)
+    primary = [item for item in endpoints if item.get("required_primary")]
+    if len(primary) != 1:
+        raise ValueError(f"expected exactly one required primary endpoint, got {len(primary)}")
+    return str(primary[0]["url"])
+
+
+DEFAULT_URL = default_subscription_url()
 REPORT = ROOT / "local-network-report.md"
 CSV_FILE = ROOT / "local-network-results.csv"
 HOME_PRIORITY_FILE = ROOT / "config" / "home-priority.json"

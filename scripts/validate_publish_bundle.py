@@ -19,7 +19,8 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from channel_identity import aliases_are_compatible, canonical_channel_key
-from playlist_config import get_group_order, load_guard
+from playlist_config import get_group_order, load_guard, load_quality
+from source_config import load_source_specs
 from validate_playlist import split_unquoted_last_comma, validate_file
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,6 +33,8 @@ SOURCE_MAP_FILE = "curated-source-map.csv"
 CANDIDATE_POOL_FILE = "curated-candidate-pool.csv"
 ALIAS_CONFLICT_REPORT = "alias-conflict-report.md"
 SOURCES_STATUS_FILE = "sources_status.csv"
+SOURCE_STATUS_HEADER = ["name", "url", "mode", "contributed", "fetch_ok", "bytes", "parsed", "truncated", "error"]
+LEGACY_SOURCE_STATUS_HEADER = ["name", "url", "fetch_ok", "bytes", "parsed", "truncated", "error"]
 
 
 @dataclass(frozen=True)
@@ -173,6 +176,13 @@ def _check_equal(actual, expected, label: str, errors: list[str]) -> None:
         errors.append(f"{label}: actual={actual!r} expected={expected!r}")
 
 
+def _parse_bool(value: str, label: str, errors: list[str]) -> bool | None:
+    if value not in {"True", "False"}:
+        errors.append(f"{SOURCES_STATUS_FILE}: {label} must be True or False, got {value!r}")
+        return None
+    return value == "True"
+
+
 def _require_fields(mapping: dict, fields: tuple[str, ...], label: str, errors: list[str]) -> None:
     missing = [field for field in fields if field not in mapping]
     if missing:
@@ -223,6 +233,11 @@ def _validate_summary(
     )
     if require_extended_schema:
         required_top_level += (
+            "sources_configured_total",
+            "sources_enabled_total",
+            "sources_recovery_total",
+            "sources_disabled_total",
+            "sources_contributing",
             "broad_media_probe_checked",
             "broad_checked_all_unique",
             "strict_video_checked_unique",
@@ -361,6 +376,8 @@ def _validate_summary(
     )
     if require_extended_schema:
         required_recheck_fields += (
+            "broadcast_progress_required",
+            "progress_required_groups",
             "first_pass_failed_unique_urls",
             "slow_retry_attempted_unique_urls",
             "slow_retry_recovered_unique_urls",
@@ -370,6 +387,26 @@ def _validate_summary(
     _require_fields(recheck, required_recheck_fields, "summary.published_recheck", errors)
     if recheck.get("core_progress_required") is not True:
         errors.append("summary.published_recheck.core_progress_required must be true")
+    if "broadcast_progress_required" in recheck:
+        if recheck.get("broadcast_progress_required") is not True:
+            errors.append("summary.published_recheck.broadcast_progress_required must be true")
+        configured_progress_groups = [
+            str(group)
+            for group in load_quality().get("live_progress_groups", [])
+            if str(group).strip()
+        ]
+        if recheck.get("progress_required_groups") != sorted(configured_progress_groups):
+            errors.append(
+                "summary.published_recheck.progress_required_groups does not match config/quality.json"
+            )
+        final_progress_urls = {
+            row.url for row in full_rows if row.group in set(configured_progress_groups)
+        }
+        progress_checked = summary.get("strict_progress_checked_unique")
+        if isinstance(progress_checked, int) and progress_checked < len(final_progress_urls):
+            errors.append(
+                "summary.strict_progress_checked_unique is smaller than final broadcast URL count"
+            )
     if recheck.get("require_video_track") is not True:
         errors.append("summary.published_recheck.require_video_track must be true")
     if recheck.get("public_network_policy_enabled") is not True:
@@ -700,10 +737,14 @@ def validate_publish_bundle(
 
     with (root / SOURCES_STATUS_FILE).open(encoding="utf-8", newline="") as f:
         status_reader = csv.DictReader(f)
-        expected_status_header = ["name", "url", "fetch_ok", "bytes", "parsed", "truncated", "error"]
-        if status_reader.fieldnames != expected_status_header:
+        status_header = status_reader.fieldnames
+        is_current_schema = status_header == SOURCE_STATUS_HEADER
+        is_legacy_schema = status_header == LEGACY_SOURCE_STATUS_HEADER
+        if not is_current_schema and not (is_legacy_schema and not require_artifacts):
             errors.append(
-                f"{SOURCES_STATUS_FILE}: header must be {expected_status_header!r}, got {status_reader.fieldnames!r}"
+                f"{SOURCES_STATUS_FILE}: header must be {SOURCE_STATUS_HEADER!r}"
+                + (f" (legacy {LEGACY_SOURCE_STATUS_HEADER!r} is accepted only with --committed-only)" if require_artifacts else "")
+                + f", got {status_header!r}"
             )
         source_statuses = list(status_reader)
     status_pairs = [((item.get("name") or "").strip(), (item.get("url") or "").strip()) for item in source_statuses]
@@ -714,12 +755,18 @@ def validate_publish_bundle(
         errors.append(f"{SOURCES_STATUS_FILE}: contains an empty source URL")
     if len(status_names) != len(set(status_names)):
         errors.append(f"{SOURCES_STATUS_FILE}: contains duplicate source names")
-    bad_fetch_values = sorted({str(item.get("fetch_ok") or "") for item in source_statuses} - {"True", "False"})
-    if bad_fetch_values:
-        errors.append(f"{SOURCES_STATUS_FILE}: invalid fetch_ok values {bad_fetch_values!r}")
-    bad_truncated_values = sorted({str(item.get("truncated") or "") for item in source_statuses} - {"True", "False"})
-    if bad_truncated_values:
-        errors.append(f"{SOURCES_STATUS_FILE}: invalid truncated values {bad_truncated_values!r}")
+    for item in source_statuses:
+        _parse_bool(str(item.get("fetch_ok") or ""), f"source {item.get('name')!r} fetch_ok", errors)
+        _parse_bool(str(item.get("truncated") or ""), f"source {item.get('name')!r} truncated", errors)
+        if is_current_schema:
+            _parse_bool(
+                str(item.get("contributed") or ""),
+                f"source {item.get('name')!r} contributed",
+                errors,
+            )
+            mode = str(item.get("mode") or "")
+            if mode not in {"enabled", "recovery"}:
+                errors.append(f"{SOURCES_STATUS_FILE}: source {item.get('name')!r} has invalid mode {mode!r}")
     for item in source_statuses:
         for field in ("bytes", "parsed"):
             try:
@@ -736,16 +783,57 @@ def validate_publish_bundle(
     config_path = root / "config" / "sources.json"
     if config_path.is_file():
         try:
-            configured = json.loads(config_path.read_text(encoding="utf-8-sig"))
-            enabled_pairs = [
-                (str(item.get("name") or "").strip(), str(item.get("url") or "").strip())
-                for item in configured
-                if item.get("enabled") is not False
-            ]
-            if status_pairs != enabled_pairs:
-                errors.append(f"{SOURCES_STATUS_FILE}: source name/URL order does not match enabled config/sources.json")
+            configured_specs = load_source_specs(config_path)
+            probe_specs = [spec for spec in configured_specs if spec.should_probe]
+            if is_current_schema:
+                expected_pairs = [(spec.name, spec.url) for spec in probe_specs]
+                if status_pairs != expected_pairs:
+                    errors.append(
+                        f"{SOURCES_STATUS_FILE}: source name/URL order does not match enabled/recovery config/sources.json"
+                    )
+                if len(source_statuses) == len(probe_specs):
+                    for item, spec in zip(source_statuses, probe_specs):
+                        if item.get("mode") != spec.mode:
+                            errors.append(
+                                f"{SOURCES_STATUS_FILE}: source {spec.name!r} mode={item.get('mode')!r} expected {spec.mode!r}"
+                            )
+                        try:
+                            parsed = int(item.get("parsed") or 0)
+                        except (TypeError, ValueError):
+                            continue
+                        contributed = item.get("contributed") == "True"
+                        if contributed != (item.get("fetch_ok") == "True" and parsed > 0):
+                            errors.append(
+                                f"{SOURCES_STATUS_FILE}: source {spec.name!r} contributed does not match fetch_ok/parsed"
+                            )
+                if require_artifacts:
+                    _check_equal(summary.get("sources_configured_total"), len(configured_specs), "summary.sources_configured_total/config", errors)
+                    _check_equal(summary.get("sources_enabled_total"), sum(spec.enabled for spec in configured_specs), "summary.sources_enabled_total/config", errors)
+                    _check_equal(summary.get("sources_recovery_total"), sum(spec.auto_recover for spec in configured_specs), "summary.sources_recovery_total/config", errors)
+                    _check_equal(summary.get("sources_disabled_total"), sum(not spec.should_probe for spec in configured_specs), "summary.sources_disabled_total/config", errors)
+                elif "sources_configured_total" in summary:
+                    _check_equal(summary["sources_configured_total"], len(configured_specs), "summary.sources_configured_total/config", errors)
+                    _check_equal(summary.get("sources_enabled_total"), sum(spec.enabled for spec in configured_specs), "summary.sources_enabled_total/config", errors)
+                    _check_equal(summary.get("sources_recovery_total"), sum(spec.auto_recover for spec in configured_specs), "summary.sources_recovery_total/config", errors)
+                    _check_equal(summary.get("sources_disabled_total"), sum(not spec.should_probe for spec in configured_specs), "summary.sources_disabled_total/config", errors)
+            elif is_legacy_schema:
+                # Existing clones can contain a pre-lifecycle publication. Keep
+                # read-only CI useful during the one-run migration window, but
+                # do not silently accept this schema in the publication gate.
+                if not any(spec.auto_recover for spec in configured_specs):
+                    enabled_pairs = [(spec.name, spec.url) for spec in configured_specs if spec.enabled]
+                    if status_pairs != enabled_pairs:
+                        errors.append(f"{SOURCES_STATUS_FILE}: source name/URL order does not match enabled config/sources.json")
         except Exception as exc:
-            errors.append(f"config/sources.json: invalid JSON: {exc}")
+            errors.append(f"config/sources.json or source lifecycle status is invalid: {exc}")
+
+    if is_current_schema and "sources_contributing" in summary:
+        _check_equal(
+            summary["sources_contributing"],
+            sum(item.get("contributed") == "True" for item in source_statuses),
+            "summary.sources_contributing/sources_status",
+            errors,
+        )
 
     _validate_summary(
         summary,

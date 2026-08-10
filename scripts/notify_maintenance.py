@@ -12,8 +12,17 @@ from pathlib import Path
 from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
-TITLE = "\u81ea\u52a8\u7ef4\u62a4\u544a\u8b66 IPTV \u76f4\u64ad\u6e90\u7ef4\u62a4\u6d41\u7a0b\u5931\u8d25"
-MARKER = "<!-- tv-live-auto-check-maintenance-alert -->"
+LEGACY_MARKER = "<!-- tv-live-auto-check-maintenance-alert -->"
+SCOPES = {
+    "maintenance": {
+        "title": "自动维护告警 IPTV 媒体检测或发布失败",
+        "marker": "<!-- tv-live-auto-check-maintenance-failure -->",
+    },
+    "cdn": {
+        "title": "自动维护告警 IPTV 主订阅 CDN 同步中",
+        "marker": "<!-- tv-live-auto-check-cdn-pending -->",
+    },
+}
 API = "https://api.github.com"
 RETRYABLE_HTTP = {408, 425, 429, 500, 502, 503, 504}
 
@@ -45,14 +54,30 @@ def api_request(method: str, path: str, token: str, payload: dict | None = None,
     raise RuntimeError(f"GitHub API request failed after {max(1, retries)} attempts: {method} {path}: {last_error!r}")
 
 
-def find_open_issue(repo: str, token: str) -> dict | None:
+def find_open_issue(repo: str, token: str, scope: str) -> dict | None:
+    if scope not in SCOPES:
+        raise ValueError(f"unsupported maintenance issue scope: {scope!r}")
     issues = api_request("GET", f"/repos/{repo}/issues?state=open&per_page=100", token) or []
+    marker = str(SCOPES[scope]["marker"])
+    title = str(SCOPES[scope]["title"])
     for issue in issues:
         if "pull_request" in issue:
             continue
-        if issue.get("title") == TITLE or MARKER in str(issue.get("body") or ""):
+        body = str(issue.get("body") or "")
+        if issue.get("title") == title or marker in body:
             return issue
+        # Migrate the original combined issue without allowing CDN recovery to
+        # close a genuine media-verification failure (or vice versa).
+        if LEGACY_MARKER in body:
+            if scope == "cdn" and "CDN 同步中" in body:
+                return issue
+            if scope == "maintenance" and "维护流程失败" in body:
+                return issue
     return None
+
+
+def scope_for_status(status: str) -> str:
+    return "maintenance" if status == "failure" else "cdn"
 
 
 def run_context() -> dict[str, str]:
@@ -80,9 +105,10 @@ def status_label(status: str) -> str:
 
 def issue_body(context: dict[str, str], status: str, message: str) -> str:
     label = status_label(status)
+    scope = scope_for_status(status)
     detail = message or "\u8bf7\u67e5\u770b workflow artifact \u548c\u6b65\u9aa4\u65e5\u5fd7"
     return "\n".join([
-        MARKER,
+        str(SCOPES[scope]["marker"]),
         f"# IPTV {label}",
         "",
         f"\u5f53\u524d\u72b6\u6001: **{label}**",
@@ -112,11 +138,12 @@ def status_comment(context: dict[str, str], status: str, message: str) -> str:
     )
 
 
-def success_comment(context: dict[str, str]) -> str:
+def success_comment(context: dict[str, str], scope: str) -> str:
+    recovered = "媒体检测与发布" if scope == "maintenance" else "主电视订阅 CDN"
     return (
-        f"\u81ea\u52a8\u7ef4\u62a4\u5df2\u6062\u590d: {context['time']} UTC\n"
+        f"{recovered}已恢复: {context['time']} UTC\n"
         f"[Workflow run {context['run_number'] or context['run_id']}]({context['run_url']})\n"
-        "GitHub Raw \u548c\u4e3b\u7535\u89c6\u8ba2\u9605\u7aef\u70b9\u5747\u5df2\u901a\u8fc7\u68c0\u67e5\uff0c\u73b0\u5173\u95ed\u6b64 Issue\u3002"
+        f"{recovered}恢复条件已通过自动校验，现关闭此 Issue。"
     )
 
 
@@ -150,6 +177,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("status", choices=["failure", "cdn_pending", "success"])
     parser.add_argument("--message", default="")
     parser.add_argument("--report", default="maintenance-run.json")
+    parser.add_argument("--scope", choices=["all", "maintenance", "cdn"], default="all")
     args = parser.parse_args(argv)
     token = os.getenv("GITHUB_TOKEN", "")
     context = run_context()
@@ -160,25 +188,42 @@ def main(argv: list[str] | None = None) -> int:
             args.message = f"{args.message.rstrip()} {report_detail}".strip()
     if not token or not repo:
         raise SystemExit("GITHUB_TOKEN and GITHUB_REPOSITORY are required")
-    issue = find_open_issue(repo, token)
     if args.status in {"failure", "cdn_pending"}:
+        scope = scope_for_status(args.status)
+        issue = find_open_issue(repo, token, scope)
         body = issue_body(context, args.status, args.message)
         if issue is None:
-            created = api_request("POST", f"/repos/{repo}/issues", token, {"title": TITLE, "body": body})
+            created = api_request(
+                "POST",
+                f"/repos/{repo}/issues",
+                token,
+                {"title": str(SCOPES[scope]["title"]), "body": body},
+            )
             print(f"created maintenance issue #{created.get('number')}")
         else:
             number = int(issue["number"])
-            api_request("PATCH", f"/repos/{repo}/issues/{number}", token, {"title": TITLE, "body": body})
+            api_request(
+                "PATCH",
+                f"/repos/{repo}/issues/{number}",
+                token,
+                {"title": str(SCOPES[scope]["title"]), "body": body},
+            )
             api_request("POST", f"/repos/{repo}/issues/{number}/comments", token, {"body": status_comment(context, args.status, args.message)})
             print(f"updated maintenance issue #{number}")
         return 0
-    if issue is None:
-        print("no open maintenance issue to close")
-        return 0
-    number = int(issue["number"])
-    api_request("POST", f"/repos/{repo}/issues/{number}/comments", token, {"body": success_comment(context)})
-    api_request("PATCH", f"/repos/{repo}/issues/{number}", token, {"state": "closed", "state_reason": "completed"})
-    print(f"closed maintenance issue #{number}")
+    scopes = ("maintenance", "cdn") if args.scope == "all" else (args.scope,)
+    closed = 0
+    for scope in scopes:
+        issue = find_open_issue(repo, token, scope)
+        if issue is None:
+            print(f"no open {scope} issue to close")
+            continue
+        number = int(issue["number"])
+        api_request("POST", f"/repos/{repo}/issues/{number}/comments", token, {"body": success_comment(context, scope)})
+        api_request("PATCH", f"/repos/{repo}/issues/{number}", token, {"state": "closed", "state_reason": "completed"})
+        print(f"closed {scope} issue #{number}")
+        closed += 1
+    print(f"closed scoped maintenance issues: {closed}")
     return 0
 
 
