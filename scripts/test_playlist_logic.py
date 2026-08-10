@@ -18,7 +18,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 from validate_playlist import validate_m3u_text, validate_text
 from verify_sources import SOURCES, Candidate, CheckResult, HLSManifest, SourceStatus, deduplicate_candidates, interleave_candidates_by_host, is_core_family_candidate, looks_bad, looks_transient_failure, order_source_statuses, parse_hls_manifest, parse_m3u, parse_txt, progress_wait_seconds, split_stream_urls, split_unquoted_last_comma
-from playlist_config import apply_home_priority_freshness, get_group_order, load_guard, load_home_priority, load_priority, load_quality, source_priority
+from playlist_config import MAX_HOME_PRIORITY_AGE_HOURS, apply_home_priority_freshness, get_group_order, load_guard, load_home_priority, load_priority, load_quality, source_priority
 from stability import stability_adjustment
 import stability as stability_module
 import verify_sources as verify_module
@@ -316,6 +316,20 @@ def test_home_priority_adjustment_and_writer() -> None:
     missing_timestamp = apply_home_priority_freshness({"home_ok_urls": ["http://ok/live.m3u8"]}, now)
     assert missing_timestamp["_fresh"] is False
     assert missing_timestamp["home_ok_urls"] == []
+    far_future_expiry = dict(fresh_data)
+    far_future_expiry["max_age_hours"] = MAX_HOME_PRIORITY_AGE_HOURS * 10
+    far_future_expiry["expires_at_utc"] = (now + timedelta(days=365)).isoformat().replace("+00:00", "Z")
+    bounded = apply_home_priority_freshness(far_future_expiry, now)
+    assert bounded["_fresh"] is True
+    assert bounded["max_age_hours"] == MAX_HOME_PRIORITY_AGE_HOURS
+    assert bounded["expires_at_utc"] == (now + timedelta(hours=MAX_HOME_PRIORITY_AGE_HOURS - 2)).isoformat().replace("+00:00", "Z")
+    future_timestamp = dict(fresh_data)
+    future_timestamp["generated_at_utc"] = (now + timedelta(hours=2)).isoformat().replace("+00:00", "Z")
+    future_timestamp["expires_at_utc"] = (now + timedelta(days=30)).isoformat().replace("+00:00", "Z")
+    future = apply_home_priority_freshness(future_timestamp, now)
+    assert future["_fresh"] is False
+    assert future["_stale_reason"] == "generated_at_utc is too far in the future"
+    assert future["home_ok_urls"] == []
 
 
 def test_coverage_counts_exact_cctv_and_reports_variants() -> None:

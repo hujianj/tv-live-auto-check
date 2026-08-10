@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from functools import lru_cache
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_DIR = ROOT / "config"
+MAX_HOME_PRIORITY_AGE_HOURS = 30 * 24
 
 DEFAULT_GROUP_ORDER = [
     "央视频道",
@@ -67,18 +68,29 @@ def apply_home_priority_freshness(data: dict, now: datetime | None = None) -> di
     failed_urls = list(result.get("home_failed_urls") or [])
     active = bool(ok_urls or failed_urls)
     now_utc = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
-    max_age_hours = max(1, int(result.get("max_age_hours", 14 * 24)))
+    max_age_hours = min(
+        MAX_HOME_PRIORITY_AGE_HOURS,
+        max(1, int(result.get("max_age_hours", 14 * 24))),
+    )
     generated = _parse_utc_timestamp(result.get("generated_at_utc"))
     expires = _parse_utc_timestamp(result.get("expires_at_utc"))
-    age_hours = max(0.0, (now_utc - generated).total_seconds() / 3600.0) if generated else None
+    age_hours = (now_utc - generated).total_seconds() / 3600.0 if generated else None
     stale_reason = ""
     if active:
         if generated is None:
             stale_reason = "missing or invalid generated_at_utc"
-        elif expires is not None and now_utc >= expires:
-            stale_reason = "expires_at_utc reached"
-        elif expires is None and age_hours is not None and age_hours >= max_age_hours:
-            stale_reason = "max_age_hours reached"
+        elif generated > now_utc + timedelta(hours=1):
+            stale_reason = "generated_at_utc is too far in the future"
+        else:
+            hard_expiry = generated + timedelta(hours=max_age_hours)
+            effective_expiry = min(expires, hard_expiry) if expires is not None else hard_expiry
+            result["expires_at_utc"] = effective_expiry.isoformat().replace("+00:00", "Z")
+            if now_utc >= effective_expiry:
+                stale_reason = (
+                    "expires_at_utc reached"
+                    if expires is not None and expires <= hard_expiry
+                    else "max_age_hours reached"
+                )
     if stale_reason:
         result["home_ok_urls"] = []
         result["home_failed_urls"] = []
