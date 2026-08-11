@@ -804,7 +804,11 @@ def main() -> int:
     start = time.time()
     for filename in TXT_FILES:
         validate_file(ROOT / filename)
-    groups, rows = parse_tv_txt(ROOT / "live-curated.txt")
+    _curated_groups, rows = parse_tv_txt(ROOT / "live-curated.txt")
+    # Use the configured order, including categories that were empty before
+    # historical refill. A recovered category must be publishable even when
+    # curation emitted no header for it in this run.
+    groups = get_group_order()
     source_map = load_source_map()
     pool_path = ROOT / CANDIDATE_POOL_FILE
     if not pool_path.exists():

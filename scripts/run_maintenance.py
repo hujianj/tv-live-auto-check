@@ -28,6 +28,14 @@ CONFIG_PATH = ROOT / "config" / "maintenance.json"
 REPORT_PATH = ROOT / "maintenance-run.json"
 
 STALE_RUN_OUTPUTS: tuple[str, ...] = (
+    "live-curated.txt",
+    "live.txt",
+    "live-verified.txt",
+    "ku9-live.txt",
+    "live.m3u",
+    "ku9-family.txt",
+    "live-family.txt",
+    "family.m3u",
     "stream_check_results.csv",
     "live-all-playable.txt",
     "all-playable.m3u",
@@ -36,6 +44,7 @@ STALE_RUN_OUTPUTS: tuple[str, ...] = (
     "alias-conflict-report.md",
     "published_recheck_results.csv",
     "source-report.md",
+    "check-report.md",
     "curated-report.md",
     "published-recheck-report.md",
     "final-publish-report.md",
