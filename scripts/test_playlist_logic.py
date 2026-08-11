@@ -1154,10 +1154,10 @@ def test_maintenance_clears_only_stale_run_diagnostics() -> None:
             maintenance_module.ROOT = Path(td)
             for name in maintenance_module.STALE_RUN_OUTPUTS:
                 (maintenance_module.ROOT / name).write_text("stale\n", encoding="utf-8")
-            playlist = maintenance_module.ROOT / "live-curated.txt"
-            playlist.write_text("keep\n", encoding="utf-8")
+            control = maintenance_module.ROOT / "config-marker.json"
+            control.write_text("keep\n", encoding="utf-8")
             maintenance_module.cleanup_stale_run_outputs()
-            assert playlist.read_text(encoding="utf-8") == "keep\n"
+            assert control.read_text(encoding="utf-8") == "keep\n"
             assert not any((maintenance_module.ROOT / name).exists() for name in maintenance_module.STALE_RUN_OUTPUTS)
     finally:
         maintenance_module.ROOT = original_root
