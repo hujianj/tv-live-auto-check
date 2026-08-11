@@ -4,6 +4,33 @@
   "retry_delay_seconds": 20,
   "guard_confirmation_attempts": 2,
   "guard_confirmation_retry_from": "verify_sources.py",
+  "max_total_runtime_seconds": 8400,
+  "stage_timeouts_seconds": {
+    "publication_config.py": 60,
+    "test_playlist_logic.py": 180,
+    "verify_sources.py": 1800,
+    "curate_ku9.py": 300,
+    "recheck_published.py": 1200,
+    "audit_coverage.py": 120,
+    "audit_quality.py": 120,
+    "guard_publish.py": 60,
+    "audit_publish_size.py": 120,
+    "validate_publish_bundle.py": 180,
+    "validate_publication.py": 120
+  },
+  "conservative_retry_env": {
+    "IPTV_CHECK_WORKERS": "96",
+    "IPTV_CHECK_WORKERS_PER_HOST": "4",
+    "IPTV_CHECK_TIMEOUT": "8",
+    "IPTV_FETCH_WORKERS": "32",
+    "IPTV_FETCH_TIMEOUT": "30",
+    "IPTV_CORE_RETRY_TIMEOUT": "20",
+    "IPTV_HLS_PROGRESS_MAX_WAIT": "18",
+    "IPTV_PUBLISHED_RECHECK_WORKERS": "32",
+    "IPTV_PUBLISHED_REFILL_WORKERS": "12",
+    "IPTV_PUBLISHED_FINAL_RETRY_WORKERS": "8",
+    "IPTV_PUBLISHED_FINAL_RETRY_TIMEOUT": "20"
+  },
   "retryable_scripts": [
     "verify_sources.py",
     "recheck_published.py"
