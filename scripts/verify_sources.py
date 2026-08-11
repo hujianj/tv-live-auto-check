@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import concurrent.futures as cf
 import csv
+import hashlib
 import zlib
 import html
 import ipaddress
@@ -961,6 +962,7 @@ def main() -> None:
         "generated": time.strftime("%Y-%m-%d %H:%M:%S"),
         "generated_utc": generated_utc.isoformat().replace("+00:00", "Z"),
         "generated_beijing": generated_beijing.strftime("%Y-%m-%d %H:%M:%S Asia/Shanghai"),
+        "source_config_sha256": hashlib.sha256(SOURCE_CONFIG.read_bytes()).hexdigest(),
         "sources_configured_total": len(SOURCE_SPECS),
         "sources_enabled_total": sum(1 for spec in SOURCE_SPECS if spec.enabled),
         "sources_recovery_total": sum(1 for spec in SOURCE_SPECS if spec.auto_recover),
