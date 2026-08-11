@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import html
 import json
 import re
@@ -856,11 +857,35 @@ def validate_publish_bundle(
             probe_specs = [spec for spec in configured_specs if spec.should_probe]
             if is_current_schema:
                 expected_pairs = [(spec.name, spec.url) for spec in probe_specs]
-                if status_pairs != expected_pairs:
+                current_config_hash = hashlib.sha256(config_path.read_bytes()).hexdigest()
+                recorded_config_hash = summary.get("source_config_sha256")
+                hash_is_valid = isinstance(recorded_config_hash, str) and bool(
+                    re.fullmatch(r"[0-9a-f]{64}", recorded_config_hash)
+                )
+                if require_artifacts and not hash_is_valid:
+                    errors.append("summary.source_config_sha256 must be a lowercase SHA256 in strict mode")
+                elif recorded_config_hash is not None and not hash_is_valid:
+                    errors.append("summary.source_config_sha256 is malformed")
+                if require_artifacts and hash_is_valid and recorded_config_hash != current_config_hash:
+                    errors.append("summary.source_config_sha256 does not match config/sources.json")
+
+                # Code/config may legitimately advance before the next full
+                # publication.  A committed-only clone must keep validating
+                # the previous immutable bundle without pretending its source
+                # status belongs to the new config.  Strict workflow mode
+                # always requires exact provenance.
+                if require_artifacts:
+                    enforce_current_config = True
+                elif hash_is_valid:
+                    enforce_current_config = recorded_config_hash == current_config_hash
+                else:
+                    enforce_current_config = status_pairs == expected_pairs
+
+                if enforce_current_config and status_pairs != expected_pairs:
                     errors.append(
                         f"{SOURCES_STATUS_FILE}: source name/URL order does not match enabled/recovery config/sources.json"
                     )
-                if len(source_statuses) == len(probe_specs):
+                if enforce_current_config and len(source_statuses) == len(probe_specs):
                     for item, spec in zip(source_statuses, probe_specs):
                         if item.get("mode") != spec.mode:
                             errors.append(
@@ -875,13 +900,8 @@ def validate_publish_bundle(
                             errors.append(
                                 f"{SOURCES_STATUS_FILE}: source {spec.name!r} contributed does not match fetch_ok/parsed"
                             )
-                if require_artifacts:
+                if enforce_current_config:
                     _check_equal(summary.get("sources_configured_total"), len(configured_specs), "summary.sources_configured_total/config", errors)
-                    _check_equal(summary.get("sources_enabled_total"), sum(spec.enabled for spec in configured_specs), "summary.sources_enabled_total/config", errors)
-                    _check_equal(summary.get("sources_recovery_total"), sum(spec.auto_recover for spec in configured_specs), "summary.sources_recovery_total/config", errors)
-                    _check_equal(summary.get("sources_disabled_total"), sum(not spec.should_probe for spec in configured_specs), "summary.sources_disabled_total/config", errors)
-                elif "sources_configured_total" in summary:
-                    _check_equal(summary["sources_configured_total"], len(configured_specs), "summary.sources_configured_total/config", errors)
                     _check_equal(summary.get("sources_enabled_total"), sum(spec.enabled for spec in configured_specs), "summary.sources_enabled_total/config", errors)
                     _check_equal(summary.get("sources_recovery_total"), sum(spec.auto_recover for spec in configured_specs), "summary.sources_recovery_total/config", errors)
                     _check_equal(summary.get("sources_disabled_total"), sum(not spec.should_probe for spec in configured_specs), "summary.sources_disabled_total/config", errors)

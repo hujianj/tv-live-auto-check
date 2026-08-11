@@ -4,9 +4,11 @@ from __future__ import annotations
 
 from pathlib import Path
 import csv
+import hashlib
 import json
 import re
 import socket
+import ssl
 import subprocess
 import sys
 import tempfile
@@ -15,6 +17,7 @@ import time
 import zlib
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
+from urllib.request import Request
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
@@ -49,7 +52,7 @@ from publication_manifest import (
 )
 from media_probe import VIDEO_STREAM_TYPES, looks_media as media_looks_playable, probe_media
 import network_safety as network_safety_module
-from network_safety import PublicRedirectHandler, PublicURLPolicyError, resolve_public_addresses, validate_public_url
+from network_safety import PublicHTTPSConnection, PublicHTTPSHandler, PublicRedirectHandler, PublicURLPolicyError, resolve_public_addresses, validate_public_url
 from url_utils import normalize_stream_url
 
 
@@ -889,6 +892,168 @@ def test_public_network_policy_blocks_private_and_redirect_targets() -> None:
         resolve_public_addresses.cache_clear()
 
 
+def test_public_connection_is_pinned_and_preserves_tls_hostname() -> None:
+    original_getaddrinfo = network_safety_module.socket.getaddrinfo
+    original_socket = network_safety_module.socket.socket
+    calls: list[tuple] = []
+
+    class FakeSocket:
+        def settimeout(self, value):
+            calls.append(("timeout", value))
+
+        def bind(self, value):
+            calls.append(("bind", value))
+
+        def connect(self, value):
+            calls.append(("connect", value))
+
+        def close(self):
+            calls.append(("close",))
+
+    class FakeContext:
+        verify_mode = ssl.CERT_REQUIRED
+        check_hostname = True
+
+        def wrap_socket(self, sock, *, server_hostname):
+            calls.append(("sni", server_hostname))
+            return sock
+
+    try:
+        network_safety_module.socket.getaddrinfo = lambda host, port, type=socket.SOCK_STREAM: [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", port))
+        ]
+        network_safety_module.socket.socket = lambda family, socktype: FakeSocket()
+        resolve_public_addresses.cache_clear()
+        connection = PublicHTTPSConnection("public.test", 443, timeout=7, context=FakeContext())
+        connection.connect()
+        assert calls == [
+            ("timeout", 7),
+            ("connect", ("93.184.216.34", 443)),
+            ("sni", "public.test"),
+        ], calls
+    finally:
+        network_safety_module.socket.getaddrinfo = original_getaddrinfo
+        network_safety_module.socket.socket = original_socket
+        resolve_public_addresses.cache_clear()
+
+
+def test_public_handler_retries_validated_edge_addresses() -> None:
+    original_getaddrinfo = network_safety_module.socket.getaddrinfo
+    attempts: list[str] = []
+    first = "2606:2800:220:1:248:1893:25c8:1946"
+    second = "93.184.216.34"
+    handler = PublicHTTPSHandler(context=ssl.create_default_context())
+
+    def fake_do_open(factory, req, **kwargs):
+        connection = factory(req.host, timeout=1, **kwargs)
+        attempts.append(connection._pinned_address)
+        if connection._pinned_address == first:
+            raise OSError("first edge is unreachable")
+        return "response"
+
+    try:
+        network_safety_module.socket.getaddrinfo = lambda host, port, type=socket.SOCK_STREAM: [
+            (socket.AF_INET6, socket.SOCK_STREAM, 6, "", (first, port, 0, 0)),
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", (second, port)),
+        ]
+        resolve_public_addresses.cache_clear()
+        network_safety_module._LAST_GOOD_ADDRESS.clear()
+        network_safety_module._BAD_ADDRESSES.clear()
+        handler.do_open = fake_do_open
+        request = Request("https://edge-retry.test/live.m3u8")
+        assert handler.https_open(request) == "response"
+        assert attempts == [first, second]
+        attempts.clear()
+        assert handler.https_open(request) == "response"
+        assert attempts == [second], attempts
+    finally:
+        network_safety_module.socket.getaddrinfo = original_getaddrinfo
+        resolve_public_addresses.cache_clear()
+        network_safety_module._LAST_GOOD_ADDRESS.clear()
+        network_safety_module._BAD_ADDRESSES.clear()
+
+
+def test_public_response_retries_body_read_on_another_edge() -> None:
+    class FakeResponse:
+        def __init__(self, *, error=None, payload=b""):
+            self.error = error
+            self.payload = payload
+            self.closed = False
+            self._public_host = "body-retry.test"
+            self._public_port = 443
+            self._public_pinned_address = "93.184.216.34"
+
+        def read(self, *_args, **_kwargs):
+            if self.error:
+                raise self.error
+            return self.payload
+
+        def close(self):
+            self.closed = True
+
+    class FakeOpener:
+        def __init__(self, response):
+            self.response = response
+            self.calls = 0
+
+        def open(self, request, timeout):
+            self.calls += 1
+            return self.response
+
+    original_opener = network_safety_module._PUBLIC_OPENER
+    first = FakeResponse(error=TimeoutError("slow edge"))
+    second = FakeResponse(payload=b"media")
+    opener = FakeOpener(second)
+    try:
+        network_safety_module._PUBLIC_OPENER = opener
+        network_safety_module._LAST_GOOD_ADDRESS.clear()
+        network_safety_module._BAD_ADDRESSES.clear()
+        wrapped = network_safety_module._RetryingPublicResponse(
+            first,
+            Request("https://body-retry.test/live.m3u8"),
+            5,
+        )
+        assert wrapped.read() == b"media"
+        assert first.closed
+        assert opener.calls == 1
+        assert "93.184.216.34" in network_safety_module._BAD_ADDRESSES[("body-retry.test", 443)]
+    finally:
+        network_safety_module._PUBLIC_OPENER = original_opener
+        network_safety_module._LAST_GOOD_ADDRESS.clear()
+        network_safety_module._BAD_ADDRESSES.clear()
+
+
+def test_public_connection_rejects_mixed_dns_before_socket_connect() -> None:
+    original_getaddrinfo = network_safety_module.socket.getaddrinfo
+    original_socket = network_safety_module.socket.socket
+    socket_created = False
+
+    def should_not_create_socket(*_args, **_kwargs):
+        nonlocal socket_created
+        socket_created = True
+        raise AssertionError("socket must not be created for a mixed public/private DNS answer")
+
+    try:
+        network_safety_module.socket.getaddrinfo = lambda host, port, type=socket.SOCK_STREAM: [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", port)),
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", port)),
+        ]
+        network_safety_module.socket.socket = should_not_create_socket
+        resolve_public_addresses.cache_clear()
+        connection = PublicHTTPSConnection("rebind.test", 443, timeout=1)
+        try:
+            connection.connect()
+        except PublicURLPolicyError as exc:
+            assert "non-public" in str(exc)
+        else:
+            raise AssertionError("mixed DNS answer was accepted")
+        assert not socket_created
+    finally:
+        network_safety_module.socket.getaddrinfo = original_getaddrinfo
+        network_safety_module.socket.socket = original_socket
+        resolve_public_addresses.cache_clear()
+
+
 def test_fetch_url_handles_gzip_final_url() -> None:
     payload = b"channel,http://example.test/live.m3u8\n"
     compressed = zlib.compressobj(wbits=16 + zlib.MAX_WBITS)
@@ -1360,7 +1525,8 @@ def _write_test_publish_bundle(root: Path, full_rows=None, family_rows=None, gro
         )
     (root / "sources_status.csv").write_text("\n".join(status_lines) + "\n", encoding="utf-8", newline="\n")
     (root / "config").mkdir(exist_ok=True)
-    (root / "config" / "sources.json").write_text(
+    source_config_path = root / "config" / "sources.json"
+    source_config_path.write_text(
         json.dumps(source_specs, indent=2) + "\n",
         encoding="utf-8",
         newline="\n",
@@ -1369,6 +1535,7 @@ def _write_test_publish_bundle(root: Path, full_rows=None, family_rows=None, gro
     family_groups = dict(__import__("collections").Counter(row.group for row in family_rows))
     checked = len({row.url for row in full_rows})
     summary = {
+        "source_config_sha256": hashlib.sha256(source_config_path.read_bytes()).hexdigest(),
         "sources_configured_total": len(source_specs),
         "sources_enabled_total": sum(spec.get("enabled", True) is True for spec in source_specs),
         "sources_recovery_total": sum(spec.get("auto_recover", False) is True for spec in source_specs),
@@ -1476,6 +1643,23 @@ def _assert_bundle_failure(root: Path, expected: str) -> None:
         assert expected in str(exc), str(exc)
     else:
         raise AssertionError(f"bundle unexpectedly passed; expected {expected!r}")
+
+
+def test_committed_bundle_allows_newer_source_config_but_strict_rejects() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        _write_test_publish_bundle(root)
+        config_path = root / "config" / "sources.json"
+        config = json.loads(config_path.read_text(encoding="utf-8"))
+        config.append({
+            "name": "future_disabled",
+            "url": "https://unit.test/future",
+            "enabled": False,
+            "note": "configuration advanced before the next publication",
+        })
+        config_path.write_text(json.dumps(config, indent=2) + "\n", encoding="utf-8", newline="\n")
+        assert validate_publish_bundle(root, require_artifacts=False)["status"] == "ok"
+        _assert_bundle_failure(root, "source_config_sha256 does not match")
 
 
 def test_publish_bundle_validator_enforces_cross_file_invariants() -> None:
@@ -2388,6 +2572,10 @@ def main() -> int:
         test_strict_media_probe_requires_a_video_track,
         test_broadcast_progress_rejects_direct_mp4_vod,
         test_public_network_policy_blocks_private_and_redirect_targets,
+        test_public_connection_is_pinned_and_preserves_tls_hostname,
+        test_public_handler_retries_validated_edge_addresses,
+        test_public_response_retries_body_read_on_another_edge,
+        test_public_connection_rejects_mixed_dns_before_socket_connect,
         test_fetch_url_handles_gzip_final_url,
         test_strict_bounded_gzip_decompression,
         test_hls_error_words_inside_valid_urls_are_not_false_negatives,
@@ -2406,6 +2594,7 @@ def main() -> int:
         test_validate_m3u_rejects_polluted_url,
         test_validate_rejects_strict_quality_filtered_channel,
         test_publish_bundle_validator_enforces_cross_file_invariants,
+        test_committed_bundle_allows_newer_source_config_but_strict_rejects,
         test_publish_size_hashes_current_worktree_not_stale_index,
         test_publication_checker_uses_exact_canonical_url_and_requires_primary,
         test_publication_manifest_covers_final_summary_without_self_hash,

@@ -15,8 +15,7 @@
     "name": "migu_interface",
     "url": "https://develop202.github.io/migu_video/interface.txt",
     "enabled": false,
-    "auto_recover": true,
-    "note": "当前抓取成功但没有 HTTP/HTTPS 播放列表候选；保留自动恢复探测，恢复后才参与检测。"
+    "note": "该文件实测只有 EPG 元数据头，不包含频道播放地址，不属于可聚合直播源。"
   },
   {
     "name": "guovin_all",
@@ -166,22 +165,19 @@
     "name": "pizazz_ai_txt",
     "url": "https://raw.githubusercontent.com/PizazzGY/TV/master/output/user_result.txt",
     "enabled": false,
-    "auto_recover": true,
-    "note": "历史上游源，最近 404；自动复查，恢复并解析出候选后才参与检测。"
+    "note": "上游 GitHub 仓库已不存在，保留记录但不再重复请求永久 404 地址。"
   },
   {
     "name": "pizazz_ai_m3u",
     "url": "https://raw.githubusercontent.com/PizazzGY/TV/master/output/user_result.m3u",
     "enabled": false,
-    "auto_recover": true,
-    "note": "历史上游源，最近 404；自动复查，恢复并解析出候选后才参与检测。"
+    "note": "上游 GitHub 仓库已不存在，保留记录但不再重复请求永久 404 地址。"
   },
   {
     "name": "gitee_dsy",
     "url": "https://gitee.com/xxy002/zhiboyuan/raw/master/dsy",
     "enabled": false,
-    "auto_recover": true,
-    "note": "历史上游源，最近 404 或不稳定；自动复查，恢复并解析出候选后才参与检测。"
+    "note": "上游路径已确认长期 404，保留记录但不再重复探测。"
   },
   {
     "name": "jacktv_oversea",
