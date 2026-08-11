@@ -25,6 +25,7 @@ SCOPES = {
 }
 API = "https://api.github.com"
 RETRYABLE_HTTP = {408, 425, 429, 500, 502, 503, 504}
+MAX_FAILURE_DETAIL_CHARS = 12_000
 
 
 def api_request(method: str, path: str, token: str, payload: dict | None = None, retries: int = 3):
@@ -120,7 +121,10 @@ def issue_body(context: dict[str, str], status: str, message: str) -> str:
         f"- \u4e8b\u4ef6: `{context['event']}`",
         f"- \u5206\u652f: `{context['ref']}`",
         f"- \u63d0\u4ea4: `{context['sha']}`",
-        f"- \u8be6\u7ec6\u4fe1\u606f: {detail}",
+        "",
+        "## \u8be6\u7ec6\u4fe1\u606f",
+        "",
+        detail,
         "",
         "\u6062\u590d\u540e\uff0c\u6210\u529f\u8fd0\u884c\u4f1a\u81ea\u52a8\u5173\u95ed\u6b64 Issue\u3002",
     ]) + "\n"
@@ -134,7 +138,7 @@ def status_comment(context: dict[str, str], status: str, message: str) -> str:
         f"\u65f6\u95f4: {context['time']} UTC\n"
         f"[Workflow run {context['run_number'] or context['run_id']}]({context['run_url']})\n"
         f"\u63d0\u4ea4: `{context['sha']}`\n"
-        f"\u8be6\u7ec6: {detail}"
+        f"\u8be6\u7ec6:\n{detail}"
     )
 
 
@@ -166,10 +170,59 @@ def maintenance_failure_detail(path: str) -> str:
     code = int(stage.get("returncode") or 1)
     classification = str(stage.get("classification") or report.get("failure_classification") or "unknown")
     elapsed = float(stage.get("elapsed_seconds") or 0.0)
-    return (
+    timeout = stage.get("timeout_seconds")
+    timeout_text = "none" if timeout is None else f"{float(timeout):.1f}s"
+    reason = str(stage.get("failure_reason") or "none")
+    lines = [(
         f"failed_stage={label} ({script}), exit={code}, classification={classification}, "
-        f"stage_elapsed={elapsed:.1f}s, pipeline_attempts={len(attempts)}"
-    )
+        f"stage_elapsed={elapsed:.1f}s, stage_timeout={timeout_text}, reason={reason}, "
+        f"pipeline_attempts={len(attempts)}"
+    )]
+    for attempt in attempts:
+        evidence = attempt.get("evidence") if isinstance(attempt.get("evidence"), dict) else {}
+        if not evidence:
+            continue
+        guard = evidence.get("guard") if isinstance(evidence.get("guard"), dict) else {}
+        recheck = (
+            evidence.get("published_recheck")
+            if isinstance(evidence.get("published_recheck"), dict)
+            else {}
+        )
+        historical = (
+            recheck.get("historical_fallback")
+            if isinstance(recheck.get("historical_fallback"), dict)
+            else {}
+        )
+        groups = evidence.get("curated_groups") if isinstance(evidence.get("curated_groups"), dict) else {}
+        failures = guard.get("failures") if isinstance(guard.get("failures"), list) else []
+        unavailable = guard.get("unavailable_sources") if isinstance(guard.get("unavailable_sources"), list) else []
+        lines.append(
+            "- attempt={attempt_no}, profile={profile}, lines={lines_count}, "
+            "core_groups=CCTV:{cctv}/satellite:{satellite}/local:{local}, "
+            "recheck={before}->{after} removed={removed} refilled={refilled}, "
+            "historical=available:{available}/attempted:{attempted}/accepted:{accepted}, "
+            "unavailable_sources={unavailable}, guard_failures={failures}".format(
+                attempt_no=attempt.get("attempt", "?"),
+                profile=attempt.get("profile", "unknown"),
+                lines_count=evidence.get("curated_published_lines", 0),
+                cctv=groups.get("\u592e\u89c6\u9891\u9053", 0),
+                satellite=groups.get("\u536b\u89c6\u9891\u9053", 0),
+                local=groups.get("\u5730\u65b9\u9891\u9053", 0),
+                before=recheck.get("before_rows", 0),
+                after=recheck.get("after_rows", 0),
+                removed=recheck.get("removed_rows", 0),
+                refilled=recheck.get("refilled_rows", 0),
+                available=historical.get("candidates_available", 0),
+                attempted=historical.get("attempted_unique_urls", 0),
+                accepted=historical.get("refilled_rows", 0),
+                unavailable=",".join(str(item) for item in unavailable) or "none",
+                failures=" | ".join(str(item) for item in failures) or "none",
+            )
+        )
+    detail = "\n".join(lines)
+    if len(detail) > MAX_FAILURE_DETAIL_CHARS:
+        detail = detail[: MAX_FAILURE_DETAIL_CHARS - 80].rstrip() + "\n[diagnostic detail truncated; see artifact]"
+    return detail
 
 
 def main(argv: list[str] | None = None) -> int:

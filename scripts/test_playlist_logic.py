@@ -7,6 +7,7 @@ import csv
 import json
 import re
 import socket
+import subprocess
 import sys
 import tempfile
 import zlib
@@ -92,6 +93,7 @@ def test_workflow_is_pinned_and_refuses_stale_publication() -> None:
     assert "--pre-wait 30" in workflow
     assert "run_endpoint_check" in workflow
     assert workflow.index("Purge subscription files after Git propagation") < workflow.index("Verify Raw and all configured publication endpoints")
+    assert "always() && steps.commit.outcome == 'success'" in workflow
     assert "notify_maintenance.py success --scope maintenance" in workflow
     assert "notify_maintenance.py success --scope cdn" in workflow
 
@@ -100,6 +102,7 @@ def test_workflow_is_pinned_and_refuses_stale_publication() -> None:
     assert cdn_refs
     assert all(re.fullmatch(r"uses: [A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[0-9a-f]{40}(?: # v\d+)?", line) for line in cdn_refs), cdn_refs
     assert "workflow_run:" in cdn_workflow
+    assert "github.event.workflow_run.conclusion == 'success'" in cdn_workflow
     assert "--required-only" in cdn_workflow
     assert "timeout --signal=TERM --kill-after=10s 150s" in cdn_workflow
     assert "timeout-minutes: 25" in cdn_workflow
@@ -1698,6 +1701,10 @@ def test_local_maintenance_wrapper_is_fail_fast_and_complete() -> None:
     config = maintenance_module.load_config()
     assert set(config["retryable_scripts"]) == {"verify_sources.py", "recheck_published.py"}
     assert "audit_quality.py" in config["fatal_scripts"]
+    assert set(config["stage_timeouts_seconds"]) == set(scripts)
+    assert config["max_total_runtime_seconds"] < 180 * 60
+    assert int(config["conservative_retry_env"]["IPTV_CHECK_WORKERS"]) < int(maintenance_module.ENV_DEFAULTS["IPTV_CHECK_WORKERS"])
+    assert int(config["conservative_retry_env"]["IPTV_CHECK_TIMEOUT"]) > int(maintenance_module.ENV_DEFAULTS["IPTV_CHECK_TIMEOUT"])
     assert maintenance_module.main(["--dry-run"]) == 0
 
 
@@ -1732,14 +1739,78 @@ def test_maintenance_retry_resumes_at_failed_network_stage() -> None:
         maintenance_module.subprocess.run = original_run
 
 
+def test_maintenance_stage_timeout_is_reported_and_retryable() -> None:
+    original_stages = maintenance_module.STAGES
+    original_run = maintenance_module.subprocess.run
+    try:
+        maintenance_module.STAGES = (maintenance_module.Stage("bounded verify", "verify_sources.py"),)
+
+        def fake_run(command, **kwargs):
+            raise subprocess.TimeoutExpired(command, kwargs.get("timeout", 1))
+
+        maintenance_module.subprocess.run = fake_run
+        record = maintenance_module.run_attempt(
+            1,
+            1,
+            {},
+            {
+                "retryable_scripts": ["verify_sources.py"],
+                "stage_timeouts_seconds": {"verify_sources.py": 1},
+            },
+        )
+        stage = record["failed_stage"]
+        assert record["status"] == "failed"
+        assert stage["returncode"] == 124
+        assert stage["timed_out"] is True
+        assert stage["classification"] == "retryable"
+        assert stage["failure_reason"] == "stage timeout exceeded"
+    finally:
+        maintenance_module.STAGES = original_stages
+        maintenance_module.subprocess.run = original_run
+
+
+def test_deterministic_timeout_and_process_launch_failure_are_fatal() -> None:
+    original_stages = maintenance_module.STAGES
+    original_run = maintenance_module.subprocess.run
+    try:
+        maintenance_module.STAGES = (maintenance_module.Stage("guard", "guard_publish.py"),)
+
+        def timeout_run(command, **kwargs):
+            raise subprocess.TimeoutExpired(command, kwargs.get("timeout", 1))
+
+        maintenance_module.subprocess.run = timeout_run
+        config = {
+            "retryable_scripts": [],
+            "guard_confirmation_attempts": 2,
+            "stage_timeouts_seconds": {"guard_publish.py": 1},
+        }
+        timeout_record = maintenance_module.run_attempt(1, 1, {}, config)
+        assert timeout_record["failure_classification"] == "fatal"
+        assert timeout_record["failed_stage"]["timed_out"] is True
+
+        def launch_failure(*_args, **_kwargs):
+            raise OSError("unit launch failure")
+
+        maintenance_module.subprocess.run = launch_failure
+        launch_record = maintenance_module.run_attempt(1, 1, {}, config)
+        assert launch_record["failure_classification"] == "fatal"
+        assert launch_record["failed_stage"]["returncode"] == 127
+        assert launch_record["failed_stage"]["launch_failed"] is True
+    finally:
+        maintenance_module.STAGES = original_stages
+        maintenance_module.subprocess.run = original_run
+
+
 def test_maintenance_gives_each_network_stage_its_own_retry_budget() -> None:
     original_run_attempt = maintenance_module.run_attempt
     original_write_report = maintenance_module.write_report
     original_append_summary = maintenance_module.append_step_summary
     starts: list[int] = []
+    profiles: list[str] = []
     try:
         def fake_attempt(attempt, total, _env, _config, start_index=0):
             starts.append(start_index)
+            profiles.append(_env.get(maintenance_module.PROFILE_ENV, ""))
             if attempt == 1:
                 stage = {"index": 3, "label": "verify", "script": "verify_sources.py", "returncode": 1, "classification": "retryable"}
                 return {"attempt": attempt, "status": "failed", "failure_classification": "retryable", "failed_stage": stage, "stages": [stage]}
@@ -1753,6 +1824,7 @@ def test_maintenance_gives_each_network_stage_its_own_retry_budget() -> None:
         maintenance_module.append_step_summary = lambda _text: None
         assert maintenance_module.main(["--max-attempts", "2", "--retry-delay", "0"]) == 0
         assert starts == [0, 2, 4]
+        assert profiles == ["standard", "network_retry_conservative", "network_retry_conservative"]
     finally:
         maintenance_module.run_attempt = original_run_attempt
         maintenance_module.write_report = original_write_report
@@ -1766,9 +1838,15 @@ def test_maintenance_guard_confirmation_restarts_from_full_upstream_verification
     original_cleanup = maintenance_module.cleanup_attempt_evidence
     original_snapshot = maintenance_module.snapshot_attempt_evidence
     starts: list[int] = []
+    profiles: list[tuple[str, str, str]] = []
     try:
         def fake_attempt(attempt, _total, _env, _config, start_index=0):
             starts.append(start_index)
+            profiles.append((
+                _env.get(maintenance_module.PROFILE_ENV, ""),
+                _env.get("IPTV_CHECK_WORKERS", ""),
+                _env.get("IPTV_CHECK_TIMEOUT", ""),
+            ))
             if attempt == 1:
                 stage = {
                     "index": 8,
@@ -1790,13 +1868,17 @@ def test_maintenance_guard_confirmation_restarts_from_full_upstream_verification
         maintenance_module.write_report = lambda _report: None
         maintenance_module.append_step_summary = lambda _text: None
         maintenance_module.cleanup_attempt_evidence = lambda: None
-        maintenance_module.snapshot_attempt_evidence = lambda _attempt: None
+        maintenance_module.snapshot_attempt_evidence = lambda _attempt, **_kwargs: None
         assert maintenance_module.main(["--max-attempts", "1", "--retry-delay", "0"]) == 0
         verify_index = next(
             index for index, stage in enumerate(maintenance_module.STAGES)
             if stage.script == "verify_sources.py"
         )
         assert starts == [0, verify_index]
+        assert profiles[0] == ("standard", maintenance_module.ENV_DEFAULTS["IPTV_CHECK_WORKERS"], maintenance_module.ENV_DEFAULTS["IPTV_CHECK_TIMEOUT"])
+        assert profiles[1][0] == "guard_confirmation_conservative"
+        assert int(profiles[1][1]) < int(profiles[0][1])
+        assert int(profiles[1][2]) > int(profiles[0][2])
     finally:
         maintenance_module.run_attempt = original_run_attempt
         maintenance_module.write_report = original_write_report
@@ -1907,7 +1989,30 @@ def test_maintenance_alert_includes_failed_stage() -> None:
             json.dumps({
                 "status": "failed",
                 "failure_classification": "retryable",
-                "attempts": [{"failed_stage": {"label": "verify", "script": "verify_sources.py", "returncode": 1}}],
+                "attempts": [{
+                    "attempt": 1,
+                    "profile": "guard_confirmation_conservative",
+                    "failed_stage": {"label": "verify", "script": "verify_sources.py", "returncode": 1},
+                    "evidence": {
+                        "curated_published_lines": 1700,
+                        "curated_groups": {"央视频道": 95, "卫视频道": 130, "地方频道": 240},
+                        "guard": {
+                            "failures": ["group 地方频道 count 240 < minimum 250"],
+                            "unavailable_sources": ["unit_source"],
+                        },
+                        "published_recheck": {
+                            "before_rows": 2000,
+                            "after_rows": 1700,
+                            "removed_rows": 320,
+                            "refilled_rows": 20,
+                            "historical_fallback": {
+                                "candidates_available": 10,
+                                "attempted_unique_urls": 8,
+                                "refilled_rows": 2,
+                            },
+                        },
+                    },
+                }],
                 "failed_stage": {
                     "label": "verify every upstream URL",
                     "script": "verify_sources.py",
@@ -1921,6 +2026,53 @@ def test_maintenance_alert_includes_failed_stage() -> None:
         detail = notify_module.maintenance_failure_detail(str(report))
         assert "verify_sources.py" in detail
         assert "stage_elapsed=12.5s" in detail
+        assert "profile=guard_confirmation_conservative" in detail
+        assert "group 地方频道 count 240 < minimum 250" in detail
+        assert "historical=available:10/attempted:8/accepted:2" in detail
+
+
+def test_maintenance_attempt_evidence_is_bounded_and_self_contained() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        (root / "full-check-summary.json").write_text(
+            json.dumps({
+                "generated_utc": "2026-08-11T00:00:00Z",
+                "unique_candidates": 100,
+                "playable_unique_urls": 60,
+                "curated_published_lines": 40,
+                "curated_groups": {"央视频道": 10},
+                "publish_guard": {
+                    "status": "rejected",
+                    "failures": ["too small"],
+                    "warnings": ["source unstable"],
+                    "unavailable_sources": ["source_a"],
+                },
+                "published_recheck": {
+                    "before_rows": 50,
+                    "after_rows": 40,
+                    "removed_rows": 12,
+                    "net_row_delta": -10,
+                    "post_retry_failed_unique_urls": 12,
+                    "refill": {"refilled_rows": 2},
+                    "historical_fallback": {
+                        "candidates_available": 4,
+                        "attempted_unique_urls": 3,
+                        "playable_unique_urls": 2,
+                        "refilled_rows": 2,
+                    },
+                },
+            }, ensure_ascii=False),
+            encoding="utf-8",
+        )
+        assert maintenance_module.collect_attempt_evidence(
+            root,
+            not_before_epoch=(root / "full-check-summary.json").stat().st_mtime + 10,
+        ) == {}
+        evidence = maintenance_module.collect_attempt_evidence(root)
+        assert evidence["curated_published_lines"] == 40
+        assert evidence["guard"]["failures"] == ["too small"]
+        assert evidence["published_recheck"]["refilled_rows"] == 2
+        assert evidence["published_recheck"]["historical_fallback"]["refilled_rows"] == 2
 
 
 def test_maintenance_alert_scopes_are_isolated() -> None:
@@ -2083,6 +2235,8 @@ def main() -> int:
         test_generated_csv_writers_force_lf_line_endings,
         test_local_maintenance_wrapper_is_fail_fast_and_complete,
         test_maintenance_retry_resumes_at_failed_network_stage,
+        test_maintenance_stage_timeout_is_reported_and_retryable,
+        test_deterministic_timeout_and_process_launch_failure_are_fatal,
         test_maintenance_gives_each_network_stage_its_own_retry_budget,
         test_maintenance_guard_confirmation_restarts_from_full_upstream_verification,
         test_watchdog_counts_only_hard_failures,
@@ -2090,6 +2244,7 @@ def main() -> int:
         test_watchdog_compacts_api_runs_and_bounds_issue_body,
         test_watchdog_confirmation_recovers_from_exception_then_success,
         test_maintenance_alert_includes_failed_stage,
+        test_maintenance_attempt_evidence_is_bounded_and_self_contained,
         test_maintenance_alert_scopes_are_isolated,
         test_recheck_source_map_helper,
         test_recheck_summary_records_video_policy,

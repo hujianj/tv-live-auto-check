@@ -184,7 +184,7 @@ jobs:
           if [ -f cdn-health-report.md ]; then cat cdn-health-report.md >> "$GITHUB_STEP_SUMMARY"; fi
           exit "$status"
       - name: Upload CDN health artifact
-        if: always()
+        if: ${{ always() && steps.commit.outcome == 'success' }}
         continue-on-error: true
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
