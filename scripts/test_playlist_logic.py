@@ -218,8 +218,59 @@ def test_source_lifecycle_separates_recovery_from_enabled_failures() -> None:
         }
     }
     old_policy = {"published_recheck": {"core_progress_required": True}}
-    assert "predates" in guard_module.relative_guard_migration_reason(current_policy, old_policy)
+    assert "0->1" in guard_module.relative_guard_migration_reason(current_policy, old_policy)
+    removed_group_policy = {
+        "published_recheck": {
+            "policy_version": 2,
+            "broadcast_progress_required": True,
+            "progress_required_groups": ["央视频道"],
+        }
+    }
+    assert guard_module.relative_guard_migration_reason(removed_group_policy, old_policy) == ""
     assert guard_module.relative_guard_migration_reason(current_policy, current_policy) == ""
+
+
+def test_guard_rejects_core_sources_that_fetch_but_parse_zero() -> None:
+    original_root = guard_module.ROOT
+    original_git_show = guard_module.git_show_json
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            guard_module.ROOT = Path(td)
+            groups = {
+                group: max(1, minimum)
+                for group, minimum in guard_module.MIN_GROUPS.items()
+            }
+            summary = {
+                "curated_published_lines": max(guard_module.guard_min_lines(), sum(groups.values())),
+                "curated_groups": groups,
+                "checked_all_unique": True,
+                "checked_candidates": 2,
+                "unique_candidates": 2,
+                "published_recheck": {
+                    "policy_version": guard_module.RECHECK_POLICY_VERSION,
+                    "broadcast_progress_required": True,
+                    "progress_required_groups": sorted(load_quality()["live_progress_groups"]),
+                },
+            }
+            (guard_module.ROOT / "full-check-summary.json").write_text(
+                json.dumps(summary, ensure_ascii=False) + "\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+            core_sources = sorted(guard_module.CORE_SOURCES)[:2]
+            with (guard_module.ROOT / "sources_status.csv").open("w", encoding="utf-8", newline="") as handle:
+                writer = csv.writer(handle, lineterminator="\n")
+                writer.writerow(["name", "url", "mode", "contributed", "fetch_ok", "bytes", "parsed", "truncated", "error"])
+                for source in core_sources:
+                    writer.writerow([source, f"https://{source}.test/list", "enabled", False, True, 100, 0, False, ""])
+            guard_module.git_show_json = lambda _spec: dict(summary)
+            assert guard_module.main() == 1
+            report = (guard_module.ROOT / "publish-guard-report.md").read_text(encoding="utf-8")
+            assert "multiple core sources unavailable" in report
+            assert "fetched but zero parsed" in report
+    finally:
+        guard_module.ROOT = original_root
+        guard_module.git_show_json = original_git_show
 
 
 def test_rules_config_contains_core_coverage() -> None:
@@ -889,8 +940,8 @@ def test_final_recheck_refills_failed_channel_urls() -> None:
     ]
     calls = []
 
-    def fake_checker(cand, core_override, require_progress):
-        calls.append((cand.url, core_override, require_progress))
+    def fake_checker(cand, *, core_override, require_progress, require_video):
+        calls.append((cand.url, core_override, require_progress, require_video))
         ok = not cand.url.endswith("5.m3u8")
         return CheckResult(cand, ok, "ok" if ok else "failed")
 
@@ -907,7 +958,95 @@ def test_final_recheck_refills_failed_channel_urls() -> None:
     assert [item.row.url for item in accepted] == ["http://a/4.m3u8", "http://a/6.m3u8"]
     assert summary["refilled_rows"] == 2
     assert summary["unresolved_rows"] == 0
-    assert all(core and progress for _url, core, progress in calls)
+    assert all(core and progress and video for _url, core, progress, video in calls)
+
+
+def test_historical_fallback_restores_missing_redundancy_with_strict_probe() -> None:
+    import recheck_published as recheck
+
+    group = "\u592e\u89c6\u9891\u9053"
+    before = [
+        recheck.Row(group, "CCTV-1", f"http://current.test/{index}.m3u8")
+        for index in range(1, 4)
+    ]
+    pool = [
+        recheck.PoolCandidate(
+            "CCTV-1",
+            recheck.Row(group, "CCTV-1", f"http://history.test/{index}.m3u8"),
+            "previous_source",
+            "previous_publication",
+        )
+        for index in range(1, 3)
+    ]
+    calls: list[dict] = []
+
+    def checker(candidate, **kwargs):
+        calls.append(kwargs)
+        return CheckResult(candidate, True, "video/h264 live progress")
+
+    final_rows, _results, summary, attempted, accepted = recheck.refill_missing_rows(
+        before,
+        before,
+        {},
+        pool,
+        checker=checker,
+    )
+    assert len(final_rows) == 5
+    assert summary["historical_target_rows"] == 2
+    assert summary["historical_attempted_unique_urls"] == 2
+    assert summary["historical_refilled_rows"] == 2
+    assert all(item.origin == "previous_publication" for item in attempted + accepted)
+    assert calls == [
+        {"core_override": True, "require_progress": True, "require_video": True},
+        {"core_override": True, "require_progress": True, "require_video": True},
+    ]
+
+
+def test_historical_fallback_can_restore_a_missing_channel_from_empty_current_rows() -> None:
+    import recheck_published as recheck
+
+    row = recheck.Row("\u592e\u89c6\u9891\u9053", "CCTV-2", "http://history.test/cctv2.m3u8")
+    candidate = recheck.PoolCandidate(
+        "CCTV-2", row, "previous_source", "previous_publication"
+    )
+
+    def checker(probe, **kwargs):
+        assert kwargs["require_video"] is True
+        return CheckResult(probe, True, "video/h264 live progress")
+
+    final_rows, _results, summary, _attempted, accepted = recheck.refill_missing_rows(
+        [], [], {}, [candidate], checker=checker
+    )
+    assert final_rows == [row]
+    assert accepted == [candidate]
+    assert summary["historical_target_rows"] == 1
+
+
+def test_candidate_pool_schema_records_origin_and_prefers_current_scan() -> None:
+    import recheck_published as recheck
+
+    group = "\u592e\u89c6\u9891\u9053"
+    current = ("CCTV-1", group, "CCTV-1", "https://slow.test/current.m3u8", "free_tv_world", "current_scan")
+    historical = ("CCTV-1", group, "CCTV-1", "http://fast.test/history.m3u8", "zbds_iptv4_txt", "previous_publication")
+    assert curate_module.candidate_pool_sort_key(current) < curate_module.candidate_pool_sort_key(historical)
+
+    with tempfile.TemporaryDirectory() as td:
+        path = Path(td) / "curated-candidate-pool.csv"
+        with path.open("w", encoding="utf-8", newline="") as handle:
+            writer = csv.writer(handle, lineterminator="\n")
+            writer.writerow(["selection_key", "group", "name", "url", "source", "origin"])
+            writer.writerow(historical)
+        loaded = recheck.load_candidate_pool(path)
+        assert loaded[0].origin == "previous_publication"
+
+        payload = path.read_text(encoding="utf-8").replace("previous_publication", "invalid_origin")
+        path.write_text(payload, encoding="utf-8", newline="\n")
+        try:
+            recheck.load_candidate_pool(path)
+        except ValueError as exc:
+            assert "invalid origin" in str(exc)
+        else:
+            raise AssertionError("invalid candidate-pool origin was accepted")
 
 
 def test_core_retry_classification() -> None:
@@ -1055,9 +1194,9 @@ def _write_test_publish_bundle(root: Path, full_rows=None, family_rows=None, gro
             writer.writerow([row.group, row.name, row.url, "unit"])
     with (root / "curated-candidate-pool.csv").open("w", encoding="utf-8", newline="") as f:
         writer = csv.writer(f, lineterminator="\n")
-        writer.writerow(["selection_key", "group", "name", "url", "source"])
+        writer.writerow(["selection_key", "group", "name", "url", "source", "origin"])
         for row in full_rows:
-            writer.writerow([canonical_channel_key(row.name), row.group, row.name, row.url, "unit"])
+            writer.writerow([canonical_channel_key(row.name), row.group, row.name, row.url, "unit", "current_scan"])
     (root / "alias-conflict-report.md").write_text("# test\n", encoding="utf-8")
     source_specs = source_specs or [{"name": "unit", "url": "https://unit.test/source", "enabled": True}]
     status_lines = ["name,url,mode,contributed,fetch_ok,bytes,parsed,truncated,error"]
@@ -1128,6 +1267,7 @@ def _write_test_publish_bundle(root: Path, full_rows=None, family_rows=None, gro
             "missing_satellite_quality": [],
         },
         "published_recheck": {
+            "policy_version": 1,
             "core_progress_required": True,
             "broadcast_progress_required": True,
             "progress_required_groups": sorted(["央视频道", "卫视频道", "地方频道"]),
@@ -1146,6 +1286,7 @@ def _write_test_publish_bundle(root: Path, full_rows=None, family_rows=None, gro
             "before_rows": len(full_rows),
             "after_rows": len(full_rows),
             "removed_rows": 0,
+            "net_row_delta": 0,
             "slow_retry": {
                 "first_pass_failed_unique_urls": 0,
                 "initial_failed_unique_urls": 0,
@@ -1159,6 +1300,15 @@ def _write_test_publish_bundle(root: Path, full_rows=None, family_rows=None, gro
                 "playable_unique_urls": 0,
                 "refilled_rows": 0,
                 "unresolved_rows": 0,
+            },
+            "historical_fallback": {
+                "enabled": True,
+                "groups": sorted(["央视频道", "卫视频道", "地方频道"]),
+                "candidates_available": 0,
+                "target_rows": 0,
+                "attempted_unique_urls": 0,
+                "playable_unique_urls": 0,
+                "refilled_rows": 0,
             },
         },
         "stability": {"enabled": True, "updated_urls": checked, "tracked_urls_after": checked},
@@ -1377,7 +1527,7 @@ def test_publish_bundle_validator_enforces_cross_file_invariants() -> None:
         _write_test_publish_bundle(root)
         pool_path = root / "curated-candidate-pool.csv"
         pool_path.write_text(
-            pool_path.read_text(encoding="utf-8").replace("selection_key,group,name,url,source", "group,selection_key,name,url,source", 1),
+            pool_path.read_text(encoding="utf-8").replace("selection_key,group,name,url,source,origin", "group,selection_key,name,url,source,origin", 1),
             encoding="utf-8",
             newline="\n",
         )
@@ -1609,6 +1759,52 @@ def test_maintenance_gives_each_network_stage_its_own_retry_budget() -> None:
         maintenance_module.append_step_summary = original_append_summary
 
 
+def test_maintenance_guard_confirmation_restarts_from_full_upstream_verification() -> None:
+    original_run_attempt = maintenance_module.run_attempt
+    original_write_report = maintenance_module.write_report
+    original_append_summary = maintenance_module.append_step_summary
+    original_cleanup = maintenance_module.cleanup_attempt_evidence
+    original_snapshot = maintenance_module.snapshot_attempt_evidence
+    starts: list[int] = []
+    try:
+        def fake_attempt(attempt, _total, _env, _config, start_index=0):
+            starts.append(start_index)
+            if attempt == 1:
+                stage = {
+                    "index": 8,
+                    "label": "guard",
+                    "script": "guard_publish.py",
+                    "returncode": 1,
+                    "classification": "confirmable",
+                }
+                return {
+                    "attempt": attempt,
+                    "status": "failed",
+                    "failure_classification": "confirmable",
+                    "failed_stage": stage,
+                    "stages": [stage],
+                }
+            return {"attempt": attempt, "status": "ok", "failure_classification": "none", "stages": []}
+
+        maintenance_module.run_attempt = fake_attempt
+        maintenance_module.write_report = lambda _report: None
+        maintenance_module.append_step_summary = lambda _text: None
+        maintenance_module.cleanup_attempt_evidence = lambda: None
+        maintenance_module.snapshot_attempt_evidence = lambda _attempt: None
+        assert maintenance_module.main(["--max-attempts", "1", "--retry-delay", "0"]) == 0
+        verify_index = next(
+            index for index, stage in enumerate(maintenance_module.STAGES)
+            if stage.script == "verify_sources.py"
+        )
+        assert starts == [0, verify_index]
+    finally:
+        maintenance_module.run_attempt = original_run_attempt
+        maintenance_module.write_report = original_write_report
+        maintenance_module.append_step_summary = original_append_summary
+        maintenance_module.cleanup_attempt_evidence = original_cleanup
+        maintenance_module.snapshot_attempt_evidence = original_snapshot
+
+
 def test_watchdog_counts_only_hard_failures() -> None:
     now = watchdog_module.datetime(2026, 8, 7, tzinfo=watchdog_module.timezone.utc)
     conclusions = ["cancelled", "failure", "skipped", "timed_out", "success"]
@@ -1674,6 +1870,34 @@ def test_watchdog_compacts_api_runs_and_bounds_issue_body() -> None:
     assert len(body) < watchdog_module.MAX_ISSUE_BODY_CHARS
     assert "watchdog-report.json" in body
     assert "original_characters" in body
+
+
+def test_watchdog_confirmation_recovers_from_exception_then_success() -> None:
+    observations = [
+        watchdog_module.WatchdogError("temporary API reset"),
+        watchdog_module.HealthResult([], ["endpoint recovered"], {"publication": {"ok": True}}),
+    ]
+    sleeps: list[float] = []
+
+    def check_once(_now):
+        item = observations.pop(0)
+        if isinstance(item, Exception):
+            raise item
+        return item
+
+    result, _now = watchdog_module.confirm_health(
+        check_once,
+        attempts=2,
+        delay_seconds=0.25,
+        sleep=sleeps.append,
+    )
+    assert result.failures == []
+    assert "endpoint recovered" in result.warnings
+    assert any("transient failure recovered" in warning for warning in result.warnings)
+    assert sleeps == [0.25]
+    confirmation = result.details["confirmation"]
+    assert [item["status"] for item in confirmation["observations"]] == ["failed", "ok"]
+    assert "temporary API reset" in confirmation["observations"][0]["failures"][0]
 
 
 def test_maintenance_alert_includes_failed_stage() -> None:
@@ -1749,6 +1973,56 @@ def test_recheck_summary_records_video_policy() -> None:
             assert summary["published_recheck"]["require_video_track"] is True
             assert summary["published_recheck"]["broadcast_progress_required"] is True
             assert summary["published_recheck"]["video_track_verified_unique_urls"] == 1
+            assert summary["published_recheck"]["removed_rows"] == 0
+            assert summary["published_recheck"]["net_row_delta"] == 0
+    finally:
+        recheck.ROOT = original_root
+
+
+def test_recheck_summary_separates_removed_refilled_and_net_rows() -> None:
+    import recheck_published as recheck
+
+    original_root = recheck.ROOT
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            recheck.ROOT = Path(td)
+            (recheck.ROOT / recheck.SUMMARY_FILE).write_text("{}\n", encoding="utf-8", newline="\n")
+            group = "\u592e\u89c6\u9891\u9053"
+            first = recheck.Row(group, "CCTV-1", "http://unit.test/one.m3u8")
+            removed = recheck.Row(group, "CCTV-1", "http://unit.test/removed.m3u8")
+            refilled = recheck.Row(group, "CCTV-1", "http://unit.test/refilled.m3u8")
+            refill_summary = {
+                "enabled": True,
+                "attempted_unique_urls": 1,
+                "playable_unique_urls": 1,
+                "refilled_rows": 1,
+                "unresolved_rows": 0,
+            }
+            retry_summary = {
+                "first_pass_failed_unique_urls": 1,
+                "attempted_unique_urls": 0,
+                "recovered_unique_urls": 0,
+                "still_failed_unique_urls": 1,
+            }
+            recheck.update_summary(
+                [first, removed],
+                [first, refilled],
+                3,
+                {removed.url: "failed"},
+                {removed.url: "failed"},
+                0.1,
+                {},
+                {},
+                {},
+                refill_summary,
+                retry_summary,
+                3,
+            )
+            summary = json.loads((recheck.ROOT / recheck.SUMMARY_FILE).read_text(encoding="utf-8"))
+            recheck_summary = summary["published_recheck"]
+            assert recheck_summary["removed_rows"] == 1
+            assert recheck_summary["refill"]["refilled_rows"] == 1
+            assert recheck_summary["net_row_delta"] == 0
     finally:
         recheck.ROOT = original_root
 
@@ -1761,6 +2035,7 @@ def main() -> int:
         test_source_statuses_follow_config_order,
         test_source_config_omits_disabled_unstable_sources,
         test_source_lifecycle_separates_recovery_from_enabled_failures,
+        test_guard_rejects_core_sources_that_fetch_but_parse_zero,
         test_rules_config_contains_core_coverage,
         test_classification_avoids_single_character_false_positives,
         test_priority_and_guard_config_are_externalized,
@@ -1792,6 +2067,9 @@ def main() -> int:
         test_progress_wait_respects_target_duration,
         test_media_segment_probe_uses_live_edge,
         test_final_recheck_refills_failed_channel_urls,
+        test_historical_fallback_restores_missing_redundancy_with_strict_probe,
+        test_historical_fallback_can_restore_a_missing_channel_from_empty_current_rows,
+        test_candidate_pool_schema_records_origin_and_prefers_current_scan,
         test_core_retry_classification,
         test_validate_rejects_malformed_url,
         test_validate_m3u_accepts_generated_shape,
@@ -1806,13 +2084,16 @@ def main() -> int:
         test_local_maintenance_wrapper_is_fail_fast_and_complete,
         test_maintenance_retry_resumes_at_failed_network_stage,
         test_maintenance_gives_each_network_stage_its_own_retry_budget,
+        test_maintenance_guard_confirmation_restarts_from_full_upstream_verification,
         test_watchdog_counts_only_hard_failures,
         test_watchdog_rejects_stale_public_manifest,
         test_watchdog_compacts_api_runs_and_bounds_issue_body,
+        test_watchdog_confirmation_recovers_from_exception_then_success,
         test_maintenance_alert_includes_failed_stage,
         test_maintenance_alert_scopes_are_isolated,
         test_recheck_source_map_helper,
         test_recheck_summary_records_video_policy,
+        test_recheck_summary_separates_removed_refilled_and_net_rows,
     ]:
         test()
         print(f"OK {test.__name__}")

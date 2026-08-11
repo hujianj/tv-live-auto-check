@@ -376,6 +376,7 @@ def _validate_summary(
     )
     if require_extended_schema:
         required_recheck_fields += (
+            "policy_version",
             "broadcast_progress_required",
             "progress_required_groups",
             "first_pass_failed_unique_urls",
@@ -383,10 +384,16 @@ def _validate_summary(
             "slow_retry_recovered_unique_urls",
             "post_retry_failed_unique_urls",
             "slow_retry",
+            "historical_fallback",
+            "net_row_delta",
         )
     _require_fields(recheck, required_recheck_fields, "summary.published_recheck", errors)
     if recheck.get("core_progress_required") is not True:
         errors.append("summary.published_recheck.core_progress_required must be true")
+    if "policy_version" in recheck:
+        configured_policy_version = int(load_quality().get("published_recheck_policy_version", 1))
+        if recheck.get("policy_version") != configured_policy_version:
+            errors.append("summary.published_recheck.policy_version does not match config/quality.json")
     if "broadcast_progress_required" in recheck:
         if recheck.get("broadcast_progress_required") is not True:
             errors.append("summary.published_recheck.broadcast_progress_required must be true")
@@ -440,13 +447,19 @@ def _validate_summary(
         "before_rows",
         "after_rows",
         "removed_rows",
+        "net_row_delta",
     )
     for field in numeric_fields:
         if field not in recheck:
             continue
         value = recheck[field]
-        if not isinstance(value, int) or isinstance(value, bool) or value < 0:
-            errors.append(f"summary.published_recheck.{field} must be a non-negative integer")
+        signed = field == "net_row_delta"
+        if not isinstance(value, int) or isinstance(value, bool) or (not signed and value < 0):
+            errors.append(
+                f"summary.published_recheck.{field} must be an integer"
+                if signed
+                else f"summary.published_recheck.{field} must be a non-negative integer"
+            )
     try:
         if recheck["checked_unique_urls"] < recheck["initial_checked_unique_urls"]:
             errors.append("summary.published_recheck.checked_unique_urls is smaller than initial_checked_unique_urls")
@@ -468,8 +481,6 @@ def _validate_summary(
             failed_before_refill = recheck["initial_failed_unique_urls"]
         if recheck["failed_unique_urls"] != failed_before_refill + recheck["refill_failed_unique_urls"]:
             errors.append("summary.published_recheck failed URL counts are inconsistent")
-        if recheck["removed_rows"] != recheck["before_rows"] - recheck["after_rows"]:
-            errors.append("summary.published_recheck removed_rows is inconsistent")
     except (KeyError, TypeError):
         pass
 
@@ -519,8 +530,55 @@ def _validate_summary(
             errors.append("summary.published_recheck refill failure counts are inconsistent")
         if refill["refilled_rows"] > playable:
             errors.append("summary.published_recheck.refill.refilled_rows exceeds playable_unique_urls")
+        if "net_row_delta" in recheck:
+            if recheck["after_rows"] != (
+                recheck["before_rows"] - recheck["removed_rows"] + refill["refilled_rows"]
+            ):
+                errors.append("summary.published_recheck removed/refilled row counts are inconsistent")
+            if recheck["net_row_delta"] != recheck["after_rows"] - recheck["before_rows"]:
+                errors.append("summary.published_recheck.net_row_delta is inconsistent")
+        elif recheck["removed_rows"] != recheck["before_rows"] - recheck["after_rows"]:
+            # Committed-only validation keeps the previous summary schema
+            # readable during the one-publication migration window.
+            errors.append("summary.published_recheck legacy removed_rows is inconsistent")
     except (KeyError, TypeError):
         pass
+
+    historical = recheck.get("historical_fallback")
+    if require_extended_schema:
+        if not isinstance(historical, dict):
+            errors.append("summary.published_recheck.historical_fallback must be an object")
+            historical = {}
+        _require_fields(
+            historical,
+            (
+                "enabled",
+                "groups",
+                "candidates_available",
+                "target_rows",
+                "attempted_unique_urls",
+                "playable_unique_urls",
+                "refilled_rows",
+            ),
+            "summary.published_recheck.historical_fallback",
+            errors,
+        )
+        configured_fallback = load_guard().get("historical_fallback") or {}
+        if historical.get("enabled") is not bool(configured_fallback.get("enabled", False)):
+            errors.append("summary.published_recheck.historical_fallback.enabled does not match config/guard.json")
+        configured_groups = sorted(str(x) for x in configured_fallback.get("groups", []) if str(x).strip())
+        if historical.get("groups") != configured_groups:
+            errors.append("summary.published_recheck.historical_fallback.groups does not match config/guard.json")
+        for field in (
+            "candidates_available",
+            "target_rows",
+            "attempted_unique_urls",
+            "playable_unique_urls",
+            "refilled_rows",
+        ):
+            value = historical.get(field)
+            if not isinstance(value, int) or isinstance(value, bool) or value < 0:
+                errors.append(f"summary.published_recheck.historical_fallback.{field} must be a non-negative integer")
 
     stability = summary.get("stability")
     if not isinstance(stability, dict):
@@ -558,7 +616,7 @@ def _validate_summary(
 
 
 def _validate_candidate_pool(path: Path, full_rows: list[Row], sources: list[str], errors: list[str]) -> None:
-    expected_header = ["selection_key", "group", "name", "url", "source"]
+    expected_header = ["selection_key", "group", "name", "url", "source", "origin"]
     expected_groups = set(get_group_order())
     pool_records: set[tuple[str, str, str, str]] = set()
     seen_identity_urls: set[tuple[str, str]] = set()
@@ -580,6 +638,7 @@ def _validate_candidate_pool(path: Path, full_rows: list[Row], sources: list[str
         name = (item.get("name") or "").strip()
         url = (item.get("url") or "").strip()
         source = (item.get("source") or "").strip()
+        origin = (item.get("origin") or "").strip()
         missing = [
             field
             for field, value in (
@@ -588,6 +647,7 @@ def _validate_candidate_pool(path: Path, full_rows: list[Row], sources: list[str
                 ("name", name),
                 ("url", url),
                 ("source", source),
+                ("origin", origin),
             )
             if not value
         ]
@@ -604,6 +664,8 @@ def _validate_candidate_pool(path: Path, full_rows: list[Row], sources: list[str
             )
         if not re.fullmatch(r"https?://\S+", url, flags=re.IGNORECASE):
             errors.append(f"{CANDIDATE_POOL_FILE} line {lineno}: invalid public playlist URL {url!r}")
+        if origin not in {"current_scan", "previous_publication"}:
+            errors.append(f"{CANDIDATE_POOL_FILE} line {lineno}: invalid origin {origin!r}")
         dedup_key = (selection_key, url)
         if dedup_key in seen_identity_urls:
             errors.append(f"{CANDIDATE_POOL_FILE} line {lineno}: duplicate selection_key/URL {dedup_key!r}")

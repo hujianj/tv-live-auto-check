@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 from __future__ import annotations
-import csv, json, re
+import csv, json, os, re, shutil, subprocess
 from pathlib import Path
 from collections import defaultdict, Counter
 from validate_playlist import validate_text
-from playlist_config import get_group_order, load_home_priority, load_quality, load_rules, score_adjustments, source_priority as configured_source_priority
+from playlist_config import get_group_order, load_guard, load_home_priority, load_quality, load_rules, score_adjustments, source_priority as configured_source_priority
 from stability import load_history, stability_adjustment, stability_enabled
 from channel_utils import cctv_key, cctv_number, cctv_sort_key, chinese_count as shared_chinese_count, format_extinf
 from channel_identity import aliases_are_compatible, canonical_channel_key, is_audio_only_channel
@@ -34,6 +34,7 @@ GROUP_ORDER = get_group_order()
 
 RULES = load_rules()
 QUALITY = load_quality()
+GUARD = load_guard()
 HOME_PRIORITY = load_home_priority()
 PROVINCES = RULES['provinces']
 HK_KEYS = RULES['category_keywords']['hk']
@@ -68,6 +69,14 @@ HOME_OK_URLS = {str(x).strip() for x in HOME_PRIORITY.get('home_ok_urls', []) if
 HOME_FAILED_URLS = {str(x).strip() for x in HOME_PRIORITY.get('home_failed_urls', []) if str(x).strip()}
 HOME_PRIORITY_BONUS = int(HOME_PRIORITY.get('bonus', -120))
 HOME_PRIORITY_PENALTY = int(HOME_PRIORITY.get('penalty', 180))
+HISTORICAL_FALLBACK = GUARD.get('historical_fallback') or {}
+HISTORICAL_FALLBACK_ENABLED = bool(HISTORICAL_FALLBACK.get('enabled', False))
+HISTORICAL_FALLBACK_GROUPS = {
+    str(group) for group in HISTORICAL_FALLBACK.get('groups', []) if str(group).strip()
+}
+HISTORICAL_FALLBACK_MAX_CANDIDATES = max(
+    0, int(HISTORICAL_FALLBACK.get('max_candidates', 0) or 0)
+)
 
 def chinese_count(s: str) -> int:
     return shared_chinese_count(s)
@@ -357,6 +366,98 @@ def has_abnormal_channel_name(name: str) -> bool:
     return False
 
 
+def prepare_curated_row(
+    raw_name: str,
+    raw_url: str,
+    raw_group: str,
+    source: str,
+) -> tuple[tuple[str, str, str, str] | None, str, str]:
+    """Apply the complete current publication hygiene policy to one row.
+
+    The same function is used for fresh upstream rows and previous-publication
+    fallback candidates. This prevents a policy change from silently restoring
+    a row that the current curation rules would reject.
+    """
+    name = clean_name(raw_name)
+    url = clean_url(raw_url)
+    group = raw_group or ''
+    source = source or ''
+    if has_invalid_channel_name(name) or not is_publishable_http_url(url):
+        return None, 'invalid_name_or_url', ''
+    if has_abnormal_channel_name(name):
+        return None, 'abnormal_channel_name', ''
+    if 'cgtn' in url.lower():
+        return None, 'cgtn_url', ''
+    if is_unstable_or_wrong_alias(name, group, source):
+        return None, 'unstable_or_wrong_alias', ''
+    strict_reason = strict_quality_drop_reason(name)
+    if strict_reason:
+        return None, 'strict_quality_filter', strict_reason
+    if is_unwanted_overseas_english(name, group, source):
+        return None, 'unwanted_overseas_english', ''
+    if is_foreign_channel(name, group, source):
+        return None, 'foreign_channel', ''
+    curated_group = classify(name, group, source)
+    if curated_group == G_OVERSEA and chinese_count(name) == 0:
+        return None, 'oversea_latin_name', ''
+    return (curated_group, name, url, source), '', ''
+
+
+def git_show_text(spec: str) -> str:
+    git = os.getenv('GIT_CMD') or shutil.which('git') or 'git'
+    try:
+        data = subprocess.check_output([git, 'show', spec], cwd=ROOT, stderr=subprocess.DEVNULL)
+        return data.decode('utf-8')
+    except Exception:
+        return ''
+
+
+def parse_tv_txt_rows(text: str) -> list[tuple[str, str, str]]:
+    rows: list[tuple[str, str, str]] = []
+    group = ''
+    for raw in (text or '').splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+        if line.endswith(',#genre#'):
+            group = line.split(',', 1)[0].strip()
+            continue
+        if not group or ',' not in line:
+            continue
+        name, url = line.split(',', 1)
+        rows.append((group, name.strip(), url.strip()))
+    return rows
+
+
+def historical_fallback_rows() -> list[tuple[str, str, str, str]]:
+    """Load last publication rows as candidates, never as trusted output.
+
+    These rows are appended only to the candidate pool. recheck_published.py
+    must prove current video bytes and live progress before any row can return
+    to the television playlist.
+    """
+    if not HISTORICAL_FALLBACK_ENABLED or not HISTORICAL_FALLBACK_GROUPS:
+        return []
+    history_urls = STABILITY_HISTORY.get('urls') or {}
+    prepared: list[tuple[str, str, str, str]] = []
+    seen: set[tuple[str, str]] = set()
+    for old_group, old_name, old_url in parse_tv_txt_rows(git_show_text('HEAD:live-curated.txt')):
+        entry = history_urls.get(clean_url(old_url)) or {}
+        source = str(entry.get('last_source') or 'previous_publication')
+        row, _reason, _strict_reason = prepare_curated_row(old_name, old_url, old_group, source)
+        if row is None or row[0] not in HISTORICAL_FALLBACK_GROUPS:
+            continue
+        key = (selection_key(row[1]), row[2])
+        if key in seen:
+            continue
+        seen.add(key)
+        prepared.append(row)
+    prepared.sort(key=sort_key)
+    if HISTORICAL_FALLBACK_MAX_CANDIDATES > 0:
+        prepared = prepared[:HISTORICAL_FALLBACK_MAX_CANDIDATES]
+    return prepared
+
+
 def validate_final_rows(text: str) -> None:
     validate_text(text, require_categories=True)
 
@@ -370,6 +471,16 @@ def sort_key(item):
         pi = SATELLITE_PRIORITY.index(name) if name in SATELLITE_PRIORITY else 99
         return (gi, pi, name, url_score(url, source))
     return (gi, name, url_score(url, source))
+
+
+def candidate_pool_sort_key(item: tuple[str, str, str, str, str, str]):
+    key, group, _name, url, source, origin = item
+    return (
+        GROUP_ORDER.index(group) if group in GROUP_ORDER else 99,
+        key,
+        0 if origin == 'current_scan' else 1,
+        url_score(url, source),
+    )
 
 
 def alias_choice_score(row: tuple[str, str, str, str]):
@@ -450,38 +561,18 @@ def main():
         for r in csv.DictReader(f):
             if r.get('ok') != 'True':
                 continue
-            name = clean_name(r.get('name', ''))
-            url = clean_url(r.get('url', '') or '')
-            group = r.get('group', '') or ''
-            source = r.get('source', '') or ''
-            if has_invalid_channel_name(name) or not is_publishable_http_url(url):
-                drop_counts['invalid_name_or_url'] += 1
+            row, reason, strict_reason = prepare_curated_row(
+                r.get('name', ''),
+                r.get('url', '') or '',
+                r.get('group', '') or '',
+                r.get('source', '') or '',
+            )
+            if row is None:
+                drop_counts[reason] += 1
+                if strict_reason:
+                    strict_drop_reasons[strict_reason] += 1
                 continue
-            if has_abnormal_channel_name(name):
-                drop_counts['abnormal_channel_name'] += 1
-                continue
-            if 'cgtn' in url.lower():
-                drop_counts['cgtn_url'] += 1
-                continue
-            if is_unstable_or_wrong_alias(name, group, source):
-                drop_counts['unstable_or_wrong_alias'] += 1
-                continue
-            strict_reason = strict_quality_drop_reason(name)
-            if strict_reason:
-                drop_counts['strict_quality_filter'] += 1
-                strict_drop_reasons[strict_reason] += 1
-                continue
-            if is_unwanted_overseas_english(name, group, source):
-                drop_counts['unwanted_overseas_english'] += 1
-                continue
-            if is_foreign_channel(name, group, source):
-                drop_counts['foreign_channel'] += 1
-                continue
-            g = classify(name, group, source)
-            if g == G_OVERSEA and chinese_count(name) == 0:
-                drop_counts['oversea_latin_name'] += 1
-                continue
-            rows.append((g, name, url, source))
+            rows.append(row)
 
     resolved_rows, alias_conflicts = resolve_url_aliases(rows)
     write_alias_conflict_report(alias_conflicts, len(rows), len(resolved_rows))
@@ -494,7 +585,7 @@ def main():
 
     # Normalize all URLs of one canonical channel to a single display name and
     # group. This prevents resolution aliases from receiving separate quotas.
-    candidate_pool: list[tuple[str, str, str, str, str]] = []
+    candidate_pool: list[tuple[str, str, str, str, str, str]] = []
     normalized_by_key: dict[str, list[tuple[str, str, str, str]]] = {}
     for key, arr in by.items():
         representative = min(arr, key=alias_choice_score)
@@ -504,13 +595,36 @@ def main():
         ]
         normalized = sorted(normalized, key=lambda x: (url_score(x[2], x[3]), sort_key(x)))
         normalized_by_key[key] = normalized
-        candidate_pool.extend((key, group, name, url, source) for group, name, url, source in normalized)
+        candidate_pool.extend((key, group, name, url, source, 'current_scan') for group, name, url, source in normalized)
+
+    # The last published protected-channel rows are recovery candidates only.
+    # Exclude every URL already present in the current pool, including URLs
+    # currently mapped to a different identity, so historical data cannot
+    # override fresh alias-conflict evidence.
+    historical_rows = historical_fallback_rows()
+    current_urls = {url for _key, _group, _name, url, _source, _origin in candidate_pool}
+    current_key_urls = {(key, url) for key, _group, _name, url, _source, _origin in candidate_pool}
+    historical_added = 0
+    for group, name, url, source in historical_rows:
+        key = selection_key(name)
+        if url in current_urls or (key, url) in current_key_urls:
+            continue
+        if key in normalized_by_key:
+            representative = normalized_by_key[key][0]
+            group, name = representative[0], representative[1]
+        candidate_pool.append((key, group, name, url, source, 'previous_publication'))
+        current_urls.add(url)
+        current_key_urls.add((key, url))
+        historical_added += 1
 
     with CURATED_CANDIDATE_POOL.open('w', encoding='utf-8', newline='') as f:
         w = csv.writer(f, lineterminator="\n")
-        w.writerow(['selection_key', 'group', 'name', 'url', 'source'])
-        for key, group, name, url, source in sorted(candidate_pool, key=lambda x: (GROUP_ORDER.index(x[1]) if x[1] in GROUP_ORDER else 99, x[0], url_score(x[3], x[4]))):
-            w.writerow([key, group, name, url, source])
+        w.writerow(['selection_key', 'group', 'name', 'url', 'source', 'origin'])
+        for key, group, name, url, source, origin in sorted(
+            candidate_pool,
+            key=candidate_pool_sort_key,
+        ):
+            w.writerow([key, group, name, url, source, origin])
 
     pub = []
     channel_limit_trimmed = 0
@@ -596,6 +710,13 @@ def main():
         'curated_source_map_artifact_only': True,
         'curated_candidate_pool_generated': True,
         'curated_candidate_pool_artifact_only': True,
+        'historical_fallback_candidates': {
+            'enabled': HISTORICAL_FALLBACK_ENABLED,
+            'groups': sorted(HISTORICAL_FALLBACK_GROUPS),
+            'previous_rows_eligible': len(historical_rows),
+            'added_to_candidate_pool': historical_added,
+            'requires_current_media_recheck': True,
+        },
         'curated_published_lines': len(pub),
         'curated_channel_names': published_unique_names,
         'curated_groups': dict(cnt),

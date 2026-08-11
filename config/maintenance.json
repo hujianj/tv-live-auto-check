@@ -2,6 +2,8 @@
   "schema_version": 1,
   "max_attempts": 2,
   "retry_delay_seconds": 20,
+  "guard_confirmation_attempts": 2,
+  "guard_confirmation_retry_from": "verify_sources.py",
   "retryable_scripts": [
     "verify_sources.py",
     "recheck_published.py"

@@ -9,13 +9,14 @@ import subprocess
 import sys
 from pathlib import Path
 
-from playlist_config import load_guard
+from playlist_config import load_guard, load_quality
 
 ROOT = Path(__file__).resolve().parents[1]
 GUARD = load_guard()
 MIN_GROUPS = {str(group): int(minimum) for group, minimum in GUARD["min_groups"].items()}
 MAX_GROUP_DROP_RATIOS = {str(group): float(ratio) for group, ratio in GUARD["max_group_drop_ratios"].items()}
 CORE_SOURCES = {str(source) for source in GUARD["core_sources"]}
+RECHECK_POLICY_VERSION = int(load_quality().get("published_recheck_policy_version", 1))
 
 
 def guard_min_lines() -> int:
@@ -140,14 +141,28 @@ def relative_guard_migration_reason(current: dict, baseline: dict) -> str:
         return ""
     current_recheck = current.get("published_recheck") or {}
     baseline_recheck = baseline.get("published_recheck") or {}
-    if current_recheck.get("broadcast_progress_required") is not True:
+    current_version = int(current_recheck.get("policy_version") or (
+        1 if current_recheck.get("broadcast_progress_required") is True else 0
+    ))
+    baseline_version = int(baseline_recheck.get("policy_version") or (
+        1 if baseline_recheck.get("broadcast_progress_required") is True else 0
+    ))
+    if current_version == baseline_version:
         return ""
     current_groups = tuple(sorted(str(x) for x in current_recheck.get("progress_required_groups") or []))
     baseline_groups = tuple(sorted(str(x) for x in baseline_recheck.get("progress_required_groups") or []))
-    if baseline_recheck.get("broadcast_progress_required") is not True:
-        return "baseline predates broadcast live-progress verification"
-    if current_groups != baseline_groups:
-        return f"broadcast live-progress groups changed: baseline={baseline_groups!r} current={current_groups!r}"
+    for migration in GUARD.get("relative_guard_policy_migrations", []):
+        if int(migration.get("from_version", -1)) != baseline_version:
+            continue
+        if int(migration.get("to_version", -1)) != current_version:
+            continue
+        if migration.get("require_current_groups_superset", False):
+            if not set(current_groups).issuperset(baseline_groups):
+                return ""
+        return (
+            f"verification policy migrated {baseline_version}->{current_version}: "
+            f"baseline_groups={baseline_groups!r} current_groups={current_groups!r}"
+        )
     return ""
 
 
@@ -176,6 +191,7 @@ def write_guard_outputs(
     health = classify_source_health(statuses)
     failed_sources = health["enabled_failed"]
     zero_parsed = health["enabled_zero_parsed"]
+    unavailable_sources = sorted(set(failed_sources + zero_parsed))
     guard = {
         "schema_version": 3,
         "status": "rejected" if failures else "ok",
@@ -187,11 +203,13 @@ def write_guard_outputs(
         "max_failed_sources": guard_max_failed_sources(),
         "core_failed_fail_threshold": guard_core_failed_fail_threshold(),
         "core_sources": sorted(CORE_SOURCES),
+        "recheck_policy_version": RECHECK_POLICY_VERSION,
         "group_deltas": group_deltas,
         "relative_baseline_comparable": not bool(migration_reason),
         "relative_guard_migration_reason": migration_reason,
         "failed_sources": failed_sources,
         "zero_parsed_sources": zero_parsed,
+        "unavailable_sources": unavailable_sources,
         "recovery_failed_sources": health["recovery_failed"],
         "recovery_zero_parsed_sources": health["recovery_zero_parsed"],
         "disabled_reported_sources": health["disabled_reported"],
@@ -226,6 +244,7 @@ def write_guard_outputs(
         "", "## Source health", "",
         f"- Enabled source failures: {', '.join(failed_sources) if failed_sources else 'none'}",
         f"- Enabled sources fetched but zero parsed: {', '.join(zero_parsed) if zero_parsed else 'none'}",
+        f"- Enabled sources unavailable for guard purposes: {', '.join(unavailable_sources) if unavailable_sources else 'none'}",
         f"- Recovery source failures (non-blocking): {', '.join(health['recovery_failed']) if health['recovery_failed'] else 'none'}",
         f"- Recovery sources fetched but zero parsed (non-blocking): {', '.join(health['recovery_zero_parsed']) if health['recovery_zero_parsed'] else 'none'}",
     ]
@@ -306,15 +325,17 @@ def main() -> int:
         if health["disabled_reported"]:
             fail(f"disabled sources were unexpectedly probed: {health['disabled_reported']}", failures)
         failed_sources = health["enabled_failed"]
-        core_failed = sorted(CORE_SOURCES.intersection(failed_sources))
-        if len(core_failed) >= guard_core_failed_fail_threshold():
-            fail(f"multiple core sources failed: {core_failed}", failures)
-        elif core_failed:
-            add_warn(f"one core source failed: {core_failed}")
-        if len(failed_sources) > guard_max_failed_sources():
-            fail(f"too many upstream fetch failures: {len(failed_sources)} {failed_sources[:10]}", failures)
-        if health["enabled_zero_parsed"]:
-            add_warn(f"enabled sources fetched but parsed no supported streams: {health['enabled_zero_parsed']}")
+        zero_parsed = health["enabled_zero_parsed"]
+        unavailable_sources = sorted(set(failed_sources + zero_parsed))
+        core_unavailable = sorted(CORE_SOURCES.intersection(unavailable_sources))
+        if len(core_unavailable) >= guard_core_failed_fail_threshold():
+            fail(f"multiple core sources unavailable (fetch failed or parsed zero): {core_unavailable}", failures)
+        elif core_unavailable:
+            add_warn(f"one core source unavailable (fetch failed or parsed zero): {core_unavailable}")
+        if len(unavailable_sources) > guard_max_failed_sources():
+            fail(f"too many enabled sources unavailable: {len(unavailable_sources)} {unavailable_sources[:10]}", failures)
+        if zero_parsed:
+            add_warn(f"enabled sources fetched but parsed no supported streams: {zero_parsed}")
         if health["recovery_failed"]:
             add_warn(f"recovery sources unavailable (non-blocking): {health['recovery_failed']}")
         if health["recovery_zero_parsed"]:

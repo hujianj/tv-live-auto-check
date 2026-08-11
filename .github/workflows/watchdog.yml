@@ -28,11 +28,11 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.12"
-      - name: Audit workflow freshness and public publication
+      - name: Audit workflow freshness and public publication (with confirmation)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GITHUB_REPOSITORY: ${{ github.repository }}
-        run: python scripts/watchdog_publication.py --repo "${{ github.repository }}" --branch main --workflow update.yml
+        run: python scripts/watchdog_publication.py --repo "${{ github.repository }}" --branch main --workflow update.yml --confirmation-attempts 2 --confirmation-delay 30
       - name: Upload watchdog summary
         if: always()
         continue-on-error: true
