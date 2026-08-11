@@ -26,6 +26,7 @@ from playlist_config import get_group_order, load_guard, load_quality, load_rule
 from curate_ku9 import per_channel_limit
 from channel_utils import format_extinf
 from channel_identity import canonical_channel_key
+from playlist_order import canonicalize_channel_rows
 from url_utils import is_publishable_http_url
 
 try:
@@ -215,10 +216,7 @@ def canonicalize_rows(groups: list[str], rows: list[Row]) -> list[Row]:
     unexpected = sorted({row.group for row in rows} - expected)
     if unexpected:
         raise ValueError(f"playlist rows contain unknown categories: {unexpected!r}")
-    by_group: dict[str, list[Row]] = defaultdict(list)
-    for row in rows:
-        by_group[row.group].append(row)
-    return [row for group in groups for row in by_group.get(group, [])]
+    return canonicalize_channel_rows(groups, rows)
 
 
 def family_profile() -> dict:

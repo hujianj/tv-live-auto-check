@@ -19,6 +19,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from channel_identity import aliases_are_compatible, canonical_channel_key
+from playlist_order import canonicalize_channel_rows
 from playlist_config import get_group_order, load_guard, load_quality
 from source_config import load_source_specs
 from validate_playlist import split_unquoted_last_comma, validate_file
@@ -124,6 +125,12 @@ def _validate_document_invariants(label: str, groups: list[str], rows: list[Row]
             f"{label}: category order/coverage mismatch: actual={groups!r} "
             f"expected_present={expected_present_groups!r}"
         )
+    try:
+        canonical_rows = canonicalize_channel_rows(expected_groups, rows)
+        if rows != canonical_rows:
+            errors.append(f"{label}: channel order is not canonical within categories")
+    except ValueError as exc:
+        errors.append(f"{label}: canonical order validation failed: {exc}")
     required_groups = [
         str(group)
         for group, minimum in load_guard().get("min_groups", {}).items()
