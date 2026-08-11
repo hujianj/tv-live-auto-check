@@ -10,6 +10,8 @@ import socket
 import subprocess
 import sys
 import tempfile
+import threading
+import time
 import zlib
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
@@ -45,7 +47,7 @@ from publication_manifest import (
     validate_manifest,
     write_manifest,
 )
-from media_probe import looks_media as media_looks_playable, probe_media
+from media_probe import VIDEO_STREAM_TYPES, looks_media as media_looks_playable, probe_media
 import network_safety as network_safety_module
 from network_safety import PublicRedirectHandler, PublicURLPolicyError, resolve_public_addresses, validate_public_url
 from url_utils import normalize_stream_url
@@ -239,10 +241,9 @@ def test_guard_rejects_core_sources_that_fetch_but_parse_zero() -> None:
     try:
         with tempfile.TemporaryDirectory() as td:
             guard_module.ROOT = Path(td)
-            groups = {
-                group: max(1, minimum)
-                for group, minimum in guard_module.MIN_GROUPS.items()
-            }
+            # Optional groups legitimately have baseline=current=minimum=0;
+            # this must not enter a relative-drop division by zero.
+            groups = dict(guard_module.MIN_GROUPS)
             summary = {
                 "curated_published_lines": max(guard_module.guard_min_lines(), sum(groups.values())),
                 "curated_groups": groups,
@@ -267,7 +268,8 @@ def test_guard_rejects_core_sources_that_fetch_but_parse_zero() -> None:
                 for source in core_sources:
                     writer.writerow([source, f"https://{source}.test/list", "enabled", False, True, 100, 0, False, ""])
             guard_module.git_show_json = lambda _spec: dict(summary)
-            assert guard_module.main() == 1
+            assert guard_module.GUARD_REJECTED_EXIT_CODE == maintenance_module.GUARD_REJECTED_EXIT_CODE
+            assert guard_module.main() == guard_module.GUARD_REJECTED_EXIT_CODE
             report = (guard_module.ROOT / "publish-guard-report.md").read_text(encoding="utf-8")
             assert "multiple core sources unavailable" in report
             assert "fetched but zero parsed" in report
@@ -314,6 +316,12 @@ def test_classification_avoids_single_character_false_positives() -> None:
     assert curate_module.classify("\u5b66\u800c\u601d", "", "unit") == "\u7efc\u5408\u5a31\u4e50"
     assert curate_module.classify("\u6211\u7231\u6211\u5bb6", "Entertainment", "mursor_yy") == "\u7efc\u5408\u5a31\u4e50"
     assert curate_module.classify("\u534e\u8bed\u9891\u9053", "Chinese TV", "iptv_org_all") == "\u6d77\u5916\u534e\u8bed\u9891\u9053"
+    assert curate_module.classify("\u5317\u4eac\u7231\u60c5\u6545\u4e8b\uff0c\u5fc3\u52a8\u4e0d\u6253\u70ca", "Entertainment", "mursor_yy") == "\u7efc\u5408\u5a31\u4e50"
+    assert curate_module.classify("\u5e7f\u4e1c\u5f71\u89c6", "", "unit") == "\u5730\u65b9\u9891\u9053"
+    assert curate_module.classify("\u6cb3\u53174K", "4K", "unit") == "\u5730\u65b9\u9891\u9053"
+    assert curate_module.classify("\u82cf\u5dde4K", "4K8K", "unit") == "\u5730\u65b9\u9891\u9053"
+    assert curate_module.classify("\u676d\u5dde\u7efc\u5408\uff08\u9ad8\u6e05\uff09", "", "unit") == "\u5730\u65b9\u9891\u9053"
+    assert curate_module.classify("\u7ecf\u5178\u7535\u5f714K", "4K", "unit") == "\u5f71\u89c6\u5267\u573a"
 
 
 def test_priority_and_guard_config_are_externalized() -> None:
@@ -732,6 +740,47 @@ def test_probe_scheduler_round_robins_initial_hosts() -> None:
     assert [item.name for item in ordered] == ["a1", "b1", "c1", "a2", "b2", "a3"]
 
 
+def test_probe_scheduler_bounds_inflight_tasks_per_host() -> None:
+    original_checker = verify_module.check_candidate_resilient
+    original_workers = verify_module.CHECK_WORKERS
+    original_host_workers = verify_module.HOST_WORKERS
+    original_pending = verify_module.MAX_PENDING_FUTURES
+    active: dict[str, int] = {}
+    peak: dict[str, int] = {}
+    lock = threading.Lock()
+    try:
+        verify_module.CHECK_WORKERS = 12
+        verify_module.HOST_WORKERS = 2
+        verify_module.MAX_PENDING_FUTURES = 32
+
+        def checker(candidate, *_args, **_kwargs):
+            host = verify_module.stream_host_key(candidate.url)
+            with lock:
+                active[host] = active.get(host, 0) + 1
+                peak[host] = max(peak.get(host, 0), active[host])
+            time.sleep(0.01)
+            with lock:
+                active[host] -= 1
+            return CheckResult(candidate, True, "unit media")
+
+        verify_module.check_candidate_resilient = checker
+        candidates = [
+            Candidate("unit", "g", f"{host}-{index}", f"https://{host}.test/{index}.m3u8")
+            for host in ("a", "b", "c")
+            for index in range(12)
+        ]
+        core = {candidate.url: False for candidate in candidates}
+        results = list(verify_module.iter_bounded_check_results(candidates, core))
+        assert len(results) == len(candidates)
+        assert set(peak) == {"a.test", "b.test", "c.test"}
+        assert all(value <= verify_module.HOST_WORKERS for value in peak.values())
+    finally:
+        verify_module.check_candidate_resilient = original_checker
+        verify_module.CHECK_WORKERS = original_workers
+        verify_module.HOST_WORKERS = original_host_workers
+        verify_module.MAX_PENDING_FUTURES = original_pending
+
+
 def test_canonical_identity_collapses_resolution_and_official_aliases() -> None:
     assert canonical_channel_key("\u6e56\u5357\u536b\u89c6") == canonical_channel_key("\u6e56\u5357\u536b\u89c64K")
     assert canonical_channel_key("\u5357\u56fd\u90fd\u5e02") == canonical_channel_key("\u5357\u56fd\u90fd\u5e024K")
@@ -752,6 +801,12 @@ def _ts_packet(pid: int, section: bytes) -> bytes:
     return header + payload + bytes([0xFF]) * (188 - len(header) - len(payload))
 
 
+def _ts_pes_packet(pid: int, stream_id: int) -> bytes:
+    header = bytes([0x47, 0x40 | ((pid >> 8) & 0x1F), pid & 0xFF, 0x10])
+    payload = b"\x00\x00\x01" + bytes([stream_id]) + b"\x00\x08\x80\x00\x00payload"
+    return header + payload + bytes([0xFF]) * (188 - len(header) - len(payload))
+
+
 def _sample_ts(stream_type: int) -> bytes:
     pat = _psi_section(0x00, b"\x00\x01\xC1\x00\x00\x00\x01\xE0\x64")
     pmt = _psi_section(
@@ -760,21 +815,51 @@ def _sample_ts(stream_type: int) -> bytes:
         + bytes([stream_type])
         + b"\xE0\x65\xF0\x00",
     )
-    return _ts_packet(0, pat) + _ts_packet(100, pmt)
+    stream_id = 0xE0 if stream_type in VIDEO_STREAM_TYPES else 0xC0
+    return _ts_packet(0, pat) + _ts_packet(100, pmt) + _ts_pes_packet(101, stream_id)
+
+
+def _sample_declared_video_with_audio_payload_only() -> bytes:
+    pat = _psi_section(0x00, b"\x00\x01\xC1\x00\x00\x00\x01\xE0\x64")
+    pmt = _psi_section(
+        0x02,
+        b"\x00\x01\xC1\x00\x00\xE1\x00\xF0\x00"
+        + b"\x1B\xE0\x65\xF0\x00"
+        + b"\x0F\xE0\x66\xF0\x00",
+    )
+    return _ts_packet(0, pat) + _ts_packet(100, pmt) + _ts_pes_packet(102, 0xC0)
 
 
 def test_strict_media_probe_requires_a_video_track() -> None:
     video = _sample_ts(0x1B)
     audio = _sample_ts(0x0F)
+    stale_video_declaration = _sample_declared_video_with_audio_payload_only()
     assert probe_media(video, "video/mp2t").kind == "video"
     assert probe_media(audio, "video/mp2t").kind == "audio"
+    stale_probe = probe_media(stale_video_declaration, "video/mp2t")
+    assert stale_probe.kind == "audio"
+    assert "only audio PID" in stale_probe.reason
     assert media_looks_playable(video, "video/mp2t", require_video=True)
     assert not media_looks_playable(audio, "video/mp2t", require_video=True)
+    assert not media_looks_playable(stale_video_declaration, "video/mp2t", require_video=True)
     assert media_looks_playable(audio, "audio/aac", require_video=False)
     init_video = b"\x00\x00\x00\x18ftypisom" + b"moovtrakmdiahdlrvideavc1"
     init_audio = b"\x00\x00\x00\x18ftypisom" + b"moovtrakmdiahdlrsounmp4a"
     assert probe_media(init_video, "video/mp4").kind == "video"
     assert probe_media(init_audio, "audio/mp4").kind == "audio"
+
+
+def test_broadcast_progress_rejects_direct_mp4_vod() -> None:
+    original_get = verify_module.http_get_small
+    init_video = b"\x00\x00\x00\x18ftypisom" + b"moovtrakmdiahdlrvideavc1"
+    try:
+        verify_module.http_get_small = lambda *_args, **_kwargs: (200, "video/mp4", init_video, "https://unit.test/archive.mp4")
+        candidate = Candidate("unit", "\u536b\u89c6\u9891\u9053", "\u6cb3\u5357\u536b\u89c6", "https://unit.test/archive.mp4")
+        result = verify_module.check_candidate(candidate, timeout=1, require_progress=True, require_video=True)
+        assert not result.ok
+        assert "cannot prove live broadcast progress" in result.detail
+    finally:
+        verify_module.http_get_small = original_get
 
 
 def test_public_network_policy_blocks_private_and_redirect_targets() -> None:
@@ -1703,7 +1788,8 @@ def test_local_maintenance_wrapper_is_fail_fast_and_complete() -> None:
     assert "audit_quality.py" in config["fatal_scripts"]
     assert set(config["stage_timeouts_seconds"]) == set(scripts)
     assert config["max_total_runtime_seconds"] < 180 * 60
-    assert int(config["conservative_retry_env"]["IPTV_CHECK_WORKERS"]) < int(maintenance_module.ENV_DEFAULTS["IPTV_CHECK_WORKERS"])
+    assert int(config["conservative_retry_env"]["IPTV_CHECK_WORKERS"]) >= int(maintenance_module.ENV_DEFAULTS["IPTV_CHECK_WORKERS"])
+    assert int(config["conservative_retry_env"]["IPTV_CHECK_WORKERS_PER_HOST"]) >= int(maintenance_module.ENV_DEFAULTS["IPTV_CHECK_WORKERS_PER_HOST"])
     assert int(config["conservative_retry_env"]["IPTV_CHECK_TIMEOUT"]) > int(maintenance_module.ENV_DEFAULTS["IPTV_CHECK_TIMEOUT"])
     assert maintenance_module.main(["--dry-run"]) == 0
 
@@ -1784,6 +1870,17 @@ def test_deterministic_timeout_and_process_launch_failure_are_fatal() -> None:
             "guard_confirmation_attempts": 2,
             "stage_timeouts_seconds": {"guard_publish.py": 1},
         }
+        maintenance_module.subprocess.run = lambda *_args, **_kwargs: SimpleNamespace(
+            returncode=maintenance_module.GUARD_REJECTED_EXIT_CODE
+        )
+        rejection_record = maintenance_module.run_attempt(1, 1, {}, config)
+        assert rejection_record["failure_classification"] == "confirmable"
+
+        maintenance_module.subprocess.run = lambda *_args, **_kwargs: SimpleNamespace(returncode=1)
+        crash_record = maintenance_module.run_attempt(1, 1, {}, config)
+        assert crash_record["failure_classification"] == "fatal"
+
+        maintenance_module.subprocess.run = timeout_run
         timeout_record = maintenance_module.run_attempt(1, 1, {}, config)
         assert timeout_record["failure_classification"] == "fatal"
         assert timeout_record["failed_stage"]["timed_out"] is True
@@ -1877,7 +1974,7 @@ def test_maintenance_guard_confirmation_restarts_from_full_upstream_verification
         assert starts == [0, verify_index]
         assert profiles[0] == ("standard", maintenance_module.ENV_DEFAULTS["IPTV_CHECK_WORKERS"], maintenance_module.ENV_DEFAULTS["IPTV_CHECK_TIMEOUT"])
         assert profiles[1][0] == "guard_confirmation_conservative"
-        assert int(profiles[1][1]) < int(profiles[0][1])
+        assert int(profiles[1][1]) >= int(profiles[0][1])
         assert int(profiles[1][2]) > int(profiles[0][2])
     finally:
         maintenance_module.run_attempt = original_run_attempt
@@ -2209,8 +2306,10 @@ def main() -> int:
         test_family_playlist_uses_canonical_identity_quota,
         test_source_dedup_is_deterministic,
         test_probe_scheduler_round_robins_initial_hosts,
+        test_probe_scheduler_bounds_inflight_tasks_per_host,
         test_canonical_identity_collapses_resolution_and_official_aliases,
         test_strict_media_probe_requires_a_video_track,
+        test_broadcast_progress_rejects_direct_mp4_vod,
         test_public_network_policy_blocks_private_and_redirect_targets,
         test_fetch_url_handles_gzip_final_url,
         test_strict_bounded_gzip_decompression,

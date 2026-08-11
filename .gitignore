@@ -18,3 +18,5 @@ cdn-health-report.md
 watchdog-report.json
 watchdog-report.md
 maintenance-run.json
+maintenance-attempt-*
+tmp-github-runs/

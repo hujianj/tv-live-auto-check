@@ -121,48 +121,67 @@ def _parse_pat(section: bytes) -> set[int]:
     return out
 
 
-def _parse_pmt(section: bytes) -> tuple[bool, bool]:
+def _parse_pmt(section: bytes) -> tuple[set[int], set[int]]:
     if len(section) < 16 or section[0] != 0x02:
-        return False, False
+        return set(), set()
     program_info_length = ((section[10] & 0x0F) << 8) | section[11]
     pos = 12 + program_info_length
     end = len(section) - 4
-    has_video = False
-    has_audio = False
+    video_pids: set[int] = set()
+    audio_pids: set[int] = set()
     while pos + 5 <= end:
         stream_type = section[pos]
+        elementary_pid = ((section[pos + 1] & 0x1F) << 8) | section[pos + 2]
         es_info_length = ((section[pos + 3] & 0x0F) << 8) | section[pos + 4]
         if stream_type in VIDEO_STREAM_TYPES:
-            has_video = True
+            video_pids.add(elementary_pid)
         if stream_type in AUDIO_STREAM_TYPES:
-            has_audio = True
+            audio_pids.add(elementary_pid)
         pos += 5 + es_info_length
-    return has_video, has_audio
+    return video_pids, audio_pids
+
+
+def _has_elementary_payload(payload: bytes) -> bool:
+    # A PMT can retain a stale video PID while the service sends only audio.
+    # Stuffing-only packets do not prove that the advertised track exists.
+    return bool(payload) and any(byte != 0xFF for byte in payload)
 
 
 def probe_mpeg_ts(data: bytes) -> MediaProbe | None:
     if len(data) < 188 * 2:
         return None
+    packets = list(_iter_ts_packets(data))
+    if not packets:
+        return None
     feed = _section_assembler()
     pmt_pids: set[int] = set()
-    has_video = False
-    has_audio = False
-    saw_packet = False
-    for pusi, pid, payload in _iter_ts_packets(data):
-        saw_packet = True
+    video_pids: set[int] = set()
+    audio_pids: set[int] = set()
+    for pusi, pid, payload in packets:
         for section in feed(pid, payload, pusi):
             if pid == 0:
                 pmt_pids.update(_parse_pat(section))
             elif pid in pmt_pids:
                 video, audio = _parse_pmt(section)
-                has_video = has_video or video
-                has_audio = has_audio or audio
-    if not saw_packet:
-        return None
-    if has_video:
-        return MediaProbe("video", "mpeg-ts", "PAT/PMT advertises video elementary stream")
-    if has_audio:
-        return MediaProbe("audio", "mpeg-ts", "PAT/PMT advertises audio but no video")
+                video_pids.update(video)
+                audio_pids.update(audio)
+
+    has_video_payload = any(
+        pid in video_pids and _has_elementary_payload(payload)
+        for _pusi, pid, payload in packets
+    )
+    has_audio_payload = any(
+        pid in audio_pids and _has_elementary_payload(payload)
+        for _pusi, pid, payload in packets
+    )
+    if has_video_payload:
+        return MediaProbe("video", "mpeg-ts", "video elementary PID carries media payload")
+    if has_audio_payload:
+        if video_pids:
+            return MediaProbe("audio", "mpeg-ts", "PMT advertises video but only audio PID carries media payload")
+        return MediaProbe("audio", "mpeg-ts", "audio elementary PID carries media payload")
+    if video_pids or audio_pids:
+        return MediaProbe("unknown", "mpeg-ts", "PAT/PMT advertises media tracks but no elementary payload was observed")
     return MediaProbe("unknown", "mpeg-ts", "TS packets found but PAT/PMT video track not observed")
 
 
