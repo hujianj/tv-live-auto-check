@@ -207,6 +207,20 @@ def render_m3u(rows: list[Row]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def canonicalize_rows(groups: list[str], rows: list[Row]) -> list[Row]:
+    """Return one stable category order shared by every publication format."""
+    if len(groups) != len(set(groups)):
+        raise ValueError("playlist category order contains duplicates")
+    expected = set(groups)
+    unexpected = sorted({row.group for row in rows} - expected)
+    if unexpected:
+        raise ValueError(f"playlist rows contain unknown categories: {unexpected!r}")
+    by_group: dict[str, list[Row]] = defaultdict(list)
+    for row in rows:
+        by_group[row.group].append(row)
+    return [row for group in groups for row in by_group.get(group, [])]
+
+
 def family_profile() -> dict:
     return load_quality().get("family_profile") or {}
 
@@ -256,6 +270,7 @@ def write_family_outputs(groups: list[str], rows: list[Row]) -> dict:
     """Write compact family playlist aliases and return summary metadata."""
     if not family_enabled():
         return {"enabled": False}
+    rows = canonicalize_rows(groups, rows)
     family_rows = build_family_rows(groups, rows)
     text = render_txt(groups, family_rows)
     validate_text(text, require_categories=True)
@@ -294,13 +309,15 @@ def cleanup_stale_diagnostics() -> None:
         pass
 
 
-def write_outputs(groups: list[str], rows: list[Row]) -> None:
-    text = render_txt(groups, rows)
+def write_outputs(groups: list[str], rows: list[Row]) -> list[Row]:
+    canonical_rows = canonicalize_rows(groups, rows)
+    text = render_txt(groups, canonical_rows)
     validate_text(text, require_categories=True)
     for filename in TXT_FILES:
         (ROOT / filename).write_text(text, encoding="utf-8", newline="\n")
-    (ROOT / M3U_FILE).write_text(render_m3u(rows), encoding="utf-8", newline="\n")
+    (ROOT / M3U_FILE).write_text(render_m3u(canonical_rows), encoding="utf-8", newline="\n")
     validate_file(ROOT / M3U_FILE)
+    return canonical_rows
 
 
 def load_source_map() -> dict[tuple[str, str], str]:
@@ -877,7 +894,7 @@ def main() -> int:
         source_map[(candidate.row.name, candidate.row.url)] = candidate.source
 
     elapsed = time.time() - start
-    write_outputs(groups, final_rows)
+    final_rows = write_outputs(groups, final_rows)
     write_source_map(final_rows, source_map)
     family_summary = write_family_outputs(groups, final_rows)
 

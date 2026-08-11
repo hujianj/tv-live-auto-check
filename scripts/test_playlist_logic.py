@@ -1110,6 +1110,59 @@ def test_historical_fallback_can_restore_a_missing_channel_from_empty_current_ro
     assert summary["historical_target_rows"] == 1
 
 
+def test_publication_outputs_share_canonical_order_after_cross_group_refill() -> None:
+    import recheck_published as recheck
+    from validate_publish_bundle import parse_m3u_document, parse_txt_document
+
+    groups = get_group_order()
+    rows = [
+        recheck.Row(groups[0], "CCTV-1", "http://unit.test/cctv1.m3u8"),
+        recheck.Row(groups[-2], "香港中文", "http://unit.test/hk.m3u8"),
+        # A newly restored identity used to be appended after the overseas rows.
+        recheck.Row(groups[1], "辽宁卫视", "http://unit.test/liaoning.m3u8"),
+        recheck.Row(groups[2], "沈阳新闻", "http://unit.test/shenyang.m3u8"),
+    ]
+    source_map = {(row.name, row.url): "unit" for row in rows}
+    original_root = recheck.ROOT
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            recheck.ROOT = Path(td)
+            canonical = recheck.write_outputs(groups, rows)
+            recheck.write_source_map(canonical, source_map)
+            _txt_groups, txt_rows = parse_txt_document(
+                (recheck.ROOT / "live-curated.txt").read_text(encoding="utf-8")
+            )
+            m3u_rows = parse_m3u_document(
+                (recheck.ROOT / "live.m3u").read_text(encoding="utf-8")
+            )
+            with (recheck.ROOT / "curated-source-map.csv").open(encoding="utf-8", newline="") as handle:
+                mapped_rows = [
+                    BundleRow(item["group"], item["name"], item["url"])
+                    for item in csv.DictReader(handle)
+                ]
+            expected_groups = [groups[0], groups[1], groups[2], groups[-2]]
+            assert [row.group for row in canonical] == expected_groups
+            assert txt_rows == m3u_rows == mapped_rows
+    finally:
+        recheck.ROOT = original_root
+
+
+def test_maintenance_clears_only_stale_run_diagnostics() -> None:
+    original_root = maintenance_module.ROOT
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            maintenance_module.ROOT = Path(td)
+            for name in maintenance_module.STALE_RUN_OUTPUTS:
+                (maintenance_module.ROOT / name).write_text("stale\n", encoding="utf-8")
+            playlist = maintenance_module.ROOT / "live-curated.txt"
+            playlist.write_text("keep\n", encoding="utf-8")
+            maintenance_module.cleanup_stale_run_outputs()
+            assert playlist.read_text(encoding="utf-8") == "keep\n"
+            assert not any((maintenance_module.ROOT / name).exists() for name in maintenance_module.STALE_RUN_OUTPUTS)
+    finally:
+        maintenance_module.ROOT = original_root
+
+
 def test_candidate_pool_schema_records_origin_and_prefers_current_scan() -> None:
     import recheck_published as recheck
 
@@ -1902,6 +1955,7 @@ def test_maintenance_gives_each_network_stage_its_own_retry_budget() -> None:
     original_run_attempt = maintenance_module.run_attempt
     original_write_report = maintenance_module.write_report
     original_append_summary = maintenance_module.append_step_summary
+    original_cleanup_stale = maintenance_module.cleanup_stale_run_outputs
     starts: list[int] = []
     profiles: list[str] = []
     try:
@@ -1919,6 +1973,7 @@ def test_maintenance_gives_each_network_stage_its_own_retry_budget() -> None:
         maintenance_module.run_attempt = fake_attempt
         maintenance_module.write_report = lambda _report: None
         maintenance_module.append_step_summary = lambda _text: None
+        maintenance_module.cleanup_stale_run_outputs = lambda: None
         assert maintenance_module.main(["--max-attempts", "2", "--retry-delay", "0"]) == 0
         assert starts == [0, 2, 4]
         assert profiles == ["standard", "network_retry_conservative", "network_retry_conservative"]
@@ -1926,6 +1981,7 @@ def test_maintenance_gives_each_network_stage_its_own_retry_budget() -> None:
         maintenance_module.run_attempt = original_run_attempt
         maintenance_module.write_report = original_write_report
         maintenance_module.append_step_summary = original_append_summary
+        maintenance_module.cleanup_stale_run_outputs = original_cleanup_stale
 
 
 def test_maintenance_guard_confirmation_restarts_from_full_upstream_verification() -> None:
@@ -1933,6 +1989,7 @@ def test_maintenance_guard_confirmation_restarts_from_full_upstream_verification
     original_write_report = maintenance_module.write_report
     original_append_summary = maintenance_module.append_step_summary
     original_cleanup = maintenance_module.cleanup_attempt_evidence
+    original_cleanup_stale = maintenance_module.cleanup_stale_run_outputs
     original_snapshot = maintenance_module.snapshot_attempt_evidence
     starts: list[int] = []
     profiles: list[tuple[str, str, str]] = []
@@ -1965,6 +2022,7 @@ def test_maintenance_guard_confirmation_restarts_from_full_upstream_verification
         maintenance_module.write_report = lambda _report: None
         maintenance_module.append_step_summary = lambda _text: None
         maintenance_module.cleanup_attempt_evidence = lambda: None
+        maintenance_module.cleanup_stale_run_outputs = lambda: None
         maintenance_module.snapshot_attempt_evidence = lambda _attempt, **_kwargs: None
         assert maintenance_module.main(["--max-attempts", "1", "--retry-delay", "0"]) == 0
         verify_index = next(
@@ -1981,6 +2039,7 @@ def test_maintenance_guard_confirmation_restarts_from_full_upstream_verification
         maintenance_module.write_report = original_write_report
         maintenance_module.append_step_summary = original_append_summary
         maintenance_module.cleanup_attempt_evidence = original_cleanup
+        maintenance_module.cleanup_stale_run_outputs = original_cleanup_stale
         maintenance_module.snapshot_attempt_evidence = original_snapshot
 
 
@@ -2320,6 +2379,8 @@ def main() -> int:
         test_final_recheck_refills_failed_channel_urls,
         test_historical_fallback_restores_missing_redundancy_with_strict_probe,
         test_historical_fallback_can_restore_a_missing_channel_from_empty_current_rows,
+        test_publication_outputs_share_canonical_order_after_cross_group_refill,
+        test_maintenance_clears_only_stale_run_diagnostics,
         test_candidate_pool_schema_records_origin_and_prefers_current_scan,
         test_core_retry_classification,
         test_validate_rejects_malformed_url,
