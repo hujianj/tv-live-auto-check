@@ -93,6 +93,7 @@
     "卫视频道",
     "地方频道"
   ],
+  "published_recheck_policy_version": 1,
   "quality_source_bonus": {
     "official_domain_contains": [
       "hebtv.com",

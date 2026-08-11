@@ -426,6 +426,67 @@ def update_issue(repo: str, token: str, result: HealthResult, now: datetime, dry
     return {"status": "no-open-issue"}
 
 
+def confirm_health(
+    check_once,
+    *,
+    attempts: int = 2,
+    delay_seconds: float = 30.0,
+    sleep=time.sleep,
+) -> tuple[HealthResult, datetime]:
+    """Repeat a failed watchdog observation before raising an alert.
+
+    Public endpoints and the GitHub API are outside this repository's control.
+    A second independently fetched observation prevents a single edge reset or
+    short Raw/CDN propagation mismatch from becoming an operator alert. The
+    final result remains strict when both observations fail.
+    """
+    attempts = max(1, int(attempts))
+    observations: list[dict[str, Any]] = []
+    final_result: HealthResult | None = None
+    final_now = datetime.now(timezone.utc)
+    for attempt in range(1, attempts + 1):
+        final_now = datetime.now(timezone.utc)
+        try:
+            result = check_once(final_now)
+        except Exception as exc:
+            result = HealthResult(
+                [f"watchdog observation raised {type(exc).__name__}: {exc}"],
+                [],
+                {"observation_exception": repr(exc)[:1000]},
+            )
+        final_result = result
+        observations.append({
+            "attempt": attempt,
+            "status": "failed" if result.failures else "ok",
+            "failures": list(result.failures),
+            "warnings": list(result.warnings),
+        })
+        if not result.failures:
+            if attempt > 1:
+                result = HealthResult(
+                    result.failures,
+                    [
+                        *result.warnings,
+                        f"watchdog transient failure recovered on confirmation attempt {attempt}",
+                    ],
+                    dict(result.details),
+                )
+                final_result = result
+            break
+        if attempt < attempts and delay_seconds > 0:
+            sleep(delay_seconds)
+    if final_result is None:
+        final_result = HealthResult(["watchdog produced no observation"], [], {})
+    details = dict(final_result.details)
+    details["confirmation"] = {
+        "attempts_configured": attempts,
+        "observations": observations,
+        "confirmed": len(observations) > 1 and not final_result.failures,
+    }
+    final_result = HealthResult(final_result.failures, final_result.warnings, details)
+    return final_result, final_now
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", default=os.getenv("GITHUB_REPOSITORY", ""))
@@ -435,6 +496,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-running-minutes", type=float, default=240.0)
     parser.add_argument("--max-consecutive-failures", type=int, default=3)
     parser.add_argument("--timeout", type=int, default=30)
+    parser.add_argument("--confirmation-attempts", type=int, default=2)
+    parser.add_argument("--confirmation-delay", type=float, default=30.0)
     parser.add_argument("--allow-missing-manifest", action="store_true")
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--report", default=str(ROOT / "watchdog-report.md"))
@@ -442,21 +505,37 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
     if "/" not in args.repo:
         raise SystemExit("--repo owner/name or GITHUB_REPOSITORY is required")
-    now = datetime.now(timezone.utc)
     token = os.getenv("GITHUB_TOKEN", "")
     api_base = f"https://api.github.com/repos/{args.repo}"
-    runs_payload = api_request(f"{api_base}/actions/workflows/{args.workflow}/runs?branch={args.branch}&per_page=50", token, timeout=args.timeout)
-    runs = list(runs_payload.get("workflow_runs", [])) if isinstance(runs_payload, dict) else []
-    run_failures, run_warnings, run_details = inspect_runs(runs, now, args.max_age_hours, args.max_running_minutes, args.max_consecutive_failures)
-    pub_failures, pub_warnings, pub_details = inspect_publication(
-        args.repo,
-        args.branch,
-        args.timeout,
-        not args.allow_missing_manifest,
-        now,
-        args.max_age_hours,
+    def check_once(now: datetime) -> HealthResult:
+        runs_payload = api_request(
+            f"{api_base}/actions/workflows/{args.workflow}/runs?branch={args.branch}&per_page=50",
+            token,
+            timeout=args.timeout,
+        )
+        runs = list(runs_payload.get("workflow_runs", [])) if isinstance(runs_payload, dict) else []
+        run_failures, run_warnings, run_details = inspect_runs(
+            runs, now, args.max_age_hours, args.max_running_minutes, args.max_consecutive_failures
+        )
+        pub_failures, pub_warnings, pub_details = inspect_publication(
+            args.repo,
+            args.branch,
+            args.timeout,
+            not args.allow_missing_manifest,
+            now,
+            args.max_age_hours,
+        )
+        return HealthResult(
+            run_failures + pub_failures,
+            run_warnings + pub_warnings,
+            {"runs": run_details, "publication": pub_details},
+        )
+
+    result, now = confirm_health(
+        check_once,
+        attempts=max(1, args.confirmation_attempts),
+        delay_seconds=max(0.0, args.confirmation_delay),
     )
-    result = HealthResult(run_failures + pub_failures, run_warnings + pub_warnings, {"runs": run_details, "publication": pub_details})
     write_reports(result, now, Path(args.report), Path(args.json_path))
     print(json.dumps({"status": "fail" if result.failures else "ok", "failures": result.failures, "warnings": result.warnings, "details": result.details}, ensure_ascii=False, indent=2, default=str))
     issue_status = update_issue(args.repo, token, result, now, args.dry_run)

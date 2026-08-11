@@ -4,6 +4,22 @@
   "max_published_recheck_failed_url_ratio": 0.25,
   "max_failed_sources": 5,
   "core_failed_fail_threshold": 2,
+  "relative_guard_policy_migrations": [
+    {
+      "from_version": 0,
+      "to_version": 1,
+      "require_current_groups_superset": true
+    }
+  ],
+  "historical_fallback": {
+    "enabled": true,
+    "groups": [
+      "央视频道",
+      "卫视频道",
+      "地方频道"
+    ],
+    "max_candidates": 5000
+  },
   "core_sources": [
     "zbds_iptv4_txt",
     "epg_cn",

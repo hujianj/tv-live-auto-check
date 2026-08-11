@@ -22,9 +22,11 @@ from verify_sources import (
     is_core_family_candidate,
 )
 from stability import update_history
-from playlist_config import load_guard, load_quality, load_rules
+from playlist_config import get_group_order, load_guard, load_quality, load_rules
+from curate_ku9 import per_channel_limit
 from channel_utils import format_extinf
 from channel_identity import canonical_channel_key
+from url_utils import is_publishable_http_url
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -55,6 +57,12 @@ REQUIRE_BROADCAST_PROGRESS = os.getenv(
 ).strip().lower() not in {"0", "false", "no"}
 LIVE_PROGRESS_GROUPS = frozenset(
     str(group) for group in load_quality().get("live_progress_groups", []) if str(group).strip()
+)
+RECHECK_POLICY_VERSION = int(load_quality().get("published_recheck_policy_version", 1))
+HISTORICAL_FALLBACK = load_guard().get("historical_fallback") or {}
+HISTORICAL_FALLBACK_ENABLED = bool(HISTORICAL_FALLBACK.get("enabled", False))
+HISTORICAL_FALLBACK_GROUPS = frozenset(
+    str(group) for group in HISTORICAL_FALLBACK.get("groups", []) if str(group).strip()
 )
 
 
@@ -154,6 +162,7 @@ class PoolCandidate:
     selection_key: str
     row: Row
     source: str
+    origin: str = "current_scan"
 
 
 def parse_tv_txt(path: Path) -> tuple[list[str], list[Row]]:
@@ -331,10 +340,10 @@ def write_results_csv(
     refill_results = refill_results or {}
     with (ROOT / CSV_FILE).open("w", encoding="utf-8", newline="") as f:
         writer = csv.writer(f, lineterminator="\n")
-        writer.writerow(["phase", "ok", "group", "name", "url", "source", "detail"])
+        writer.writerow(["phase", "ok", "group", "name", "url", "source", "origin", "detail"])
         for row in rows:
             result = results[row.url]
-            writer.writerow(["published", result.ok, row.group, row.name, row.url, "published_recheck", result.detail])
+            writer.writerow(["published", result.ok, row.group, row.name, row.url, "published_recheck", "current_publication", result.detail])
         for candidate in attempted_refills:
             result = refill_results[candidate.row.url]
             writer.writerow([
@@ -344,6 +353,7 @@ def write_results_csv(
                 candidate.row.name,
                 candidate.row.url,
                 candidate.source,
+                candidate.origin,
                 result.detail,
             ])
 
@@ -366,23 +376,38 @@ def load_candidate_pool(path: Path | None = None) -> list[PoolCandidate]:
         return []
     out: list[PoolCandidate] = []
     seen: set[tuple[str, str]] = set()
+    expected_groups = set(get_group_order())
     with path.open(encoding="utf-8", newline="") as f:
-        for item in csv.DictReader(f):
+        reader = csv.DictReader(f)
+        expected_header = ["selection_key", "group", "name", "url", "source", "origin"]
+        if reader.fieldnames != expected_header:
+            raise ValueError(
+                f"{path.name}: header must be {expected_header!r}, got {reader.fieldnames!r}"
+            )
+        for lineno, item in enumerate(reader, 2):
             group = (item.get("group") or "").strip()
             name = (item.get("name") or "").strip()
             url = (item.get("url") or "").strip()
-            source = (item.get("source") or "unknown").strip() or "unknown"
-            selection_key = (item.get("selection_key") or canonical_channel_key(name)).strip()
-            if not group or not name or not url or not selection_key:
-                continue
-            # A corrupt/stale pool must never refill a different channel identity.
+            source = (item.get("source") or "").strip()
+            origin = (item.get("origin") or "").strip()
+            selection_key = (item.get("selection_key") or "").strip()
+            if not all((group, name, url, source, origin, selection_key)):
+                raise ValueError(f"{path.name} line {lineno}: candidate pool contains an empty field")
+            if group not in expected_groups:
+                raise ValueError(f"{path.name} line {lineno}: unknown group {group!r}")
+            if not is_publishable_http_url(url):
+                raise ValueError(f"{path.name} line {lineno}: invalid public URL {url!r}")
             if selection_key != canonical_channel_key(name):
-                continue
+                raise ValueError(
+                    f"{path.name} line {lineno}: selection key does not match channel name"
+                )
+            if origin not in {"current_scan", "previous_publication"}:
+                raise ValueError(f"{path.name} line {lineno}: invalid origin {origin!r}")
             dedup_key = (selection_key, url)
             if dedup_key in seen:
-                continue
+                raise ValueError(f"{path.name} line {lineno}: duplicate selection key/URL")
             seen.add(dedup_key)
-            out.append(PoolCandidate(selection_key, Row(group, name, url), source))
+            out.append(PoolCandidate(selection_key, Row(group, name, url), source, origin))
     return out
 
 
@@ -427,6 +452,30 @@ def refill_missing_rows(
     are eligible; every replacement is checked again before publication.
     """
     targets = _unique_url_counts(before_rows)
+    historical_candidates = [
+        candidate for candidate in pool
+        if HISTORICAL_FALLBACK_ENABLED
+        and candidate.origin == "previous_publication"
+        and candidate.row.group in HISTORICAL_FALLBACK_GROUPS
+    ]
+    historical_by_key: dict[tuple[str, str], set[str]] = defaultdict(set)
+    historical_representatives: dict[tuple[str, str], Row] = {}
+    for candidate in historical_candidates:
+        key = row_identity(candidate.row)
+        historical_by_key[key].add(candidate.row.url)
+        historical_representatives.setdefault(key, candidate.row)
+    historical_target_rows = 0
+    for key, urls in historical_by_key.items():
+        representative = historical_representatives[key]
+        limit = per_channel_limit(representative.group, representative.name)
+        previous_target = targets.get(key, 0)
+        # Historical candidates are only the previous URLs absent from the
+        # entire current candidate pool. Add that missing redundancy to the
+        # current target instead of comparing the two counts independently.
+        target = min(max(1, limit), previous_target + len(urls))
+        if target > previous_target:
+            targets[key] = target
+            historical_target_rows += target - previous_target
     current = _unique_url_counts(kept_rows)
     deficits = {key: max(0, target - current.get(key, 0)) for key, target in targets.items()}
     deficits = {key: count for key, count in deficits.items() if count > 0}
@@ -439,6 +488,11 @@ def refill_missing_rows(
             "playable_unique_urls": 0,
             "refilled_rows": 0,
             "unresolved_rows": sum(deficits.values()),
+            "historical_candidates_available": len(historical_candidates),
+            "historical_target_rows": historical_target_rows,
+            "historical_attempted_unique_urls": 0,
+            "historical_playable_unique_urls": 0,
+            "historical_refilled_rows": 0,
         }, [], []
 
     candidates_by_key: dict[tuple[str, str], list[PoolCandidate]] = defaultdict(list)
@@ -480,8 +534,9 @@ def refill_missing_rows(
                 fut = ex.submit(
                     checker,
                     Candidate(candidate.source, candidate.row.group, candidate.row.name, candidate.row.url),
-                    core,
-                    REQUIRE_BROADCAST_PROGRESS and requires_live_progress(candidate.row),
+                    core_override=core,
+                    require_progress=REQUIRE_BROADCAST_PROGRESS and requires_live_progress(candidate.row),
+                    require_video=REQUIRE_VIDEO_TRACK,
                 )
                 futs[fut] = (key, candidate)
             for fut in cf.as_completed(futs):
@@ -499,6 +554,12 @@ def refill_missing_rows(
                 remaining[key] -= 1
 
     final_rows = _ordered_rows(before_rows, kept_rows + [candidate.row for candidate in accepted])
+    historical_attempted = [candidate for candidate in attempted if candidate.origin == "previous_publication"]
+    historical_accepted = [candidate for candidate in accepted if candidate.origin == "previous_publication"]
+    historical_playable = sum(
+        1 for candidate in historical_attempted
+        if results.get(candidate.row.url) is not None and results[candidate.row.url].ok
+    )
     summary = {
         "enabled": True,
         "channels_with_deficit": len(deficits),
@@ -507,6 +568,11 @@ def refill_missing_rows(
         "playable_unique_urls": sum(1 for result in results.values() if result.ok),
         "refilled_rows": len(accepted),
         "unresolved_rows": sum(remaining.values()),
+        "historical_candidates_available": len(historical_candidates),
+        "historical_target_rows": historical_target_rows,
+        "historical_attempted_unique_urls": len(historical_attempted),
+        "historical_playable_unique_urls": historical_playable,
+        "historical_refilled_rows": len(historical_accepted),
     }
     return final_rows, results, summary, attempted, accepted
 
@@ -530,6 +596,7 @@ def update_summary(
     cnt = Counter(row.group for row in after_rows)
     source_cnt = Counter(source_for(row, source_map) for row in after_rows)
     group_source_cnt = Counter(f"{row.group}|{source_for(row, source_map)}" for row in after_rows)
+    removed_rows = sum(1 for row in before_rows if row.url in initial_failed_urls)
     summary.update({
         "curated_published_lines": len(after_rows),
         "curated_channel_names": len({row.name for row in after_rows}),
@@ -550,11 +617,13 @@ def update_summary(
         "stability": stability_summary,
         "published_recheck": {
             "enabled": True,
+            "policy_version": RECHECK_POLICY_VERSION,
             "checked_unique_urls": checked_urls,
             "initial_checked_unique_urls": len({row.url for row in before_rows}),
             "before_rows": len(before_rows),
             "after_rows": len(after_rows),
-            "removed_rows": len(before_rows) - len(after_rows),
+            "removed_rows": removed_rows,
+            "net_row_delta": len(after_rows) - len(before_rows),
             # Keep each phase distinct. The old initial_failed field was
             # accidentally populated after the slow retry, which made the
             # report impossible to interpret.
@@ -580,6 +649,15 @@ def update_summary(
             ),
             "public_network_policy_enabled": True,
             "refill": refill_summary,
+            "historical_fallback": {
+                "enabled": HISTORICAL_FALLBACK_ENABLED,
+                "groups": sorted(HISTORICAL_FALLBACK_GROUPS),
+                "candidates_available": refill_summary.get("historical_candidates_available", 0),
+                "target_rows": refill_summary.get("historical_target_rows", 0),
+                "attempted_unique_urls": refill_summary.get("historical_attempted_unique_urls", 0),
+                "playable_unique_urls": refill_summary.get("historical_playable_unique_urls", 0),
+                "refilled_rows": refill_summary.get("historical_refilled_rows", 0),
+            },
             "slow_retry": retry_summary,
             "elapsed_seconds": round(elapsed, 1),
         },
@@ -598,7 +676,9 @@ def write_report(before_rows: list[Row], after_rows: list[Row], failed_urls: dic
         f"Elapsed: {elapsed:.1f}s",
         f"Rows before: {len(before_rows)}",
         f"Rows after: {len(after_rows)}",
-        f"Removed rows: {len(before_rows) - len(after_rows)}",
+        f"Rows removed after strict recheck: {len(failed_rows)}",
+        f"Rows refilled after strict recheck: {refill_summary.get('refilled_rows', 0)}",
+        f"Net row delta: {len(after_rows) - len(before_rows):+d}",
         f"Failed unique URLs after slow retry: {len(failed_urls)}",
         f"Slow retry attempted unique URLs: {refill_summary.get('initial_retry', {}).get('attempted_unique_urls', 0)}",
         f"Slow retry recovered unique URLs: {refill_summary.get('initial_retry', {}).get('recovered_unique_urls', 0)}",
@@ -610,15 +690,17 @@ def write_report(before_rows: list[Row], after_rows: list[Row], failed_urls: dic
         f"Refill attempted unique URLs: {refill_summary.get('attempted_unique_urls', 0)}",
         f"Refill playable unique URLs: {refill_summary.get('playable_unique_urls', 0)}",
         f"Refilled rows: {refill_summary.get('refilled_rows', 0)}",
+        f"Historical fallback candidates attempted: {refill_summary.get('historical_attempted_unique_urls', 0)}",
+        f"Historical fallback rows accepted: {refill_summary.get('historical_refilled_rows', 0)}",
         f"Unresolved refill rows: {refill_summary.get('unresolved_rows', 0)}",
         "",
         "## Group deltas",
         "",
-        "| Group | Before | After | Removed |",
+        "| Group | Before | After | Net delta |",
         "|---|---:|---:|---:|",
     ]
     for group in before_counts:
-        lines.append(f"| {group} | {before_counts[group]} | {after_counts[group]} | {before_counts[group] - after_counts[group]} |")
+        lines.append(f"| {group} | {before_counts[group]} | {after_counts[group]} | {after_counts[group] - before_counts[group]:+d} |")
     if failed_rows:
         lines += ["", "## First failed rows", ""]
         for row in failed_rows[:80]:

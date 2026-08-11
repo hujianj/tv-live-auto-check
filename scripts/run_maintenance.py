@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 import json
 import os
 from pathlib import Path
+import shutil
 import subprocess
 import sys
 import time
@@ -90,6 +91,13 @@ def load_config(path: Path = CONFIG_PATH) -> dict[str, Any]:
         raise ValueError("maintenance config schema_version must be 1")
     data["max_attempts"] = _positive_int(data.get("max_attempts"), "max_attempts")
     data["retry_delay_seconds"] = _positive_int(data.get("retry_delay_seconds"), "retry_delay_seconds")
+    data["guard_confirmation_attempts"] = _positive_int(
+        data.get("guard_confirmation_attempts", 1), "guard_confirmation_attempts"
+    )
+    confirmation_start = data.get("guard_confirmation_retry_from", "verify_sources.py")
+    if not isinstance(confirmation_start, str) or not confirmation_start.strip():
+        raise ValueError("guard_confirmation_retry_from must be a non-empty script name")
+    data["guard_confirmation_retry_from"] = confirmation_start.strip()
     known_scripts = {stage.script for stage in STAGES}
     retryable = data.get("retryable_scripts")
     fatal = data.get("fatal_scripts")
@@ -104,6 +112,10 @@ def load_config(path: Path = CONFIG_PATH) -> dict[str, Any]:
         missing = sorted(known_scripts - (retryable_set | fatal_set))
         extra = sorted((retryable_set | fatal_set) - known_scripts)
         raise ValueError(f"maintenance stage classification mismatch: missing={missing} extra={extra}")
+    if data["guard_confirmation_retry_from"] not in known_scripts:
+        raise ValueError("guard_confirmation_retry_from must name a maintenance stage")
+    if data["guard_confirmation_retry_from"] not in retryable_set:
+        raise ValueError("guard_confirmation_retry_from must be a retryable network stage")
     for key in (
         "max_candidates_per_source",
         "max_total_candidates",
@@ -147,6 +159,35 @@ def write_report(report: dict[str, Any]) -> None:
     )
 
 
+def cleanup_attempt_evidence() -> None:
+    """Remove only this workflow's bounded failure snapshots before a run."""
+    for path in ROOT.glob("maintenance-attempt-*"):
+        if path.is_file():
+            try:
+                path.unlink()
+            except OSError as exc:
+                print(f"MAINTENANCE WARN: cannot remove stale evidence {path.name}: {exc!r}")
+
+
+def snapshot_attempt_evidence(attempt: int) -> None:
+    """Preserve small decision reports when a pass fails before artifacts upload."""
+    names = (
+        "full-check-summary.json",
+        "publish-guard-report.md",
+        "published-recheck-report.md",
+        "sources_status.csv",
+    )
+    for name in names:
+        source = ROOT / name
+        if not source.is_file():
+            continue
+        target = ROOT / f"maintenance-attempt-{attempt}-{name}"
+        try:
+            shutil.copyfile(source, target)
+        except OSError as exc:
+            print(f"MAINTENANCE WARN: cannot snapshot {name}: {exc!r}")
+
+
 def run_attempt(
     attempt: int,
     total: int,
@@ -174,7 +215,9 @@ def run_attempt(
         completed = subprocess.run(command, cwd=ROOT, env=stage_env, check=False)
         elapsed = round(time.monotonic() - stage_started, 3)
         classification = "ok" if completed.returncode == 0 else (
-            "retryable" if stage.script in set(config["retryable_scripts"]) else "fatal"
+            "retryable" if stage.script in set(config["retryable_scripts"])
+            else "confirmable" if stage.script == "guard_publish.py" and int(config.get("guard_confirmation_attempts", 1)) > 1
+            else "fatal"
         )
         stage_record = {
             "index": display_index,
@@ -229,9 +272,17 @@ def main(argv: list[str] | None = None) -> int:
         raise SystemExit("max attempts must be >=1 and retry delay must be >=0")
 
     if args.dry_run:
-        print(f"max_attempts_per_retryable_stage={max_attempts} retry_delay_seconds={retry_delay}")
+        print(
+            f"max_attempts_per_retryable_stage={max_attempts} "
+            f"guard_confirmation_attempts={config.get('guard_confirmation_attempts', 1)} "
+            f"retry_delay_seconds={retry_delay}"
+        )
         for index, stage in enumerate(STAGES, 1):
-            classification = "retryable" if stage.script in set(config["retryable_scripts"]) else "fatal"
+            classification = (
+                "retryable" if stage.script in set(config["retryable_scripts"])
+                else "confirmable" if stage.script == "guard_publish.py" and int(config.get("guard_confirmation_attempts", 1)) > 1
+                else "fatal"
+            )
             print(f"{index:02d}. [{classification}] {stage.label}: {' '.join(stage_command(stage))}")
         return 0
 
@@ -248,19 +299,27 @@ def main(argv: list[str] | None = None) -> int:
     env.setdefault("IPTV_MAX_TOTAL_FETCH_BYTES", str(config["max_total_fetch_bytes"]))
     env.setdefault("IPTV_MAX_PENDING_FUTURES", str(config["max_pending_futures"]))
     retryable_scripts = set(config["retryable_scripts"])
-    max_pipeline_passes = 1 + len(retryable_scripts) * (max_attempts - 1)
+    guard_confirmation_attempts = int(config.get("guard_confirmation_attempts", 1))
+    max_pipeline_passes = (
+        1
+        + len(retryable_scripts) * (max_attempts - 1)
+        + max(0, guard_confirmation_attempts - 1)
+    )
 
     report: dict[str, Any] = {
         "schema_version": 2,
-        "retry_strategy": "resume_failed_network_stage",
+        "retry_strategy": "resume_failed_network_stage_and_confirm_guard",
         "started_utc": utc_now(),
         "status": "running",
         "max_attempts": max_attempts,
         "max_attempts_per_retryable_stage": max_attempts,
         "max_pipeline_passes": max_pipeline_passes,
         "retry_delay_seconds": retry_delay,
+        "guard_confirmation_attempts": guard_confirmation_attempts,
+        "guard_confirmation_retry_from": config["guard_confirmation_retry_from"],
         "attempts": [],
     }
+    cleanup_attempt_evidence()
     write_report(report)
     started = time.monotonic()
     start_index = 0
@@ -296,6 +355,23 @@ def main(argv: list[str] | None = None) -> int:
         attempt_record["failed_stage_attempt"] = stage_failure_counts[failed_script]
         report["retry_failures_by_script"] = stage_failure_counts
         write_report(report)
+        snapshot_attempt_evidence(attempt)
+        if classification == "confirmable":
+            confirmation_count = stage_failure_counts[failed_script]
+            if confirmation_count < guard_confirmation_attempts:
+                start_index = next(
+                    index for index, item in enumerate(STAGES)
+                    if item.script == config["guard_confirmation_retry_from"]
+                )
+                print(
+                    f"Guard rejected this pass; starting confirmation pass at stage "
+                    f"{start_index + 1}/{len(STAGES)} ({STAGES[start_index].label}).",
+                    flush=True,
+                )
+                if retry_delay:
+                    time.sleep(retry_delay)
+                attempt += 1
+                continue
         if classification != "retryable" or stage_failure_counts[failed_script] >= max_attempts:
             break
         start_index = max(0, int(failed_stage.get("index") or 1) - 1)

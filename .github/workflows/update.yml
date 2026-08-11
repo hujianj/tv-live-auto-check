@@ -115,6 +115,7 @@ jobs:
             publish-manifest.json
             full-check-summary.json
             maintenance-run.json
+            maintenance-attempt-*
       - name: Commit verified playlist without overwriting newer code
         id: commit
         if: ${{ steps.preflight.outputs.stale != 'true' && steps.maintenance.outcome == 'success' }}
