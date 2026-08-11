@@ -675,7 +675,19 @@ def check_candidate(cand: Candidate, timeout: int = TIMEOUT, core_override: bool
                         return CheckResult(cand, True, f"variant ok variants_checked={checked_variants} {result.detail}")
                 return CheckResult(cand, False, f"variant fail variants_checked={checked_variants} {last_detail}")
             return _check_media_manifest(cand, url, text, final, timeout, segment_limit, require_progress, require_video)
-        return CheckResult(cand, looks_media(data, ctype, require_video=require_video), f"direct {ctype} bytes={len(data)} {media_detail(data, ctype)} required={'video' if require_video else 'media'}")
+        direct_probe = probe_media(data, ctype)
+        if require_progress and direct_probe.container in {"mp4/fmp4", "fmp4"}:
+            return CheckResult(
+                cand,
+                False,
+                "direct MP4/fMP4 cannot prove live broadcast progress; rejecting likely VOD",
+            )
+        return CheckResult(
+            cand,
+            direct_probe.kind == "video" if require_video else direct_probe.kind in {"video", "audio"},
+            f"direct {ctype} bytes={len(data)} {media_detail(data, ctype)} "
+            f"required={'video' if require_video else 'media'} progress={'required' if require_progress else 'not-required'}",
+        )
     except Exception as exc:
         return CheckResult(cand, False, repr(exc)[:160])
 
@@ -764,26 +776,47 @@ def interleave_candidates_by_host(candidates: Iterable[Candidate]) -> list[Candi
 
 
 def iter_bounded_check_results(candidates: list[Candidate], core_by_url: dict[str, bool]) -> Iterable[CheckResult]:
-    """Probe candidates without enqueuing every URL as a Future at once."""
-    iterator = iter(candidates)
-    pending: dict[cf.Future[CheckResult], Candidate] = {}
+    """Probe all candidates with bounded futures and host-aware admission.
+
+    The HTTP layer still enforces the per-host semaphore for redirects and HLS
+    child resources. Admission control here prevents queued tasks for one slow
+    host from occupying every executor thread while unrelated hosts wait.
+    """
+    buckets: dict[str, deque[Candidate]] = {}
+    for candidate in candidates:
+        buckets.setdefault(stream_host_key(candidate.url), deque()).append(candidate)
+    ready_hosts = deque(buckets)
+    ready_set = set(ready_hosts)
+    inflight_by_host: dict[str, int] = {host: 0 for host in buckets}
+    pending: dict[cf.Future[CheckResult], tuple[Candidate, str]] = {}
+
+    def mark_ready(host: str) -> None:
+        if buckets[host] and inflight_by_host[host] < HOST_WORKERS and host not in ready_set:
+            ready_hosts.append(host)
+            ready_set.add(host)
+
+    def submit_ready(executor: cf.ThreadPoolExecutor) -> None:
+        while ready_hosts and len(pending) < MAX_PENDING_FUTURES:
+            host = ready_hosts.popleft()
+            ready_set.remove(host)
+            if not buckets[host] or inflight_by_host[host] >= HOST_WORKERS:
+                continue
+            cand = buckets[host].popleft()
+            future = executor.submit(check_candidate_resilient, cand, core_by_url[cand.url], False)
+            pending[future] = (cand, host)
+            inflight_by_host[host] += 1
+            mark_ready(host)
+
     with cf.ThreadPoolExecutor(max_workers=CHECK_WORKERS) as executor:
-        while len(pending) < MAX_PENDING_FUTURES:
-            try:
-                cand = next(iterator)
-            except StopIteration:
-                break
-            pending[executor.submit(check_candidate_resilient, cand, core_by_url[cand.url], False)] = cand
+        submit_ready(executor)
         while pending:
             done, _ = cf.wait(pending, return_when=cf.FIRST_COMPLETED)
             for future in done:
-                pending.pop(future, None)
+                _candidate, host = pending.pop(future)
+                inflight_by_host[host] -= 1
+                mark_ready(host)
                 yield future.result()
-                try:
-                    cand = next(iterator)
-                except StopIteration:
-                    continue
-                pending[executor.submit(check_candidate_resilient, cand, core_by_url[cand.url], False)] = cand
+            submit_ready(executor)
 
 def main() -> None:
     cleanup_transient_outputs()
@@ -945,7 +978,7 @@ def main() -> None:
             "max_pending_futures": MAX_PENDING_FUTURES,
         },
         "probe_scheduling": {
-            "strategy": "round_robin_initial_host",
+            "strategy": "host_aware_bounded_futures",
             "initial_host_count": len({stream_host_key(candidate.url) for candidate in to_check}),
             "workers": CHECK_WORKERS,
             "workers_per_host": HOST_WORKERS,

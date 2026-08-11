@@ -220,8 +220,12 @@ def classify(name: str, group: str, source: str) -> str:
         return G_SAT
     if any(k in name for k in HK_KEYS) or any(k in group for k in GROUP_KEYS['hk']):
         return G_HK
-    if (
+    province_station_name = (
         any(p in name for p in PROVINCES)
+        and not re.search(r'[，,。！？：:、；;]', name)
+    )
+    if (
+        province_station_name
         or any(k in group for k in GROUP_KEYS['local'])
         or re.search(r'(?:\u65b0\u95fb\u7efc\u5408|\u65b0\u95fb\u9891\u9053|\u516c\u5171\u9891\u9053|\u7efc\u5408\u9891\u9053|\u516c\u5171\u53f0|\u7efc\u5408\u53f0)$', name)
     ):

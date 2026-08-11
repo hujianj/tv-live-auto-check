@@ -9,6 +9,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+from maintenance_contract import GUARD_REJECTED_EXIT_CODE
 from playlist_config import load_guard, load_quality
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -308,7 +309,7 @@ def main() -> int:
         if cur < minimum:
             fail(f"group {group} count {cur} < minimum {minimum}", failures)
         base = int(base_groups.get(group, 0)) if base_groups else 0
-        if base >= minimum and not migration_reason:
+        if base > 0 and base >= minimum and not migration_reason:
             drop = (base - cur) / base
             max_group_drop = MAX_GROUP_DROP_RATIOS.get(group, 0.45)
             if drop > max_group_drop:
@@ -343,7 +344,7 @@ def main() -> int:
     write_guard_outputs(current, baseline, failures, warnings, statuses, migration_reason)
     if failures:
         print("Publish guard rejected this run; keeping previous published playlist unchanged.")
-        return 1
+        return GUARD_REJECTED_EXIT_CODE
     print("Publish guard OK", json.dumps({"curated_published_lines": cur_lines, "baseline_lines": base_lines}, ensure_ascii=False))
     return 0
 

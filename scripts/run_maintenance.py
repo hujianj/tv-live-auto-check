@@ -21,6 +21,8 @@ import sys
 import time
 from typing import Any
 
+from maintenance_contract import GUARD_REJECTED_EXIT_CODE
+
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "config" / "maintenance.json"
 REPORT_PATH = ROOT / "maintenance-run.json"
@@ -344,7 +346,11 @@ def run_attempt(
             else "fatal" if launch_failed
             else "retryable" if stage.script in set(config["retryable_scripts"])
             else "fatal" if timed_out
-            else "confirmable" if stage.script == "guard_publish.py" and int(config.get("guard_confirmation_attempts", 1)) > 1
+            else "confirmable" if (
+                stage.script == "guard_publish.py"
+                and returncode == GUARD_REJECTED_EXIT_CODE
+                and int(config.get("guard_confirmation_attempts", 1)) > 1
+            )
             else "fatal"
         )
         stage_record = {
