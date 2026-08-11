@@ -98,6 +98,14 @@ jobs:
           retention-days: 30
           if-no-files-found: warn
           path: |
+            live-curated.txt
+            live.txt
+            live-verified.txt
+            ku9-live.txt
+            live.m3u
+            ku9-family.txt
+            live-family.txt
+            family.m3u
             stream_check_results.csv
             live-all-playable.txt
             all-playable.m3u
@@ -105,6 +113,9 @@ jobs:
             curated-candidate-pool.csv
             alias-conflict-report.md
             published_recheck_results.csv
+            sources_status.csv
+            source-report.md
+            curated-report.md
             published-recheck-report.md
             final-publish-report.md
             stability-report.md
