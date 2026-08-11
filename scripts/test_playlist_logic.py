@@ -1116,11 +1116,14 @@ def test_publication_outputs_share_canonical_order_after_cross_group_refill() ->
 
     groups = get_group_order()
     rows = [
-        recheck.Row(groups[0], "CCTV-1", "http://unit.test/cctv1.m3u8"),
+        recheck.Row(groups[0], "CCTV-17", "http://unit.test/cctv17.m3u8"),
         recheck.Row(groups[-2], "香港中文", "http://unit.test/hk.m3u8"),
         # A newly restored identity used to be appended after the overseas rows.
         recheck.Row(groups[1], "辽宁卫视", "http://unit.test/liaoning.m3u8"),
         recheck.Row(groups[2], "沈阳新闻", "http://unit.test/shenyang.m3u8"),
+        # A recovered CCTV identity must be inserted numerically, not appended.
+        recheck.Row(groups[0], "CCTV-2", "http://unit.test/cctv2.m3u8"),
+        recheck.Row(groups[0], "CCTV-1", "http://unit.test/cctv1.m3u8"),
     ]
     source_map = {(row.name, row.url): "unit" for row in rows}
     original_root = recheck.ROOT
@@ -1140,8 +1143,9 @@ def test_publication_outputs_share_canonical_order_after_cross_group_refill() ->
                     BundleRow(item["group"], item["name"], item["url"])
                     for item in csv.DictReader(handle)
                 ]
-            expected_groups = [groups[0], groups[1], groups[2], groups[-2]]
+            expected_groups = [groups[0], groups[0], groups[0], groups[1], groups[2], groups[-2]]
             assert [row.group for row in canonical] == expected_groups
+            assert [row.name for row in canonical[:3]] == ["CCTV-1", "CCTV-2", "CCTV-17"]
             assert txt_rows == m3u_rows == mapped_rows
     finally:
         recheck.ROOT = original_root
@@ -1515,6 +1519,20 @@ def test_publish_bundle_validator_enforces_cross_file_invariants() -> None:
         order = get_group_order()
         _write_test_publish_bundle(root, group_order=[order[1], order[0], *order[2:]])
         _assert_bundle_failure(root, "category order/coverage mismatch")
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        order = get_group_order()
+        rows = [
+            BundleRow(order[0], "CCTV-17", "http://unit.test/cctv17.m3u8"),
+            BundleRow(order[0], "CCTV-2", "http://unit.test/cctv2.m3u8"),
+            *[
+                BundleRow(group, f"家庭频道{index}", f"http://unit.test/{index}.m3u8")
+                for index, group in enumerate(order[1:], 1)
+            ],
+        ]
+        _write_test_publish_bundle(root, full_rows=rows, family_rows=rows)
+        _assert_bundle_failure(root, "channel order is not canonical")
 
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
