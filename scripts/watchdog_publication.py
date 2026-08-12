@@ -267,17 +267,19 @@ def inspect_publication(
         try:
             data, headers = public_fetch(str(spec["url"]), timeout=timeout)
             digest = hashlib.sha256(data).hexdigest()
-            if label == "raw":
-                validate_text(data.decode("utf-8", "strict"), require_categories=True)
-            else:
-                validate_text(data.decode("utf-8", "strict"), require_categories=True)
+            validate_text(data.decode("utf-8", "strict"), require_categories=True)
             fetched[label] = data
             result["endpoints"][label] = {"url": spec["url"], "bytes": len(data), "sha256": digest, **headers}
         except Exception as exc:
-            failures.append(f"{label} publication endpoint failed: {exc}")
-    if "raw" in fetched and "primary" in fetched:
-        if fetched["raw"] != fetched["primary"]:
-            failures.append("authoritative Raw and required primary television endpoint serve different bytes")
+            detail = f"{label} publication endpoint failed: {exc}"
+            if label == "raw":
+                failures.append(detail)
+            else:
+                # The CDN reconciler owns the television endpoint. A stale or
+                # temporarily unavailable edge must not create a second
+                # maintenance incident or hide the healthy Raw publication.
+                warnings.append(f"{detail} (CDN scope; see the CDN reconciliation issue)")
+                result["endpoints"][label] = {"url": spec["url"], "ok": False, "error": str(exc)}
     manifest_url = f"https://raw.githubusercontent.com/{repo}/{branch}/publish-manifest.json"
     try:
         manifest_data, manifest_headers = public_fetch(manifest_url, timeout=timeout, max_bytes=1_000_000)
@@ -287,11 +289,18 @@ def inspect_publication(
         freshness_failures, freshness_details = manifest_freshness(manifest, now, max_age_hours)
         failures.extend(freshness_failures)
         files = manifest.get("files") if isinstance(manifest.get("files"), dict) else {}
-        expected_primary = files.get(config["primary_text_file"], {})
+        expected_raw = files.get(config["authoritative_raw_file"], {})
+        if "raw" in fetched:
+            actual = hashlib.sha256(fetched["raw"]).hexdigest()
+            if expected_raw.get("sha256") != actual or expected_raw.get("bytes") != len(fetched["raw"]):
+                failures.append("public manifest does not match the authoritative Raw publication file")
         if "primary" in fetched:
+            expected_primary = files.get(config["primary_text_file"], {})
             actual = hashlib.sha256(fetched["primary"]).hexdigest()
             if expected_primary.get("sha256") != actual or expected_primary.get("bytes") != len(fetched["primary"]):
-                failures.append("public manifest does not match the required primary television file")
+                warnings.append("primary television endpoint is serving a valid but stale publication (CDN scope)")
+            elif "raw" in fetched and fetched["raw"] != fetched["primary"]:
+                warnings.append("primary television endpoint differs from authoritative Raw bytes (CDN scope)")
         result["manifest"] = {
             "url": manifest_url,
             "bytes": len(manifest_data),

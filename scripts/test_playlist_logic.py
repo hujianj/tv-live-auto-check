@@ -2413,6 +2413,49 @@ def test_watchdog_confirmation_recovers_from_exception_then_success() -> None:
     assert "temporary API reset" in confirmation["observations"][0]["failures"][0]
 
 
+def test_watchdog_scopes_stale_primary_cdn_to_warning() -> None:
+    raw = (ROOT / "live-curated.txt").read_bytes()
+    first_url = next(
+        line.rsplit(b",", 1)[1]
+        for line in raw.splitlines()
+        if b"," in line and not line.endswith(b",#genre#")
+    )
+    primary = raw.replace(first_url, b"https://example.invalid/old.m3u8", 1)
+    manifest = json.loads((ROOT / "publish-manifest.json").read_text(encoding="utf-8"))
+    manifest["source_summary"]["generated_utc"] = "2026-08-12T05:00:00Z"
+    manifest["files"]["live-curated.txt"] = {
+        "bytes": len(raw),
+        "sha256": hashlib.sha256(raw).hexdigest(),
+    }
+    manifest["files"]["ku9-live.txt"] = {
+        "bytes": len(raw),
+        "sha256": hashlib.sha256(raw).hexdigest(),
+    }
+    original_fetch = watchdog_module.public_fetch
+    original_config = watchdog_module.load_publication_config
+
+    def fake_fetch(url: str, **_kwargs):
+        if "publish-manifest.json" in url:
+            return json.dumps(manifest).encode("utf-8"), {}
+        if "raw.githubusercontent.com" in url:
+            return raw, {}
+        return primary, {}
+
+    try:
+        watchdog_module.public_fetch = fake_fetch
+        failures, warnings, details = watchdog_module.inspect_publication(
+            "example/repo", "main", 5, True,
+            watchdog_module.datetime(2026, 8, 12, 5, 30, tzinfo=watchdog_module.timezone.utc),
+            36.0,
+        )
+    finally:
+        watchdog_module.public_fetch = original_fetch
+        watchdog_module.load_publication_config = original_config
+    assert failures == []
+    assert any("stale publication" in item and "CDN scope" in item for item in warnings)
+    assert details["endpoints"]["raw"]["sha256"] == hashlib.sha256(raw).hexdigest()
+
+
 def test_maintenance_alert_includes_failed_stage() -> None:
     with tempfile.TemporaryDirectory() as td:
         report = Path(td) / "maintenance-run.json"
