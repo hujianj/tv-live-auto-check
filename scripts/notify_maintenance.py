@@ -15,7 +15,7 @@ from urllib.request import Request, urlopen
 LEGACY_MARKER = "<!-- tv-live-auto-check-maintenance-alert -->"
 SCOPES = {
     "maintenance": {
-        "title": "自动维护告警 IPTV 媒体检测或发布失败",
+        "title": "自动维护告警 IPTV 媒体检测或 Raw 发布失败",
         "marker": "<!-- tv-live-auto-check-maintenance-failure -->",
     },
     "cdn": {
