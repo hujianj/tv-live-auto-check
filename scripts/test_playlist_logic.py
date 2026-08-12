@@ -2414,44 +2414,96 @@ def test_watchdog_confirmation_recovers_from_exception_then_success() -> None:
 
 
 def test_watchdog_scopes_stale_primary_cdn_to_warning() -> None:
-    raw = (ROOT / "live-curated.txt").read_bytes()
-    first_url = next(
-        line.rsplit(b",", 1)[1]
-        for line in raw.splitlines()
-        if b"," in line and not line.endswith(b",#genre#")
-    )
-    primary = raw.replace(first_url, b"https://example.invalid/old.m3u8", 1)
-    manifest = json.loads((ROOT / "publish-manifest.json").read_text(encoding="utf-8"))
-    manifest["source_summary"]["generated_utc"] = "2026-08-12T05:00:00Z"
-    manifest["files"]["live-curated.txt"] = {
-        "bytes": len(raw),
-        "sha256": hashlib.sha256(raw).hexdigest(),
-    }
-    manifest["files"]["ku9-live.txt"] = {
-        "bytes": len(raw),
-        "sha256": hashlib.sha256(raw).hexdigest(),
-    }
+    # Keep this test independent from generated files. The maintenance runner
+    # removes the previous publication before the unit-test stage, so relying
+    # on the checkout's live-curated.txt or publish-manifest.json makes the
+    # test pass in CI but fail in the real maintenance workflow.
+    original_root = watchdog_module.ROOT
     original_fetch = watchdog_module.public_fetch
-    original_config = watchdog_module.load_publication_config
-
-    def fake_fetch(url: str, **_kwargs):
-        if "publish-manifest.json" in url:
-            return json.dumps(manifest).encode("utf-8"), {}
-        if "raw.githubusercontent.com" in url:
-            return raw, {}
-        return primary, {}
-
     try:
-        watchdog_module.public_fetch = fake_fetch
-        failures, warnings, details = watchdog_module.inspect_publication(
-            "example/repo", "main", 5, True,
-            watchdog_module.datetime(2026, 8, 12, 5, 30, tzinfo=watchdog_module.timezone.utc),
-            36.0,
-        )
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            (root / "config").mkdir()
+            (root / "config" / "publication.json").write_text(
+                json.dumps(
+                    {
+                        "schema_version": 1,
+                        "primary_text_file": "ku9-live.txt",
+                        "authoritative_raw_file": "live-curated.txt",
+                        "playlist_files": ["live-curated.txt", "ku9-live.txt"],
+                        "publication_files": ["live-curated.txt", "ku9-live.txt"],
+                        "purge_files": ["live-curated.txt", "ku9-live.txt"],
+                        "endpoints": [
+                            {
+                                "name": "github_raw",
+                                "template": "https://raw.githubusercontent.com/{repo}/{branch}/{path}",
+                                "path": "live-curated.txt",
+                                "retries": 1,
+                                "timeout_seconds": 1,
+                                "endpoint_deadline_seconds": 1,
+                                "hard_raw": True,
+                                "television_compatible": False,
+                                "required_primary": False,
+                            },
+                            {
+                                "name": "jsdelivr_primary",
+                                "template": "https://cdn.example.test/{repo}/{branch}/{path}",
+                                "path": "ku9-live.txt",
+                                "retries": 1,
+                                "timeout_seconds": 1,
+                                "endpoint_deadline_seconds": 1,
+                                "hard_raw": False,
+                                "television_compatible": True,
+                                "required_primary": True,
+                            },
+                        ],
+                    },
+                    ensure_ascii=False,
+                )
+                + "\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+            raw = (
+                "\\u592e\\u89c6\\u9891\\u9053,#genre#\nCCTV-1,http://example.invalid/live.m3u8\n"
+                "\\u536b\\u89c6\\u9891\\u9053,#genre#\n\\u6e56\\u5357\\u536b\\u89c6,http://example.invalid/hunan.m3u8\n"
+                "\\u5730\\u65b9\\u9891\\u9053,#genre#\n\\u6c88\\u9633\\u65b0\\u95fb,http://example.invalid/shenyang.m3u8\n"
+            ).encode("ascii").decode("unicode_escape").encode("utf-8")
+            first_url = b"http://example.invalid/live.m3u8"
+            primary = raw.replace(first_url, b"https://example.invalid/old.m3u8", 1)
+            manifest = {
+                "schema_version": 1,
+                "source_summary": {"generated_utc": "2026-08-12T05:00:00Z"},
+                "files": {
+                    "live-curated.txt": {
+                        "bytes": len(raw),
+                        "sha256": hashlib.sha256(raw).hexdigest(),
+                    },
+                    "ku9-live.txt": {
+                        "bytes": len(raw),
+                        "sha256": hashlib.sha256(raw).hexdigest(),
+                    },
+                },
+            }
+
+            def fake_fetch(url: str, **_kwargs):
+                if "publish-manifest.json" in url:
+                    return json.dumps(manifest).encode("utf-8"), {}
+                if "raw.githubusercontent.com" in url:
+                    return raw, {}
+                return primary, {}
+
+            watchdog_module.ROOT = root
+            watchdog_module.public_fetch = fake_fetch
+            failures, warnings, details = watchdog_module.inspect_publication(
+                "example/repo", "main", 5, True,
+                watchdog_module.datetime(2026, 8, 12, 5, 30, tzinfo=watchdog_module.timezone.utc),
+                36.0,
+            )
     finally:
+        watchdog_module.ROOT = original_root
         watchdog_module.public_fetch = original_fetch
-        watchdog_module.load_publication_config = original_config
-    assert failures == []
+    assert failures == [], (failures, warnings, details)
     assert any("stale publication" in item and "CDN scope" in item for item in warnings)
     assert details["endpoints"]["raw"]["sha256"] == hashlib.sha256(raw).hexdigest()
 
