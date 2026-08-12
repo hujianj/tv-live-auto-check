@@ -352,6 +352,7 @@ def test_priority_and_guard_config_are_externalized() -> None:
     assert quality["channel_limits"]["core_max_urls_per_name"] >= quality["channel_limits"]["default_max_urls_per_name"]
     assert quality["group_max_rows"]["综合娱乐"] >= guard["min_groups"]["综合娱乐"]
     assert quality["final_quality_audit"]["fail_on_host_concentration"] is False
+    assert quality["final_quality_audit"]["fail_on_latin_noise_residue"] is True
     assert "Geo-blocked" in quality["strict_drop_name_tokens"]
     assert "澳門MACAU" in quality["strict_drop_name_tokens"]
     assert "KroneHit" in quality["strict_drop_name_tokens"]
@@ -544,6 +545,38 @@ def test_quality_audit_detects_core_and_strict_residue() -> None:
     assert any("strict filtered" in x for x in failures)
     assert result["missing_cctv_quality"]
     assert warnings
+
+
+def test_mixed_latin_noise_is_rejected_at_every_publication_gate() -> None:
+    name = "Edinburgh南空"
+    url = "http://a/room.m3u8"
+    row, reason, _detail = curate_module.prepare_curated_row(name, url, "虎牙一起看", "freetv_huya")
+    assert row is None
+    assert reason == "latin_noise_name"
+
+    # Pure foreign names retain their existing, more precise drop reason.
+    row, reason, _detail = curate_module.prepare_curated_row(
+        "DiscoveryAsia", url, "Overseas", "iptv_org_all"
+    )
+    assert row is None
+    assert reason == "strict_quality_filter"
+
+    for payload in (
+        f"综合娱乐,#genre#\n{name},{url}\n",
+        f'#EXTM3U\n#EXTINF:-1 tvg-name="{name}" group-title="综合娱乐",{name}\n{url}\n',
+    ):
+        try:
+            (validate_m3u_text if payload.startswith("#EXTM3U") else validate_text)(
+                payload, require_categories=False
+            )
+        except ValueError as exc:
+            assert "mixed Latin/noise" in str(exc)
+        else:
+            raise AssertionError("mixed Latin/noise row unexpectedly passed playlist validation")
+
+    result, failures, _warnings = quality_module.build_audit([("综合娱乐", name, url)])
+    assert result["latin_noise_review_count"] == 1
+    assert any("mixed Latin/noise" in item for item in failures)
 
 
 def test_quality_audit_detects_host_single_point() -> None:
@@ -1591,6 +1624,8 @@ def _write_test_publish_bundle(root: Path, full_rows=None, family_rows=None, gro
             "unique_urls": checked,
             "groups": full_groups,
             "strict_filter_residue": [],
+            "latin_noise_review_count": 0,
+            "latin_noise_review_sample": [],
             "missing_cctv_quality": [],
             "missing_satellite_quality": [],
         },
@@ -1685,6 +1720,28 @@ def test_publish_bundle_validator_enforces_cross_file_invariants() -> None:
         result = validate_publish_bundle(root)
         assert result["status"] == "ok"
         assert result["full_rows"] == len(get_group_order())
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        _write_test_publish_bundle(root)
+        summary_path = root / "full-check-summary.json"
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        summary["quality_audit"]["latin_noise_review_count"] = 1
+        summary["quality_audit"]["latin_noise_review_sample"] = [
+            {"group": "综合娱乐", "name": "Edinburgh南空", "url": "http://unit.test/room.m3u8"}
+        ]
+        summary_path.write_text(
+            json.dumps(summary, ensure_ascii=False, indent=2) + "\n",
+            encoding="utf-8",
+            newline="\n",
+        )
+        _assert_bundle_failure(root, "latin_noise_review_count is not zero")
+        try:
+            validate_publish_bundle(root, require_artifacts=False)
+        except BundleValidationError as exc:
+            assert "latin_noise_review_count is not zero" in str(exc)
+        else:
+            raise AssertionError("committed-only bundle accepted nonzero Latin/noise residue")
 
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)
@@ -2570,6 +2627,7 @@ def main() -> int:
         test_coverage_counts_exact_cctv_and_reports_variants,
         test_format_extinf_escapes_quoted_attributes,
         test_quality_audit_detects_core_and_strict_residue,
+        test_mixed_latin_noise_is_rejected_at_every_publication_gate,
         test_quality_audit_detects_host_single_point,
         test_quality_audit_warns_without_blocking_on_global_host_concentration,
         test_local_network_parser_and_core_filter,

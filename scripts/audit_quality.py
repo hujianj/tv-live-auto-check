@@ -201,7 +201,11 @@ def build_audit(rows: list[tuple[str, str, str]]) -> tuple[dict, list[str], list
     if weak_satellite:
         warnings.append("important satellite channels below independent URL warning target: " + ", ".join(f"{x['name']}={x['unique_urls']}" for x in weak_satellite))
     if latin_noise:
-        warnings.append(f"latin/noise-like channel names remain for review: {len(latin_noise)}")
+        message = f"mixed Latin/noise channel names remain: {len(latin_noise)}"
+        if audit_cfg.get("fail_on_latin_noise_residue", True):
+            failures.append(message)
+        else:
+            warnings.append(message)
     if weak_core_host_diversity:
         warnings.append(
             "core channels below independent host warning target: "

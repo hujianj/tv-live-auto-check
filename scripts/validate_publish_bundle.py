@@ -343,6 +343,8 @@ def _validate_summary(
             "unique_urls",
             "groups",
             "strict_filter_residue",
+            "latin_noise_review_count",
+            "latin_noise_review_sample",
             "missing_cctv_quality",
             "missing_satellite_quality",
         ),
@@ -362,6 +364,13 @@ def _validate_summary(
     for field in ("strict_filter_residue", "missing_cctv_quality", "missing_satellite_quality"):
         if quality.get(field):
             errors.append(f"summary.quality_audit.{field} is not empty")
+    if quality.get("latin_noise_review_count") != 0:
+        errors.append(
+            "summary.quality_audit.latin_noise_review_count is not zero: "
+            f"{quality.get('latin_noise_review_count')!r}"
+        )
+    if quality.get("latin_noise_review_sample"):
+        errors.append("summary.quality_audit.latin_noise_review_sample is not empty")
 
     recheck = summary.get("published_recheck")
     if not isinstance(recheck, dict):
