@@ -1,17 +1,17 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 2062
-Unique channel names: 1356
-Unique canonical channel identities: 1356
-Unique URLs: 2062
+Rows: 2045
+Unique channel names: 1354
+Unique canonical channel identities: 1354
+Unique URLs: 2045
 Strict filter residue count: 0
 Latin/noise-like review count: 0
 Channel unique URL limit violations: 0
 URL identity conflicts: 0
-Unique stream hosts: 166
-Top stream host share: 22.2%
-Top five stream host share: 54.7%
+Unique stream hosts: 157
+Top stream host share: 21.7%
+Top five stream host share: 54.8%
 
 ## Core CCTV quality
 
@@ -49,7 +49,7 @@ Minimum important satellite independent URLs: 3
 | 河北卫视 | 6 | 6 | 6 | OK |
 | 河南卫视 | 6 | 6 | 6 | OK |
 | 北京卫视 | 6 | 6 | 5 | OK |
-| 东方卫视 | 6 | 6 | 5 | OK |
+| 东方卫视 | 5 | 5 | 4 | OK |
 | 浙江卫视 | 5 | 5 | 4 | OK |
 | 江苏卫视 | 6 | 6 | 6 | OK |
 | 湖南卫视 | 6 | 6 | 5 | OK |
@@ -60,16 +60,16 @@ Minimum important satellite independent URLs: 3
 
 | Host | Rows | Share |
 |---|---:|---:|
-| stream1.freetv.fun | 457 | 22.2% |
-| live.ottiptv.cc | 353 | 17.1% |
-| cloud.video.taobao.com | 188 | 9.1% |
+| stream1.freetv.fun | 444 | 21.7% |
+| live.ottiptv.cc | 361 | 17.7% |
+| cloud.video.taobao.com | 188 | 9.2% |
 | vodcdn.video.taobao.com | 72 | 3.5% |
-| l.cztvcloud.com | 58 | 2.8% |
+| l.cztvcloud.com | 56 | 2.7% |
+| 63.141.230.178 | 48 | 2.3% |
+| 38.75.136.137 | 48 | 2.3% |
 | vd3.bdstatic.com | 48 | 2.3% |
-| 63.141.230.178 | 47 | 2.3% |
-| 38.75.136.137 | 44 | 2.1% |
-| cdn.jdshipin.com | 40 | 1.9% |
 | 107.150.60.122 | 37 | 1.8% |
+| cdn.jdshipin.com | 35 | 1.7% |
 
 ## Family playlist audit
 
