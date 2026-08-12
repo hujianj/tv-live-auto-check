@@ -278,7 +278,6 @@ class PublicHTTPSHandler(_PublicAddressRetryHandler, HTTPSHandler):
             PublicHTTPSConnection,
             req,
             context=self._context,
-            check_hostname=self._check_hostname,
         )
 
 

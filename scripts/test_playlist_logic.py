@@ -943,6 +943,9 @@ def test_public_handler_retries_validated_edge_addresses() -> None:
     first = "2606:2800:220:1:248:1893:25c8:1946"
     second = "93.184.216.34"
     handler = PublicHTTPSHandler(context=ssl.create_default_context())
+    # Python 3.12 no longer creates this private HTTPSHandler attribute.
+    if hasattr(handler, "_check_hostname"):
+        del handler._check_hostname
 
     def fake_do_open(factory, req, **kwargs):
         connection = factory(req.host, timeout=1, **kwargs)
