@@ -29,7 +29,7 @@ from publication_config import endpoint_urls, load_publication_config
 from validate_playlist import validate_text
 
 MARKER = "<!-- tv-live-auto-check-watchdog -->"
-ISSUE_TITLE = "\u81ea\u52a8\u76d1\u63a7\u544a\u8b66 IPTV \u81ea\u52a8\u7ef4\u62a4\u6216\u516c\u5f00\u8ba2\u9605\u5f02\u5e38"
+ISSUE_TITLE = "\u81ea\u52a8\u76d1\u63a7\u544a\u8b66 IPTV \u81ea\u52a8\u7ef4\u62a4\u6216 Raw \u53d1\u5e03\u5f02\u5e38"
 HARD_FAILURE_CONCLUSIONS = {"action_required", "failure", "startup_failure", "timed_out"}
 RUN_DETAIL_FIELDS = (
     "id",
@@ -45,6 +45,7 @@ RUN_DETAIL_FIELDS = (
 )
 MAX_ISSUE_BODY_CHARS = 30_000
 MAX_ISSUE_EVIDENCE_CHARS = 20_000
+MAX_ISSUE_PAGES = 10
 
 
 class WatchdogError(RuntimeError):
@@ -412,6 +413,20 @@ def render_issue_body(result: HealthResult, now: datetime) -> str:
     return body
 
 
+def list_watchdog_issues(repo: str, token: str) -> list[dict[str, Any]]:
+    """Read a bounded history so a closed watchdog issue can be reused."""
+    base = f"https://api.github.com/repos/{repo}/issues"
+    issues: list[dict[str, Any]] = []
+    for page in range(1, MAX_ISSUE_PAGES + 1):
+        batch = api_request(f"{base}?state=all&per_page=100&page={page}", token) or []
+        if not isinstance(batch, list):
+            raise WatchdogError(f"GitHub issues API returned a non-list page: page={page}")
+        issues.extend(item for item in batch if isinstance(item, dict))
+        if len(batch) < 100:
+            break
+    return issues
+
+
 def update_issue(repo: str, token: str, result: HealthResult, now: datetime, dry_run: bool = False) -> dict[str, Any]:
     if dry_run:
         print(render_issue_body(result, now))
@@ -419,17 +434,28 @@ def update_issue(repo: str, token: str, result: HealthResult, now: datetime, dry
     if not token:
         raise WatchdogError("GITHUB_TOKEN is required to create/update watchdog issues")
     base = f"https://api.github.com/repos/{repo}"
-    issues = api_request(f"{base}/issues?state=open&per_page=100", token)
-    existing = next((item for item in issues if MARKER in str(item.get("body", ""))), None)
+    issues = list_watchdog_issues(repo, token)
+    matches = [item for item in issues if "pull_request" not in item and MARKER in str(item.get("body", ""))]
+    matches.sort(key=lambda item: str(item.get("updated_at") or item.get("created_at") or ""), reverse=True)
+    existing = matches[0] if matches else None
     body = render_issue_body(result, now)
     if result.failures:
         payload = {"title": ISSUE_TITLE, "body": body}
         if existing:
+            if existing.get("state") == "closed":
+                payload["state"] = "open"
             issue = api_request(f"{base}/issues/{existing['number']}", token, method="PATCH", payload=payload)
+            if existing.get("state") == "closed":
+                api_request(
+                    f"{base}/issues/{existing['number']}/comments",
+                    token,
+                    method="POST",
+                    payload={"body": "Watchdog 检测到问题再次出现，已重新打开此 Issue。"},
+                )
             return {"status": "updated", "number": issue.get("number")}
         issue = api_request(f"{base}/issues", token, method="POST", payload=payload)
         return {"status": "opened", "number": issue.get("number")}
-    if existing:
+    if existing and existing.get("state") == "open":
         api_request(f"{base}/issues/{existing['number']}", token, method="PATCH", payload={"state": "closed", "body": body})
         return {"status": "closed", "number": existing.get("number")}
     return {"status": "no-open-issue"}
