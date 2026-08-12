@@ -1,23 +1,23 @@
 # IPTV source verification report
 
-Generated: 2026-08-12 06:57:55
-Generated UTC: 2026-08-12T06:57:54Z
-Generated Beijing: 2026-08-12 14:57:54 Asia/Shanghai
-Elapsed: 1391.8s
+Generated: 2026-08-12 09:55:09
+Generated UTC: 2026-08-12T09:55:09Z
+Generated Beijing: 2026-08-12 17:55:09 Asia/Shanghai
+Elapsed: 1395.5s
 Sources configured: 37 (enabled=28, recovery=2, disabled=7)
 Sources probed: 30
 Sources fetched OK: 28
 Sources contributing candidates: 28
-Parsed candidates: 32497
-Unique name+URL candidates: 28363
-Unique stream URLs: 27555
-Checked unique stream URLs: 27555
+Parsed candidates: 32770
+Unique name+URL candidates: 28633
+Unique stream URLs: 27825
+Checked unique stream URLs: 27825
 Checked all unique URLs: True
-Playable channel names: 10162
-Playable unique URLs: 12831
-Playable name+URL lines: 13317
-Playable URLs found (legacy line count): 13317
-Pre-curated published playable lines: 11854
+Playable channel names: 10180
+Playable unique URLs: 12765
+Playable name+URL lines: 13217
+Playable URLs found (legacy line count): 13217
+Pre-curated published playable lines: 11800
 
 ## Source fetch status
 
@@ -41,8 +41,8 @@ Pre-curated published playable lines: 11854
 | bigbiggrandg_gather | enabled | OK | YES | 1954 | 329793 | False |  |
 | yang_gather | enabled | OK | YES | 129 | 28939 | False |  |
 | iptv_org_all | enabled | OK | YES | 12740 | 2742303 | False |  |
-| epg_cn | enabled | OK | YES | 2738 | 869724 | False |  |
-| epg_hk | enabled | OK | YES | 75 | 23875 | False |  |
+| epg_cn | enabled | OK | YES | 2726 | 865683 | False |  |
+| epg_hk | enabled | OK | YES | 77 | 24469 | False |  |
 | epg_mo | enabled | OK | YES | 19 | 6134 | False |  |
 | epg_tw | enabled | OK | YES | 124 | 43353 | False |  |
 | iptv_org_tw | enabled | OK | YES | 24 | 4800 | False |  |
@@ -50,7 +50,7 @@ Pre-curated published playable lines: 11854
 | epg_my | enabled | OK | YES | 23 | 7362 | False |  |
 | free_tv_world | enabled | OK | YES | 1919 | 530377 | False |  |
 | mursor_yy | enabled | OK | YES | 591 | 124828 | False |  |
-| mursor_bililive | enabled | OK | YES | 548 | 108060 | False |  |
+| mursor_bililive | enabled | OK | YES | 831 | 162920 | False |  |
 | freetv_huya | recovery | FAIL | NO | 0 | 0 | False | TimeoutError('The read operation timed out') |
 | freetv_douyu | recovery | FAIL | NO | 0 | 0 | False | TimeoutError('The read operation timed out') |
 
@@ -58,22 +58,22 @@ Pre-curated published playable lines: 11854
 
 | Source | Lines |
 |---|---:|
-| iptv_org_all | 7082 |
-| epg_cn | 1017 |
-| bigbiggrandg_gather | 656 |
-| iyouhun_zb | 582 |
-| free_tv_world | 573 |
-| mursor_yy | 533 |
-| zbds_iptv4_txt | 472 |
-| guovin_all | 359 |
-| suxuang_ipv4 | 247 |
-| guovin_ipv4 | 239 |
-| vamoschuck_m3u | 50 |
+| iptv_org_all | 7154 |
+| epg_cn | 1030 |
+| bigbiggrandg_gather | 657 |
+| free_tv_world | 571 |
+| mursor_yy | 537 |
+| iyouhun_zb | 518 |
+| zbds_iptv4_txt | 388 |
+| guovin_all | 380 |
+| suxuang_ipv4 | 245 |
+| guovin_ipv4 | 243 |
+| vamoschuck_m3u | 32 |
 | iptv_org_tw | 10 |
 | epg_mo | 8 |
 | suxuang_ipv6 | 8 |
 | kimentanm_aptv | 7 |
-| guovin_ipv6 | 3 |
+| guovin_ipv6 | 4 |
 | epg_hk | 2 |
 | epg_sg | 2 |
 | yang_gather | 2 |
@@ -126,17 +126,15 @@ Pre-curated published playable lines: 11854
 - 央视频道 / CCTV-15 / guovin_ipv4
 - 央视频道 / CCTV-15 / guovin_ipv4
 - 央视频道 / CCTV-15 / guovin_ipv4
-- 央视频道 / CCTV-15(1080p) / iptv_org_all
 - 央视频道 / CCTV-16 / guovin_ipv4
 - 央视频道 / CCTV-16 / guovin_ipv4
 - 央视频道 / CCTV-16 / guovin_ipv4
 - 央视频道 / CCTV-16 / guovin_ipv4
-- 央视频道 / CCTV-16 / guovin_ipv4
+- 央视频道 / CCTV-16 / guovin_ipv6
 - 央视频道 / CCTV-17 / guovin_ipv4
 - 央视频道 / CCTV-17 / guovin_ipv4
 - 央视频道 / CCTV-17 / guovin_ipv4
 - 央视频道 / CCTV-17(1080p) / iptv_org_all
-- 央视频道 / CCTV-2 / guovin_ipv4
 - 央视频道 / CCTV-2 / guovin_ipv4
 - 央视频道 / CCTV-2 / guovin_ipv4
 - 央视频道 / CCTV-2 / guovin_ipv4
@@ -162,3 +160,5 @@ Pre-curated published playable lines: 11854
 - 央视频道 / CCTV-5 / guovin_ipv4
 - 央视频道 / CCTV-5 / guovin_ipv4
 - 央视频道 / CCTV-5 / guovin_ipv4
+- 央视频道 / CCTV-5+ / guovin_ipv4
+- 央视频道 / CCTV-5+ / iptv_org_all
