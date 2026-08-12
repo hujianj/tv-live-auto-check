@@ -7,7 +7,7 @@ from collections import defaultdict, Counter
 from validate_playlist import validate_text
 from playlist_config import get_group_order, load_guard, load_home_priority, load_quality, load_rules, score_adjustments, source_priority as configured_source_priority
 from stability import load_history, stability_adjustment, stability_enabled
-from channel_utils import cctv_key, cctv_number, cctv_sort_key, chinese_count as shared_chinese_count, format_extinf
+from channel_utils import cctv_key, cctv_number, cctv_sort_key, chinese_count as shared_chinese_count, format_extinf, is_latin_noise_name
 from channel_identity import aliases_are_compatible, canonical_channel_key, is_audio_only_channel
 from url_utils import is_publishable_http_url, normalize_stream_url
 
@@ -397,6 +397,8 @@ def prepare_curated_row(
     strict_reason = strict_quality_drop_reason(name)
     if strict_reason:
         return None, 'strict_quality_filter', strict_reason
+    if is_latin_noise_name(name):
+        return None, 'latin_noise_name', ''
     if is_unwanted_overseas_english(name, group, source):
         return None, 'unwanted_overseas_english', ''
     if is_foreign_channel(name, group, source):

@@ -501,8 +501,21 @@ def test_coverage_counts_exact_cctv_and_reports_variants() -> None:
     assert coverage_cctv_key("CCTV-5+") == "CCTV-5+"
     assert cctv_variant_base("CCTV-5+体育") == "CCTV-5+"
     assert is_latin_noise_name("DiscoveryAsia") is True
+    assert is_latin_noise_name("Edinburgh南空") is True
+    assert is_latin_noise_name("口袋妖怪COVER") is True
     assert is_latin_noise_name("BRTV北京卫视") is False
+    assert is_latin_noise_name("NewTV家庭剧场") is False
+    assert is_latin_noise_name("BesTV动画") is False
     assert is_latin_noise_name("TVB中文") is False
+    assert is_latin_noise_name("TVBPlus") is False
+    assert is_latin_noise_name("RTHKTV31") is False
+    assert is_latin_noise_name("DaliTV(大立電視台)") is False
+
+    row, reason, _detail = curate_module.prepare_curated_row(
+        "Edinburgh南空", "http://a/live.m3u8", "虎牙一起看", "freetv_huya"
+    )
+    assert row is None
+    assert reason == "latin_noise_name"
 
 
 def test_format_extinf_escapes_quoted_attributes() -> None:

@@ -57,12 +57,15 @@ def cctv_sort_key(name: str) -> tuple[int, int, int, str]:
 
 
 def is_latin_noise_name(name: str) -> bool:
-    """Report-only heuristic for English/overseas residue in the family list."""
+    """Reject mixed-language nicknames while preserving known Chinese TV brands."""
     n = (name or "").strip()
     upper = n.upper()
     if cctv_key(n) or re.match(r"^CCTV[-_ ]?\d+", upper):
         return False
-    if re.match(r"^(TVB|TVBS|RTHK|VIUTV|PHOENIX|ELEVEN)", upper):
+    if re.match(
+        r"^(?:BESTV|NEWTV|SITV|CIBN|CETV|CHC|TVB|TVBS|RTHK|VIUTV|PHOENIX|ELEVEN|DALITV)",
+        upper,
+    ):
         return False
     return bool(re.search(r"[A-Za-z]{5,}", n))
 

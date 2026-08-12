@@ -383,6 +383,10 @@ def write_outputs(result: dict, family_result: dict | None = None) -> None:
         lines += ["", "## Strict filter residue sample", ""]
         for item in result["strict_filter_residue"][:30]:
             lines.append(f"- {item['group']} / {item['name']} / {item['reason']}")
+    if result["latin_noise_review_sample"]:
+        lines += ["", "## Mixed Latin/noise residue sample", ""]
+        for item in result["latin_noise_review_sample"][:30]:
+            lines.append(f"- {item['group']} / {item['name']}")
     if result["url_identity_conflicts"]:
         lines += ["", "## URL identity conflict sample", ""]
         for item in result["url_identity_conflicts"][:30]:
