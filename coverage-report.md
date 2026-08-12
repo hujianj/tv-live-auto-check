@@ -36,7 +36,7 @@ Fail on missing important satellite: True
 | 河北卫视 | 6 | 6 | OK |
 | 河南卫视 | 6 | 6 | OK |
 | 北京卫视 | 6 | 6 | OK |
-| 东方卫视 | 5 | 5 | OK |
+| 东方卫视 | 6 | 6 | OK |
 | 浙江卫视 | 5 | 5 | OK |
 | 江苏卫视 | 6 | 6 | OK |
 | 湖南卫视 | 6 | 6 | OK |
