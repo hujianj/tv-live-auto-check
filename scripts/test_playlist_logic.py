@@ -2577,6 +2577,94 @@ def test_maintenance_alert_scopes_are_isolated() -> None:
         notify_module.api_request = original_api
 
 
+def test_maintenance_alert_reuses_closed_issue_and_reopens_it() -> None:
+    original_api = notify_module.api_request
+    calls: list[tuple[str, str, dict | None]] = []
+    closed = {
+        "number": 42,
+        "title": notify_module.SCOPES["cdn"]["title"],
+        "body": notify_module.SCOPES["cdn"]["marker"],
+        "state": "closed",
+        "updated_at": "2026-08-12T00:00:00Z",
+    }
+    try:
+        def fake_api(method: str, path: str, token: str, payload=None):
+            calls.append((method, path, payload))
+            if method == "GET" and "state=open" in path:
+                return []
+            if method == "GET" and "state=closed" in path:
+                return [closed]
+            if method == "PATCH":
+                return {"number": 42}
+            return None
+
+        notify_module.api_request = fake_api
+        issue = notify_module.find_closed_issue("example/repo", "token", "cdn")
+        assert issue == closed
+        assert any(method == "GET" and "state=closed" in path for method, path, _ in calls)
+    finally:
+        notify_module.api_request = original_api
+
+
+def test_maintenance_alert_issue_lookup_is_bounded_and_paginates() -> None:
+    original_api = notify_module.api_request
+    calls: list[str] = []
+    target = {
+        "number": 99,
+        "title": notify_module.SCOPES["maintenance"]["title"],
+        "body": notify_module.SCOPES["maintenance"]["marker"],
+        "state": "closed",
+        "updated_at": "2026-08-12T00:00:00Z",
+    }
+    try:
+        def fake_api(method: str, path: str, token: str, payload=None):
+            calls.append(path)
+            page = path.rsplit("page=", 1)[-1]
+            if page == "1":
+                return [{} for _ in range(100)]
+            if page == "2":
+                return [target]
+            raise AssertionError(f"unexpected page request: {path}")
+
+        notify_module.api_request = fake_api
+        assert notify_module.find_closed_issue("example/repo", "token", "maintenance") == target
+        assert len(calls) == 2
+    finally:
+        notify_module.api_request = original_api
+
+
+def test_watchdog_reuses_closed_issue() -> None:
+    original_api = watchdog_module.api_request
+    calls: list[tuple[str, str, dict | None]] = []
+    closed = {
+        "number": 51,
+        "body": watchdog_module.MARKER,
+        "state": "closed",
+        "updated_at": "2026-08-12T00:00:00Z",
+    }
+    result = watchdog_module.HealthResult(["Raw unavailable"], [], {})
+    try:
+        def fake_api(url: str, token: str | None, method: str = "GET", payload=None, **_kwargs):
+            calls.append((method, url, payload))
+            if method == "GET":
+                return [closed]
+            if method == "PATCH":
+                return {"number": 51}
+            return None
+
+        watchdog_module.api_request = fake_api
+        outcome = watchdog_module.update_issue(
+            "example/repo", "token", result,
+            watchdog_module.datetime(2026, 8, 12, tzinfo=watchdog_module.timezone.utc),
+        )
+    finally:
+        watchdog_module.api_request = original_api
+    assert outcome == {"status": "updated", "number": 51}
+    patch = next(payload for method, _url, payload in calls if method == "PATCH")
+    assert patch["state"] == "open"
+    assert any(method == "POST" and "/comments" in url for method, url, _ in calls)
+
+
 def test_recheck_source_map_helper() -> None:
     from recheck_published import Row, source_for
 
@@ -2727,9 +2815,13 @@ def main() -> int:
         test_watchdog_rejects_stale_public_manifest,
         test_watchdog_compacts_api_runs_and_bounds_issue_body,
         test_watchdog_confirmation_recovers_from_exception_then_success,
+        test_watchdog_scopes_stale_primary_cdn_to_warning,
         test_maintenance_alert_includes_failed_stage,
         test_maintenance_attempt_evidence_is_bounded_and_self_contained,
         test_maintenance_alert_scopes_are_isolated,
+        test_maintenance_alert_reuses_closed_issue_and_reopens_it,
+        test_maintenance_alert_issue_lookup_is_bounded_and_paginates,
+        test_watchdog_reuses_closed_issue,
         test_recheck_source_map_helper,
         test_recheck_summary_records_video_policy,
         test_recheck_summary_separates_removed_refilled_and_net_rows,

@@ -26,6 +26,7 @@ SCOPES = {
 API = "https://api.github.com"
 RETRYABLE_HTTP = {408, 425, 429, 500, 502, 503, 504}
 MAX_FAILURE_DETAIL_CHARS = 12_000
+MAX_ISSUE_PAGES = 10
 
 
 def api_request(method: str, path: str, token: str, payload: dict | None = None, retries: int = 3):
@@ -55,26 +56,58 @@ def api_request(method: str, path: str, token: str, payload: dict | None = None,
     raise RuntimeError(f"GitHub API request failed after {max(1, retries)} attempts: {method} {path}: {last_error!r}")
 
 
-def find_open_issue(repo: str, token: str, scope: str) -> dict | None:
+def _issue_matches_scope(issue: dict, scope: str) -> bool:
+    if "pull_request" in issue:
+        return False
+    body = str(issue.get("body") or "")
+    title = str(SCOPES[scope]["title"])
+    marker = str(SCOPES[scope]["marker"])
+    if issue.get("title") == title or marker in body:
+        return True
+    # Migrate the original combined issue without allowing CDN recovery to
+    # close a genuine media-verification failure (or vice versa).
+    if LEGACY_MARKER in body:
+        if scope == "cdn" and "CDN 同步中" in body:
+            return True
+        if scope == "maintenance" and "维护流程失败" in body:
+            return True
+    return False
+
+
+def list_issues(repo: str, token: str, state: str) -> list[dict]:
+    """Read a bounded issue history so alert reuse survives repository growth."""
+    issues: list[dict] = []
+    for page in range(1, MAX_ISSUE_PAGES + 1):
+        batch = api_request(
+            "GET",
+            f"/repos/{repo}/issues?state={state}&per_page=100&page={page}",
+            token,
+        ) or []
+        if not isinstance(batch, list):
+            raise RuntimeError(f"GitHub issues API returned a non-list page: state={state} page={page}")
+        issues.extend(item for item in batch if isinstance(item, dict))
+        if len(batch) < 100:
+            break
+    return issues
+
+
+def find_issue(repo: str, token: str, scope: str, state: str = "open") -> dict | None:
     if scope not in SCOPES:
         raise ValueError(f"unsupported maintenance issue scope: {scope!r}")
-    issues = api_request("GET", f"/repos/{repo}/issues?state=open&per_page=100", token) or []
-    marker = str(SCOPES[scope]["marker"])
-    title = str(SCOPES[scope]["title"])
-    for issue in issues:
-        if "pull_request" in issue:
-            continue
-        body = str(issue.get("body") or "")
-        if issue.get("title") == title or marker in body:
-            return issue
-        # Migrate the original combined issue without allowing CDN recovery to
-        # close a genuine media-verification failure (or vice versa).
-        if LEGACY_MARKER in body:
-            if scope == "cdn" and "CDN 同步中" in body:
-                return issue
-            if scope == "maintenance" and "维护流程失败" in body:
-                return issue
-    return None
+    if state not in {"open", "closed", "all"}:
+        raise ValueError(f"unsupported GitHub issue state: {state!r}")
+    issues = list_issues(repo, token, state)
+    matches = [issue for issue in issues if _issue_matches_scope(issue, scope)]
+    matches.sort(key=lambda issue: str(issue.get("updated_at") or issue.get("created_at") or ""), reverse=True)
+    return matches[0] if matches else None
+
+
+def find_open_issue(repo: str, token: str, scope: str) -> dict | None:
+    return find_issue(repo, token, scope, "open")
+
+
+def find_closed_issue(repo: str, token: str, scope: str) -> dict | None:
+    return find_issue(repo, token, scope, "closed")
 
 
 def scope_for_status(status: str) -> str:
@@ -244,6 +277,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.status in {"failure", "cdn_pending"}:
         scope = scope_for_status(args.status)
         issue = find_open_issue(repo, token, scope)
+        reopened = False
+        if issue is None:
+            issue = find_closed_issue(repo, token, scope)
+            reopened = issue is not None
         body = issue_body(context, args.status, args.message)
         if issue is None:
             created = api_request(
@@ -255,14 +292,20 @@ def main(argv: list[str] | None = None) -> int:
             print(f"created maintenance issue #{created.get('number')}")
         else:
             number = int(issue["number"])
+            update_payload = {
+                "title": str(SCOPES[scope]["title"]),
+                "body": body,
+            }
+            if reopened:
+                update_payload["state"] = "open"
             api_request(
                 "PATCH",
                 f"/repos/{repo}/issues/{number}",
                 token,
-                {"title": str(SCOPES[scope]["title"]), "body": body},
+                update_payload,
             )
             api_request("POST", f"/repos/{repo}/issues/{number}/comments", token, {"body": status_comment(context, args.status, args.message)})
-            print(f"updated maintenance issue #{number}")
+            print(f"{'reopened' if reopened else 'updated'} maintenance issue #{number}")
         return 0
     scopes = ("maintenance", "cdn") if args.scope == "all" else (args.scope,)
     closed = 0
