@@ -397,12 +397,12 @@ def prepare_curated_row(
     strict_reason = strict_quality_drop_reason(name)
     if strict_reason:
         return None, 'strict_quality_filter', strict_reason
-    if is_latin_noise_name(name):
-        return None, 'latin_noise_name', ''
     if is_unwanted_overseas_english(name, group, source):
         return None, 'unwanted_overseas_english', ''
     if is_foreign_channel(name, group, source):
         return None, 'foreign_channel', ''
+    if is_latin_noise_name(name):
+        return None, 'latin_noise_name', ''
     curated_group = classify(name, group, source)
     if curated_group == G_OVERSEA and chinese_count(name) == 0:
         return None, 'oversea_latin_name', ''

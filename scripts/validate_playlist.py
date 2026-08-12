@@ -10,7 +10,7 @@ from collections import Counter
 from pathlib import Path
 
 from playlist_config import get_group_order, load_guard, load_quality, load_rules
-from channel_utils import cctv_number, chinese_count as shared_chinese_count
+from channel_utils import cctv_number, chinese_count as shared_chinese_count, is_latin_noise_name
 from channel_identity import is_audio_only_channel
 from url_utils import publishable_url_issue
 
@@ -135,6 +135,8 @@ def validate_channel_semantics(group: str, name: str, url: str, lineno: int, lin
     strict_reason = strict_quality_drop_reason(name)
     if strict_reason:
         bad.append((lineno, f"strict quality filtered channel ({strict_reason})", line[:240]))
+    if is_latin_noise_name(name):
+        bad.append((lineno, "mixed Latin/noise channel name", line[:240]))
     if not cctv_num(name) and not is_hk_mo_tw_channel(name, group):
         if any(tok in upper_name for tok in UNWANTED_OVERSEAS_TOKENS):
             bad.append((lineno, "unwanted overseas/English channel", line[:240]))
