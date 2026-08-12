@@ -3,11 +3,11 @@
 Enabled: True
 Tracked URLs before: 5000
 Tracked URLs after: 5000
-Updated URLs this run: 2841
-OK updates this run: 2012
-Fail updates this run: 829
-Trimmed URLs: 45
-Last updated Beijing: 2026-08-11T21:24:59+08:00
+Updated URLs this run: 2893
+OK updates this run: 2056
+Fail updates this run: 837
+Trimmed URLs: 410
+Last updated Beijing: 2026-08-12T12:07:12+08:00
 
 ## Most stable tracked URLs
 
@@ -27,14 +27,12 @@ Last updated Beijing: 2026-08-11T21:24:59+08:00
 | -90 | 20 | 0 | 10 | 0 | 河南卫视 | guovin_ipv4 | http://1.94.31.214/php/hntv.php?id=hnws |
 | -90 | 20 | 0 | 10 | 0 | 河南乡村 | suxuang_ipv4 | http://1.94.31.214/php/hntv.php?id=hnxc |
 | -90 | 20 | 0 | 10 | 0 | 河南新闻 | suxuang_ipv4 | http://1.94.31.214/php/hntv.php?id=hnxw |
-| -90 | 20 | 0 | 10 | 0 | 武术世界 | suxuang_ipv4 | http://1.94.31.214/php/hntv.php?id=wspd |
 | -90 | 20 | 0 | 10 | 0 | 安徽卫视 | guovin_ipv4 | http://107.150.60.122/live/ahwshd.m3u8 |
 | -90 | 20 | 0 | 10 | 0 | CCTV-4 | guovin_ipv4 | http://107.150.60.122/live/cctv4hd.m3u8 |
 | -90 | 20 | 0 | 10 | 0 | CHC动作电影 | guovin_ipv4 | http://107.150.60.122/live/chcdz.m3u8 |
 | -90 | 20 | 0 | 10 | 0 | CHC家庭影院 | guovin_ipv4 | http://107.150.60.122/live/chcjt.m3u8 |
 | -90 | 20 | 0 | 10 | 0 | 重庆卫视 | guovin_ipv4 | http://107.150.60.122/live/cqwshd.m3u8 |
 | -90 | 20 | 0 | 10 | 0 | 东方卫视 | guovin_ipv4 | http://107.150.60.122/live/dfwshd.m3u8 |
-| -90 | 20 | 0 | 10 | 0 | 第一剧场 | guovin_ipv4 | http://107.150.60.122/live/dyjc.m3u8 |
 | -90 | 20 | 0 | 10 | 0 | 广东卫视 | guovin_ipv4 | http://107.150.60.122/live/gdwshd.m3u8 |
 | -90 | 20 | 0 | 10 | 0 | 广西国际 | guovin_ipv4 | http://107.150.60.122/live/gxgj.m3u8 |
 | -90 | 20 | 0 | 10 | 0 | 广西新闻 | guovin_ipv4 | http://107.150.60.122/live/gxxw.m3u8 |
@@ -43,38 +41,40 @@ Last updated Beijing: 2026-08-11T21:24:59+08:00
 | -90 | 20 | 0 | 10 | 0 | 黑龙江卫视 | guovin_ipv4 | http://107.150.60.122/live/hljwshd.m3u8 |
 | -90 | 20 | 0 | 10 | 0 | 湖南卫视 | guovin_ipv4 | http://107.150.60.122/live/hnwshd.m3u8 |
 | -90 | 20 | 0 | 10 | 0 | 江苏卫视 | guovin_ipv4 | http://107.150.60.122/live/jswshd.m3u8 |
+| -90 | 20 | 0 | 10 | 0 | 辽宁卫视 | guovin_ipv4 | http://107.150.60.122/live/lnwshd.m3u8 |
+| -90 | 20 | 0 | 10 | 0 | 内蒙古卫视 | guovin_ipv4 | http://107.150.60.122/live/nmgws.m3u8 |
 
 ## Least stable tracked URLs
 
 | Adjustment | OK | Fail | Streak OK | Streak Fail | Channel | Source | Error | URL |
 |---:|---:|---:|---:|---:|---|---|---|---|
-| 140 | 14 | 5 | 0 | 3 | 永嘉新闻综合 | iyouhun_zb | segments ok checked=2 required=video; manifest did not advance after 10.0s | http://l.cztvcloud.com/channels/lantian/SXyongjia1/720p.m3u8?zzhed |
-| 140 | 11 | 4 | 0 | 4 | 山东体育 | iyouhun_zb | segment bad 200 audio/x-aac bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed | http://live.xmcdn.com/live/805/64.m3u8 |
-| 140 | 11 | 4 | 0 | 4 | 山东体育 | iyouhun_zb | variant fail variants_checked=1 segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: audio elementary PID carries media payload | http://satellitepull.cnr.cn/live/wxsdtyxxgb/playlist.m3u8 |
-| 140 | 15 | 9 | 0 | 5 | BRTV北京卫视(1080p) | iptv_org_all | final slow retry failed attempt=1 first=<HTTPError 403: 'Forbidden'>; last=<HTTPError 403: 'Forbidden'> | http://go.bkpcp.top/mg/bjws |
-| 140 | 10 | 5 | 0 | 4 | 山东体育 | iyouhun_zb | variant fail variants_checked=1 segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: audio elementary PID carries media payload | https://satellitepull.cnr.cn/live/wxsdtyxxgb/playlist.m3u8 |
-| 140 | 8 | 3 | 0 | 3 | 浙江新聞 | epg_cn | variant fail variants_checked=1 segments ok checked=2 required=video; manifest did not advance after 10.0s | https://stream1.freetv.fun/e49c3e942fdda148437c92e0082be0e8baed40698aae39e6d7674bc1b406b82f.m3u8 |
-| 140 | 8 | 5 | 0 | 5 | 甘肃都市调频 | bigbiggrandg_gather | final slow retry failed attempt=1 first=variant fail variants_checked=1 segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: audio elementary PID car | https://satellitepull.cnr.cn/live/wxgsdstb/playlist.m3u8 |
-| 140 | 7 | 4 | 0 | 4 | 武汉一台新闻综合 | guovin_all | variant fail variants_checked=1 segments ok checked=2 required=video; manifest did not advance after 10.0s | https://stream1.freetv.fun/wu-yi-xin-wen-zong-he-1.m3u8 |
-| 140 | 11 | 11 | 0 | 10 | 浙江卫视 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=3 required=video; manifest did not advance after 10.0s; last=segments ok checked=3 required=video; m | http://ali-m-l.cztv.com/channels/lantian/channel01/1080p.m3u8 |
-| 140 | 0 | 3 | 0 | 3 | 大湾区卫视 | zbds_iptv4_txt | final slow retry failed attempt=1 first=variant fail variants_checked=1 segments ok checked=3 required=video; manifest did not advance after 14.0s; last=variant | http://222.128.55.152:9080/live/dwq.m3u8 |
-| 140 | 0 | 3 | 0 | 3 | 河北农民 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment | http://ls.qingting.fm/live/1650.m3u8 |
-| 140 | 0 | 3 | 0 | 3 | 六安公共 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment | http://ls.qingting.fm/live/1794199.m3u8 |
-| 140 | 0 | 3 | 0 | 3 | 永嘉新闻综合 | guovin_all | segments ok checked=2 required=video; VOD/endlist manifest is not a live channel | https://stream1.freetv.fun/yong-jia-xin-wen-zong-he-2.m3u8 |
-| 140 | 0 | 4 | 0 | 4 | 海南新闻 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment | http://ls.qingting.fm/live/1861.m3u8 |
-| 140 | 7 | 13 | 0 | 10 | 浙江卫视 | zbds_iptv4_txt | segments ok checked=3 required=video; manifest did not advance after 10.0s | https://ali-m-l.cztv.com/channels/lantian/channel001/1080p.m3u8 |
-| 140 | 0 | 6 | 0 | 6 | 浙江卫视 | zbds_iptv4_txt | segments ok checked=3 required=video; manifest did not advance after 10.0s | http://ali-m-l.cztv.com/channels/lantian/channel001/1080p.m3u8 |
-| 140 | 0 | 6 | 0 | 6 | 「中」凤凰传奇-光芒 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct audio/mpeg bytes=65536 audio/mpeg-audio: MPEG audio frame observed required=video progress=not-required; last=dir | http://antiserver.kuwo.cn/anti.s?rid=MUSIC_24042019&response=res&format=mp4&type=convert_url |
-| 140 | 0 | 6 | 0 | 6 | 杭州综合 | iyouhun_zb | final slow retry failed attempt=1 first=segment bad 200 audio/x-aac bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 audi | http://live.xmcdn.com/live/1845/64.m3u8 |
-| 140 | 0 | 6 | 0 | 6 | 上海动感101 | bigbiggrandg_gather | final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG au | http://ls.qingting.fm/live/274.m3u8 |
-| 140 | 0 | 7 | 0 | 7 | 怀集音乐台 | bigbiggrandg_gather | final slow retry failed attempt=1 first=segment bad 200 audio/x-aac bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 audi | http://live.xmcdn.com:80/live/966/64.m3u8 |
-| 140 | 0 | 8 | 0 | 8 | 山东生活 | iyouhun_zb | final slow retry failed attempt=1 first=segment bad 200 audio/x-aac bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 audi | http://live.xmcdn.com/live/802/64.m3u8 |
-| 140 | 8 | 17 | 0 | 10 | 浙江卫视 | zbds_iptv4_txt | segments ok checked=3 required=video; manifest did not advance after 10.0s | http://ali-m-l.cztv.com:80/channels/lantian/channel001/1080p.m3u8 |
-| 140 | 0 | 9 | 0 | 9 | 「中」凤凰传奇-自由自在 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct audio/mpeg bytes=65536 audio/mpeg-audio: MPEG audio frame observed required=video progress=not-required; last=dir | http://antiserver.kuwo.cn/anti.s?rid=MUSIC_24042025&response=res&format=mp4&type=convert_url |
-| 140 | 0 | 10 | 0 | 10 | 「中」凤凰传奇-歌唱二小放牛郎 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct video/mp4 bytes=31151 audio/mp4/fmp4: MP4 audio handler/sample entry observed required=video progress=not-require | http://antiserver.kuwo.cn/anti.s?rid=MUSIC_8120530&response=res&format=mp4&type=convert_url |
-| 140 | 0 | 10 | 0 | 10 | 浙江卫视 | zbds_iptv4_txt | segments ok checked=3 required=video; manifest did not advance after 10.0s | https://ali-m-l.cztv.com/channels/lantian/channel001/1080p.m3u8? |
-| 140 | 8 | 20 | 0 | 10 | 台湾古典音乐台 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct audio/mpeg bytes=65536 audio/audio: audio content type required=video progress=not-required; last=direct audio/mp | http://59.120.88.155:8000/live.mp3 |
-| 140 | 8 | 20 | 0 | 10 | 「中」冷漠-你把爱情给了谁 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct video/mp4 bytes=31151 audio/mp4/fmp4: MP4 audio handler/sample entry observed required=video progress=not-require | http://antiserver.kuwo.cn/anti.s?rid=MUSIC_1210771&response=res&format=mp4&type=convert_url |
-| 140 | 8 | 20 | 0 | 10 | 「中」陈瑞-爱的痕迹 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct video/mp4 bytes=31151 audio/mp4/fmp4: MP4 audio handler/sample entry observed required=video progress=not-require | http://antiserver.kuwo.cn/anti.s?rid=MUSIC_1218815&response=res&format=mp4&type=convert_url |
-| 140 | 8 | 20 | 0 | 10 | 「中」陈瑞-爱得真伤的深 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct video/mp4 bytes=31151 audio/mp4/fmp4: MP4 audio handler/sample entry observed required=video progress=not-require | http://antiserver.kuwo.cn/anti.s?rid=MUSIC_1218839&response=res&format=mp4&type=convert_url |
-| 140 | 8 | 20 | 0 | 10 | 「中」冷漠-谁都不要说分手 | bigbiggrandg_gather | final slow retry failed attempt=1 first=direct audio/mpeg bytes=65536 audio/mpeg-audio: MPEG audio frame observed required=video progress=not-required; last=dir | http://antiserver.kuwo.cn/anti.s?rid=MUSIC_12975393&response=res&format=mp4&type=convert_url |
+| 140 | 17 | 4 | 0 | 4 | 山东体育 | guovin_all | segments ok checked=2 required=video; VOD/endlist manifest is not a live channel | https://stream1.freetv.fun/shan-dong-ti-yu-4.m3u8 |
+| 140 | 17 | 4 | 0 | 4 | 广州竞赛 | iyouhun_zb | segments ok checked=2 required=video; VOD/endlist manifest is not a live channel | https://stream1.freetv.fun/yan-zhou-jing-sai-6.ctv |
+| 140 | 17 | 5 | 0 | 4 | 浙江民生休閒 | epg_cn | variant fail variants_checked=1 segments ok checked=2 required=video; manifest did not advance after 10.0s | https://stream1.freetv.fun/368f34b56ab82436c93ce42c6b7e187c31f260857d1e13b5f9982cccccf31330.m3u8 |
+| 140 | 16 | 4 | 0 | 4 | 浙江新聞 | epg_cn | variant fail variants_checked=1 segments ok checked=2 required=video; manifest did not advance after 10.0s | https://stream1.freetv.fun/380e05b63c5cbc0a650eba5cb99437c69aecc3d6252b1e80adc2aea1dc836d81.m3u8 |
+| 140 | 15 | 4 | 0 | 4 | 湖南经视 | guovin_all | segments ok checked=2 required=video; VOD/endlist manifest is not a live channel | https://stream1.freetv.fun/hu-nan-jing-shi-2.m3u8 |
+| 140 | 17 | 7 | 0 | 3 | 浙江教科影视 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://ali-vl.cztv.com/channels/lantian/channel004/360p.m3u8 |
+| 140 | 14 | 4 | 0 | 4 | 湖南娱乐 | iyouhun_zb | segments ok checked=2 required=video; VOD/endlist manifest is not a live channel | https://stream1.freetv.fun/hu-nan-yu-le-9.m3u8 |
+| 140 | 17 | 8 | 0 | 3 | 汾西综合 | zbds_iptv4_txt | final slow retry failed attempt=1 first=URLError(TimeoutError('timed out')); last=URLError(TimeoutError('timed out')) | https://qmmqvzoz.live.sxmty.com/live/hls/f24f8a390c084386a564074c9260100c/be3fdf07606145739ab2c4b80fe0136a.m3u8?zshanxd |
+| 140 | 13 | 5 | 0 | 4 | 浙江錢江都市 | epg_cn | variant fail variants_checked=1 segments ok checked=2 required=video; manifest did not advance after 10.0s | https://stream1.freetv.fun/24d626f33fb712a407ed0e3ed7f8d77019c9747ffb10426c6fa5f3464aba95b1.m3u8 |
+| 140 | 11 | 4 | 0 | 3 | 浙江經濟生活 | epg_cn | variant fail variants_checked=1 segments ok checked=2 required=video; manifest did not advance after 10.0s | https://stream1.freetv.fun/4d8b9fe3035f2e18ad4cfd932ed099f54c0bc5196cba62f0bc4c77e3a9bb7a17.m3u8 |
+| 140 | 10 | 4 | 0 | 4 | 第一财经 | iyouhun_zb | segment bad 200 audio/x-aac bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed | http://live.xmcdn.com/live/56/64.m3u8 |
+| 140 | 10 | 5 | 0 | 5 | 山东体育 | iyouhun_zb | segment bad 200 audio/x-aac bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed | http://live.xmcdn.com/live/805/64.m3u8 |
+| 140 | 10 | 5 | 0 | 5 | 山东体育 | iyouhun_zb | variant fail variants_checked=1 segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: audio elementary PID carries media payload | http://satellitepull.cnr.cn/live/wxsdtyxxgb/playlist.m3u8 |
+| 140 | 10 | 5 | 0 | 3 | 溫州經濟科教 | epg_cn | final slow retry failed attempt=1 first=direct application/octet-stream bytes=7896 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed requir | https://stream1.freetv.fun/1a374486c7cf9bda68906e4e0c84519f24270b43e25a0f23a6f7b35ab9074231.ctv |
+| 140 | 14 | 10 | 0 | 6 | BRTV北京卫视(1080p) | iptv_org_all | final slow retry failed attempt=1 first=URLError(TimeoutError('timed out')) (core retry after first=URLError(TimeoutError('timed out'))); last=URLError(TimeoutE | http://go.bkpcp.top/mg/bjws |
+| 140 | 8 | 4 | 0 | 4 | 浙江經濟生活 | epg_cn | variant fail variants_checked=1 segments ok checked=2 required=video; manifest did not advance after 10.0s | https://stream1.freetv.fun/1b07fc283d6e769e6271b0c63c290a190d8baf5600a0455cc25b82133e8de3e2.m3u8 |
+| 140 | 8 | 4 | 0 | 4 | 湖北经视 | guovin_all | segments ok checked=2 required=video; VOD/endlist manifest is not a live channel | https://t.freetv.fun/live/hu-bei-jing-shi-1.m3u8 |
+| 140 | 7 | 3 | 0 | 3 | 福建经视 | guovin_all | final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=vi | https://stream1.freetv.fun/fu-jian-jing-ji-1.m3u8 |
+| 140 | 7 | 3 | 0 | 3 | 福建经视 | guovin_all | final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=vi | https://stream1.freetv.fun/fu-jian-jing-ji-2.m3u8 |
+| 140 | 7 | 3 | 0 | 3 | 福建经视 | guovin_all | final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=vi | https://stream1.freetv.fun/fu-jian-jing-ji-4.m3u8 |
+| 140 | 7 | 3 | 0 | 3 | 福建经视 | guovin_all | final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=vi | https://stream1.freetv.fun/fu-jian-jing-ji-5.m3u8 |
+| 140 | 7 | 3 | 0 | 3 | 福建经视 | guovin_all | final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=vi | https://stream1.freetv.fun/fu-jian-jing-ji-6.m3u8 |
+| 140 | 9 | 6 | 0 | 5 | 山东体育 | iyouhun_zb | variant fail variants_checked=1 segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: audio elementary PID carries media payload | https://satellitepull.cnr.cn/live/wxsdtyxxgb/playlist.m3u8 |
+| 140 | 7 | 4 | 0 | 4 | 浙江新聞 | epg_cn | variant fail variants_checked=1 segments ok checked=2 required=video; manifest did not advance after 10.0s | https://stream1.freetv.fun/e49c3e942fdda148437c92e0082be0e8baed40698aae39e6d7674bc1b406b82f.m3u8 |
+| 140 | 6 | 3 | 0 | 3 | 平湖新闻综合 | guovin_all | final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=vi | https://stream1.freetv.fun/ping-hu-xin-wen-zong-he-5.m3u8 |
+| 140 | 6 | 3 | 0 | 3 | 浙江公共新闻 | iyouhun_zb | final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=vi | https://stream1.freetv.fun/zhe-jiang-gong-gong-xin-wen-2.ctv |
+| 140 | 6 | 5 | 0 | 5 | 武汉一台新闻综合 | guovin_all | variant fail variants_checked=1 segments ok checked=2 required=video; manifest did not advance after 10.0s | https://stream1.freetv.fun/wu-yi-xin-wen-zong-he-1.m3u8 |
+| 140 | 4 | 3 | 0 | 3 | 衢江新闻综合 | guovin_all | final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=vi | https://stream1.freetv.fun/qu-jiang-xin-wen-zong-he-3.m3u8 |
+| 140 | 4 | 3 | 0 | 3 | 永嘉新闻综合 | iyouhun_zb | final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=vi | https://stream1.freetv.fun/yong-jia-xin-wen-zong-he-1.m3u8 |
+| 140 | 3 | 3 | 0 | 3 | 浙江少儿 | iyouhun_zb | segments ok checked=2 required=video; manifest did not advance after 10.0s | http://ali-m-l.cztv.com/channels/lantian/channel008/1080p.m3u8?fbl= |
