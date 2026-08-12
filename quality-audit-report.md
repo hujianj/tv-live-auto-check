@@ -1,17 +1,17 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 2056
-Unique channel names: 1443
-Unique canonical channel identities: 1443
-Unique URLs: 2056
+Rows: 2081
+Unique channel names: 1455
+Unique canonical channel identities: 1455
+Unique URLs: 2081
 Strict filter residue count: 0
-Latin/noise-like review count: 7
+Latin/noise-like review count: 0
 Channel unique URL limit violations: 0
 URL identity conflicts: 0
-Unique stream hosts: 156
-Top stream host share: 17.4%
-Top five stream host share: 56.8%
+Unique stream hosts: 154
+Top stream host share: 17.3%
+Top five stream host share: 56.2%
 
 ## Core CCTV quality
 
@@ -27,7 +27,7 @@ Minimum independent hosts per core channel: 2
 | CCTV-5 | 6 | 6 | 5 | OK |
 | CCTV-6 | 6 | 6 | 5 | OK |
 | CCTV-7 | 6 | 6 | 6 | OK |
-| CCTV-8 | 6 | 6 | 5 | OK |
+| CCTV-8 | 6 | 6 | 6 | OK |
 | CCTV-9 | 6 | 6 | 6 | OK |
 | CCTV-10 | 6 | 6 | 6 | OK |
 | CCTV-11 | 6 | 6 | 5 | OK |
@@ -60,23 +60,19 @@ Minimum important satellite independent URLs: 3
 
 | Host | Rows | Share |
 |---|---:|---:|
-| stream1.freetv.fun | 357 | 17.4% |
-| www.goodiptv.club | 342 | 16.6% |
-| live.ottiptv.cc | 208 | 10.1% |
-| cloud.video.taobao.com | 188 | 9.1% |
+| stream1.freetv.fun | 360 | 17.3% |
+| www.goodiptv.club | 333 | 16.0% |
+| live.ottiptv.cc | 217 | 10.4% |
+| cloud.video.taobao.com | 188 | 9.0% |
 | vodcdn.video.taobao.com | 72 | 3.5% |
+| l.cztvcloud.com | 55 | 2.6% |
 | vd3.bdstatic.com | 48 | 2.3% |
 | 63.141.230.178 | 44 | 2.1% |
-| 38.75.136.137 | 41 | 2.0% |
-| 112.27.235.94 | 34 | 1.7% |
-| 107.150.60.122 | 34 | 1.7% |
+| 38.75.136.137 | 43 | 2.1% |
+| 112.27.235.94 | 34 | 1.6% |
 
 ## Family playlist audit
 
 Status: ok
-Rows: 1069
-Unique URLs: 1069
-
-## Warnings
-
-- latin/noise-like channel names remain for review: 7
+Rows: 1083
+Unique URLs: 1083
