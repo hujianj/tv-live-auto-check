@@ -37,7 +37,7 @@ Fail on missing important satellite: True
 | 河南卫视 | 6 | 6 | OK |
 | 北京卫视 | 6 | 6 | OK |
 | 东方卫视 | 6 | 6 | OK |
-| 浙江卫视 | 5 | 5 | OK |
+| 浙江卫视 | 3 | 3 | OK |
 | 江苏卫视 | 6 | 6 | OK |
 | 湖南卫视 | 6 | 6 | OK |
 | 广东卫视 | 6 | 6 | OK |
@@ -50,4 +50,4 @@ Fail on missing important satellite: True
 | CCTV-4 | 2 | 2 |
 | CCTV-5 | 6 | 6 |
 | CCTV-8 | 6 | 6 |
-| CCTV-5+ | 6 | 6 |
+| CCTV-5+ | 5 | 5 |

@@ -1,36 +1,36 @@
 # IPTV source verification report
 
-Generated: 2026-08-13 09:57:07
-Generated UTC: 2026-08-13T09:57:06Z
-Generated Beijing: 2026-08-13 17:57:06 Asia/Shanghai
-Elapsed: 1429.6s
+Generated: 2026-08-13 21:29:33
+Generated UTC: 2026-08-13T21:29:33Z
+Generated Beijing: 2026-08-14 05:29:33 Asia/Shanghai
+Elapsed: 1571.4s
 Sources configured: 37 (enabled=28, recovery=2, disabled=7)
 Sources probed: 30
 Sources fetched OK: 28
 Sources contributing candidates: 28
-Parsed candidates: 33102
-Unique name+URL candidates: 28969
-Unique stream URLs: 28160
-Checked unique stream URLs: 28160
+Parsed candidates: 32283
+Unique name+URL candidates: 28266
+Unique stream URLs: 27469
+Checked unique stream URLs: 27469
 Checked all unique URLs: True
-Playable channel names: 10240
-Playable unique URLs: 13109
-Playable name+URL lines: 13602
-Playable URLs found (legacy line count): 13602
-Pre-curated published playable lines: 11990
+Playable channel names: 10212
+Playable unique URLs: 12895
+Playable name+URL lines: 13379
+Playable URLs found (legacy line count): 13379
+Pre-curated published playable lines: 11881
 
 ## Source fetch status
 
 | Source | Mode | Fetch | Contributes | Parsed | Bytes | Truncated | Error |
 |---|---|---:|---:|---:|---:|---:|---|
 | iyouhun_zb | enabled | OK | YES | 3560 | 285069 | False |  |
-| zbds_iptv4_txt | enabled | OK | YES | 836 | 66651 | False |  |
+| zbds_iptv4_txt | enabled | OK | YES | 722 | 60212 | False |  |
 | guovin_all | enabled | OK | YES | 1694 | 422313 | False |  |
 | guovin_ipv4 | enabled | OK | YES | 421 | 94354 | False |  |
 | guovin_ipv6 | enabled | OK | YES | 1424 | 366747 | False |  |
 | suxuang_ipv4 | enabled | OK | YES | 1210 | 268671 | False |  |
 | suxuang_ipv6 | enabled | OK | YES | 853 | 200521 | False |  |
-| zbds_iptv4_m3u | enabled | OK | YES | 460 | 101495 | False |  |
+| zbds_iptv4_m3u | enabled | OK | YES | 374 | 82943 | False |  |
 | burningc4_ipv4 | enabled | OK | YES | 58 | 8021 | False |  |
 | vamoschuck_m3u | enabled | OK | YES | 788 | 147124 | False |  |
 | zbds_iptv6_txt | enabled | OK | YES | 2 | 268 | False |  |
@@ -41,16 +41,16 @@ Pre-curated published playable lines: 11990
 | bigbiggrandg_gather | enabled | OK | YES | 1954 | 329793 | False |  |
 | yang_gather | enabled | OK | YES | 129 | 28939 | False |  |
 | iptv_org_all | enabled | OK | YES | 12739 | 2741418 | False |  |
-| epg_cn | enabled | OK | YES | 3081 | 979087 | False |  |
-| epg_hk | enabled | OK | YES | 78 | 24790 | False |  |
+| epg_cn | enabled | OK | YES | 2918 | 926819 | False |  |
+| epg_hk | enabled | OK | YES | 74 | 23525 | False |  |
 | epg_mo | enabled | OK | YES | 19 | 6134 | False |  |
-| epg_tw | enabled | OK | YES | 124 | 43460 | False |  |
+| epg_tw | enabled | OK | YES | 123 | 43039 | False |  |
 | iptv_org_tw | enabled | OK | YES | 24 | 4780 | False |  |
 | epg_sg | enabled | OK | YES | 19 | 5946 | False |  |
 | epg_my | enabled | OK | YES | 23 | 7368 | False |  |
 | free_tv_world | enabled | OK | YES | 1919 | 530377 | False |  |
 | mursor_yy | enabled | OK | YES | 591 | 124828 | False |  |
-| mursor_bililive | enabled | OK | YES | 812 | 159884 | False |  |
+| mursor_bililive | enabled | OK | YES | 361 | 71363 | False |  |
 | freetv_huya | recovery | FAIL | NO | 0 | 0 | False | TimeoutError('The read operation timed out') |
 | freetv_douyu | recovery | FAIL | NO | 0 | 0 | False | TimeoutError('The read operation timed out') |
 
@@ -58,19 +58,18 @@ Pre-curated published playable lines: 11990
 
 | Source | Lines |
 |---|---:|
-| iptv_org_all | 7141 |
-| epg_cn | 1071 |
-| bigbiggrandg_gather | 654 |
-| iyouhun_zb | 573 |
-| free_tv_world | 567 |
-| zbds_iptv4_txt | 546 |
-| mursor_yy | 535 |
-| guovin_all | 352 |
-| suxuang_ipv4 | 231 |
-| guovin_ipv4 | 216 |
-| vamoschuck_m3u | 51 |
+| iptv_org_all | 7167 |
+| epg_cn | 998 |
+| bigbiggrandg_gather | 657 |
+| iyouhun_zb | 594 |
+| free_tv_world | 588 |
+| mursor_yy | 538 |
+| zbds_iptv4_txt | 412 |
+| guovin_all | 356 |
+| suxuang_ipv4 | 240 |
+| guovin_ipv4 | 236 |
+| vamoschuck_m3u | 50 |
 | iptv_org_tw | 11 |
-| epg_tw | 9 |
 | epg_mo | 8 |
 | suxuang_ipv6 | 8 |
 | kimentanm_aptv | 7 |
@@ -78,7 +77,8 @@ Pre-curated published playable lines: 11990
 | epg_hk | 2 |
 | yang_gather | 2 |
 | epg_sg | 1 |
-| zbds_iptv6_m3u | 1 |
+| epg_tw | 1 |
+| zbds_iptv6_txt | 1 |
 
 ## First 80 pre-curation playable channel candidates
 
