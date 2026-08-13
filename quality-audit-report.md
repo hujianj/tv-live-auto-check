@@ -1,17 +1,17 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 2027
-Unique channel names: 1345
-Unique canonical channel identities: 1345
-Unique URLs: 2027
+Rows: 2065
+Unique channel names: 1357
+Unique canonical channel identities: 1357
+Unique URLs: 2065
 Strict filter residue count: 0
 Latin/noise-like review count: 0
 Channel unique URL limit violations: 0
 URL identity conflicts: 0
-Unique stream hosts: 161
-Top stream host share: 21.7%
-Top five stream host share: 55.2%
+Unique stream hosts: 163
+Top stream host share: 22.3%
+Top five stream host share: 54.8%
 
 ## Core CCTV quality
 
@@ -31,7 +31,7 @@ Minimum independent hosts per core channel: 2
 | CCTV-9 | 6 | 6 | 6 | OK |
 | CCTV-10 | 6 | 6 | 6 | OK |
 | CCTV-11 | 6 | 6 | 6 | OK |
-| CCTV-12 | 6 | 6 | 6 | OK |
+| CCTV-12 | 6 | 6 | 5 | OK |
 | CCTV-13 | 6 | 6 | 6 | OK |
 | CCTV-14 | 6 | 6 | 6 | OK |
 | CCTV-15 | 6 | 6 | 6 | OK |
@@ -48,31 +48,31 @@ Minimum important satellite independent URLs: 3
 | 辽宁卫视 | 6 | 6 | 6 | OK |
 | 河北卫视 | 6 | 6 | 6 | OK |
 | 河南卫视 | 6 | 6 | 6 | OK |
-| 北京卫视 | 6 | 6 | 6 | OK |
-| 东方卫视 | 6 | 6 | 4 | OK |
+| 北京卫视 | 6 | 6 | 5 | OK |
+| 东方卫视 | 6 | 6 | 5 | OK |
 | 浙江卫视 | 5 | 5 | 4 | OK |
 | 江苏卫视 | 6 | 6 | 6 | OK |
 | 湖南卫视 | 6 | 6 | 5 | OK |
-| 广东卫视 | 5 | 5 | 5 | OK |
+| 广东卫视 | 6 | 6 | 6 | OK |
 | 深圳卫视 | 6 | 6 | 6 | OK |
 
 ## Stream host concentration
 
 | Host | Rows | Share |
 |---|---:|---:|
-| stream1.freetv.fun | 440 | 21.7% |
-| live.ottiptv.cc | 361 | 17.8% |
-| cloud.video.taobao.com | 188 | 9.3% |
-| vodcdn.video.taobao.com | 72 | 3.6% |
-| l.cztvcloud.com | 58 | 2.9% |
-| 63.141.230.178 | 49 | 2.4% |
-| vd3.bdstatic.com | 48 | 2.4% |
-| 38.75.136.137 | 44 | 2.2% |
-| cdn.jdshipin.com | 41 | 2.0% |
-| 107.150.60.122 | 35 | 1.7% |
+| stream1.freetv.fun | 460 | 22.3% |
+| live.ottiptv.cc | 358 | 17.3% |
+| cloud.video.taobao.com | 188 | 9.1% |
+| vodcdn.video.taobao.com | 72 | 3.5% |
+| l.cztvcloud.com | 54 | 2.6% |
+| vd3.bdstatic.com | 48 | 2.3% |
+| 63.141.230.178 | 41 | 2.0% |
+| cdn.jdshipin.com | 40 | 1.9% |
+| 107.150.60.122 | 36 | 1.7% |
+| 38.75.136.137 | 35 | 1.7% |
 
 ## Family playlist audit
 
 Status: ok
-Rows: 1051
-Unique URLs: 1051
+Rows: 1060
+Unique URLs: 1060
