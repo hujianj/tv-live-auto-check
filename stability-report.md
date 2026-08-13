@@ -3,11 +3,11 @@
 Enabled: True
 Tracked URLs before: 5000
 Tracked URLs after: 5000
-Updated URLs this run: 2784
-OK updates this run: 2027
-Fail updates this run: 757
-Trimmed URLs: 46
-Last updated Beijing: 2026-08-13T05:41:12+08:00
+Updated URLs this run: 2923
+OK updates this run: 2065
+Fail updates this run: 858
+Trimmed URLs: 113
+Last updated Beijing: 2026-08-13T18:10:04+08:00
 
 ## Most stable tracked URLs
 
@@ -34,47 +34,47 @@ Last updated Beijing: 2026-08-13T05:41:12+08:00
 | -90 | 20 | 0 | 10 | 0 | CHC家庭影院 | guovin_ipv4 | http://107.150.60.122/live/chcjt.m3u8 |
 | -90 | 20 | 0 | 10 | 0 | 重庆卫视 | guovin_ipv4 | http://107.150.60.122/live/cqwshd.m3u8 |
 | -90 | 20 | 0 | 10 | 0 | 东方卫视 | guovin_ipv4 | http://107.150.60.122/live/dfwshd.m3u8 |
+| -90 | 20 | 0 | 10 | 0 | 第一剧场 | guovin_ipv4 | http://107.150.60.122/live/dyjc.m3u8 |
 | -90 | 20 | 0 | 10 | 0 | 广东卫视 | guovin_ipv4 | http://107.150.60.122/live/gdwshd.m3u8 |
 | -90 | 20 | 0 | 10 | 0 | 广西国际 | guovin_ipv4 | http://107.150.60.122/live/gxgj.m3u8 |
 | -90 | 20 | 0 | 10 | 0 | 广西新闻 | guovin_ipv4 | http://107.150.60.122/live/gxxw.m3u8 |
 | -90 | 20 | 0 | 10 | 0 | 贵州卫视 | guovin_ipv4 | http://107.150.60.122/live/gzwshd.m3u8 |
 | -90 | 20 | 0 | 10 | 0 | 怀旧剧场 | guovin_ipv4 | http://107.150.60.122/live/hjjc.m3u8 |
-| -90 | 20 | 0 | 10 | 0 | 黑龙江卫视 | guovin_ipv4 | http://107.150.60.122/live/hljwshd.m3u8 |
 | -90 | 20 | 0 | 10 | 0 | 湖南卫视 | guovin_ipv4 | http://107.150.60.122/live/hnwshd.m3u8 |
+| -90 | 20 | 0 | 10 | 0 | 吉林卫视 | guovin_ipv4 | http://107.150.60.122/live/jlwshd.m3u8 |
 | -90 | 20 | 0 | 10 | 0 | 江苏卫视 | guovin_ipv4 | http://107.150.60.122/live/jswshd.m3u8 |
-| -90 | 20 | 0 | 10 | 0 | 辽宁卫视 | guovin_ipv4 | http://107.150.60.122/live/lnwshd.m3u8 |
 
 ## Least stable tracked URLs
 
 | Adjustment | OK | Fail | Streak OK | Streak Fail | Channel | Source | Error | URL |
 |---:|---:|---:|---:|---:|---|---|---|---|
-| 140 | 16 | 4 | 0 | 4 | 广东卫视 | zbds_iptv4_txt | direct MP4/fMP4 cannot prove live broadcast progress; rejecting likely VOD | https://txmov2.a.kwimgs.com/upic/2023/01/26/09/BMjAyMzAxMjYwOTE3NDVfNzM5MzQzNzIyXzk0NjI1OTUwNTA3XzBfMw==_b_B81ddda927d33445d544befd008e60109.mp4 |
-| 140 | 15 | 5 | 0 | 5 | 浙江少儿 | iyouhun_zb | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://ali-vl.cztv.com/channels/lantian/channel008/360p.m3u8 |
-| 140 | 15 | 5 | 0 | 5 | 浙江留学 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://ali-vl.cztv.com/channels/lantian/channel009/360p.m3u8 |
-| 140 | 15 | 6 | 0 | 5 | 浙江新闻 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://ali-vl.cztv.com/channels/lantian/channel007/360p.m3u8 |
-| 140 | 14 | 6 | 0 | 6 | 浙江国际 | zbds_iptv4_txt | segments ok checked=2 required=video; manifest did not advance after 10.0s | http://ali-vl.cztv.com/channels/lantian/channel010/360p.m3u8 |
-| 140 | 14 | 6 | 0 | 6 | 武义新闻综合 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXwuyi1/720p.m3u8 |
-| 140 | 14 | 6 | 0 | 6 | 浙江少兒頻道 | epg_cn | final slow retry failed attempt=1 first=variant fail variants_checked=1 segments ok checked=2 required=video; manifest did not advance after 10.0s; last=variant | https://stream1.freetv.fun/35a0daa7713e9d18a65cc981f0cdafde70603f4435101f72eb74091d56981967.m3u8 |
-| 140 | 14 | 6 | 0 | 6 | 浙江教育科技 | epg_cn | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | https://stream1.freetv.fun/b7bae3d25dad3ab74ddba31239f86135f9612a812d5b7010cc3da20d51e33c29.ctv |
-| 140 | 14 | 6 | 0 | 6 | 浙江少兒頻道 | epg_cn | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | https://stream1.freetv.fun/d148043df6b2f6d9464b41a73a6da05d758d0ad15a0d1d8a38a95b817d0a34e3.ctv |
-| 140 | 15 | 8 | 0 | 5 | 浙江民生休闲 | iyouhun_zb | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://ali-vl.cztv.com/channels/lantian/channel006/360p.m3u8 |
-| 140 | 14 | 8 | 0 | 7 | 浙江民生休閒 | epg_cn | final slow retry failed attempt=1 first=variant fail variants_checked=1 segments ok checked=2 required=video; manifest did not advance after 10.0s; last=variant | https://stream1.freetv.fun/368f34b56ab82436c93ce42c6b7e187c31f260857d1e13b5f9982cccccf31330.m3u8 |
-| 140 | 13 | 7 | 0 | 7 | 中国蓝新闻 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://ali-m-l.cztv.com/channels/lantian/channel009/1080p.m3u8 |
-| 140 | 13 | 7 | 0 | 7 | 可克达拉综合 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 7.5s; last=segments ok checked=2 required=video; ma | http://file.loulannews.cn/nmip-media/channellive/channel103824/playlist.m3u8 |
-| 140 | 13 | 7 | 0 | 7 | 苍南新闻综合 | iyouhun_zb | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXcangnan1/720p.m3u8?zzhed |
-| 140 | 13 | 7 | 0 | 7 | 洞头综合 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXdongtou1/720p.m3u8 |
-| 140 | 13 | 7 | 0 | 7 | 洞头综合 | iyouhun_zb | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXdongtou1/720p.m3u8?%E5%85%B3%E6%B3%A8%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7[%E6%99%B4%E5%9B%AD] |
-| 140 | 13 | 7 | 0 | 7 | 开化新闻综合 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXkaihua1/720p.m3u8?zzhed |
-| 140 | 13 | 7 | 0 | 7 | 开化国家公园 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXkaihua2/720p.m3u8zzhed |
-| 140 | 13 | 7 | 0 | 7 | 兰溪新闻综合 | iyouhun_zb | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXlanxi1/720p.m3u8?zzhed |
-| 140 | 13 | 7 | 0 | 7 | 平湖民生休闲 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 12.5s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXpinghu2/720p.m3u8 |
-| 140 | 13 | 7 | 0 | 7 | 平湖民生休闲 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 12.5s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXpinghu2/720p.m3u8?zzhed |
-| 140 | 13 | 7 | 0 | 7 | 普陀新闻综合 | iyouhun_zb | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXputuo1/720p.m3u8?zzhed |
-| 140 | 13 | 7 | 0 | 7 | 浙江遂昌 | iyouhun_zb | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXsuichang1/720p.m3u8?%E5%85%B3%E6%B3%A8%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7[%E6%99%B4%E5%9B%AD] |
-| 140 | 13 | 7 | 0 | 7 | 遂昌综合 | iyouhun_zb | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXsuichang1/720p.m3u8zzhed |
-| 140 | 13 | 7 | 0 | 7 | 文成综合 | iyouhun_zb | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXwencheng1/720p.m3u8?fbl= |
-| 140 | 13 | 7 | 0 | 7 | 文成综合 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXwencheng1/720p.m3u8?zzhed |
-| 140 | 13 | 7 | 0 | 7 | 武义新闻综合 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXwuyi1/720p.m3u8?zzhed |
-| 140 | 13 | 7 | 0 | 7 | 永嘉新闻综合 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXyongjia1/720p.m3u8 |
-| 140 | 13 | 7 | 0 | 7 | 余杭综合 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXyuhang1/720p.m3u8?zzhed |
-| 140 | 13 | 7 | 0 | 7 | 余杭未来E | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXyuhang3/720p.m3u8 |
+| 140 | 15 | 5 | 0 | 3 | 广元综合 | guovin_all | final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=vi | https://stream1.freetv.fun/yan-yuan-zong-he-1.m3u8 |
+| 140 | 15 | 5 | 0 | 3 | 广元综合 | guovin_all | final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=vi | https://stream1.freetv.fun/yan-yuan-zong-he-2.ctv |
+| 140 | 15 | 5 | 0 | 5 | 广东卫视 | zbds_iptv4_txt | direct MP4/fMP4 cannot prove live broadcast progress; rejecting likely VOD | https://txmov2.a.kwimgs.com/upic/2023/01/26/09/BMjAyMzAxMjYwOTE3NDVfNzM5MzQzNzIyXzk0NjI1OTUwNTA3XzBfMw==_b_B81ddda927d33445d544befd008e60109.mp4 |
+| 140 | 14 | 6 | 0 | 6 | 浙江少儿 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://ali-vl.cztv.com/channels/lantian/channel008/360p.m3u8 |
+| 140 | 14 | 6 | 0 | 6 | 浙江留学 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://ali-vl.cztv.com/channels/lantian/channel009/360p.m3u8 |
+| 140 | 13 | 7 | 0 | 7 | 浙江国际 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://ali-vl.cztv.com/channels/lantian/channel010/360p.m3u8 |
+| 140 | 13 | 7 | 0 | 3 | 庆元综合 | iyouhun_zb | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXqingyuan1/720p.m3u8?zzhed |
+| 140 | 13 | 7 | 0 | 7 | 武义新闻综合 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXwuyi1/720p.m3u8 |
+| 140 | 13 | 7 | 0 | 7 | 浙江少兒頻道 | epg_cn | final slow retry failed attempt=1 first=variant fail variants_checked=1 segments ok checked=2 required=video; manifest did not advance after 10.0s; last=variant | https://stream1.freetv.fun/35a0daa7713e9d18a65cc981f0cdafde70603f4435101f72eb74091d56981967.m3u8 |
+| 140 | 13 | 7 | 0 | 7 | 浙江教育科技 | epg_cn | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | https://stream1.freetv.fun/b7bae3d25dad3ab74ddba31239f86135f9612a812d5b7010cc3da20d51e33c29.ctv |
+| 140 | 13 | 7 | 0 | 7 | 浙江少兒頻道 | epg_cn | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | https://stream1.freetv.fun/d148043df6b2f6d9464b41a73a6da05d758d0ad15a0d1d8a38a95b817d0a34e3.ctv |
+| 140 | 14 | 9 | 0 | 6 | 浙江民生休闲 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://ali-vl.cztv.com/channels/lantian/channel006/360p.m3u8 |
+| 140 | 13 | 9 | 0 | 8 | 浙江民生休閒 | epg_cn | final slow retry failed attempt=1 first=variant fail variants_checked=1 segments ok checked=2 required=video; manifest did not advance after 10.0s; last=variant | https://stream1.freetv.fun/368f34b56ab82436c93ce42c6b7e187c31f260857d1e13b5f9982cccccf31330.m3u8 |
+| 140 | 12 | 8 | 0 | 8 | 中国蓝新闻 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://ali-m-l.cztv.com/channels/lantian/channel009/1080p.m3u8 |
+| 140 | 12 | 8 | 0 | 8 | 可克达拉综合 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 7.5s; last=segments ok checked=2 required=video; ma | http://file.loulannews.cn/nmip-media/channellive/channel103824/playlist.m3u8 |
+| 140 | 12 | 8 | 0 | 8 | 苍南新闻综合 | iyouhun_zb | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXcangnan1/720p.m3u8?zzhed |
+| 140 | 12 | 8 | 0 | 8 | 洞头综合 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXdongtou1/720p.m3u8 |
+| 140 | 12 | 8 | 0 | 8 | 洞头综合 | iyouhun_zb | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXdongtou1/720p.m3u8?%E5%85%B3%E6%B3%A8%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7[%E6%99%B4%E5%9B%AD] |
+| 140 | 12 | 8 | 0 | 8 | 开化新闻综合 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXkaihua1/720p.m3u8?zzhed |
+| 140 | 12 | 8 | 0 | 8 | 开化国家公园 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXkaihua2/720p.m3u8zzhed |
+| 140 | 12 | 8 | 0 | 8 | 兰溪新闻综合 | iyouhun_zb | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXlanxi1/720p.m3u8?zzhed |
+| 140 | 12 | 8 | 0 | 8 | 平湖民生休闲 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 12.5s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXpinghu2/720p.m3u8 |
+| 140 | 12 | 8 | 0 | 8 | 平湖民生休闲 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 12.5s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXpinghu2/720p.m3u8?zzhed |
+| 140 | 12 | 8 | 0 | 8 | 普陀新闻综合 | iyouhun_zb | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXputuo1/720p.m3u8?zzhed |
+| 140 | 12 | 8 | 0 | 8 | 浙江遂昌 | iyouhun_zb | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXsuichang1/720p.m3u8?%E5%85%B3%E6%B3%A8%E5%BE%AE%E4%BF%A1%E5%85%AC%E4%BC%97%E5%8F%B7[%E6%99%B4%E5%9B%AD] |
+| 140 | 12 | 8 | 0 | 8 | 遂昌综合 | iyouhun_zb | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=TimeoutError('timed out') | http://l.cztvcloud.com/channels/lantian/SXsuichang1/720p.m3u8zzhed |
+| 140 | 12 | 8 | 0 | 8 | 文成综合 | iyouhun_zb | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXwencheng1/720p.m3u8?fbl= |
+| 140 | 12 | 8 | 0 | 8 | 文成综合 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXwencheng1/720p.m3u8?zzhed |
+| 140 | 12 | 8 | 0 | 8 | 武义新闻综合 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXwuyi1/720p.m3u8?zzhed |
+| 140 | 12 | 8 | 0 | 8 | 永嘉新闻综合 | zbds_iptv4_txt | final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; m | http://l.cztvcloud.com/channels/lantian/SXyongjia1/720p.m3u8 |
