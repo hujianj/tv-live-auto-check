@@ -1,17 +1,17 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 2001
-Unique channel names: 1327
-Unique canonical channel identities: 1327
-Unique URLs: 2001
+Rows: 2074
+Unique channel names: 1488
+Unique canonical channel identities: 1488
+Unique URLs: 2074
 Strict filter residue count: 0
 Latin/noise-like review count: 0
 Channel unique URL limit violations: 0
 URL identity conflicts: 0
-Unique stream hosts: 157
-Top stream host share: 21.6%
-Top five stream host share: 55.0%
+Unique stream hosts: 151
+Top stream host share: 24.5%
+Top five stream host share: 60.6%
 
 ## Core CCTV quality
 
@@ -36,7 +36,7 @@ Minimum independent hosts per core channel: 2
 | CCTV-14 | 6 | 6 | 6 | OK |
 | CCTV-15 | 6 | 6 | 6 | OK |
 | CCTV-16 | 6 | 6 | 6 | OK |
-| CCTV-17 | 6 | 6 | 4 | OK |
+| CCTV-17 | 6 | 6 | 6 | OK |
 | CCTV-5+ | 6 | 6 | 6 | OK |
 
 ## Important satellite quality
@@ -49,8 +49,8 @@ Minimum important satellite independent URLs: 3
 | 河北卫视 | 6 | 6 | 6 | OK |
 | 河南卫视 | 6 | 6 | 6 | OK |
 | 北京卫视 | 6 | 6 | 6 | OK |
-| 东方卫视 | 6 | 6 | 4 | OK |
-| 浙江卫视 | 3 | 3 | 3 | OK |
+| 东方卫视 | 6 | 6 | 5 | OK |
+| 浙江卫视 | 5 | 5 | 4 | OK |
 | 江苏卫视 | 6 | 6 | 6 | OK |
 | 湖南卫视 | 6 | 6 | 5 | OK |
 | 广东卫视 | 6 | 6 | 6 | OK |
@@ -60,23 +60,19 @@ Minimum important satellite independent URLs: 3
 
 | Host | Rows | Share |
 |---|---:|---:|
-| stream1.freetv.fun | 432 | 21.6% |
-| live.ottiptv.cc | 361 | 18.0% |
-| cloud.video.taobao.com | 188 | 9.4% |
-| vodcdn.video.taobao.com | 72 | 3.6% |
-| 63.141.230.178 | 48 | 2.4% |
-| vd3.bdstatic.com | 48 | 2.4% |
-| 38.75.136.137 | 46 | 2.3% |
-| l.cztvcloud.com | 45 | 2.2% |
-| cdn.jdshipin.com | 41 | 2.0% |
-| 107.150.60.122 | 37 | 1.8% |
+| www.goodiptv.club | 508 | 24.5% |
+| stream1.freetv.fun | 336 | 16.2% |
+| cloud.video.taobao.com | 188 | 9.1% |
+| live.ottiptv.cc | 152 | 7.3% |
+| vodcdn.video.taobao.com | 72 | 3.5% |
+| vd3.bdstatic.com | 48 | 2.3% |
+| 63.141.230.178 | 35 | 1.7% |
+| 107.150.60.122 | 34 | 1.6% |
+| 38.75.136.137 | 32 | 1.5% |
+| 198.204.228.26 | 27 | 1.3% |
 
 ## Family playlist audit
 
 Status: ok
-Rows: 1024
-Unique URLs: 1024
-
-## Warnings
-
-- important satellite channels below independent URL warning target: 浙江卫视=3
+Rows: 1077
+Unique URLs: 1077
