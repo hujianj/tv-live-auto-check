@@ -1,17 +1,17 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 2041
-Unique channel names: 1347
-Unique canonical channel identities: 1347
-Unique URLs: 2041
+Rows: 2099
+Unique channel names: 1476
+Unique canonical channel identities: 1476
+Unique URLs: 2099
 Strict filter residue count: 0
 Latin/noise-like review count: 0
 Channel unique URL limit violations: 0
 URL identity conflicts: 0
-Unique stream hosts: 159
-Top stream host share: 22.1%
-Top five stream host share: 55.5%
+Unique stream hosts: 154
+Top stream host share: 18.3%
+Top five stream host share: 56.7%
 
 ## Core CCTV quality
 
@@ -24,18 +24,18 @@ Minimum independent hosts per core channel: 2
 | CCTV-2 | 6 | 6 | 6 | OK |
 | CCTV-3 | 6 | 6 | 6 | OK |
 | CCTV-4 | 6 | 6 | 6 | OK |
-| CCTV-5 | 6 | 6 | 5 | OK |
+| CCTV-5 | 6 | 6 | 4 | OK |
 | CCTV-6 | 6 | 6 | 6 | OK |
 | CCTV-7 | 6 | 6 | 6 | OK |
 | CCTV-8 | 6 | 6 | 6 | OK |
 | CCTV-9 | 6 | 6 | 6 | OK |
 | CCTV-10 | 6 | 6 | 6 | OK |
 | CCTV-11 | 6 | 6 | 5 | OK |
-| CCTV-12 | 6 | 6 | 6 | OK |
+| CCTV-12 | 6 | 6 | 5 | OK |
 | CCTV-13 | 6 | 6 | 6 | OK |
 | CCTV-14 | 6 | 6 | 6 | OK |
 | CCTV-15 | 6 | 6 | 6 | OK |
-| CCTV-16 | 6 | 6 | 5 | OK |
+| CCTV-16 | 6 | 6 | 6 | OK |
 | CCTV-17 | 6 | 6 | 6 | OK |
 | CCTV-5+ | 6 | 6 | 6 | OK |
 
@@ -48,8 +48,8 @@ Minimum important satellite independent URLs: 3
 | 辽宁卫视 | 6 | 6 | 6 | OK |
 | 河北卫视 | 6 | 6 | 6 | OK |
 | 河南卫视 | 6 | 6 | 6 | OK |
-| 北京卫视 | 6 | 6 | 5 | OK |
-| 东方卫视 | 6 | 6 | 5 | OK |
+| 北京卫视 | 6 | 6 | 6 | OK |
+| 东方卫视 | 6 | 6 | 6 | OK |
 | 浙江卫视 | 5 | 5 | 4 | OK |
 | 江苏卫视 | 6 | 6 | 6 | OK |
 | 湖南卫视 | 6 | 6 | 5 | OK |
@@ -60,19 +60,19 @@ Minimum important satellite independent URLs: 3
 
 | Host | Rows | Share |
 |---|---:|---:|
-| stream1.freetv.fun | 451 | 22.1% |
-| live.ottiptv.cc | 366 | 17.9% |
-| cloud.video.taobao.com | 188 | 9.2% |
-| vodcdn.video.taobao.com | 72 | 3.5% |
-| l.cztvcloud.com | 56 | 2.7% |
-| vd3.bdstatic.com | 48 | 2.4% |
-| 38.75.136.137 | 44 | 2.2% |
-| 63.141.230.178 | 42 | 2.1% |
-| cdn.jdshipin.com | 41 | 2.0% |
-| 107.150.60.122 | 36 | 1.8% |
+| www.goodiptv.club | 385 | 18.3% |
+| stream1.freetv.fun | 346 | 16.5% |
+| live.ottiptv.cc | 200 | 9.5% |
+| cloud.video.taobao.com | 188 | 9.0% |
+| vodcdn.video.taobao.com | 72 | 3.4% |
+| l.cztvcloud.com | 55 | 2.6% |
+| vd3.bdstatic.com | 48 | 2.3% |
+| 63.141.230.178 | 45 | 2.1% |
+| 38.75.136.137 | 43 | 2.0% |
+| 107.150.60.122 | 36 | 1.7% |
 
 ## Family playlist audit
 
 Status: ok
-Rows: 1056
-Unique URLs: 1056
+Rows: 1118
+Unique URLs: 1118
