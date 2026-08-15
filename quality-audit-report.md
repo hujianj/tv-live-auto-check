@@ -1,17 +1,17 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 2099
-Unique channel names: 1476
-Unique canonical channel identities: 1476
-Unique URLs: 2099
+Rows: 2019
+Unique channel names: 1342
+Unique canonical channel identities: 1342
+Unique URLs: 2019
 Strict filter residue count: 0
 Latin/noise-like review count: 0
 Channel unique URL limit violations: 0
 URL identity conflicts: 0
-Unique stream hosts: 154
-Top stream host share: 18.3%
-Top five stream host share: 56.7%
+Unique stream hosts: 158
+Top stream host share: 22.2%
+Top five stream host share: 55.9%
 
 ## Core CCTV quality
 
@@ -24,7 +24,7 @@ Minimum independent hosts per core channel: 2
 | CCTV-2 | 6 | 6 | 6 | OK |
 | CCTV-3 | 6 | 6 | 6 | OK |
 | CCTV-4 | 6 | 6 | 6 | OK |
-| CCTV-5 | 6 | 6 | 4 | OK |
+| CCTV-5 | 6 | 6 | 5 | OK |
 | CCTV-6 | 6 | 6 | 6 | OK |
 | CCTV-7 | 6 | 6 | 6 | OK |
 | CCTV-8 | 6 | 6 | 6 | OK |
@@ -49,7 +49,7 @@ Minimum important satellite independent URLs: 3
 | 河北卫视 | 6 | 6 | 6 | OK |
 | 河南卫视 | 6 | 6 | 6 | OK |
 | 北京卫视 | 6 | 6 | 6 | OK |
-| 东方卫视 | 6 | 6 | 6 | OK |
+| 东方卫视 | 6 | 6 | 5 | OK |
 | 浙江卫视 | 5 | 5 | 4 | OK |
 | 江苏卫视 | 6 | 6 | 6 | OK |
 | 湖南卫视 | 6 | 6 | 5 | OK |
@@ -60,19 +60,19 @@ Minimum important satellite independent URLs: 3
 
 | Host | Rows | Share |
 |---|---:|---:|
-| www.goodiptv.club | 385 | 18.3% |
-| stream1.freetv.fun | 346 | 16.5% |
-| live.ottiptv.cc | 200 | 9.5% |
-| cloud.video.taobao.com | 188 | 9.0% |
-| vodcdn.video.taobao.com | 72 | 3.4% |
-| l.cztvcloud.com | 55 | 2.6% |
-| vd3.bdstatic.com | 48 | 2.3% |
-| 63.141.230.178 | 45 | 2.1% |
-| 38.75.136.137 | 43 | 2.0% |
-| 107.150.60.122 | 36 | 1.7% |
+| stream1.freetv.fun | 448 | 22.2% |
+| live.ottiptv.cc | 372 | 18.4% |
+| cloud.video.taobao.com | 188 | 9.3% |
+| vodcdn.video.taobao.com | 72 | 3.6% |
+| vd3.bdstatic.com | 48 | 2.4% |
+| 38.75.136.137 | 42 | 2.1% |
+| 63.141.230.178 | 41 | 2.0% |
+| cdn.jdshipin.com | 41 | 2.0% |
+| 107.150.60.122 | 34 | 1.7% |
+| 198.204.228.26 | 30 | 1.5% |
 
 ## Family playlist audit
 
 Status: ok
-Rows: 1118
-Unique URLs: 1118
+Rows: 1041
+Unique URLs: 1041
