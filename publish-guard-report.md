@@ -1,9 +1,9 @@
 # Publish guard report
 
 Status: ok
-Baseline lines: 1929
-Current lines: 1898
-Total drop ratio: 1.6%
+Baseline lines: 1898
+Current lines: 1979
+Total drop ratio: -4.3%
 Relative baseline comparable: True
 Relative guard migration: none
 
@@ -11,16 +11,16 @@ Relative guard migration: none
 
 | Group | Baseline | Current | Delta | Drop | Minimum |
 |---|---:|---:|---:|---:|---:|
-| 央视频道 | 128 | 127 | -1 | 0.8% | 90 |
-| 卫视频道 | 188 | 186 | -2 | 1.1% | 120 |
-| 地方频道 | 387 | 370 | -17 | 4.4% | 250 |
-| 影视剧场 | 145 | 150 | 5 | -3.4% | 0 |
-| 少儿动漫 | 19 | 13 | -6 | 31.6% | 0 |
-| 体育纪实 | 49 | 47 | -2 | 4.1% | 0 |
-| 音乐综艺 | 16 | 17 | 1 | -6.2% | 0 |
-| 生活休闲 | 65 | 55 | -10 | 15.4% | 0 |
-| 综合娱乐 | 877 | 879 | 2 | -0.2% | 0 |
-| 港澳台频道 | 55 | 54 | -1 | 1.8% | 0 |
+| 央视频道 | 127 | 128 | 1 | -0.8% | 90 |
+| 卫视频道 | 186 | 177 | -9 | 4.8% | 120 |
+| 地方频道 | 370 | 296 | -74 | 20.0% | 250 |
+| 影视剧场 | 150 | 179 | 29 | -19.3% | 0 |
+| 少儿动漫 | 13 | 39 | 26 | -200.0% | 0 |
+| 体育纪实 | 47 | 71 | 24 | -51.1% | 0 |
+| 音乐综艺 | 17 | 35 | 18 | -105.9% | 0 |
+| 生活休闲 | 55 | 104 | 49 | -89.1% | 0 |
+| 综合娱乐 | 879 | 884 | 5 | -0.6% | 0 |
+| 港澳台频道 | 54 | 66 | 12 | -22.2% | 0 |
 | 海外华语频道 | 0 | 0 | 0 | n/a | 0 |
 
 ## Source health
@@ -28,9 +28,5 @@ Relative guard migration: none
 - Enabled source failures: none
 - Enabled sources fetched but zero parsed: none
 - Enabled sources unavailable for guard purposes: none
-- Recovery source failures (non-blocking): freetv_huya, freetv_douyu
+- Recovery source failures (non-blocking): none
 - Recovery sources fetched but zero parsed (non-blocking): none
-
-## Warnings
-
-- recovery sources unavailable (non-blocking): ['freetv_huya', 'freetv_douyu']
