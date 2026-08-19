@@ -1,17 +1,17 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 1871
-Unique channel names: 1255
-Unique canonical channel identities: 1255
-Unique URLs: 1871
+Rows: 1909
+Unique channel names: 1264
+Unique canonical channel identities: 1264
+Unique URLs: 1909
 Strict filter residue count: 0
 Latin/noise-like review count: 0
 Channel unique URL limit violations: 0
 URL identity conflicts: 0
-Unique stream hosts: 143
-Top stream host share: 23.5%
-Top five stream host share: 58.5%
+Unique stream hosts: 145
+Top stream host share: 25.7%
+Top five stream host share: 60.7%
 
 ## Core CCTV quality
 
@@ -27,15 +27,15 @@ Minimum independent hosts per core channel: 2
 | CCTV-5 | 6 | 6 | 5 | OK |
 | CCTV-6 | 6 | 6 | 6 | OK |
 | CCTV-7 | 6 | 6 | 6 | OK |
-| CCTV-8 | 6 | 6 | 6 | OK |
+| CCTV-8 | 6 | 6 | 5 | OK |
 | CCTV-9 | 6 | 6 | 6 | OK |
 | CCTV-10 | 6 | 6 | 6 | OK |
 | CCTV-11 | 6 | 6 | 5 | OK |
-| CCTV-12 | 6 | 6 | 5 | OK |
+| CCTV-12 | 6 | 6 | 6 | OK |
 | CCTV-13 | 6 | 6 | 6 | OK |
 | CCTV-14 | 6 | 6 | 6 | OK |
 | CCTV-15 | 6 | 6 | 6 | OK |
-| CCTV-16 | 6 | 6 | 5 | OK |
+| CCTV-16 | 6 | 6 | 6 | OK |
 | CCTV-17 | 6 | 6 | 3 | OK |
 | CCTV-5+ | 6 | 6 | 6 | OK |
 
@@ -52,7 +52,7 @@ Minimum important satellite independent URLs: 3
 | 东方卫视 | 6 | 6 | 5 | OK |
 | 浙江卫视 | 4 | 4 | 3 | OK |
 | 江苏卫视 | 6 | 6 | 6 | OK |
-| 湖南卫视 | 5 | 5 | 4 | OK |
+| 湖南卫视 | 6 | 6 | 5 | OK |
 | 广东卫视 | 6 | 6 | 6 | OK |
 | 深圳卫视 | 6 | 6 | 6 | OK |
 
@@ -60,19 +60,19 @@ Minimum important satellite independent URLs: 3
 
 | Host | Rows | Share |
 |---|---:|---:|
-| stream1.freetv.fun | 439 | 23.5% |
-| live.ottiptv.cc | 331 | 17.7% |
-| cloud.video.taobao.com | 188 | 10.0% |
-| vodcdn.video.taobao.com | 72 | 3.8% |
-| live.metshop.top | 64 | 3.4% |
-| vd3.bdstatic.com | 48 | 2.6% |
-| 63.141.230.178 | 43 | 2.3% |
-| 38.75.136.137 | 39 | 2.1% |
-| 107.150.60.122 | 36 | 1.9% |
-| 198.204.228.26 | 32 | 1.7% |
+| stream1.freetv.fun | 491 | 25.7% |
+| live.ottiptv.cc | 360 | 18.9% |
+| cloud.video.taobao.com | 188 | 9.8% |
+| live.metshop.top | 69 | 3.6% |
+| 63.141.230.178 | 51 | 2.7% |
+| vd3.bdstatic.com | 48 | 2.5% |
+| 38.75.136.137 | 46 | 2.4% |
+| 107.150.60.122 | 38 | 2.0% |
+| 198.204.228.26 | 37 | 1.9% |
+| vodcdn.video.taobao.com | 30 | 1.6% |
 
 ## Family playlist audit
 
 Status: ok
-Rows: 982
-Unique URLs: 982
+Rows: 980
+Unique URLs: 980
