@@ -1,17 +1,17 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 1909
-Unique channel names: 1264
-Unique canonical channel identities: 1264
-Unique URLs: 1909
+Rows: 1877
+Unique channel names: 1253
+Unique canonical channel identities: 1253
+Unique URLs: 1877
 Strict filter residue count: 0
 Latin/noise-like review count: 0
 Channel unique URL limit violations: 0
 URL identity conflicts: 0
-Unique stream hosts: 145
-Top stream host share: 25.7%
-Top five stream host share: 60.7%
+Unique stream hosts: 146
+Top stream host share: 23.7%
+Top five stream host share: 58.9%
 
 ## Core CCTV quality
 
@@ -27,7 +27,7 @@ Minimum independent hosts per core channel: 2
 | CCTV-5 | 6 | 6 | 5 | OK |
 | CCTV-6 | 6 | 6 | 6 | OK |
 | CCTV-7 | 6 | 6 | 6 | OK |
-| CCTV-8 | 6 | 6 | 5 | OK |
+| CCTV-8 | 6 | 6 | 6 | OK |
 | CCTV-9 | 6 | 6 | 6 | OK |
 | CCTV-10 | 6 | 6 | 6 | OK |
 | CCTV-11 | 6 | 6 | 5 | OK |
@@ -45,11 +45,11 @@ Minimum important satellite independent URLs: 3
 
 | Channel | Published rows | Unique URLs | Unique hosts | Status |
 |---|---:|---:|---:|---|
-| 辽宁卫视 | 5 | 5 | 5 | OK |
+| 辽宁卫视 | 6 | 6 | 6 | OK |
 | 河北卫视 | 6 | 6 | 6 | OK |
-| 河南卫视 | 4 | 4 | 4 | OK |
+| 河南卫视 | 3 | 3 | 3 | OK |
 | 北京卫视 | 5 | 5 | 4 | OK |
-| 东方卫视 | 6 | 6 | 5 | OK |
+| 东方卫视 | 6 | 6 | 6 | OK |
 | 浙江卫视 | 4 | 4 | 3 | OK |
 | 江苏卫视 | 6 | 6 | 6 | OK |
 | 湖南卫视 | 6 | 6 | 5 | OK |
@@ -60,19 +60,23 @@ Minimum important satellite independent URLs: 3
 
 | Host | Rows | Share |
 |---|---:|---:|
-| stream1.freetv.fun | 491 | 25.7% |
-| live.ottiptv.cc | 360 | 18.9% |
-| cloud.video.taobao.com | 188 | 9.8% |
-| live.metshop.top | 69 | 3.6% |
-| 63.141.230.178 | 51 | 2.7% |
-| vd3.bdstatic.com | 48 | 2.5% |
-| 38.75.136.137 | 46 | 2.4% |
+| stream1.freetv.fun | 444 | 23.7% |
+| live.ottiptv.cc | 337 | 18.0% |
+| cloud.video.taobao.com | 188 | 10.0% |
+| vodcdn.video.taobao.com | 72 | 3.8% |
+| live.metshop.top | 64 | 3.4% |
+| vd3.bdstatic.com | 48 | 2.6% |
+| 63.141.230.178 | 45 | 2.4% |
+| 38.75.136.137 | 39 | 2.1% |
 | 107.150.60.122 | 38 | 2.0% |
-| 198.204.228.26 | 37 | 1.9% |
-| vodcdn.video.taobao.com | 30 | 1.6% |
+| 198.204.228.26 | 33 | 1.8% |
 
 ## Family playlist audit
 
 Status: ok
-Rows: 980
-Unique URLs: 980
+Rows: 977
+Unique URLs: 977
+
+## Warnings
+
+- important satellite channels below independent URL warning target: 河南卫视=3
