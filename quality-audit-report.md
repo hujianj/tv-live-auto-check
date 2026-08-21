@@ -1,17 +1,17 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 1877
-Unique channel names: 1253
-Unique canonical channel identities: 1253
-Unique URLs: 1877
+Rows: 1881
+Unique channel names: 1229
+Unique canonical channel identities: 1229
+Unique URLs: 1881
 Strict filter residue count: 0
 Latin/noise-like review count: 0
 Channel unique URL limit violations: 0
 URL identity conflicts: 0
 Unique stream hosts: 146
-Top stream host share: 23.7%
-Top five stream host share: 58.9%
+Top stream host share: 25.6%
+Top five stream host share: 58.8%
 
 ## Core CCTV quality
 
@@ -37,7 +37,7 @@ Minimum independent hosts per core channel: 2
 | CCTV-15 | 6 | 6 | 6 | OK |
 | CCTV-16 | 6 | 6 | 6 | OK |
 | CCTV-17 | 6 | 6 | 3 | OK |
-| CCTV-5+ | 6 | 6 | 6 | OK |
+| CCTV-5+ | 6 | 6 | 4 | OK |
 
 ## Important satellite quality
 
@@ -47,10 +47,10 @@ Minimum important satellite independent URLs: 3
 |---|---:|---:|---:|---|
 | 辽宁卫视 | 6 | 6 | 6 | OK |
 | 河北卫视 | 6 | 6 | 6 | OK |
-| 河南卫视 | 3 | 3 | 3 | OK |
-| 北京卫视 | 5 | 5 | 4 | OK |
+| 河南卫视 | 4 | 4 | 4 | OK |
+| 北京卫视 | 6 | 6 | 5 | OK |
 | 东方卫视 | 6 | 6 | 6 | OK |
-| 浙江卫视 | 4 | 4 | 3 | OK |
+| 浙江卫视 | 5 | 5 | 4 | OK |
 | 江苏卫视 | 6 | 6 | 6 | OK |
 | 湖南卫视 | 6 | 6 | 5 | OK |
 | 广东卫视 | 6 | 6 | 6 | OK |
@@ -60,23 +60,19 @@ Minimum important satellite independent URLs: 3
 
 | Host | Rows | Share |
 |---|---:|---:|
-| stream1.freetv.fun | 444 | 23.7% |
-| live.ottiptv.cc | 337 | 18.0% |
+| stream1.freetv.fun | 482 | 25.6% |
+| live.ottiptv.cc | 317 | 16.9% |
 | cloud.video.taobao.com | 188 | 10.0% |
-| vodcdn.video.taobao.com | 72 | 3.8% |
-| live.metshop.top | 64 | 3.4% |
+| vodcdn.video.taobao.com | 71 | 3.8% |
 | vd3.bdstatic.com | 48 | 2.6% |
-| 63.141.230.178 | 45 | 2.4% |
-| 38.75.136.137 | 39 | 2.1% |
-| 107.150.60.122 | 38 | 2.0% |
-| 198.204.228.26 | 33 | 1.8% |
+| 63.141.230.178 | 46 | 2.4% |
+| live.metshop.top | 46 | 2.4% |
+| 38.75.136.137 | 40 | 2.1% |
+| 107.150.60.122 | 37 | 2.0% |
+| 198.204.228.26 | 34 | 1.8% |
 
 ## Family playlist audit
 
 Status: ok
-Rows: 977
-Unique URLs: 977
-
-## Warnings
-
-- important satellite channels below independent URL warning target: 河南卫视=3
+Rows: 982
+Unique URLs: 982
