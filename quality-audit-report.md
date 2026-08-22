@@ -2,16 +2,16 @@
 
 Status: ok
 Rows: 1913
-Unique channel names: 1261
-Unique canonical channel identities: 1261
+Unique channel names: 1265
+Unique canonical channel identities: 1265
 Unique URLs: 1913
 Strict filter residue count: 0
 Latin/noise-like review count: 0
 Channel unique URL limit violations: 0
 URL identity conflicts: 0
-Unique stream hosts: 147
-Top stream host share: 25.7%
-Top five stream host share: 60.2%
+Unique stream hosts: 149
+Top stream host share: 25.6%
+Top five stream host share: 59.7%
 
 ## Core CCTV quality
 
@@ -20,19 +20,19 @@ Minimum independent hosts per core channel: 2
 
 | Channel | Published rows | Unique URLs | Unique hosts | Status |
 |---|---:|---:|---:|---|
-| CCTV-1 | 6 | 6 | 6 | OK |
+| CCTV-1 | 6 | 6 | 5 | OK |
 | CCTV-2 | 6 | 6 | 6 | OK |
-| CCTV-3 | 6 | 6 | 6 | OK |
+| CCTV-3 | 6 | 6 | 5 | OK |
 | CCTV-4 | 6 | 6 | 6 | OK |
 | CCTV-5 | 6 | 6 | 4 | OK |
 | CCTV-6 | 6 | 6 | 6 | OK |
 | CCTV-7 | 6 | 6 | 6 | OK |
-| CCTV-8 | 6 | 6 | 5 | OK |
+| CCTV-8 | 6 | 6 | 6 | OK |
 | CCTV-9 | 6 | 6 | 6 | OK |
 | CCTV-10 | 6 | 6 | 6 | OK |
 | CCTV-11 | 6 | 6 | 5 | OK |
 | CCTV-12 | 6 | 6 | 5 | OK |
-| CCTV-13 | 6 | 6 | 4 | OK |
+| CCTV-13 | 6 | 6 | 5 | OK |
 | CCTV-14 | 6 | 6 | 6 | OK |
 | CCTV-15 | 6 | 6 | 6 | OK |
 | CCTV-16 | 6 | 6 | 5 | OK |
@@ -60,19 +60,19 @@ Minimum important satellite independent URLs: 3
 
 | Host | Rows | Share |
 |---|---:|---:|
-| stream1.freetv.fun | 491 | 25.7% |
-| live.ottiptv.cc | 333 | 17.4% |
+| stream1.freetv.fun | 489 | 25.6% |
+| live.ottiptv.cc | 326 | 17.0% |
 | cloud.video.taobao.com | 188 | 9.8% |
 | vodcdn.video.taobao.com | 72 | 3.8% |
 | live.metshop.top | 68 | 3.6% |
-| 63.141.230.178 | 54 | 2.8% |
+| 63.141.230.178 | 51 | 2.7% |
 | vd3.bdstatic.com | 48 | 2.5% |
-| 38.75.136.137 | 47 | 2.5% |
-| 107.150.60.122 | 39 | 2.0% |
-| 198.204.228.26 | 37 | 1.9% |
+| 38.75.136.137 | 46 | 2.4% |
+| 107.150.60.122 | 40 | 2.1% |
+| 198.204.228.26 | 36 | 1.9% |
 
 ## Family playlist audit
 
 Status: ok
-Rows: 978
-Unique URLs: 978
+Rows: 981
+Unique URLs: 981
