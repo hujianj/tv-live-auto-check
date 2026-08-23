@@ -39,7 +39,7 @@ Fail on missing important satellite: True
 | 东方卫视 | 6 | 6 | OK |
 | 浙江卫视 | 5 | 5 | OK |
 | 江苏卫视 | 6 | 6 | OK |
-| 湖南卫视 | 6 | 6 | OK |
+| 湖南卫视 | 5 | 5 | OK |
 | 广东卫视 | 6 | 6 | OK |
 | 深圳卫视 | 6 | 6 | OK |
 
