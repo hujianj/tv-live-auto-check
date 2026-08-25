@@ -34,12 +34,12 @@ Fail on missing important satellite: True
 |---|---:|---:|---|
 | 辽宁卫视 | 6 | 6 | OK |
 | 河北卫视 | 6 | 6 | OK |
-| 河南卫视 | 5 | 5 | OK |
-| 北京卫视 | 6 | 6 | OK |
+| 河南卫视 | 6 | 6 | OK |
+| 北京卫视 | 5 | 5 | OK |
 | 东方卫视 | 6 | 6 | OK |
-| 浙江卫视 | 5 | 5 | OK |
+| 浙江卫视 | 6 | 6 | OK |
 | 江苏卫视 | 6 | 6 | OK |
-| 湖南卫视 | 6 | 6 | OK |
+| 湖南卫视 | 5 | 5 | OK |
 | 广东卫视 | 6 | 6 | OK |
 | 深圳卫视 | 6 | 6 | OK |
 
@@ -47,7 +47,7 @@ Fail on missing important satellite: True
 
 | Core channel | Variant rows | Variant unique URLs |
 |---|---:|---:|
-| CCTV-4 | 3 | 3 |
+| CCTV-4 | 4 | 4 |
 | CCTV-5 | 6 | 6 |
 | CCTV-8 | 6 | 6 |
-| CCTV-5+ | 6 | 6 |
+| CCTV-5+ | 5 | 5 |
