@@ -1,17 +1,17 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 1900
-Unique channel names: 1280
-Unique canonical channel identities: 1280
-Unique URLs: 1900
+Rows: 1948
+Unique channel names: 1379
+Unique canonical channel identities: 1379
+Unique URLs: 1948
 Strict filter residue count: 0
 Latin/noise-like review count: 0
 Channel unique URL limit violations: 0
 URL identity conflicts: 0
-Unique stream hosts: 150
-Top stream host share: 24.2%
-Top five stream host share: 59.5%
+Unique stream hosts: 148
+Top stream host share: 24.5%
+Top five stream host share: 60.6%
 
 ## Core CCTV quality
 
@@ -25,7 +25,7 @@ Minimum independent hosts per core channel: 2
 | CCTV-3 | 6 | 6 | 5 | OK |
 | CCTV-4 | 6 | 6 | 6 | OK |
 | CCTV-5 | 6 | 6 | 6 | OK |
-| CCTV-6 | 6 | 6 | 6 | OK |
+| CCTV-6 | 6 | 6 | 4 | OK |
 | CCTV-7 | 6 | 6 | 6 | OK |
 | CCTV-8 | 6 | 6 | 6 | OK |
 | CCTV-9 | 6 | 6 | 5 | OK |
@@ -35,8 +35,8 @@ Minimum independent hosts per core channel: 2
 | CCTV-13 | 6 | 6 | 4 | OK |
 | CCTV-14 | 6 | 6 | 6 | OK |
 | CCTV-15 | 6 | 6 | 6 | OK |
-| CCTV-16 | 6 | 6 | 5 | OK |
-| CCTV-17 | 6 | 6 | 2 | OK |
+| CCTV-16 | 6 | 6 | 6 | OK |
+| CCTV-17 | 6 | 6 | 3 | OK |
 | CCTV-5+ | 6 | 6 | 5 | OK |
 
 ## Important satellite quality
@@ -48,8 +48,8 @@ Minimum important satellite independent URLs: 3
 | 辽宁卫视 | 6 | 6 | 6 | OK |
 | 河北卫视 | 6 | 6 | 6 | OK |
 | 河南卫视 | 6 | 6 | 6 | OK |
-| 北京卫视 | 5 | 5 | 4 | OK |
-| 东方卫视 | 6 | 6 | 5 | OK |
+| 北京卫视 | 6 | 6 | 5 | OK |
+| 东方卫视 | 6 | 6 | 6 | OK |
 | 浙江卫视 | 6 | 6 | 6 | OK |
 | 江苏卫视 | 6 | 6 | 6 | OK |
 | 湖南卫视 | 5 | 5 | 4 | OK |
@@ -60,23 +60,19 @@ Minimum important satellite independent URLs: 3
 
 | Host | Rows | Share |
 |---|---:|---:|
-| stream1.freetv.fun | 460 | 24.2% |
-| live.ottiptv.cc | 342 | 18.0% |
-| cloud.video.taobao.com | 188 | 9.9% |
-| vodcdn.video.taobao.com | 72 | 3.8% |
-| live.metshop.top | 69 | 3.6% |
-| 63.141.230.178 | 54 | 2.8% |
-| 38.75.136.137 | 49 | 2.6% |
+| www.goodiptv.club | 477 | 24.5% |
+| stream1.freetv.fun | 393 | 20.2% |
+| cloud.video.taobao.com | 188 | 9.7% |
+| vodcdn.video.taobao.com | 72 | 3.7% |
+| 63.141.230.178 | 51 | 2.6% |
 | vd3.bdstatic.com | 48 | 2.5% |
-| 107.150.60.122 | 42 | 2.2% |
-| 198.204.228.26 | 27 | 1.4% |
+| 38.75.136.137 | 46 | 2.4% |
+| live.metshop.top | 46 | 2.4% |
+| 107.150.60.122 | 41 | 2.1% |
+| live.ottiptv.cc | 33 | 1.7% |
 
 ## Family playlist audit
 
 Status: ok
-Rows: 989
-Unique URLs: 989
-
-## Warnings
-
-- core channels below independent host warning target: CCTV-17=2
+Rows: 1007
+Unique URLs: 1007
