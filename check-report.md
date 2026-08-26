@@ -1,36 +1,36 @@
 # IPTV source verification report
 
-Generated: 2026-08-25 21:09:32
-Generated UTC: 2026-08-25T21:09:32Z
-Generated Beijing: 2026-08-26 05:09:32 Asia/Shanghai
-Elapsed: 1403.9s
+Generated: 2026-08-26 23:49:59
+Generated UTC: 2026-08-26T23:49:59Z
+Generated Beijing: 2026-08-27 07:49:59 Asia/Shanghai
+Elapsed: 1013.8s
 Sources configured: 37 (enabled=28, recovery=2, disabled=7)
 Sources probed: 30
-Sources fetched OK: 28
-Sources contributing candidates: 28
-Parsed candidates: 29122
-Unique name+URL candidates: 25658
-Unique stream URLs: 24709
-Checked unique stream URLs: 24709
+Sources fetched OK: 27
+Sources contributing candidates: 27
+Parsed candidates: 28937
+Unique name+URL candidates: 25514
+Unique stream URLs: 24571
+Checked unique stream URLs: 24571
 Checked all unique URLs: True
-Playable channel names: 10173
-Playable unique URLs: 11756
-Playable name+URL lines: 12380
-Playable URLs found (legacy line count): 12380
-Pre-curated published playable lines: 11756
+Playable channel names: 10601
+Playable unique URLs: 12003
+Playable name+URL lines: 12616
+Playable URLs found (legacy line count): 12616
+Pre-curated published playable lines: 12100
 
 ## Source fetch status
 
 | Source | Mode | Fetch | Contributes | Parsed | Bytes | Truncated | Error |
 |---|---|---:|---:|---:|---:|---:|---|
 | iyouhun_zb | enabled | OK | YES | 6 | 609 | False |  |
-| zbds_iptv4_txt | enabled | OK | YES | 791 | 64007 | False |  |
+| zbds_iptv4_txt | enabled | OK | YES | 767 | 62215 | False |  |
 | guovin_all | enabled | OK | YES | 1568 | 382886 | False |  |
 | guovin_ipv4 | enabled | OK | YES | 458 | 101920 | False |  |
 | guovin_ipv6 | enabled | OK | YES | 1117 | 282498 | False |  |
 | suxuang_ipv4 | enabled | OK | YES | 1209 | 268175 | False |  |
 | suxuang_ipv6 | enabled | OK | YES | 853 | 200521 | False |  |
-| zbds_iptv4_m3u | enabled | OK | YES | 487 | 106994 | False |  |
+| zbds_iptv4_m3u | enabled | OK | YES | 479 | 104772 | False |  |
 | burningc4_ipv4 | enabled | OK | YES | 58 | 8021 | False |  |
 | vamoschuck_m3u | enabled | OK | YES | 788 | 147124 | False |  |
 | zbds_iptv6_txt | enabled | OK | YES | 2 | 268 | False |  |
@@ -40,34 +40,34 @@ Pre-curated published playable lines: 11756
 | kimentanm_aptv | enabled | OK | YES | 119 | 21944 | False |  |
 | bigbiggrandg_gather | enabled | OK | YES | 1954 | 329793 | False |  |
 | yang_gather | enabled | OK | YES | 127 | 27353 | False |  |
-| iptv_org_all | enabled | OK | YES | 12829 | 2782364 | False |  |
-| epg_cn | enabled | OK | YES | 3554 | 1131754 | False |  |
-| epg_hk | enabled | OK | YES | 85 | 27126 | False |  |
+| iptv_org_all | enabled | OK | YES | 12846 | 2787793 | False |  |
+| epg_cn | enabled | OK | YES | 3168 | 1009267 | False |  |
+| epg_hk | enabled | OK | YES | 84 | 26789 | False |  |
 | epg_mo | enabled | OK | YES | 19 | 6134 | False |  |
-| epg_tw | enabled | OK | YES | 129 | 44863 | False |  |
+| epg_tw | enabled | OK | YES | 117 | 41017 | False |  |
 | iptv_org_tw | enabled | OK | YES | 24 | 4780 | False |  |
-| epg_sg | enabled | OK | YES | 18 | 5669 | False |  |
+| epg_sg | enabled | OK | YES | 11 | 3482 | False |  |
 | epg_my | enabled | OK | YES | 29 | 9228 | False |  |
 | free_tv_world | enabled | OK | YES | 2031 | 548441 | False |  |
-| mursor_yy | enabled | OK | YES | 477 | 99841 | False |  |
-| mursor_bililive | enabled | OK | YES | 225 | 44752 | False |  |
+| mursor_yy | enabled | FAIL | NO | 0 | 0 | False | PublicURLPolicyError('DNS resolution failed for gongdian.top: [Errno -5] No address associated with hostname') |
+| mursor_bililive | enabled | FAIL | NO | 0 | 0 | False | PublicURLPolicyError('DNS resolution failed for gongdian.top: [Errno -5] No address associated with hostname') |
 | freetv_huya | recovery | FAIL | NO | 0 | 0 | False | TimeoutError('The read operation timed out') |
-| freetv_douyu | recovery | FAIL | NO | 0 | 0 | False | TimeoutError('The read operation timed out') |
+| freetv_douyu | recovery | OK | YES | 938 | 178118 | False |  |
 
 ## Pre-curation playable lines by source
 
 | Source | Lines |
 |---|---:|
-| iptv_org_all | 7036 |
-| epg_cn | 1386 |
-| free_tv_world | 883 |
-| bigbiggrandg_gather | 668 |
-| zbds_iptv4_txt | 496 |
-| mursor_yy | 403 |
-| guovin_all | 396 |
-| guovin_ipv4 | 229 |
-| suxuang_ipv4 | 166 |
-| vamoschuck_m3u | 46 |
+| iptv_org_all | 7001 |
+| epg_cn | 1242 |
+| freetv_douyu | 902 |
+| free_tv_world | 886 |
+| bigbiggrandg_gather | 663 |
+| zbds_iptv4_txt | 520 |
+| guovin_all | 394 |
+| guovin_ipv4 | 226 |
+| suxuang_ipv4 | 167 |
+| vamoschuck_m3u | 52 |
 | suxuang_ipv6 | 12 |
 | iptv_org_tw | 11 |
 | epg_mo | 8 |
@@ -123,6 +123,7 @@ Pre-curated published playable lines: 11756
 - 央视频道 / CCTV-15 / guovin_ipv4
 - 央视频道 / CCTV-15 / guovin_ipv4
 - 央视频道 / CCTV-15 / guovin_ipv4
+- 央视频道 / CCTV-15(1080p) / iptv_org_all
 - 央视频道 / CCTV-16 / guovin_ipv4
 - 央视频道 / CCTV-16 / guovin_ipv4
 - 央视频道 / CCTV-16 / guovin_ipv4
@@ -159,4 +160,3 @@ Pre-curated published playable lines: 11756
 - 央视频道 / CCTV-5 / guovin_ipv4
 - 央视频道 / CCTV-5 / guovin_ipv4
 - 央视频道 / CCTV-5 / guovin_ipv4
-- 央视频道 / CCTV-5+ / guovin_ipv4
