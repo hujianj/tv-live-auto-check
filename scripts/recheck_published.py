@@ -133,12 +133,16 @@ def retry_failed_final_urls(
                     results[url].cand,
                     True,
                     f"final slow retry ok attempt={attempt} first={first_details[url]}; {retry.detail}",
+                    retry.elapsed_seconds,
+                    retry.checked_at,
                 )
             else:
                 results[url] = CheckResult(
                     results[url].cand,
                     False,
                     f"final slow retry failed attempt={attempt} first={first_details[url]}; last={retry.detail}",
+                    retry.elapsed_seconds,
+                    retry.checked_at,
                 )
                 pending.append(url)
     return {
@@ -451,10 +455,11 @@ def write_results_csv(
     refill_results = refill_results or {}
     with (ROOT / CSV_FILE).open("w", encoding="utf-8", newline="") as f:
         writer = csv.writer(f, lineterminator="\n")
-        writer.writerow(["phase", "ok", "group", "name", "url", "source", "origin", "detail"])
+        writer.writerow(["phase", "ok", "group", "name", "url", "source", "origin", "detail", "video_required", "progress_required", "checked_at", "elapsed_seconds"])
         for row in rows:
             result = results[row.url]
-            writer.writerow(["published", result.ok, row.group, row.name, row.url, "published_recheck", "current_publication", result.detail])
+            writer.writerow(["published", result.ok, row.group, row.name, row.url, "published_recheck", "current_publication", result.detail,
+                             REQUIRE_VIDEO_TRACK, REQUIRE_BROADCAST_PROGRESS and requires_live_progress(row), result.checked_at, result.elapsed_seconds])
         for candidate in attempted_refills:
             result = refill_results[candidate.row.url]
             writer.writerow([
@@ -466,6 +471,10 @@ def write_results_csv(
                 candidate.source,
                 candidate.origin,
                 result.detail,
+                REQUIRE_VIDEO_TRACK,
+                REQUIRE_BROADCAST_PROGRESS and requires_live_progress(candidate.row),
+                result.checked_at,
+                result.elapsed_seconds,
             ])
 
 
@@ -945,6 +954,7 @@ def main() -> int:
                 print(f"published_recheck {i}/{len(futs)} ok_urls={ok_count}", flush=True)
 
     retry_summary = retry_failed_final_urls(by_url, results, core_urls, progress_urls)
+    write_results_csv(rows, results, [], {})
     print("Published final slow retry", json.dumps(retry_summary, ensure_ascii=False, sort_keys=True), flush=True)
     failed_urls = {url: result.detail for url, result in results.items() if not result.ok}
     kept_rows = [row for row in rows if row.url not in failed_urls]
@@ -993,6 +1003,7 @@ def main() -> int:
     refill_summary["initial_retry"] = retry_summary
     for candidate in accepted_refills:
         source_map[(candidate.row.name, candidate.row.url)] = candidate.source
+    write_results_csv(rows, results, attempted_refills, refill_results)
 
     elapsed = time.time() - start
 

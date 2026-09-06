@@ -10,6 +10,9 @@ from stability import load_history, stability_adjustment, stability_enabled
 from channel_utils import cctv_key, cctv_number, cctv_sort_key, chinese_count as shared_chinese_count, format_extinf, is_latin_noise_name
 from channel_identity import aliases_are_compatible, canonical_channel_key, is_audio_only_channel
 from url_utils import is_publishable_http_url, normalize_stream_url
+from channel_scope import domestic_chinese_issue
+from source_config import load_source_specs
+from source_policy import publication_issue
 
 ROOT = Path(__file__).resolve().parents[1]
 IN = ROOT / "stream_check_results.csv"
@@ -83,7 +86,9 @@ def chinese_count(s: str) -> int:
 
 
 def clean_name(name: str) -> str:
+    from channel_identity import normalize_station_alias
     name = (name or '').strip().replace(' ', '')
+    name = normalize_station_alias(name)
     # TXT playlist uses comma as delimiter; keep channel names delimiter-safe.
     name = name.replace(',', '\uFF0C')
     # CCTV1/CCTV-1 -> CCTV-1, and collapse resolution aliases to the exact
@@ -159,6 +164,8 @@ def is_hk_mo_tw_channel(name: str, group: str = '') -> bool:
 def is_unwanted_overseas_english(name: str, group: str, source: str) -> bool:
     n = name.strip()
     upper = n.upper()
+    if chinese_count(n) == 0 and not domestic_chinese_issue(n, group, source):
+        return False
     # Keep real CCTV numeric channels before applying the pure-Latin home-list
     # filter; otherwise CCTV-1/CCTV-5 are incorrectly treated as English names.
     if cctv_num(n):
@@ -192,6 +199,8 @@ def is_foreign_channel(name: str, group: str, source: str) -> bool:
         return True
     # Pure English/foreign names are removed, except numeric CCTV and HK/TW abbreviations.
     if chinese_count(n) == 0:
+        if not domestic_chinese_issue(n, group, source):
+            return False
         if cctv_num(n):
             return False
         if is_hk_mo_tw_channel(n, group):
@@ -216,10 +225,10 @@ def is_unstable_or_wrong_alias(name: str, group: str, source: str) -> bool:
 def classify(name: str, group: str, source: str) -> str:
     if cctv_num(name):
         return G_CCTV
-    if "\u536b\u89c6" in name:
-        return G_SAT
     if any(k in name for k in HK_KEYS) or any(k in group for k in GROUP_KEYS['hk']):
         return G_HK
+    if "\u536b\u89c6" in name:
+        return G_SAT
     province_station_name = (
         any(p in name for p in PROVINCES)
         and not re.search(r'[，,。！？：:、；;]', name)
@@ -227,7 +236,7 @@ def classify(name: str, group: str, source: str) -> str:
     if (
         province_station_name
         or any(k in group for k in GROUP_KEYS['local'])
-        or re.search(r'(?:\u65b0\u95fb\u7efc\u5408|\u65b0\u95fb\u9891\u9053|\u516c\u5171\u9891\u9053|\u7efc\u5408\u9891\u9053|\u516c\u5171\u53f0|\u7efc\u5408\u53f0)$', name)
+        or re.search(r'(?:\u65b0\u95fb\u7efc\u5408|\u65b0\u95fb\u7efc\u5408\u9891\u9053|\u65b0\u95fb\u9891\u9053|\u516c\u5171\u9891\u9053|\u7efc\u5408\u9891\u9053|\u516c\u5171\u53f0|\u7efc\u5408\u53f0)(?:\([^)]*\))*$', name)
     ):
         return G_LOCAL
     # Merge former movie/entertainment and other miscellaneous channels into a few broad categories.
@@ -245,13 +254,6 @@ def classify(name: str, group: str, source: str) -> str:
     # stream is overseas. Rotation sources commonly use generic Latin group
     # names for mainland films and shows. Only explicit overseas collections
     # plus an overseas-language group marker may select the overseas bucket.
-    group_lower = (group or '').lower()
-    if (
-        source in OVERSEAS_SOURCE_NAMES
-        and chinese_count(name) > 0
-        and any(token in group_lower for token in OVERSEAS_GROUP_TOKENS)
-    ):
-        return G_OVERSEA
     return G_ENT
 
 
@@ -397,6 +399,9 @@ def prepare_curated_row(
     strict_reason = strict_quality_drop_reason(name)
     if strict_reason:
         return None, 'strict_quality_filter', strict_reason
+    scope_issue = domestic_chinese_issue(name, group, source)
+    if scope_issue:
+        return None, 'channel_scope', scope_issue
     if is_unwanted_overseas_english(name, group, source):
         return None, 'unwanted_overseas_english', ''
     if is_foreign_channel(name, group, source):
@@ -404,8 +409,8 @@ def prepare_curated_row(
     if is_latin_noise_name(name):
         return None, 'latin_noise_name', ''
     curated_group = classify(name, group, source)
-    if curated_group == G_OVERSEA and chinese_count(name) == 0:
-        return None, 'oversea_latin_name', ''
+    if curated_group == G_OVERSEA:
+        return None, 'foreign_channel_group', ''
     return (curated_group, name, url, source), '', ''
 
 
@@ -447,9 +452,12 @@ def historical_fallback_rows() -> list[tuple[str, str, str, str]]:
     history_urls = STABILITY_HISTORY.get('urls') or {}
     prepared: list[tuple[str, str, str, str]] = []
     seen: set[tuple[str, str]] = set()
+    specs = {spec.name: spec for spec in load_source_specs()}
     for old_group, old_name, old_url in parse_tv_txt_rows(git_show_text('HEAD:live-curated.txt')):
         entry = history_urls.get(clean_url(old_url)) or {}
         source = str(entry.get('last_source') or 'previous_publication')
+        if publication_issue(specs.get(source), clean_url(old_url)):
+            continue
         row, _reason, _strict_reason = prepare_curated_row(old_name, old_url, old_group, source)
         if row is None or row[0] not in HISTORICAL_FALLBACK_GROUPS:
             continue
@@ -563,9 +571,13 @@ def main():
     rows = []
     drop_counts = Counter()
     strict_drop_reasons = Counter()
+    specs = {spec.name: spec for spec in load_source_specs()}
     with IN.open(encoding='utf-8', newline='') as f:
         for r in csv.DictReader(f):
             if r.get('ok') != 'True':
+                continue
+            if publication_issue(specs.get(r.get('source', '')), clean_url(r.get('url', ''))):
+                drop_counts['source_permission'] += 1
                 continue
             row, reason, strict_reason = prepare_curated_row(
                 r.get('name', ''),

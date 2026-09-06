@@ -133,6 +133,8 @@ jobs:
             alias-conflict-report.md
             published_recheck_results.csv
             sources_status.csv
+            source-inventory.json
+            output/
             source-report.md
             curated-report.md
             published-recheck-report.md
