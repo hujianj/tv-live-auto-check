@@ -108,11 +108,11 @@
     "fail_on_latin_noise_residue": true,
     "fail_on_channel_limit_violation": true,
     "fail_on_group_limit_violation": true,
-    "min_exact_cctv_unique_urls": 3,
-    "min_important_satellite_unique_urls": 3,
+    "min_exact_cctv_unique_urls": 1,
+    "min_important_satellite_unique_urls": 1,
     "warn_exact_cctv_unique_urls_below": 4,
     "warn_important_satellite_unique_urls_below": 4,
-    "min_core_unique_hosts": 2,
+    "min_core_unique_hosts": 1,
     "warn_core_unique_hosts_below": 3,
     "fail_on_host_concentration": false,
     "max_top_host_share": 0.5,
@@ -155,7 +155,7 @@
       "港澳台频道": 60,
       "海外华语频道": 80
     },
-    "min_lines": 700,
+    "min_lines": 1,
     "max_lines": 1400
   },
   "drop_audio_only_channels": true

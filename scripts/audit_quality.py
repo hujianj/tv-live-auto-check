@@ -12,6 +12,7 @@ from channel_identity import aliases_are_compatible, canonical_channel_key
 from curate_ku9 import per_channel_limit, strict_quality_drop_reason
 from playlist_config import get_group_order, load_quality, load_rules
 from validate_playlist import validate_file
+from channel_scope import domestic_chinese_issue
 
 ROOT = Path(__file__).resolve().parents[1]
 PLAYLIST = ROOT / "live-curated.txt"
@@ -172,6 +173,9 @@ def build_audit(rows: list[tuple[str, str, str]]) -> tuple[dict, list[str], list
 
     failures: list[str] = []
     warnings: list[str] = []
+    scope_residue = [name for group, name, _url in rows if domestic_chinese_issue(name, group)]
+    if scope_residue:
+        failures.append(f"domestic Chinese channel scope violations: {len(scope_residue)}")
     if audit_cfg.get("fail_on_strict_filter_residue", True) and strict_residue:
         failures.append(f"strict filtered channel residue remains: {len(strict_residue)} rows")
     if missing_cctv_quality:
@@ -218,6 +222,8 @@ def build_audit(rows: list[tuple[str, str, str]]) -> tuple[dict, list[str], list
 
     result = {
         "status": "rejected" if failures else "ok",
+        "channel_scope_violation_count": len(scope_residue),
+        "channel_scope_violation_sample": scope_residue[:40],
         "rows": len(rows),
         "unique_channel_identities": len(by_identity),
         "unique_names": len({name for _, name, _ in rows}),

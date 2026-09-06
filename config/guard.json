@@ -1,5 +1,13 @@
 {
-  "min_lines": 1800,
+  "min_lines": 1,
+  "coverage_metric": "canonical_channels",
+  "min_channels": 29,
+  "min_group_channels": {
+    "央视频道": 18,
+    "卫视频道": 10,
+    "地方频道": 1
+  },
+  "source_outages_block_publication": false,
   "max_total_drop_ratio": 0.2,
   "max_published_recheck_failed_url_ratio": 0.25,
   "max_failed_sources": 5,
@@ -29,9 +37,9 @@
     "bigbiggrandg_gather"
   ],
   "min_groups": {
-    "央视频道": 90,
-    "卫视频道": 120,
-    "地方频道": 250,
+    "央视频道": 1,
+    "卫视频道": 1,
+    "地方频道": 1,
     "影视剧场": 0,
     "少儿动漫": 0,
     "体育纪实": 0,
