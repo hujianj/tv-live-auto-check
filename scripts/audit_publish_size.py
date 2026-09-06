@@ -102,7 +102,6 @@ def main() -> int:
     thresholds = {
         "max_primary_txt_bytes": ("ku9-live.txt", int(guard.get("max_primary_txt_bytes", 600_000))),
         "max_m3u_bytes": ("live.m3u", int(guard.get("max_m3u_bytes", 1_000_000))),
-        "max_stability_history_bytes": ("stability-history.tsv", int(guard.get("max_stability_history_bytes", 1_200_000))),
     }
     for label, (filename, limit) in thresholds.items():
         size = sizes.get(filename, 0)

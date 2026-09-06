@@ -54,7 +54,7 @@
   },
   "stability": {
     "enabled": true,
-    "history_file": "stability-history.tsv",
+    "history_file": "stability-state.json",
     "report_file": "stability-report.md",
     "max_entries": 5000,
     "evidence_counter_cap": 20,

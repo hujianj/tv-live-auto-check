@@ -6,6 +6,7 @@ import concurrent.futures as cf
 import csv
 import json
 import os
+import shutil
 import sys
 import time
 from collections import Counter, defaultdict
@@ -21,7 +22,7 @@ from verify_sources import (
     check_candidate_resilient,
     is_core_family_candidate,
 )
-from stability import update_history
+from stability import build_observation, preview_observation, write_observation
 from playlist_config import get_group_order, load_guard, load_quality, load_rules
 from curate_ku9 import per_channel_limit
 from channel_utils import format_extinf
@@ -45,6 +46,8 @@ FINAL_REPORT_FILE = "final-publish-report.md"
 CSV_FILE = "published_recheck_results.csv"
 SOURCE_MAP_FILE = "curated-source-map.csv"
 CANDIDATE_POOL_FILE = "curated-candidate-pool.csv"
+PENDING_STABILITY_FILE = "stability-observation.json"
+TRANSACTION_DIR = ".maintenance-staging/recheck"
 
 MAX_WORKERS = int(os.getenv("IPTV_PUBLISHED_RECHECK_WORKERS", os.getenv("IPTV_CHECK_WORKERS", "64")))
 REFILL_WORKERS = max(1, int(os.getenv("IPTV_PUBLISHED_REFILL_WORKERS", "24")))
@@ -305,6 +308,99 @@ def cleanup_stale_diagnostics() -> None:
             path.unlink()
     except OSError:
         pass
+
+
+def _transaction_root(root: Path) -> Path:
+    return root / TRANSACTION_DIR
+
+
+def recover_interrupted_promotion(root: Path = ROOT, *, fail_after: int | None = None) -> bool:
+    """Roll back a promotion that was interrupted after its journal was written."""
+    transaction_root = _transaction_root(root)
+    journal_path = transaction_root / "transaction.json"
+    if not journal_path.exists():
+        return False
+    journal = json.loads(journal_path.read_text(encoding="utf-8"))
+    if journal.get("schema_version") != 1 or journal.get("state") != "promoting":
+        raise ValueError("invalid recheck promotion journal")
+    entries = journal.get("files")
+    if not isinstance(entries, list) or not entries:
+        raise ValueError("recheck promotion journal has no files")
+    backup_root = transaction_root / "backup"
+    for index, item in enumerate(entries, 1):
+        if not isinstance(item, dict):
+            raise ValueError("invalid recheck promotion journal entry")
+        name = item.get("name")
+        existed = item.get("existed")
+        if not isinstance(name, str) or Path(name).name != name or type(existed) is not bool:
+            raise ValueError("unsafe recheck promotion journal entry")
+        destination = root / name
+        backup = backup_root / name
+        if existed:
+            if not backup.is_file():
+                raise ValueError(f"missing rollback backup for {name}")
+            temporary = root / (name + ".rollback.tmp")
+            shutil.copy2(backup, temporary)
+            os.replace(temporary, destination)
+        else:
+            try:
+                destination.unlink()
+            except FileNotFoundError:
+                pass
+        if fail_after is not None and index >= fail_after:
+            raise RuntimeError("injected recheck rollback failure")
+    shutil.rmtree(transaction_root)
+    print("Recovered an interrupted recheck output promotion.", flush=True)
+    return True
+
+
+def prepare_staging_root(root: Path = ROOT) -> Path:
+    transaction_root = _transaction_root(root)
+    if transaction_root.exists():
+        shutil.rmtree(transaction_root)
+    staged = transaction_root / "staged"
+    staged.mkdir(parents=True)
+    return staged
+
+
+def promote_staged_outputs(
+    staged_root: Path,
+    filenames: list[str],
+    root: Path = ROOT,
+    *,
+    fail_after: int | None = None,
+) -> None:
+    """Promote a validated file set, rolling every destination back on failure."""
+    names = list(dict.fromkeys(filenames))
+    if not names or any(Path(name).name != name for name in names):
+        raise ValueError("recheck promotion accepts only non-empty basename file lists")
+    missing = [name for name in names if not (staged_root / name).is_file()]
+    if missing:
+        raise ValueError(f"staged recheck outputs are incomplete: {missing}")
+    transaction_root = _transaction_root(root)
+    backup_root = transaction_root / "backup"
+    backup_root.mkdir(parents=True, exist_ok=True)
+    entries = []
+    for name in names:
+        destination = root / name
+        existed = destination.is_file()
+        entries.append({"name": name, "existed": existed})
+        if existed:
+            shutil.copy2(destination, backup_root / name)
+    journal = {"schema_version": 1, "state": "promoting", "files": entries}
+    journal_path = transaction_root / "transaction.json"
+    temporary_journal = transaction_root / "transaction.json.tmp"
+    temporary_journal.write_text(json.dumps(journal, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
+    os.replace(temporary_journal, journal_path)
+    try:
+        for index, name in enumerate(names, 1):
+            os.replace(staged_root / name, root / name)
+            if fail_after is not None and index >= fail_after:
+                raise RuntimeError("injected recheck promotion failure")
+    except BaseException:
+        recover_interrupted_promotion(root)
+        raise
+    shutil.rmtree(transaction_root)
 
 
 def write_outputs(groups: list[str], rows: list[Row]) -> list[Row]:
@@ -750,8 +846,8 @@ def write_final_report(groups: list[str], rows: list[Row], failed_urls: dict[str
         f"Live-progress groups: {', '.join(sorted(LIVE_PROGRESS_GROUPS))}",
         f"Final recheck elapsed: {elapsed:.1f}s",
         f"Source map available: {bool(source_map)}",
-        f"Stability tracked URLs after update: {stability_summary.get('tracked_urls_after')}",
-        f"Stability OK/fail updates: {stability_summary.get('ok_updates')}/{stability_summary.get('fail_updates')}",
+        f"Stability tracked URLs after pending observation: {stability_summary.get('tracked_urls_after')}",
+        f"Pending stability OK/fail updates: {stability_summary.get('ok_updates')}/{stability_summary.get('fail_updates')}",
         f"Strict quality filter dropped rows before recheck: {quality.get('strict_filter_dropped_rows', 0)}",
         f"Channel limit trimmed rows before recheck: {quality.get('channel_limit_trimmed_rows', 0)}",
         f"Group limit trimmed rows before recheck: {sum((quality.get('group_limit_trimmed_counts') or {}).values())}",
@@ -798,6 +894,9 @@ def write_final_report(groups: list[str], rows: list[Row], failed_urls: dict[str
 
 
 def main() -> int:
+    global ROOT
+    repository_root = ROOT
+    recover_interrupted_promotion(repository_root)
     cleanup_stale_diagnostics()
     start = time.time()
     for filename in TXT_FILES:
@@ -896,9 +995,6 @@ def main() -> int:
         source_map[(candidate.row.name, candidate.row.url)] = candidate.source
 
     elapsed = time.time() - start
-    final_rows = write_outputs(groups, final_rows)
-    write_source_map(final_rows, source_map)
-    family_summary = write_family_outputs(groups, final_rows)
 
     refill_failed_urls = {
         url: result.detail for url, result in refill_results.items() if not result.ok
@@ -906,7 +1002,15 @@ def main() -> int:
     all_failed_urls = dict(failed_urls)
     all_failed_urls.update(refill_failed_urls)
     stability_rows = rows + [candidate.row for candidate in attempted_refills]
-    stability_summary = update_history(stability_rows, all_failed_urls, source_map)
+    summary_before_recheck = json.loads((repository_root / SUMMARY_FILE).read_text(encoding="utf-8"))
+    observation_id = os.getenv("IPTV_STABILITY_OBSERVATION_ID", "").strip()
+    if not observation_id:
+        observation_id = "manual:" + ":".join((
+            str(summary_before_recheck.get("generated_utc") or "unknown"),
+            str(summary_before_recheck.get("source_config_sha256") or "unknown"),
+        ))
+    observation = build_observation(stability_rows, all_failed_urls, source_map, observation_id)
+    stability_summary = preview_observation(observation)
     checked_url_set = set(by_url) | set(refill_results)
     checked_urls = len(checked_url_set)
 
@@ -919,32 +1023,60 @@ def main() -> int:
             if requires_live_progress(Row(result.cand.group, result.cand.name, result.cand.url))
         )
     strict_progress_checked_unique = len(strict_progress_urls)
-    update_summary(
-        rows,
-        final_rows,
-        checked_urls,
-        failed_urls,
-        all_failed_urls,
-        elapsed,
-        source_map,
-        stability_summary,
-        family_summary,
-        refill_summary,
-        retry_summary,
-        strict_progress_checked_unique,
-    )
-    write_report(rows, final_rows, failed_urls, elapsed, refill_summary)
-    write_final_report(
-        groups,
-        final_rows,
-        failed_urls,
-        elapsed,
-        source_map,
-        stability_summary,
-        family_summary,
-        refill_summary,
-    )
-    write_results_csv(rows, results, attempted_refills, refill_results)
+    staged_root = prepare_staging_root(repository_root)
+    shutil.copy2(repository_root / SUMMARY_FILE, staged_root / SUMMARY_FILE)
+    ROOT = staged_root
+    try:
+        final_rows = write_outputs(groups, final_rows)
+        write_source_map(final_rows, source_map)
+        family_summary = write_family_outputs(groups, final_rows)
+        update_summary(
+            rows,
+            final_rows,
+            checked_urls,
+            failed_urls,
+            all_failed_urls,
+            elapsed,
+            source_map,
+            stability_summary,
+            family_summary,
+            refill_summary,
+            retry_summary,
+            strict_progress_checked_unique,
+        )
+        write_report(rows, final_rows, failed_urls, elapsed, refill_summary)
+        write_final_report(
+            groups,
+            final_rows,
+            failed_urls,
+            elapsed,
+            source_map,
+            stability_summary,
+            family_summary,
+            refill_summary,
+        )
+        write_results_csv(rows, results, attempted_refills, refill_results)
+        write_observation(ROOT / PENDING_STABILITY_FILE, observation)
+        for filename in [*TXT_FILES, M3U_FILE, *family_txt_files(), family_m3u_file()]:
+            validate_file(ROOT / filename, require_categories=True)
+        staged_summary = json.loads((ROOT / SUMMARY_FILE).read_text(encoding="utf-8"))
+        if (staged_summary.get("stability") or {}).get("observation_id") != observation_id:
+            raise ValueError("staged summary does not reference the pending stability observation")
+    finally:
+        ROOT = repository_root
+    promoted_files = [
+        *TXT_FILES,
+        M3U_FILE,
+        *family_txt_files(),
+        family_m3u_file(),
+        SOURCE_MAP_FILE,
+        CSV_FILE,
+        SUMMARY_FILE,
+        REPORT_FILE,
+        FINAL_REPORT_FILE,
+        PENDING_STABILITY_FILE,
+    ]
+    promote_staged_outputs(staged_root, promoted_files, repository_root)
     print(
         "Published recheck done: "
         f"before={len(rows)} after={len(final_rows)} failed_urls={len(failed_urls)} "

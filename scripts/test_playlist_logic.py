@@ -5,7 +5,9 @@ from __future__ import annotations
 from pathlib import Path
 import csv
 import hashlib
+import io
 import json
+import os
 import re
 import socket
 import ssl
@@ -15,6 +17,7 @@ import tempfile
 import threading
 import time
 import zlib
+import zipfile
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from urllib.request import Request
@@ -83,6 +86,7 @@ def test_workflow_is_pinned_and_refuses_stale_publication() -> None:
     assert_queue_safety_contract("cancel-in-progress: false")
     assert "IPTV_REQUIRE_VIDEO_TRACK" in (ROOT / "scripts" / "run_maintenance.py").read_text(encoding="utf-8")
     assert "issues: write" in workflow
+    assert "actions: read" in workflow
     assert "notify_maintenance.py" in workflow
     assert workflow.count("continue-on-error: true") >= 4
     assert not workflow.rstrip().endswith(r"\n"), "workflow contains a literal trailing \\n token"
@@ -91,6 +95,11 @@ def test_workflow_is_pinned_and_refuses_stale_publication() -> None:
     assert "Required primary television endpoint is not current" in endpoint_checker
     assert "publication_check=" not in endpoint_checker
     assert "python scripts/run_maintenance.py" in workflow
+    assert workflow.index("Restore validated stability state") < workflow.index("Run complete maintenance pipeline")
+    assert workflow.index("Run complete maintenance pipeline") < workflow.index("Upload finalized stability state")
+    assert "retention-days: 90" in workflow
+    assert 'IPTV_STABILITY_OBSERVATION_ID: "${{ github.run_id }}:${{ github.sha }}"' in workflow
+    assert '${{ github.run_id }}:${{ env.SOURCE_SHA }}' not in workflow
     assert workflow.index("Run complete maintenance pipeline") < workflow.index("Commit verified playlist")
     assert "cdn_pending" in workflow
     assert "--publication-files" in workflow
@@ -241,6 +250,7 @@ def test_source_lifecycle_separates_recovery_from_enabled_failures() -> None:
 def test_guard_rejects_core_sources_that_fetch_but_parse_zero() -> None:
     original_root = guard_module.ROOT
     original_git_show = guard_module.git_show_json
+    original_step_summary = os.environ.pop("GITHUB_STEP_SUMMARY", None)
     try:
         with tempfile.TemporaryDirectory() as td:
             guard_module.ROOT = Path(td)
@@ -279,6 +289,8 @@ def test_guard_rejects_core_sources_that_fetch_but_parse_zero() -> None:
     finally:
         guard_module.ROOT = original_root
         guard_module.git_show_json = original_git_show
+        if original_step_summary is not None:
+            os.environ["GITHUB_STEP_SUMMARY"] = original_step_summary
 
 
 def test_rules_config_contains_core_coverage() -> None:
@@ -678,9 +690,8 @@ def test_stability_update_counts_unique_urls() -> None:
             assert stable["ok"] == cap
             assert stable["fail"] == 0
             assert stable["streak_ok"] == streak_cap
-            before = (tmp_path / "history.tsv").read_bytes()
             stability_module.update_history(stable_row, {}, {})
-            assert (tmp_path / "history.tsv").read_bytes() == before
+            assert stability_module.load_history()["urls"]["http://stable/live.m3u8"]["ok"] == cap
             stability_module.update_history(stable_row, {"http://stable/live.m3u8": "timeout"}, {})
             after_failure = stability_module.load_history()["urls"]["http://stable/live.m3u8"]
             assert after_failure["ok"] == cap - 1
@@ -690,6 +701,120 @@ def test_stability_update_counts_unique_urls() -> None:
         finally:
             stability_module.history_path = old_history_path  # type: ignore[assignment]
             stability_module.report_path = old_report_path  # type: ignore[assignment]
+
+
+def test_stability_observation_is_idempotent_and_validated() -> None:
+    old_history_path = stability_module.history_path
+    old_report_path = stability_module.report_path
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        stability_module.history_path = lambda: root / "state.json"  # type: ignore[assignment]
+        stability_module.report_path = lambda: root / "report.md"  # type: ignore[assignment]
+        try:
+            rows = [SimpleNamespace(group="央视频道", name="CCTV-1", url="https://unit.test/live.m3u8")]
+            observation = stability_module.build_observation(rows, {}, {}, "run-1:sha")
+            preview = stability_module.preview_observation(observation)
+            assert preview["observation_applied"] is False
+            assert preview["observation_pending"] is True
+            assert preview["state_update_mode"] == "deferred_until_maintenance_success"
+            first = stability_module.apply_observation(observation)
+            second = stability_module.apply_observation(observation)
+            assert first["observation_applied"] is True
+            assert first["state_update_mode"] == "applied"
+            assert second["observation_applied"] is False
+            assert second["updated_urls"] == 0
+            history = stability_module.load_history()
+            assert history["urls"][rows[0].url]["ok"] == 1
+            assert history["applied_observation_ids"] == ["run-1:sha"]
+            damaged = dict(observation)
+            damaged["entries"] = [{"url": "file:///etc/passwd", "name": "bad", "source": "x", "status": "ok", "error": ""}]
+            try:
+                stability_module.validate_observation(damaged)
+            except ValueError:
+                pass
+            else:
+                raise AssertionError("non-public observation URL must be rejected")
+        finally:
+            stability_module.history_path = old_history_path  # type: ignore[assignment]
+            stability_module.report_path = old_report_path  # type: ignore[assignment]
+
+
+def test_stability_artifact_zip_is_strict_and_bounded() -> None:
+    import restore_stability_state as restore
+
+    state = stability_module.empty_history()
+    state["urls"] = {
+        "https://unit.test/live.m3u8": {
+            "ok": 1,
+            "fail": 0,
+            "streak_ok": 1,
+            "streak_fail": 0,
+            "last_status": "ok",
+        }
+    }
+
+    def archive(files: dict[str, bytes]) -> bytes:
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as handle:
+            for name, payload in files.items():
+                handle.writestr(name, payload)
+        return buffer.getvalue()
+
+    payload = json.dumps(state).encode()
+    restored = restore.history_from_zip(archive({"stability-state.json": payload}))
+    assert restored["urls"] == state["urls"]
+    for bad in (
+        archive({"stability-state.json": payload, "extra.txt": b"x"}),
+        archive({"stability-state.json": b"not-json"}),
+        archive({"nested/other.json": payload}),
+    ):
+        try:
+            restore.history_from_zip(bad)
+        except (ValueError, json.JSONDecodeError):
+            pass
+        else:
+            raise AssertionError("invalid stability artifact archive was accepted")
+
+
+def test_stability_restore_skips_damaged_newer_artifact() -> None:
+    import restore_stability_state as restore
+
+    state = stability_module.empty_history()
+    state["urls"] = {
+        "https://unit.test/stable.m3u8": {
+            "ok": 1,
+            "fail": 0,
+            "streak_ok": 1,
+            "streak_fail": 0,
+            "last_status": "ok",
+            "adjustment": -11,
+        }
+    }
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as handle:
+        handle.writestr("stability-state.json", json.dumps(state).encode())
+    good_archive = buffer.getvalue()
+    originals = (
+        restore.successful_run_ids,
+        restore.artifact_for_run,
+        restore.download,
+        restore.write_history,
+    )
+    saved: list[dict] = []
+    try:
+        restore.successful_run_ids = lambda *_args: [20, 19]  # type: ignore[assignment]
+        restore.artifact_for_run = lambda _repo, run_id, _token: {  # type: ignore[assignment]
+            "id": run_id,
+            "archive_download_url": f"https://unit.test/{run_id}.zip",
+        }
+        restore.download = lambda url, _token: b"damaged" if "/20.zip" in url else good_archive  # type: ignore[assignment]
+        restore.write_history = lambda history: saved.append(history)  # type: ignore[assignment]
+        result = restore.restore("owner/repo", "main", "token")
+        assert result["status"] == "restored"
+        assert result["run_id"] == 19
+        assert saved[0]["urls"] == state["urls"]
+    finally:
+        restore.successful_run_ids, restore.artifact_for_run, restore.download, restore.write_history = originals
 
 
 def test_split_unquoted_last_comma() -> None:
@@ -2093,22 +2218,96 @@ def test_generated_csv_writers_force_lf_line_endings() -> None:
                 assert 'lineterminator="\\n"' in line, (relative, line)
 
 
+def test_recheck_output_promotion_rolls_back_every_file() -> None:
+    import recheck_published as recheck
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        staged = root / recheck.TRANSACTION_DIR / "staged"
+        staged.mkdir(parents=True)
+        names = ["live-curated.txt", "full-check-summary.json", "new-report.md"]
+        original = {
+            "live-curated.txt": b"old-playlist\n",
+            "full-check-summary.json": b'{"old":true}\n',
+        }
+        for name, payload in original.items():
+            (root / name).write_bytes(payload)
+        for name in names:
+            (staged / name).write_text("new " + name + "\n", encoding="utf-8", newline="\n")
+        try:
+            recheck.promote_staged_outputs(staged, names, root, fail_after=1)
+        except RuntimeError as exc:
+            assert "injected" in str(exc)
+        else:
+            raise AssertionError("promotion failure injection did not fail")
+        assert {name: (root / name).read_bytes() for name in original} == original
+        assert not (root / "new-report.md").exists()
+        assert not (root / recheck.TRANSACTION_DIR).exists()
+
+        # Recovery copies backups instead of consuming them, so an interruption
+        # during rollback can itself be resumed safely.
+        transaction = root / recheck.TRANSACTION_DIR
+        backup = transaction / "backup"
+        backup.mkdir(parents=True)
+        journal = {
+            "schema_version": 1,
+            "state": "promoting",
+            "files": [{"name": "live-curated.txt", "existed": True}],
+        }
+        (transaction / "transaction.json").write_text(json.dumps(journal), encoding="utf-8")
+        (backup / "live-curated.txt").write_bytes(b"known-good\n")
+        (root / "live-curated.txt").write_bytes(b"partial\n")
+        try:
+            recheck.recover_interrupted_promotion(root, fail_after=1)
+        except RuntimeError:
+            pass
+        else:
+            raise AssertionError("rollback interruption injection did not fail")
+        assert (backup / "live-curated.txt").read_bytes() == b"known-good\n"
+        assert recheck.recover_interrupted_promotion(root) is True
+        assert (root / "live-curated.txt").read_bytes() == b"known-good\n"
+
+
+def test_curate_checkpoint_restores_exact_input_bytes() -> None:
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        for index, name in enumerate(maintenance_module.CHECKPOINT_FILES):
+            (root / name).write_bytes(f"fixture-{index}-{name}\n".encode())
+        hashes = maintenance_module.save_curate_checkpoint(root)
+        before = {name: (root / name).read_bytes() for name in maintenance_module.CHECKPOINT_FILES}
+        for name in maintenance_module.CHECKPOINT_FILES:
+            (root / name).write_text("mutated\n", encoding="utf-8")
+        restored = maintenance_module.restore_curate_checkpoint(root)
+        assert restored == hashes
+        assert {name: (root / name).read_bytes() for name in maintenance_module.CHECKPOINT_FILES} == before
+        checkpoint_file = maintenance_module.checkpoint_dir(root) / maintenance_module.CHECKPOINT_FILES[0]
+        checkpoint_file.write_text("damaged\n", encoding="utf-8")
+        try:
+            maintenance_module.restore_curate_checkpoint(root)
+        except ValueError as exc:
+            assert "hash mismatch" in str(exc)
+        else:
+            raise AssertionError("damaged checkpoint must not be restored")
+
+
 def test_local_maintenance_wrapper_is_fail_fast_and_complete() -> None:
     commands = maintenance_module.pipeline_commands()
     labels = [label for label, _command in commands]
     scripts = [Path(command[1]).name for _label, command in commands]
-    assert labels[-4:] == [
+    assert labels[-5:] == [
         "guard against unsafe shrinkage",
         "audit publish size and generate manifest",
         "validate complete publish bundle",
         "validate immutable public publication",
+        "finalize stability state",
     ]
     assert scripts == [stage.script for stage in maintenance_module.STAGES]
     assert commands[0][1][-1] == "--validate"
-    assert commands[-2][1][-1] == "--strict"
+    assert commands[-3][1][-1] == "--strict"
     assert scripts.index("guard_publish.py") < scripts.index("audit_publish_size.py")
     assert scripts.index("audit_publish_size.py") < scripts.index("validate_publish_bundle.py")
     assert scripts.index("validate_publish_bundle.py") < scripts.index("validate_publication.py")
+    assert scripts.index("validate_publication.py") < scripts.index("finalize_stability.py")
     assert maintenance_module.STEP_ENV_OVERRIDES["verify_sources.py"]["IPTV_REQUIRE_VIDEO_TRACK"] == "0"
     assert maintenance_module.STEP_ENV_OVERRIDES["recheck_published.py"]["IPTV_REQUIRE_VIDEO_TRACK"] == "1"
     config = maintenance_module.load_config()
@@ -2816,6 +3015,9 @@ def main() -> int:
         test_local_network_parser_and_core_filter,
         test_stability_adjustment_prefers_proven_urls,
         test_stability_update_counts_unique_urls,
+        test_stability_observation_is_idempotent_and_validated,
+        test_stability_artifact_zip_is_strict_and_bounded,
+        test_stability_restore_skips_damaged_newer_artifact,
         test_split_unquoted_last_comma,
         test_split_stream_urls,
         test_parse_m3u_name_and_split_urls,
@@ -2857,6 +3059,8 @@ def main() -> int:
         test_publication_manifest_covers_final_summary_without_self_hash,
         test_final_recheck_slow_retry_recovers_non_core_failure,
         test_generated_csv_writers_force_lf_line_endings,
+        test_recheck_output_promotion_rolls_back_every_file,
+        test_curate_checkpoint_restores_exact_input_bytes,
         test_local_maintenance_wrapper_is_fail_fast_and_complete,
         test_maintenance_retry_resumes_at_failed_network_stage,
         test_maintenance_stage_timeout_is_reported_and_retryable,

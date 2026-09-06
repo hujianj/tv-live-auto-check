@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -26,6 +27,16 @@ from maintenance_contract import GUARD_REJECTED_EXIT_CODE
 ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = ROOT / "config" / "maintenance.json"
 REPORT_PATH = ROOT / "maintenance-run.json"
+CHECKPOINT_FILES: tuple[str, ...] = (
+    "live-curated.txt",
+    "live.txt",
+    "live-verified.txt",
+    "ku9-live.txt",
+    "live.m3u",
+    "full-check-summary.json",
+    "curated-source-map.csv",
+    "curated-candidate-pool.csv",
+)
 
 STALE_RUN_OUTPUTS: tuple[str, ...] = (
     "live-curated.txt",
@@ -56,6 +67,7 @@ STALE_RUN_OUTPUTS: tuple[str, ...] = (
     "publish-manifest.json",
     "full-check-summary.json",
     "sources_status.csv",
+    "stability-observation.json",
 )
 
 
@@ -78,6 +90,7 @@ STAGES: tuple[Stage, ...] = (
     Stage("audit publish size and generate manifest", "audit_publish_size.py"),
     Stage("validate complete publish bundle", "validate_publish_bundle.py", ("--strict",)),
     Stage("validate immutable public publication", "validate_publication.py"),
+    Stage("finalize stability state", "finalize_stability.py"),
 )
 
 ENV_DEFAULTS = {
@@ -113,6 +126,63 @@ PIPELINE_DEADLINE_ENV = "IPTV_MAINTENANCE_DEADLINE_MONOTONIC"
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def checkpoint_dir(root: Path = ROOT) -> Path:
+    return root / ".maintenance-staging" / "curate-checkpoint"
+
+
+def save_curate_checkpoint(root: Path = ROOT) -> dict[str, str]:
+    missing = [name for name in CHECKPOINT_FILES if not (root / name).is_file()]
+    if missing:
+        raise ValueError(f"cannot checkpoint incomplete curate output: {missing}")
+    destination = checkpoint_dir(root)
+    temporary = destination.with_name(destination.name + ".tmp")
+    if temporary.exists():
+        shutil.rmtree(temporary)
+    temporary.mkdir(parents=True)
+    hashes: dict[str, str] = {}
+    for name in CHECKPOINT_FILES:
+        shutil.copy2(root / name, temporary / name)
+        hashes[name] = sha256_file(temporary / name)
+    (temporary / "checkpoint.json").write_text(
+        json.dumps({"schema_version": 1, "files": hashes}, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    if destination.exists():
+        shutil.rmtree(destination)
+    os.replace(temporary, destination)
+    return hashes
+
+
+def restore_curate_checkpoint(root: Path = ROOT) -> dict[str, str]:
+    destination = checkpoint_dir(root)
+    manifest_path = destination / "checkpoint.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    hashes = manifest.get("files") if manifest.get("schema_version") == 1 else None
+    if not isinstance(hashes, dict) or list(hashes) != list(CHECKPOINT_FILES):
+        raise ValueError("invalid curate checkpoint manifest")
+    for name, expected in hashes.items():
+        source = destination / name
+        if not source.is_file() or sha256_file(source) != expected:
+            raise ValueError(f"curate checkpoint hash mismatch: {name}")
+    for name in CHECKPOINT_FILES:
+        temporary = root / (name + ".checkpoint.tmp")
+        shutil.copy2(destination / name, temporary)
+        os.replace(temporary, root / name)
+    actual = {name: sha256_file(root / name) for name in CHECKPOINT_FILES}
+    if actual != hashes:
+        raise ValueError("restored curate checkpoint bytes differ from manifest")
+    return actual
 
 
 def _positive_int(value: object, field: str) -> int:
@@ -358,6 +428,11 @@ def run_attempt(
                 remaining_runtime,
             )
             try:
+                if stage.script == "recheck_published.py":
+                    from recheck_published import recover_interrupted_promotion
+                    recover_interrupted_promotion(ROOT)
+                    restored = restore_curate_checkpoint(ROOT)
+                    print(f"Restored immutable curate checkpoint: files={len(restored)}", flush=True)
                 completed = subprocess.run(
                     command,
                     cwd=ROOT,
@@ -383,6 +458,11 @@ def run_attempt(
                 timed_out = False
                 launch_failed = True
                 timeout_reason = f"process launch failed: {exc!r}"
+            except (ValueError, json.JSONDecodeError) as exc:
+                returncode = 125
+                timed_out = False
+                launch_failed = True
+                timeout_reason = f"maintenance checkpoint failure: {exc}"
         elapsed = round(time.monotonic() - stage_started, 3)
         classification = "ok" if returncode == 0 else (
             "fatal" if timed_out and "pipeline runtime budget" in timeout_reason
@@ -429,6 +509,24 @@ def run_attempt(
                 flush=True,
             )
             return record
+        if stage.script == "curate_ku9.py":
+            try:
+                hashes = save_curate_checkpoint(ROOT)
+                stage_record["checkpoint_sha256"] = hashes
+            except Exception as exc:
+                stage_record.update({
+                    "returncode": 125,
+                    "classification": "fatal",
+                    "failure_reason": f"cannot save curate checkpoint: {exc}",
+                })
+                record.update({
+                    "status": "failed",
+                    "failure_classification": "fatal",
+                    "failed_stage": stage_record,
+                    "finished_utc": utc_now(),
+                    "elapsed_seconds": round(time.monotonic() - attempt_started, 3),
+                })
+                return record
         print(f"Stage OK: {stage.label} ({elapsed:.1f}s)", flush=True)
     record.update(
         {
@@ -518,7 +616,12 @@ def main(argv: list[str] | None = None) -> int:
         "attempts": [],
     }
     cleanup_attempt_evidence()
+    from recheck_published import recover_interrupted_promotion
+    recover_interrupted_promotion(ROOT)
     cleanup_stale_run_outputs()
+    staging_root = checkpoint_dir(ROOT).parent
+    if staging_root.exists():
+        shutil.rmtree(staging_root)
     write_report(report)
     start_index = 0
     stage_failure_counts: dict[str, int] = {}

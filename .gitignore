@@ -19,4 +19,8 @@ watchdog-report.json
 watchdog-report.md
 maintenance-run.json
 maintenance-attempt-*
+.maintenance-staging/
+stability-state.json
+stability-observation.json
+stability-report.md
 tmp-github-runs/
