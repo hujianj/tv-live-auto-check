@@ -604,6 +604,12 @@ def _validate_summary(
     _require_fields(stability, ("enabled", "updated_urls", "tracked_urls_after"), "summary.stability", errors)
     if stability.get("enabled") is not True:
         errors.append("summary.stability.enabled must be true")
+    if "state_update_mode" in stability and stability.get("state_update_mode") != "deferred_until_maintenance_success":
+        errors.append("summary.stability.state_update_mode must describe deferred pre-publication state")
+    if "observation_applied" in stability and stability.get("observation_applied") is not False:
+        errors.append("summary.stability.observation_applied must be false before finalization")
+    if "observation_pending" in stability and stability.get("observation_pending") is not True:
+        errors.append("summary.stability.observation_pending must be true before finalization")
     if "updated_urls" in stability and "checked_unique_urls" in recheck:
         _check_equal(stability["updated_urls"], recheck["checked_unique_urls"], "summary stability/recheck URL counts", errors)
     if "tracked_urls_after" in stability and "checked_unique_urls" in recheck:

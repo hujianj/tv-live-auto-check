@@ -45,7 +45,7 @@ GitHub Actions 每天北京时间 04:20 和 16:20 各计划运行一次，也可
 7. 按 `config/rules.json` 和 `config/quality.json` 做家用分类、过滤和限量。
 8. 生成 `live-curated.txt` / `live.txt` / `live-verified.txt` / `ku9-live.txt` / `live.m3u`。
 9. 对最终发布列表再做一次全量 URL 复测；第一轮失败的所有最终 URL 会以更低并发和更长超时再试一次，确认失败后才删除并从候选池补线。央视、卫视、地方台还会把上一版已发布线路作为恢复候选，但每一条都必须在本轮重新通过视频轨道和 HLS 进度检测；历史线路不会直接复用。
-10. 更新有界的 `stability-history.tsv`，让近期更稳定的线路在下一轮排序更靠前；成功/失败证据和连续次数会封顶并互相衰减，`last_seen` 只按北京时间周起始日更新，避免状态无限增长和每轮全表时间戳改写。
+10. 在全部发布门禁通过后，幂等应用本轮稳定性 observation；`stability-state.json` 只保存为 90 天 Actions artifact，不再每天提交大状态文件。下一轮仅从最近一次成功的主维护运行恢复并严格校验状态，缺失或损坏时从空状态安全启动。近期更稳定的线路会在下一轮排序更靠前；证据计数有上限并互相衰减，`last_seen` 只按北京时间周起始日更新。
 11. 运行核心频道覆盖审计、最终质量审计和防缩水发布守卫。
 12. 最终写入体积审计结果，再生成不包含自哈希的 `publish-manifest.json`，对所有其余发布文件的最终大小和 SHA256 做不可变校验。
 13. 完整跨文件校验和公开产物校验全部通过后才提交新版直播源。
@@ -82,6 +82,8 @@ alias-conflict-report.md
 ```
 
 `curated-source-map.csv` 和 `curated-candidate-pool.csv` 每次都会生成，但只存放在 Actions artifact 中，不是仓库内的公开订阅文件。`full-check-summary.json` 会用 `*_generated` 和 `*_artifact_only` 字段明确区分这两种语义。
+
+严格复检使用不可变的整理阶段 checkpoint。每次重试前都会核对 SHA256 并恢复同一份输入；复检输出先在 `.maintenance-staging` 中完整生成和校验，再通过带事务日志与回滚备份的文件组提升替换工作区结果。稳定性 observation 只在覆盖、质量、防缩水、完整 bundle 和发布 manifest 全部通过后应用一次，单次运行重试不会重复累计证据。
 
 `publish-manifest.json` 是最终公开产物清单。它记录除自身以外的所有发布文件最终大小和 SHA256；清单自身不记录自己的哈希，从设计上避免 `full-check-summary.json` 过去那种“写回审计数据后自身大小和哈希立即失效”的循环依赖。另有只读、无仓库写凭据的轻量 CI，会在代码或公开产物被直接修改时运行单元测试和清单校验，不触发三万 URL 的昂贵全量检测。
 
