@@ -95,6 +95,8 @@ def clean_name(name: str) -> str:
     # canonical name so one channel receives one shared line quota.
     name = re.sub(r'^CCTV[-_ ]?(\d+)(\+?)', r'CCTV-\1\2', name, flags=re.I)
     exact = cctv_key(name)
+    if not exact and re.fullmatch(r'CCTV-\d+\+?(?:\u4e2d\u6587\u56fd\u9645|\u5965\u6797\u5339\u514b|\u4f53\u80b2\u8d5b\u4e8b)', name, re.I):
+        exact = cctv_key(canonical_channel_key(name))
     return (exact or name)[:80]
 
 

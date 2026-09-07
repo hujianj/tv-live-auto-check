@@ -16,7 +16,7 @@ import threading
 import time
 import uuid
 from collections import Counter, deque
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from contextlib import contextmanager
@@ -31,6 +31,7 @@ from url_utils import is_publishable_http_url, normalize_stream_url, publishable
 from network_safety import public_urlopen
 from source_config import SourceSpec, configured_source_pairs, load_source_specs, probe_source_specs
 from media_probe import looks_media as probe_looks_media, probe_media
+from media_decode import DecodeResult, MAX_INIT_BYTES, MAX_SAMPLE_BYTES, decode_video
 from source_adapters import parse as parse_source_data
 from source_policy import POLICY_VERSION as SOURCE_POLICY_VERSION, discovery_links, publication_issue, source_record
 from channel_scope import CHANNEL_SCOPE, NETWORK_SCOPE, POLICY_VERSION as CHANNEL_POLICY_VERSION, domestic_chinese_issue
@@ -142,6 +143,7 @@ class CheckResult:
     detail: str
     elapsed_seconds: float = 0.0
     checked_at: str = ""
+    decoded_frames: int = 0
 
 
 def order_source_statuses(statuses: Iterable[SourceStatus], sources: list[tuple[str, str]] | None = None) -> list[SourceStatus]:
@@ -611,19 +613,28 @@ def media_detail(data: bytes, ctype: str) -> str:
     return f"{probe.kind}/{probe.container}: {probe.reason}"
 
 
-def check_aux_resources(manifest: HLSManifest, timeout: int, require_video: bool = False) -> tuple[bool, str]:
+def load_hls_initialization(manifest: HLSManifest, timeout: int, require_video: bool = False) -> tuple[bool, str, bytes]:
     if manifest.encrypted or manifest.keys:
-        return False, "encrypted/DRM HLS excluded; no key or license requested"
-    for map_url in manifest.maps[:1]:
+        return False, "encrypted/DRM HLS excluded; no key or license requested", b""
+    if len(manifest.maps) > 1:
+        return False, "changing HLS initialization maps not supported", b""
+    prefix = b""
+    for map_url in manifest.maps:
         # The initialization segment contains the track table for CMAF/fMP4.
         # It is the authoritative place to reject audio-only HLS streams.
-        code, ctype, data, _final = http_get_small(map_url, max_bytes=65536, timeout=timeout)
+        code, ctype, data, _final = http_get_small(map_url, max_bytes=MAX_INIT_BYTES, timeout=timeout)
         if code >= 400 or not looks_media(data, ctype, require_video=require_video):
-            return False, f"map bad {code} {ctype} bytes={len(data)} {media_detail(data, ctype)}"
-    return True, f"keys={min(1, len(manifest.keys))} maps={min(1, len(manifest.maps))}"
+            return False, f"map bad {code} {ctype} bytes={len(data)} {media_detail(data, ctype)}", b""
+        prefix = data
+    return True, f"keys=0 maps={len(manifest.maps)}", prefix
 
 
-def check_media_segments(segments: list[str], limit: int = HLS_SEGMENT_CHECKS, timeout: int = TIMEOUT, require_video: bool | None = None) -> tuple[bool, str]:
+def check_aux_resources(manifest: HLSManifest, timeout: int, require_video: bool = False) -> tuple[bool, str]:
+    ok, detail, _prefix = load_hls_initialization(manifest, timeout, require_video)
+    return ok, detail
+
+
+def check_media_segments(segments: list[str], limit: int = HLS_SEGMENT_CHECKS, timeout: int = TIMEOUT, require_video: bool | None = None, init_data: bytes = b"") -> tuple[bool, str]:
     if not segments:
         return False, "no segment"
     if require_video is None:
@@ -637,10 +648,21 @@ def check_media_segments(segments: list[str], limit: int = HLS_SEGMENT_CHECKS, t
     for seg in segments[-max(1, limit):]:
         code, ctype, data, _final = http_get_small(seg, max_bytes=sample_bytes, timeout=timeout)
         checked += 1
-        if code >= 400 or not looks_media(data, ctype, require_video=require_video):
+        if code >= 400 or not data or looks_bad(data) or not looks_media(init_data + data, ctype, require_video=require_video):
             return False, f"segment bad {code} {ctype} bytes={len(data)} checked={checked} {media_detail(data, ctype)}"
     mode = "video" if require_video else "media"
     return True, f"segments ok checked={checked} required={mode}"
+
+
+def decode_manifest_sample(manifest: HLSManifest, timeout: int, prefix: bytes = b"") -> DecodeResult:
+    if manifest.encrypted or manifest.keys or not manifest.segments:
+        return DecodeResult(False, 0, "missing or encrypted media for decode")
+    if manifest.maps and not prefix:
+        return DecodeResult(False, 0, "missing HLS initialization for decode")
+    code, _ctype, data, _final = http_get_small(manifest.segments[-1], max_bytes=MAX_SAMPLE_BYTES, timeout=timeout)
+    if code >= 400 or not data or looks_bad(data):
+        return DecodeResult(False, 0, "invalid HLS media sample for decode")
+    return decode_video(prefix + data, deadline=getattr(_PROBE_CONTEXT, "deadline", None))
 
 
 def progress_wait_seconds(target_duration: float | None) -> float:
@@ -676,7 +698,10 @@ def check_hls_progress(playlist_url: str, initial: HLSManifest, timeout: int, re
     # usable. Probe the newly advertised edge segment again; this rejects stale
     # manifests that advance while their latest media objects are already 404,
     # empty, HTML error pages, or audio-only payloads.
-    edge_ok, edge_detail = check_media_segments(later.segments, limit=1, timeout=timeout, require_video=require_video)
+    aux_ok, aux_detail, prefix = load_hls_initialization(later, timeout, require_video)
+    if not aux_ok:
+        return False, f"new edge initialization failed: {aux_detail}"
+    edge_ok, edge_detail = check_media_segments(later.segments, limit=1, timeout=timeout, require_video=require_video, init_data=prefix)
     if not edge_ok:
         return False, f"manifest advanced after {wait_seconds:.1f}s; new edge failed: {edge_detail}"
     return True, f"manifest advanced after {wait_seconds:.1f}s; new edge ok"
@@ -691,28 +716,33 @@ def parse_next_from_m3u8(text: str, base: str) -> tuple[str | None, str | None]:
     return None, None
 
 
-def _check_media_manifest(cand: Candidate, playlist_url: str, text: str, final: str, timeout: int, segment_limit: int, require_progress: bool, require_video: bool) -> CheckResult:
+def _check_media_manifest(cand: Candidate, playlist_url: str, text: str, final: str, timeout: int, segment_limit: int, require_progress: bool, require_video: bool, require_decode: bool = False) -> CheckResult:
     manifest = parse_hls_manifest(text, final)
-    aux_ok, aux_detail = check_aux_resources(manifest, timeout, require_video=require_video)
+    aux_ok, aux_detail, prefix = load_hls_initialization(manifest, timeout, require_video=require_video)
     if not aux_ok:
         return CheckResult(cand, False, aux_detail)
-    segments_ok, segment_detail = check_media_segments(manifest.segments, limit=segment_limit, timeout=timeout, require_video=require_video)
+    if require_decode and (manifest.endlist or "#EXT-X-BYTERANGE:" in text.upper()):
+        return CheckResult(cand, False, "VOD/endlist or unsupported byte-range media playlist")
+    segments_ok, segment_detail = check_media_segments(manifest.segments, limit=segment_limit, timeout=timeout, require_video=require_video, init_data=prefix)
     if not segments_ok:
         return CheckResult(cand, False, segment_detail)
+    decoded = decode_manifest_sample(manifest, timeout, prefix) if require_decode else DecodeResult(True, 0, "frame decode not requested")
+    if not decoded.ok:
+        return CheckResult(cand, False, f"{segment_detail}; {decoded.detail}", decoded_frames=decoded.frames)
     if require_progress:
         progress_ok, progress_detail = check_hls_progress(final, manifest, timeout, require_video=require_video)
         if not progress_ok:
             return CheckResult(cand, False, f"{segment_detail}; {progress_detail}")
-        return CheckResult(cand, True, f"{segment_detail}; {aux_detail}; {progress_detail}")
-    return CheckResult(cand, True, f"{segment_detail}; {aux_detail}")
+        return CheckResult(cand, True, f"{segment_detail}; {aux_detail}; {progress_detail}; {decoded.detail}", decoded_frames=decoded.frames)
+    return CheckResult(cand, True, f"{segment_detail}; {aux_detail}; {decoded.detail}", decoded_frames=decoded.frames)
 
 
-def check_candidate(cand: Candidate, timeout: int = TIMEOUT, core_override: bool | None = None, require_progress: bool = False, require_video: bool | None = None) -> CheckResult:
+def check_candidate(cand: Candidate, timeout: int = TIMEOUT, core_override: bool | None = None, require_progress: bool = False, require_video: bool | None = None, require_decode: bool = False) -> CheckResult:
     start = time.monotonic()
     previous = getattr(_PROBE_CONTEXT, "deadline", None)
     _PROBE_CONTEXT.deadline = previous or start + URL_BUDGET
     try:
-        result = _check_candidate(cand, timeout, core_override, require_progress, require_video)
+        result = _check_candidate(cand, timeout, core_override, require_progress, require_video, require_decode)
     finally:
         _PROBE_CONTEXT.deadline = previous
     result.elapsed_seconds = round(time.monotonic() - start, 3)
@@ -720,7 +750,7 @@ def check_candidate(cand: Candidate, timeout: int = TIMEOUT, core_override: bool
     return result
 
 
-def _check_candidate(cand: Candidate, timeout: int = TIMEOUT, core_override: bool | None = None, require_progress: bool = False, require_video: bool | None = None) -> CheckResult:
+def _check_candidate(cand: Candidate, timeout: int = TIMEOUT, core_override: bool | None = None, require_progress: bool = False, require_video: bool | None = None, require_decode: bool = False) -> CheckResult:
     url = cand.url.strip()
     issue = publishable_url_issue(url)
     if issue:
@@ -758,35 +788,41 @@ def _check_candidate(cand: Candidate, timeout: int = TIMEOUT, core_override: boo
                         segment_limit,
                         require_progress,
                         require_video,
+                        require_decode,
                     )
                     last_detail = result.detail
                     if result.ok:
-                        return CheckResult(cand, True, f"variant ok variants_checked={checked_variants} {result.detail}")
+                        return replace(result, detail=f"variant ok variants_checked={checked_variants} {result.detail}")
                 return CheckResult(cand, False, f"variant fail variants_checked={checked_variants} {last_detail}")
-            return _check_media_manifest(cand, url, text, final, timeout, segment_limit, require_progress, require_video)
+            return _check_media_manifest(cand, url, text, final, timeout, segment_limit, require_progress, require_video, require_decode)
         direct_probe = probe_media(data, ctype)
-        if require_progress and direct_probe.container in {"mp4/fmp4", "fmp4"}:
+        if (require_progress or require_decode) and direct_probe.container in {"mp4/fmp4", "fmp4"}:
             return CheckResult(
                 cand,
                 False,
                 "direct MP4/fMP4 cannot prove live broadcast progress; rejecting likely VOD",
             )
+        decoded = DecodeResult(True, 0, "frame decode not requested")
+        if require_decode and direct_probe.kind == "video":
+            code, _ctype, sample, _final = http_get_small(url, max_bytes=MAX_SAMPLE_BYTES, timeout=timeout)
+            decoded = decode_video(sample, deadline=getattr(_PROBE_CONTEXT, "deadline", None)) if code < 400 else DecodeResult(False, 0, f"media sample HTTP {code}")
         return CheckResult(
             cand,
-            direct_probe.kind == "video" if require_video else direct_probe.kind in {"video", "audio"},
+            decoded.ok and (direct_probe.kind == "video" if require_video or require_decode else direct_probe.kind in {"video", "audio"}),
             f"direct {ctype} bytes={len(data)} {media_detail(data, ctype)} "
-            f"required={'video' if require_video else 'media'} progress={'required' if require_progress else 'not-required'}",
+            f"required={'video' if require_video else 'media'} progress={'required' if require_progress else 'not-required'}; {decoded.detail}",
+            decoded_frames=decoded.frames,
         )
     except Exception as exc:
         return CheckResult(cand, False, redact_text(repr(exc))[:160])
 
 
-def check_candidate_resilient(cand: Candidate, core_override: bool | None = None, require_progress: bool = False, require_video: bool | None = None) -> CheckResult:
+def check_candidate_resilient(cand: Candidate, core_override: bool | None = None, require_progress: bool = False, require_video: bool | None = None, require_decode: bool = False) -> CheckResult:
     start = time.monotonic()
     previous_deadline = getattr(_PROBE_CONTEXT, "deadline", None)
     _PROBE_CONTEXT.deadline = previous_deadline or start + URL_BUDGET
     try:
-        result = _check_candidate_resilient(cand, core_override, require_progress, require_video)
+        result = _check_candidate_resilient(cand, core_override, require_progress, require_video, require_decode)
     except Exception as exc:
         result = CheckResult(cand, False, redact_text(repr(exc))[:240])
     finally:
@@ -796,10 +832,10 @@ def check_candidate_resilient(cand: Candidate, core_override: bool | None = None
     return result
 
 
-def _check_candidate_resilient(cand: Candidate, core_override: bool | None = None, require_progress: bool = False, require_video: bool | None = None) -> CheckResult:
+def _check_candidate_resilient(cand: Candidate, core_override: bool | None = None, require_progress: bool = False, require_video: bool | None = None, require_decode: bool = False) -> CheckResult:
     """Check a URL, with a slow retry for core family channels on transient failures."""
     is_core = is_core_family_candidate(cand) if core_override is None else core_override
-    first = check_candidate(cand, timeout=TIMEOUT, core_override=is_core, require_progress=require_progress, require_video=require_video)
+    first = check_candidate(cand, timeout=TIMEOUT, core_override=is_core, require_progress=require_progress, require_video=require_video, require_decode=require_decode)
     if first.ok or CORE_RETRY_ATTEMPTS <= 0:
         return first
     if not is_core or not looks_transient_failure(first.detail):
@@ -812,9 +848,10 @@ def _check_candidate_resilient(cand: Candidate, core_override: bool | None = Non
             core_override=is_core,
             require_progress=require_progress,
             require_video=require_video,
+            require_decode=require_decode,
         )
         if retry.ok:
-            return CheckResult(cand, True, f"core retry ok attempt={attempt} first={first.detail}; {retry.detail}")
+            return replace(retry, detail=f"core retry ok attempt={attempt} first={first.detail}; {retry.detail}")
         last = retry
         if not looks_transient_failure(retry.detail):
             break

@@ -4,7 +4,7 @@
 
 此分支正在迁移来源许可和国内中文筛选规则。代码测试通过不等于新订阅已发布；只有完整维护运行通过覆盖、质量和发布校验后，才会替换 `main` 中的订阅文件。失败运行的 `output/` 只提供本轮诊断结果，不能冒充正式长期订阅。
 
-2026-09-07 核查：修复分支的 111 项离线测试通过；上一轮当前网络全量检查覆盖 177 个唯一 URL，严格复检保留 27 条线路，但核心频道缺失，未发布。今天针对此前被误过滤的 `CCTV-9 (576i)` 补测，解析已正常，地址返回 404，不能补入正式列表。六个订阅入口返回同一份旧版文件，CDN 一致并不意味着自动维护已成功；远端最近三次主维护均失败。完整证据与未完成项见 [迁移审查记录](docs/review-2026-09-07.md)。
+2026-09-07 核查：云端第 177 次主维护确认在首检阶段两次达到 1800 秒后退出，第二次重新检测全部 22849 个 URL，未执行发布和 CDN 检查。修复分支加入检测前筛选、同轮成功结果续检、整条 URL 时间预算和最终视频帧解码。120 项离线测试通过，但这不等于新订阅已发布。先前本地全流程复检保留 13 条线路，因核心频道缺失未发布；该轮发生在实际解码增强之前，不能作为解码成功证据。完整证据与未完成项见 [迁移审查记录](docs/review-2026-09-07.md)。
 
 ## 当前维护范围
 
@@ -15,6 +15,8 @@
 - 原始来源记录不删除。`rights_status: pending/restricted` 仅记录、抓取静态数据或待审核候选，不进入正式媒体候选；只有有明确、带日期的许可依据且通过检测的来源可参与发布。应用/代码许可证不等于电视节目版权授权。
 
 四个参考项目均保留独立的 `catalog` 配置：`youhunwl/TVAPP`、`qist/tvbox`、`Huameng11/yingshiTV`、`tushen6/Tomorrow`。只读取公开说明和静态候选链接，不执行 APK、JAR、spider 或私有接口。当前 `iptv-org` 的许可依据仅覆盖公开链接目录，不表示项目取得了电视节目再分发权。
+
+来源审核与使用边界见 [来源许可记录](docs/source-permissions.md)。BurningC4 和 Free-TV 按各自 README 明确的播放器订阅说明接入；不将链接目录的使用许可解释为节目内容再分发权。
 
 来源最新状态即时写入 `source-inventory.json`，作为 Actions 诊断 artifact 保存，不提交每日大文件。该文件包含格式、超时、启用状态、许可说明、抓取时间、解析数、策略排除原因和进入媒体检测的数量。`full-check-summary.json` 区分 `parsed_candidates`、`eligible_candidates`、`policy_excluded_candidates` 与实际检测数，不能把未检测候选计为可播放。
 
@@ -50,6 +52,8 @@ https://hujianj.github.io/tv-live-auto-check/live.m3u
 
 GitHub Actions 每天北京时间 04:20 和 16:20 各计划运行一次，也可以手动 `Run workflow`。GitHub 托管运行器可能延迟几十分钟启动，因此这是计划时间，不是精确执行时刻。独立 watchdog 每天另外检查两次维护新鲜度、Raw、发布清单和电视主订阅端点。
 
+手动选择非默认修复分支时，只执行验证和保存诊断 artifact，不提交播放列表、不刷新正式 CDN、不发送正式维护状态通知。定时发布只来自默认分支。
+
 流程：
 
 1. 读取 `config/sources.json` 中 `enabled` 源和允许自动恢复探测的 `auto_recover` 源；永久禁用源不参与本轮。
@@ -60,7 +64,7 @@ GitHub Actions 每天北京时间 04:20 和 16:20 各计划运行一次，也可
 6. 只保留检测可播放的 URL。
 7. 按 `config/rules.json` 和 `config/quality.json` 做家用分类、过滤和限量。
 8. 生成 `live-curated.txt` / `live.txt` / `live-verified.txt` / `ku9-live.txt` / `live.m3u`。
-9. 对最终发布列表再做一次全量 URL 复测；第一轮失败的所有最终 URL 会以更低并发和更长超时再试一次，确认失败后才删除并从候选池补线。央视、卫视、地方台还会把上一版已发布线路作为恢复候选，但每一条都必须在本轮重新通过视频轨道和 HLS 进度检测；历史线路不会直接复用。
+9. 对最终发布列表再做一次全量 URL 复测；每个保留、慢速重试及补位地址必须实际解出至少 3 帧视频，不能只靠容器轨道声明通过。FFmpeg 仅处理安全下载的有限媒体字节，禁用网络和文件输入协议，最多 4 个解码进程、每次 12 秒，并受 URL 总预算约束。失败地址低并发重试后才删除并从候选池补线。央视、卫视、地方台还要求 HLS 直播推进；历史线路必须重新通过本轮全部检测，不会直接复用。
 10. 运行核心频道覆盖审计、最终质量审计和防缩水发布守卫。
 11. 最终写入体积审计结果，再生成不包含自哈希的 `publish-manifest.json`，对所有其余发布文件的最终大小和 SHA256 做不可变校验。
 12. 完整跨文件校验和公开产物校验全部通过后，幂等应用本轮稳定性 observation；`stability-state.json` 只保存为 90 天 Actions artifact，不再每天提交大状态文件。下一轮仅从最近一次成功的主维护运行恢复并严格校验状态，缺失或损坏时从空状态安全启动。近期更稳定的线路会在下一轮排序更靠前；证据计数有上限并互相衰减，`last_seen` 只按北京时间周起始日更新。
@@ -206,9 +210,11 @@ config/sources.json
 
 ## 本地验证命令
 
-依赖 Python 3.11 或更高版本、Git，当前代码只使用 Python 标准库。推荐在独立 clone 中运行，因为维护脚本会重建工作目录中的播放文件和诊断文件，但不会自行执行 `git push`。
+依赖 Python 3.11 或更高版本、Git 和 `requirements.txt` 固定的 FFmpeg 运行包。推荐在独立 clone 中运行，因为维护脚本会重建工作目录中的播放文件和诊断文件，但不会自行执行 `git push`。
 
 ```powershell
+python -m pip install -r requirements.txt
+python scripts\media_decode.py
 python scripts\run_maintenance.py --dry-run
 python scripts\run_maintenance.py
 ```
@@ -218,7 +224,7 @@ python scripts\run_maintenance.py
 输出分为两层：
 
 - 正式候选：仓库根目录的 `ku9-live.txt`、`live.m3u`、`ku9-family.txt`、`family.m3u`，仅在全部门禁通过后由 Actions 提交。
-- 当前运行诊断：`output/live.m3u`、`output/current-network.m3u`、`output/stable.m3u`、`output/report.json`、`output/report.md`，作为 artifact 保存 30 天。依据最新要求不生成辽宁本地专用列表。稳定列表要求本轮通过和至少 3 次有效历史成功记录，没有足够证据时为空，并在报告明确标注。
+- 当前运行诊断：`output/live.m3u`、`output/live.txt`、`output/current-network.m3u`、`output/stable.m3u`、`output/report.json`、`output/report.md`，作为 artifact 保存 30 天。依据最新要求不生成辽宁本地专用列表。稳定列表要求本轮通过和至少 3 次有效历史成功记录，没有足够证据时为空，并在报告明确标注。
 
 失败运行也输出诊断，`publication_ready: false` 表示不可替换长期订阅。运行开始会清理这些生成文件，导出时重新核对来源配置指纹、检测时间和当前轮次，不使用残留的成功结果。
 
@@ -314,7 +320,7 @@ local-network-results.csv
 ## 检测边界
 
 - 当前检测验证 DNS/TCP/HTTP、HLS 子清单、媒体分片、容器视频轨道及广播频道的直播进度，不是用 HTTP 200 代替可播放。
-- 检查不会执行完整音视频解码，也不做节目画面身份识别或音频语言识别；不能保证所有电视解码器兼容，更不能证明频道标签与实际画面永远一致。
+- 最终检查执行有限分片的视频帧解码，不录制整场节目，不验证音频语言、节目画面身份或电视硬件兼容性。成功解出 3 帧不能证明将来持续播放或上游标注一定正确。读取超出采样上限、字节范围 HLS、动态初始化映射等暂不支持的格式会保守拒绝，不能伪造成功。
 - 正式输出不固化运行中遇到的临时重定向、短期签名或令牌。加密/DRM HLS 直接拒绝，不请求密钥。普通固定 `key=txiptv` 不因参数名误删，但高熵 key、鉴权和到期参数仍需拒绝或审核。
 - 失败线路保留诊断和历史记录、允许后续恢复，但不因历史成功而冒充本轮可播放备用源。GitHub 定时任务和 CDN 都可能延迟；CDN 与 Git 文件一致不代表频道已经重新检测。
 - 家庭网络额外排序默认关闭，不需要用户提供所在地或电视宽带信息。

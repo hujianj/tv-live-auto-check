@@ -18,6 +18,7 @@ from source_config import load_source_specs
 from source_policy import publication_issue
 from stability import empty_history, validate_history
 from url_utils import is_publishable_http_url, redact_text
+from media_decode import MIN_DECODED_FRAMES
 
 
 def read_json(path: Path, default: dict) -> dict:
@@ -103,6 +104,12 @@ def export_outputs(root: Path, maintenance: dict | None = None) -> dict:
         needs_progress = bool(cctv_number(name) or item.get("group") in {"\u592e\u89c6\u9891\u9053", "\u536b\u89c6\u9891\u9053", "\u5730\u65b9\u9891\u9053"})
         if needs_progress and item.get("progress_required") != "True":
             issue = issue or "live progress was not checked"
+        try:
+            decoded_frames = int(item.get("decoded_frames", "0"))
+        except (ValueError, TypeError):
+            decoded_frames = 0
+        if item.get("decode_required") != "True" or decoded_frames < MIN_DECODED_FRAMES:
+            issue = issue or "video frames were not successfully decoded"
         row, reason, _detail = prepare_curated_row(name, url, item.get("group", ""), source)
         playable = checked_now and item.get("ok") == "True" and item.get("video_required") == "True" and not issue and row is not None
         checks_by_key[key] = {
@@ -110,6 +117,8 @@ def export_outputs(root: Path, maintenance: dict | None = None) -> dict:
             "broad_probe_ok": evidence.get("ok") == "True" if evidence else None,
             "strict_probe_ok": item.get("ok") == "True",
             "video_probe_ok": item.get("ok") == "True" if item.get("video_required") == "True" else None,
+            "decoded_frames": decoded_frames,
+            "decode_required": item.get("decode_required") == "True",
             "eligible_current_result": playable, "evidence_is_current": checked_now,
             "stage": "strict_recheck", "status": "passed" if playable else "failed_or_excluded",
             "checked_at": item.get("checked_at", ""), "elapsed_seconds": item.get("elapsed_seconds", ""),
@@ -168,7 +177,15 @@ def export_outputs(root: Path, maintenance: dict | None = None) -> dict:
               "language_validation": "upstream metadata and channel identity, not audio transcription"}
     output = root / "output"
     output.mkdir(exist_ok=True)
-    files = {"live.m3u": render(rows), "current-network.m3u": render(rows), "stable.m3u": render(stable),
+    txt = []
+    previous_group = None
+    for group, name, url, _source in rows:
+        if group != previous_group:
+            txt.append(f"{group},#genre#")
+            previous_group = group
+        txt.append(f"{name},{url}")
+    files = {"live.m3u": render(rows), "live.txt": "\n".join(txt) + ("\n" if txt else ""),
+             "current-network.m3u": render(rows), "stable.m3u": render(stable),
              "report.json": json.dumps(report, ensure_ascii=False, indent=2) + "\n"}
     lines = ["# Current-network IPTV verification", "", f"Maintenance: {report['maintenance_status']}",
              "Scope: domestic Chinese channels, current execution environment only.",

@@ -1383,10 +1383,11 @@ def test_final_recheck_refills_failed_channel_urls() -> None:
     ]
     calls = []
 
-    def fake_checker(cand, *, core_override, require_progress, require_video):
+    def fake_checker(cand, *, core_override, require_progress, require_video, require_decode):
+        assert require_decode is True
         calls.append((cand.url, core_override, require_progress, require_video))
         ok = not cand.url.endswith("5.m3u8")
-        return CheckResult(cand, ok, "ok" if ok else "failed")
+        return CheckResult(cand, ok, "ok" if ok else "failed", decoded_frames=3 if ok else 0)
 
     final_rows, results, summary, attempted, accepted = recheck.refill_missing_rows(
         before,
@@ -1425,7 +1426,7 @@ def test_historical_fallback_restores_missing_redundancy_with_strict_probe() -> 
 
     def checker(candidate, **kwargs):
         calls.append(kwargs)
-        return CheckResult(candidate, True, "video/h264 live progress")
+        return CheckResult(candidate, True, "video/h264 live progress", decoded_frames=3)
 
     final_rows, _results, summary, attempted, accepted = recheck.refill_missing_rows(
         before,
@@ -1440,8 +1441,8 @@ def test_historical_fallback_restores_missing_redundancy_with_strict_probe() -> 
     assert summary["historical_refilled_rows"] == 2
     assert all(item.origin == "previous_publication" for item in attempted + accepted)
     assert calls == [
-        {"core_override": True, "require_progress": True, "require_video": True},
-        {"core_override": True, "require_progress": True, "require_video": True},
+        {"core_override": True, "require_progress": True, "require_video": True, "require_decode": True},
+        {"core_override": True, "require_progress": True, "require_video": True, "require_decode": True},
     ]
 
 
@@ -1455,7 +1456,7 @@ def test_historical_fallback_can_restore_a_missing_channel_from_empty_current_ro
 
     def checker(probe, **kwargs):
         assert kwargs["require_video"] is True
-        return CheckResult(probe, True, "video/h264 live progress")
+        return CheckResult(probe, True, "video/h264 live progress", decoded_frames=3)
 
     final_rows, _results, summary, _attempted, accepted = recheck.refill_missing_rows(
         [], [], {}, [candidate], checker=checker
@@ -1778,6 +1779,9 @@ def _write_test_publish_bundle(root: Path, full_rows=None, family_rows=None, gro
             "progress_required_groups": sorted(["央视频道", "卫视频道", "地方频道"]),
             "require_video_track": True,
             "video_track_verified_unique_urls": checked,
+            "require_frame_decode": True,
+            "minimum_decoded_frames": 3,
+            "frame_decoded_unique_urls": checked,
             "public_network_policy_enabled": True,
             "checked_unique_urls": checked,
             "initial_checked_unique_urls": checked,
@@ -2203,7 +2207,7 @@ def test_final_recheck_slow_retry_recovers_non_core_failure() -> None:
 
     def checker(candidate, **kwargs):
         calls.append(kwargs)
-        return CheckResult(candidate, True, "video/h264")
+        return CheckResult(candidate, True, "video/h264", decoded_frames=3)
 
     summary = recheck.retry_failed_final_urls(
         {url: row},
@@ -2218,7 +2222,7 @@ def test_final_recheck_slow_retry_recovers_non_core_failure() -> None:
     assert summary["recovered_unique_urls"] == 1
     assert summary["still_failed_unique_urls"] == 0
     assert results[url].ok is True
-    assert calls == [{"timeout": 17, "core_override": False, "require_progress": False, "require_video": True}]
+    assert calls == [{"timeout": 17, "core_override": False, "require_progress": False, "require_video": True, "require_decode": True}]
 
 
 def test_generated_csv_writers_force_lf_line_endings() -> None:
@@ -3014,6 +3018,9 @@ def test_recheck_summary_separates_removed_refilled_and_net_rows() -> None:
 
 
 def main() -> int:
+    from test_media_decode import run_tests as run_decoder_tests
+    if not run_decoder_tests():
+        return 1
     from test_source_pipeline import run_tests
     run_tests()
     for test in [

@@ -187,6 +187,31 @@ class SourcePipelineTests(unittest.TestCase):
         self.assertNotEqual(canonical_channel_key('CCTV-4K'), 'CCTV-4')
         self.assertTrue(domestic_chinese_issue('CCTV-9 English (576i)'))
 
+    def test_known_cctv_descriptive_aliases_have_one_display_identity(self):
+        from curate_ku9 import clean_name
+        from audit_coverage import build_coverage
+        names = ['CCTV-4\u4e2d\u6587\u56fd\u9645', 'CCTV-16\u5965\u6797\u5339\u514b', 'CCTV-5+\u4f53\u80b2\u8d5b\u4e8b']
+        expected = ['CCTV-4', 'CCTV-16', 'CCTV-5+']
+        self.assertEqual([clean_name(name) for name in names], expected)
+        rows = [('\u592e\u89c6\u9891\u9053', clean_name(name), f'https://tv.test/{index}') for index, name in enumerate(names)]
+        self.assertEqual(build_coverage(rows, {'required_cctv': expected})['missing_cctv'], [])
+        self.assertEqual(clean_name('CCTV-4K'), 'CCTV-4K')
+        self.assertEqual(clean_name('CCTV-4(RTHK33)'), 'CCTV-4(RTHK33)')
+
+    def test_source_approval_needs_valid_evidence_and_supported_adapter(self):
+        from source_config import load_source_specs
+        valid = {'name': 'fixture', 'url': 'https://catalog.test/list', 'enabled': True,
+                 'rights_status': 'approved', 'terms_url': 'https://catalog.test/terms',
+                 'reviewed_at': '2026-09-07', 'permission_scope': 'synthetic test fixture'}
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'sources.json'
+            for change in ({'terms_url': 'javascript:x'}, {'terms_url': 'https://name:password@host.test'},
+                           {'reviewed_at': 'yesterday'}, {'reviewed_at': '2026-02-31'},
+                           {'permission_scope': '  '}, {'format': 'hls'}):
+                path.write_text(json.dumps([dict(valid, **change)]), encoding='utf-8')
+                with self.subTest(change=change), self.assertRaises(ValueError):
+                    load_source_specs(path)
+
     def test_aborted_recheck_preserves_playlists_records_failure_and_restores_checkpoint(self):
         import recheck_published as recheck
         import run_maintenance as maintenance
@@ -207,8 +232,9 @@ class SourcePipelineTests(unittest.TestCase):
             original = {name: (root / name).read_bytes() for name in maintenance.CHECKPOINT_FILES}
             maintenance.save_curate_checkpoint(root)
 
-            def checker(candidate, *_args):
-                return verify.CheckResult(candidate, not candidate.url.endswith('/2'), 'synthetic media result', 0.1, now)
+            def checker(candidate, *_args, **kwargs):
+                self.assertTrue(kwargs['require_decode'])
+                return verify.CheckResult(candidate, not candidate.url.endswith('/2'), 'synthetic media result', 0.1, now, 3)
 
             retry = {'first_pass_failed_unique_urls': 1, 'attempted_unique_urls': 1,
                      'recovered_unique_urls': 0, 'still_failed_unique_urls': 1}
@@ -250,7 +276,7 @@ class SourcePipelineTests(unittest.TestCase):
             write_csv_fixture(root, 'stream_check_results.csv', rows)
             write_csv_fixture(root, 'published_recheck_results.csv', [
                 dict(row, source='published_recheck', ok='True' if row['name'] == 'CCTV-1' else 'False',
-                     video_required='True', progress_required='True') for row in rows[:2]])
+                     video_required='True', progress_required='True', decode_required='True', decoded_frames='3') for row in rows[:2]])
             write_csv_fixture(root, 'curated-source-map.csv', [rows[0]])
             counts = export_outputs(root, {'status': 'failed', 'started_utc': now})
             report = json.loads((root / 'output/report.json').read_text(encoding='utf-8'))
@@ -272,7 +298,7 @@ class SourcePipelineTests(unittest.TestCase):
             root = Path(directory)
             now = prepare_export_fixture(root)
             common = {'url': 'https://tv.test/shared', 'source': 'fixture', 'ok': 'True', 'checked_at': now,
-                      'video_required': 'True', 'progress_required': 'True', 'group': '\u592e\u89c6\u9891\u9053'}
+                      'video_required': 'True', 'progress_required': 'True', 'decode_required': 'True', 'decoded_frames': '3', 'group': '\u592e\u89c6\u9891\u9053'}
             rows = [dict(common, name='CCTV-1', tvg_id='CCTV1.cn'),
                     dict(common, name='\u4e2d\u6587\u65b0\u95fb', tvg_id='ChineseNews.us')]
             write_csv_fixture(root, 'stream_check_results.csv', rows)
@@ -290,7 +316,7 @@ class SourcePipelineTests(unittest.TestCase):
             root = Path(directory)
             now = prepare_export_fixture(root)
             common = {'url': 'https://tv.test/shared', 'name': 'CCTV-1', 'ok': 'True', 'checked_at': now,
-                      'video_required': 'True', 'progress_required': 'True', 'group': '\u592e\u89c6\u9891\u9053'}
+                      'video_required': 'True', 'progress_required': 'True', 'decode_required': 'True', 'decoded_frames': '3', 'group': '\u592e\u89c6\u9891\u9053'}
             rows = [dict(common, source=source) for source in ('fixture', 'backup')]
             write_csv_fixture(root, 'stream_check_results.csv', rows)
             write_csv_fixture(root, 'published_recheck_results.csv', [dict(common, source='published_recheck')])
@@ -314,6 +340,36 @@ class SourcePipelineTests(unittest.TestCase):
             self.assertIsNone(resumed.get("https://a.test/1", False))
             self.assertIsNone(resumed.get("https://a.test/2", True))
             self.assertIsNone(ScanCheckpoint(path, "run2", "policy1").get("https://a.test/1", True))
+
+    def test_checkpoint_resumes_after_interrupted_append_but_rechecks_failures(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'scan.jsonl'
+            first = ScanCheckpoint(path, 'run1', 'policy1')
+            now = datetime.now(timezone.utc).isoformat()
+            for number in range(100):
+                first.record(f'https://tv.test/{number}', True, number < 90, 'fixture', now, 0.01)
+            with path.open('a', encoding='utf-8') as handle:
+                handle.write('{"url":"interrupted')
+            resumed = ScanCheckpoint(path, 'run1', 'policy1')
+            self.assertEqual(sum(resumed.get(f'https://tv.test/{number}', True) is not None for number in range(100)), 90)
+            resumed.record('https://tv.test/100', True, True, 'recovered', now, 0.01)
+            self.assertIsNotNone(ScanCheckpoint(path, 'run1', 'policy1').get('https://tv.test/100', True))
+            self.assertIsNone(ScanCheckpoint(path, 'run1', 'changed-policy').get('https://tv.test/0', True))
+
+    def test_slow_drip_body_cannot_extend_url_budget(self):
+        from types import SimpleNamespace
+        clock = [0.0]
+        reads = []
+        def read(_limit):
+            clock[0] += 0.6
+            reads.append(1)
+            return b'x'
+        response = SimpleNamespace(read=read, read1=read)
+        with patch.object(verify._PROBE_CONTEXT, 'deadline', 1.0, create=True), \
+                patch.object(verify.time, 'monotonic', side_effect=lambda: clock[0]):
+            with self.assertRaisesRegex(TimeoutError, 'URL total budget exceeded'):
+                verify.read_bounded(response, 65536)
+        self.assertEqual(len(reads), 2)
 
     def test_encryption_is_rejected_without_fetching_keys(self):
         manifest = verify.parse_hls_manifest('#EXTM3U\n#EXT-X-KEY:METHOD=SAMPLE-AES,URI="skd://license"\n#EXTINF:6,\na.ts', 'https://tv.test/live')
@@ -359,6 +415,7 @@ class SourcePipelineTests(unittest.TestCase):
             evidence = {
                 'ok': 'True', 'group': '\u592e\u89c6\u9891\u9053', 'name': 'CCTV-1', 'url': 'https://tv.test/live',
                 'source': 'fixture', 'video_required': 'True', 'progress_required': 'True', 'checked_at': now,
+                'decode_required': 'True', 'decoded_frames': '3',
             }
             for filename in ('stream_check_results.csv', 'published_recheck_results.csv', 'curated-source-map.csv'):
                 with (root / filename).open('w', encoding='utf-8', newline='') as handle:

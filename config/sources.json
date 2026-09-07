@@ -93,12 +93,12 @@
     "format": "m3u",
     "timeout_seconds": 20,
     "update_method": "scheduled_fetch",
-    "rights_status": "pending",
+    "rights_status": "restricted",
     "license": "unknown",
     "homepage": "https://raw.githubusercontent.com/suxuang/myIPTV/refs/heads/main/ipv4.m3u",
-    "terms_url": "",
-    "reviewed_at": "2026-09-06",
-    "permission_scope": "unconfirmed; retained as a candidate, no automatic media publication"
+    "terms_url": "https://github.com/suxuang/myIPTV/blob/main/README.md",
+    "reviewed_at": "2026-09-07",
+    "permission_scope": "README limits use to study/research, prohibits commercial use and requires deletion within 24 hours; not suitable for a permanent subscription."
   },
   {
     "name": "suxuang_ipv6",
@@ -107,12 +107,12 @@
     "format": "m3u",
     "timeout_seconds": 20,
     "update_method": "scheduled_fetch",
-    "rights_status": "pending",
+    "rights_status": "restricted",
     "license": "unknown",
     "homepage": "https://raw.githubusercontent.com/suxuang/myIPTV/refs/heads/main/ipv6.m3u",
-    "terms_url": "",
-    "reviewed_at": "2026-09-06",
-    "permission_scope": "unconfirmed; retained as a candidate, no automatic media publication"
+    "terms_url": "https://github.com/suxuang/myIPTV/blob/main/README.md",
+    "reviewed_at": "2026-09-07",
+    "permission_scope": "README limits use to study/research, prohibits commercial use and requires deletion within 24 hours; not suitable for a permanent subscription."
   },
   {
     "name": "zbds_iptv4_m3u",
@@ -136,12 +136,13 @@
     "format": "m3u",
     "timeout_seconds": 20,
     "update_method": "scheduled_fetch",
-    "rights_status": "pending",
-    "license": "unknown",
-    "homepage": "https://raw.githubusercontent.com/BurningC4/Chinese-IPTV/master/TV-IPV4.m3u",
-    "terms_url": "",
-    "reviewed_at": "2026-09-06",
-    "permission_scope": "unconfirmed; retained as a candidate, no automatic media publication"
+    "rights_status": "approved",
+    "license": "Explicit README IPTV-player use; no general repository license declared",
+    "homepage": "https://github.com/BurningC4/Chinese-IPTV",
+    "terms_url": "https://github.com/BurningC4/Chinese-IPTV/blob/master/README.md",
+    "reviewed_at": "2026-09-07",
+    "permission_scope": "README explicitly invites IPTV-player use of TV-IPV4.m3u. Use is limited to public unauthenticated link selection for a personal subscription, with attribution; no media relay or content relicensing.",
+    "note": "README reviewed at blob dac601c3aaef1505d3c0b44b845a1b6ff75161b0; see docs/source-permissions.md. HTTP reachability alone does not approve a channel."
   },
   {
     "name": "vamoschuck_m3u",
@@ -220,12 +221,12 @@
     "format": "m3u",
     "timeout_seconds": 20,
     "update_method": "scheduled_fetch",
-    "rights_status": "pending",
+    "rights_status": "restricted",
     "license": "unknown",
     "homepage": "https://raw.githubusercontent.com/Kimentanm/aptv/master/m3u/iptv.m3u",
-    "terms_url": "",
-    "reviewed_at": "2026-09-06",
-    "permission_scope": "unconfirmed; retained as a candidate, no automatic media publication"
+    "terms_url": "https://github.com/Kimentanm/aptv/blob/master/README.md",
+    "reviewed_at": "2026-09-07",
+    "permission_scope": "README explicitly limits streams to product testing and prohibits distribution; retained as a catalog record only."
   },
   {
     "name": "bigbiggrandg_gather",
@@ -376,12 +377,13 @@
     "format": "m3u",
     "timeout_seconds": 20,
     "update_method": "scheduled_fetch",
-    "rights_status": "pending",
-    "license": "unknown",
-    "homepage": "https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8",
-    "terms_url": "",
-    "reviewed_at": "2026-09-06",
-    "permission_scope": "unconfirmed; retained as a candidate, no automatic media publication"
+    "rights_status": "approved",
+    "license": "Explicit README IPTV-player use; no general repository license declared",
+    "homepage": "https://github.com/Free-TV/IPTV",
+    "terms_url": "https://github.com/Free-TV/IPTV/blob/master/README.md",
+    "reviewed_at": "2026-09-07",
+    "permission_scope": "README explicitly invites IPTV-player use and limits its catalog to officially free channels. Use is limited to public unauthenticated link selection for a personal subscription, with attribution; no media relay or content relicensing.",
+    "note": "README reviewed at blob 2c4640904cb55e3c35238b6851be18e0898ebabe; see docs/source-permissions.md. Foreign, geoblocked, paid, signed and protected entries remain excluded."
   },
   {
     "name": "mursor_yy",
