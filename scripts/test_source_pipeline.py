@@ -446,6 +446,41 @@ class SourcePipelineTests(unittest.TestCase):
                 path.write_text(json.dumps(bad), encoding='utf-8')
                 self.assertEqual(stability.load_json_history(path), stability.empty_history())
 
+    def test_maintenance_summary_distinguishes_timeout_and_publication_hold(self):
+        from run_maintenance import maintenance_summary
+        stage = {'label': 'strict recheck', 'returncode': 1, 'classification': 'retryable',
+                 'elapsed_seconds': 40, 'timed_out': False}
+        report = {'status': 'failed', 'elapsed_seconds': 100, 'failed_stage': stage,
+                  'attempts': [{'attempt': 1, 'stages': [stage], 'evidence': {
+                      'published_recheck': {'status': 'aborted', 'abort_reason': 'failed ratio 30% > 25%',
+                          'candidate_after_rows': 18, 'post_retry_failed_unique_urls': 10,
+                          'outputs_rewritten': False}}}]}
+        summary = maintenance_summary(report)
+        self.assertIn('failed ratio 30% > 25%', summary)
+        self.assertIn('verified candidate rows=18', summary)
+        self.assertIn('outputs_rewritten=False', summary)
+        self.assertNotIn('| timeout |', summary)
+        stage.update(timed_out=True, failure_reason='stage timeout exceeded', elapsed_seconds=1800)
+        summary = maintenance_summary(report)
+        self.assertIn('| timeout |', summary)
+        self.assertIn('stage timeout exceeded', summary)
+        self.assertIn('后续步骤', maintenance_summary({'status': 'ok'}))
+
+    def test_maintenance_alert_reports_aborted_candidate_count(self):
+        from notify_maintenance import maintenance_failure_detail
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / 'run.json'
+            path.write_text(json.dumps({'status': 'failed',
+                'failed_stage': {'label': 'recheck', 'script': 'recheck_published.py', 'returncode': 1},
+                'attempts': [{'attempt': 1, 'evidence': {'published_recheck': {
+                    'status': 'aborted', 'abort_reason': 'too many failed URLs',
+                    'after_rows': 28, 'candidate_after_rows': 18, 'outputs_rewritten': False,
+                    'post_retry_failed_unique_urls': 10}}}]}), encoding='utf-8')
+            detail = maintenance_failure_detail(str(path))
+            self.assertIn('verified_candidate_rows=18', detail)
+            self.assertIn('too many failed URLs', detail)
+            self.assertIn('subscription was not updated', detail)
+
 
 def run_tests():
     result = unittest.TextTestRunner(verbosity=1).run(unittest.defaultTestLoader.loadTestsFromTestCase(SourcePipelineTests))

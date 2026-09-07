@@ -130,6 +130,9 @@ def test_workflow_is_pinned_and_refuses_stale_publication() -> None:
     assert "contents: read" in fast_workflow
     assert "persist-credentials: false" in fast_workflow
     assert "validate_publication.py" in fast_workflow
+    assert "name: Code and configuration" in fast_workflow
+    assert "name: Existing publication integrity" in fast_workflow
+    assert "continue-on-error" not in fast_workflow
 
 
 def test_publication_config_rejects_ambiguous_roles_and_unsafe_paths() -> None:
