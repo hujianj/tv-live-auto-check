@@ -210,7 +210,7 @@ config/sources.json
 
 ## 本地验证命令
 
-依赖 Python 3.11 或更高版本、Git 和 `requirements.txt` 固定的 FFmpeg 运行包。推荐在独立 clone 中运行，因为维护脚本会重建工作目录中的播放文件和诊断文件，但不会自行执行 `git push`。
+依赖 Python 3.11 或更高版本、Git 和 FFmpeg。优先使用 `IPTV_FFMPEG_EXE` 指定程序或系统 FFmpeg；没有系统程序时使用 `requirements.txt` 固定的运行包。Ubuntu Actions 使用系统 FFmpeg，每轮通过同一套 TS/fMP4 实际解码测试后才探测网络。推荐在独立 clone 中运行，因为维护脚本会重建工作目录中的播放文件和诊断文件，但不会自行执行 `git push`。
 
 ```powershell
 python -m pip install -r requirements.txt
