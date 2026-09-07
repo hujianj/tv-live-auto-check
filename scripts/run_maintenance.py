@@ -291,6 +291,44 @@ def append_step_summary(text: str) -> None:
         print(f"MAINTENANCE WARN: cannot write GITHUB_STEP_SUMMARY: {exc!r}")
 
 
+def maintenance_summary(report: dict[str, Any]) -> str:
+    """Separate completed checks from publication, which happens in later steps."""
+    from url_utils import redact_text
+
+    passed = report.get("status") == "ok"
+    lines = [
+        "## Maintenance pipeline", "",
+        "Status: **OK**" if passed else "Status: **FAILED**", "",
+        ("媒体与文件校验通过；提交及 CDN 状态见后续步骤。" if passed else
+         "本轮未发布：保留上次已提交的订阅，不将部分检测结果写入正式地址。"),
+        "", f"Elapsed: {report.get('elapsed_seconds', 0)}s", "",
+        "| Pass | Stage | Seconds | Result |",
+        "|---|---|---:|---|",
+    ]
+    attempts = report.get("attempts") or []
+    for attempt in attempts:
+        for stage in attempt.get("stages") or []:
+            result = "timeout" if stage.get("timed_out") else stage.get("classification", "unknown")
+            lines.append(f"| {attempt.get('attempt', '?')} | {stage.get('label', 'unknown')} | "
+                         f"{stage.get('elapsed_seconds', 0)} | {result} |")
+    if not passed:
+        last = attempts[-1] if attempts else {}
+        stage = report.get("failed_stage") or last.get("failed_stage") or {}
+        evidence = last.get("evidence") or {}
+        recheck = evidence.get("published_recheck") or {}
+        reason = stage.get("failure_reason") or recheck.get("abort_reason") or "See failed stage log."
+        lines.extend(["", f"Failed stage: {stage.get('label', 'unknown')}", "",
+                      "Reason: " + redact_text(str(reason))[:1000]])
+        if recheck:
+            lines.extend(["", f"Final recheck: {recheck.get('status', 'unknown')}; "
+                          f"failed URLs={recheck.get('post_retry_failed_unique_urls', 0)}; "
+                          f"verified candidate rows={recheck.get('candidate_after_rows', 0)}; "
+                          f"outputs_rewritten={recheck.get('outputs_rewritten', False)}."])
+        lines.extend(["", "本轮详细结果：下载 `full-iptv-check-<run_id>` artifact，查看 "
+                      "`output/report.md` 和 `published_recheck_results.csv`。"])
+    return "\n".join(lines) + "\n"
+
+
 def write_report(report: dict[str, Any]) -> None:
     REPORT_PATH.write_text(
         json.dumps(report, ensure_ascii=False, indent=2) + "\n",
@@ -669,11 +707,7 @@ def main(argv: list[str] | None = None) -> int:
                 }
             )
             write_report(report)
-            append_step_summary(
-                f"## Maintenance pipeline\n\nStatus: **OK**  \n"
-                f"Successful pass: {attempt}/{max_pipeline_passes}  \n"
-                f"Elapsed: {report['elapsed_seconds']}s\n"
-            )
+            append_step_summary(maintenance_summary(report))
             print(f"\nMAINTENANCE PIPELINE OK on pass {attempt}/{max_pipeline_passes}")
             return 0
 
@@ -731,12 +765,7 @@ def main(argv: list[str] | None = None) -> int:
         }
     )
     write_report(report)
-    append_step_summary(
-        f"## Maintenance pipeline\n\nStatus: **FAILED**  \n"
-        f"Pipeline passes: {len(report['attempts'])}/{max_pipeline_passes}  \n"
-        f"Classification: {report['failure_classification']}  \n"
-        f"Failed stage: {(report.get('failed_stage') or {}).get('label', 'unknown')}\n"
-    )
+    append_step_summary(maintenance_summary(report))
     return int((last.get("failed_stage") or {}).get("returncode") or 1)
 
 
