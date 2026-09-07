@@ -117,6 +117,9 @@ def test_workflow_is_pinned_and_refuses_stale_publication() -> None:
     assert all(re.fullmatch(r"uses: [A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+@[0-9a-f]{40}(?: # v\d+)?", line) for line in cdn_refs), cdn_refs
     assert "workflow_run:" in cdn_workflow
     assert "github.event.workflow_run.conclusion == 'success'" in cdn_workflow
+    assert "github.event.workflow_run.head_branch == 'main'" in cdn_workflow
+    assert cdn_workflow.index("--validate-only") < cdn_workflow.index("python scripts/purge_jsdelivr.py")
+    assert "steps.publication.outcome == 'failure'" in cdn_workflow
     assert "--required-only" in cdn_workflow
     assert "timeout --signal=TERM --kill-after=10s 150s" in cdn_workflow
     assert "timeout-minutes: 25" in cdn_workflow
