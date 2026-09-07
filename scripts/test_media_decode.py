@@ -29,10 +29,11 @@ class MediaDecodeTests(unittest.TestCase):
         cls.mp4 = video_fixture("mp4")
 
     def test_real_ts_and_fmp4_decode_frames(self):
-        for payload in (self.ts, self.mp4):
-            result = decoder.decode_video(payload)
-            self.assertTrue(result.ok, result.detail)
-            self.assertEqual(result.frames, 3)
+        for container, payload in (("ts", self.ts), ("fmp4", self.mp4)):
+            with self.subTest(container=container):
+                result = decoder.decode_video(payload)
+                self.assertTrue(result.ok, result.detail)
+                self.assertEqual(result.frames, 3)
 
     def test_fake_track_does_not_prove_playback(self):
         payload = b'\x00\x00\x00\x18ftypisom' + b'\0' * 16 + b'moovvideavc1'

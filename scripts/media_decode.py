@@ -30,8 +30,9 @@ class DecodeResult:
 @lru_cache(maxsize=1)
 def decoder_executable() -> str:
     configured = os.getenv("IPTV_FFMPEG_EXE", "").strip()
-    if configured:
-        executable = configured
+    system = shutil.which("ffmpeg")
+    if configured or system:
+        executable = configured or system
     else:
         try:
             import imageio_ffmpeg

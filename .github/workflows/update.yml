@@ -70,6 +70,10 @@ jobs:
       - name: Install and verify frame decoder
         if: ${{ steps.preflight.outputs.stale != 'true' }}
         run: |
+          if ! command -v ffmpeg >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
           python -m pip install --disable-pip-version-check -r requirements.txt
           python scripts/media_decode.py
       - name: Restore validated stability state from successful maintenance
