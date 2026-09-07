@@ -9,8 +9,8 @@ from channel_utils import cctv_key
 
 
 _RESOLUTION_SUFFIX = re.compile(
-    r"(?:\((?:\d{3,4}p|HD|FHD|UHD|4K|\u9ad8\u6e05|\u8d85\u6e05|\u6807\u6e05|\u84dd\u5149)\)|"
-    r"[-_ ]?(?:\d{3,4}p|HD|FHD|UHD|4K|\u9ad8\u6e05|\u8d85\u6e05|\u6807\u6e05|\u84dd\u5149))$",
+    r"(?:\((?:\d{3,4}[pi]|HD|FHD|UHD|4K|\u9ad8\u6e05|\u8d85\u6e05|\u6807\u6e05|\u84dd\u5149)\)|"
+    r"[-_ ]?(?:\d{3,4}[pi]|HD|FHD|UHD|4K|\u9ad8\u6e05|\u8d85\u6e05|\u6807\u6e05|\u84dd\u5149))$",
     re.I,
 )
 _CCTV_NUMBERED_ALIAS_SUFFIX = re.compile(

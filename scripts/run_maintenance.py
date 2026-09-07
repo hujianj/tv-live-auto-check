@@ -385,6 +385,10 @@ def collect_attempt_evidence(root: Path = ROOT, not_before_epoch: float = 0.0) -
             "unavailable_sources": [str(item) for item in unavailable[:20]],
         },
         "published_recheck": {
+            "status": str(recheck.get("status") or ("completed" if recheck else "not_run")),
+            "outputs_rewritten": bool(recheck) and recheck.get("outputs_rewritten", True),
+            "candidate_after_rows": recheck.get("candidate_after_rows", recheck.get("after_rows")),
+            "abort_reason": recheck.get("abort_reason", ""),
             "before_rows": int(recheck.get("before_rows") or 0),
             "after_rows": int(recheck.get("after_rows") or 0),
             "removed_rows": int(recheck.get("removed_rows") or 0),

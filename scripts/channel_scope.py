@@ -72,7 +72,7 @@ def domestic_chinese_issue(name: str, group: str = "", source: str = "",
         return "foreign_only_catalog"
     if any(token.casefold() in group.casefold() for token in POLICY.get("foreign_group_tokens", [])):
         return "foreign_channel_group"
-    if re.fullmatch(r"(?:CCTV[-_ ]?(?:(?:[1-9]|1[0-7])\+?|[48]K)|CETV[-_ ]?[1-4])(?:HD|FHD|UHD|\((?:HD|FHD|\d+p)\))?", name, re.I):
+    if re.fullmatch(r"(?:CCTV[-_ ]?(?:(?:[1-9]|1[0-7])\+?|[48]K)|CETV[-_ ]?[1-4])(?:HD|FHD|UHD|\((?:HD|FHD|\d+[pi])\))?", re.sub(r"\s+", "", name), re.I):
         return ""
     if chinese_count(name):
         return ""
