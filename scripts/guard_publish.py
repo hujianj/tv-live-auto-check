@@ -11,6 +11,8 @@ from pathlib import Path
 
 from maintenance_contract import GUARD_REJECTED_EXIT_CODE
 from playlist_config import load_guard, load_quality
+from channel_identity import canonical_channel_key
+from source_config import SourceSpec, load_source_specs
 
 ROOT = Path(__file__).resolve().parents[1]
 GUARD = load_guard()
@@ -62,7 +64,7 @@ def read_sources_status() -> list[dict[str, str]]:
         return list(csv.DictReader(f))
 
 
-def classify_source_health(statuses: list[dict[str, str]]) -> dict[str, list[str]]:
+def classify_source_health(statuses: list[dict[str, str]], specs: dict[str, SourceSpec] | None = None) -> dict[str, list[str]]:
     """Split source failures by lifecycle mode before applying hard gates.
 
     Legacy status files have no mode column and are treated as enabled. A
@@ -76,6 +78,8 @@ def classify_source_health(statuses: list[dict[str, str]]) -> dict[str, list[str
         "recovery_zero_parsed": [],
         "disabled_reported": [],
         "invalid_mode": [],
+        "candidate_failed": [],
+        "candidate_zero_parsed": [],
     }
     for row in statuses:
         name = (row.get("name") or "").strip()
@@ -87,9 +91,12 @@ def classify_source_health(statuses: list[dict[str, str]]) -> dict[str, list[str
             result["disabled_reported"].append(name or "<empty>")
             continue
         target = "enabled" if mode == "enabled" else "recovery"
+        spec = (specs or {}).get(name)
+        if spec is not None and not spec.publish_allowed:
+            target = "candidate"
         if row.get("fetch_ok") != "True":
             result[f"{target}_failed"].append(name or "<empty>")
-        elif int(row.get("parsed") or 0) == 0:
+        elif int(row.get("parsed") or 0) == 0 and not (spec and spec.format == "catalog"):
             result[f"{target}_zero_parsed"].append(name or "<empty>")
     return result
 
@@ -129,6 +136,36 @@ def ratio(base: int, current: int) -> float | None:
     return (base - current) / base
 
 
+def channel_coverage(rows) -> dict:
+    by_group: dict[str, set[str]] = {}
+    identities: set[str] = set()
+    for group, name, _url in rows:
+        identity = canonical_channel_key(name)
+        identities.add(identity)
+        by_group.setdefault(group, set()).add(identity)
+    return {"total": len(identities), "groups": {group: len(names) for group, names in by_group.items()}}
+
+
+def coverage_failures(current: dict, baseline: dict, *, migration: bool = False) -> list[str]:
+    """Backups must not inflate channel coverage or hide a missing channel."""
+    failures = []
+    minimum = int(GUARD.get("min_channels", 1))
+    total = int(current.get("total", 0))
+    if total < minimum:
+        failures.append(f"unique channels {total} < minimum {minimum}")
+    base_total = int(baseline.get("total", 0))
+    if base_total > 0 and not migration and (base_total - total) / base_total > guard_max_total_drop_ratio():
+        failures.append(f"unique channels dropped: baseline={base_total} current={total}")
+    for group, minimum in GUARD.get("min_group_channels", {}).items():
+        count = int(current.get("groups", {}).get(group, 0))
+        base = int(baseline.get("groups", {}).get(group, 0))
+        if count < int(minimum):
+            failures.append(f"group {group} unique channels {count} < minimum {minimum}")
+        if base > 0 and not migration and (base - count) / base > MAX_GROUP_DROP_RATIOS.get(group, 0.45):
+            failures.append(f"group {group} unique channels dropped: baseline={base} current={count}")
+    return failures
+
+
 def relative_guard_migration_reason(current: dict, baseline: dict) -> str:
     """Allow one stricter verification-policy migration without weakening limits.
 
@@ -140,6 +177,10 @@ def relative_guard_migration_reason(current: dict, baseline: dict) -> str:
     """
     if not baseline:
         return ""
+    if (int(baseline.get("source_policy_version", 0)) == 0
+            and current.get("source_policy_version") == 1
+            and current.get("channel_scope") == "domestic_chinese"):
+        return "source permission policy migrated 0->1 with domestic Chinese scope; absolute core coverage still required"
     current_recheck = current.get("published_recheck") or {}
     baseline_recheck = baseline.get("published_recheck") or {}
     current_version = int(current_recheck.get("policy_version") or (
@@ -174,6 +215,7 @@ def write_guard_outputs(
     warnings: list[str],
     statuses: list[dict[str, str]],
     migration_reason: str = "",
+    source_specs: dict[str, SourceSpec] | None = None,
 ) -> None:
     groups = current.get("curated_groups") or {}
     base_groups = baseline.get("curated_groups") or {}
@@ -189,12 +231,17 @@ def write_guard_outputs(
             "delta": cur - base,
             "drop_ratio": ratio(base, cur),
         }
-    health = classify_source_health(statuses)
+    health = classify_source_health(statuses, source_specs)
     failed_sources = health["enabled_failed"]
     zero_parsed = health["enabled_zero_parsed"]
     unavailable_sources = sorted(set(failed_sources + zero_parsed))
     guard = {
         "schema_version": 3,
+        "coverage_metric": GUARD.get("coverage_metric", "lines"),
+        "channel_coverage": current.get("guard_channel_coverage", {}),
+        "min_channels": GUARD.get("min_channels"),
+        "min_group_channels": GUARD.get("min_group_channels", {}),
+        "source_outages_block_publication": GUARD.get("source_outages_block_publication", True),
         "status": "rejected" if failures else "ok",
         "baseline_lines": base_lines,
         "current_lines": cur_lines,
@@ -215,6 +262,8 @@ def write_guard_outputs(
         "recovery_zero_parsed_sources": health["recovery_zero_parsed"],
         "disabled_reported_sources": health["disabled_reported"],
         "invalid_mode_sources": health["invalid_mode"],
+        "candidate_failed_sources": health["candidate_failed"],
+        "candidate_zero_parsed_sources": health["candidate_zero_parsed"],
         "failures": failures,
         "warnings": warnings,
     }
@@ -230,6 +279,8 @@ def write_guard_outputs(
         f"Total drop ratio: {guard['total_drop_ratio']:.1%}" if guard["total_drop_ratio"] is not None else "Total drop ratio: n/a",
         f"Relative baseline comparable: {guard['relative_baseline_comparable']}",
         f"Relative guard migration: {migration_reason or 'none'}",
+        f"Coverage metric: {guard['coverage_metric']}",
+        f"Independent channel coverage: {guard['channel_coverage']}",
         "",
         "## Group deltas",
         "",
@@ -248,6 +299,8 @@ def write_guard_outputs(
         f"- Enabled sources unavailable for guard purposes: {', '.join(unavailable_sources) if unavailable_sources else 'none'}",
         f"- Recovery source failures (non-blocking): {', '.join(health['recovery_failed']) if health['recovery_failed'] else 'none'}",
         f"- Recovery sources fetched but zero parsed (non-blocking): {', '.join(health['recovery_zero_parsed']) if health['recovery_zero_parsed'] else 'none'}",
+        f"- Candidate source failures (non-blocking): {', '.join(health['candidate_failed']) or 'none'}",
+        f"- Candidate sources parsed empty (non-blocking): {', '.join(health['candidate_zero_parsed']) or 'none'}",
     ]
     if health["disabled_reported"]:
         lines.append(f"- Disabled sources unexpectedly reported: {', '.join(health['disabled_reported'])}")
@@ -285,13 +338,25 @@ def main() -> int:
     min_lines = guard_min_lines()
     max_drop_ratio = guard_max_total_drop_ratio()
     migration_reason = relative_guard_migration_reason(current, baseline)
+    channel_metric = GUARD.get("coverage_metric") == "canonical_channels"
+    specs_path = ROOT / "config" / "sources.json"
+    source_specs = {spec.name: spec for spec in load_source_specs(specs_path)} if specs_path.exists() else {}
     def add_warn(msg: str) -> None:
         warnings.append(msg)
         warn(msg)
 
     if cur_lines < min_lines:
         fail(f"curated lines {cur_lines} < minimum {min_lines}", failures)
-    if base_lines > 0:
+    if channel_metric:
+        from audit_coverage import parse_txt
+        metrics = channel_coverage(parse_txt(ROOT / "live-curated.txt"))
+        current["guard_channel_coverage"] = metrics
+        base_metrics = baseline.get("guard_channel_coverage", {})
+        if not base_metrics:
+            add_warn("no comparable independent-channel baseline; absolute coverage remains enforced")
+        for message in coverage_failures(metrics, base_metrics, migration=bool(migration_reason)):
+            fail(message, failures)
+    if base_lines > 0 and not channel_metric:
         if migration_reason:
             add_warn(f"relative drop guards skipped for one policy migration: {migration_reason}")
         else:
@@ -300,7 +365,7 @@ def main() -> int:
                 fail(f"curated lines dropped {drop:.1%}: baseline={base_lines} current={cur_lines}", failures)
             else:
                 print(f"GUARD OK total lines baseline={base_lines} current={cur_lines} drop={drop:.1%}")
-    else:
+    elif not base_lines:
         add_warn("no baseline full-check-summary.json found; total drop guard skipped")
     groups = current.get("curated_groups") or {}
     base_groups = baseline.get("curated_groups") or {}
@@ -309,18 +374,18 @@ def main() -> int:
         if cur < minimum:
             fail(f"group {group} count {cur} < minimum {minimum}", failures)
         base = int(base_groups.get(group, 0)) if base_groups else 0
-        if base > 0 and base >= minimum and not migration_reason:
+        if base > 0 and base >= minimum and not migration_reason and not channel_metric:
             drop = (base - cur) / base
             max_group_drop = MAX_GROUP_DROP_RATIOS.get(group, 0.45)
             if drop > max_group_drop:
                 fail(f"group {group} dropped {drop:.1%}: baseline={base} current={cur} max={max_group_drop:.0%}", failures)
     if current.get("checked_all_unique") is not True:
         fail("checked_all_unique is not true", failures)
-    if int(current.get("checked_candidates") or -1) != int(current.get("unique_candidates") or -2):
+    if current.get("checked_candidates") != current.get("unique_candidates") or "checked_candidates" not in current:
         fail("checked_candidates != unique_candidates", failures)
     statuses = read_sources_status()
     if statuses:
-        health = classify_source_health(statuses)
+        health = classify_source_health(statuses, source_specs)
         if health["invalid_mode"]:
             fail(f"invalid source lifecycle modes: {health['invalid_mode']}", failures)
         if health["disabled_reported"]:
@@ -329,19 +394,24 @@ def main() -> int:
         zero_parsed = health["enabled_zero_parsed"]
         unavailable_sources = sorted(set(failed_sources + zero_parsed))
         core_unavailable = sorted(CORE_SOURCES.intersection(unavailable_sources))
+        source_problem = (lambda message: fail(message, failures)) if GUARD.get("source_outages_block_publication", True) else add_warn
         if len(core_unavailable) >= guard_core_failed_fail_threshold():
-            fail(f"multiple core sources unavailable (fetch failed or parsed zero): {core_unavailable}", failures)
+            source_problem(f"multiple core sources unavailable (fetch failed or parsed zero): {core_unavailable}")
         elif core_unavailable:
             add_warn(f"one core source unavailable (fetch failed or parsed zero): {core_unavailable}")
         if len(unavailable_sources) > guard_max_failed_sources():
-            fail(f"too many enabled sources unavailable: {len(unavailable_sources)} {unavailable_sources[:10]}", failures)
+            source_problem(f"many enabled sources unavailable: {len(unavailable_sources)} {unavailable_sources[:10]}")
         if zero_parsed:
             add_warn(f"enabled sources fetched but parsed no supported streams: {zero_parsed}")
         if health["recovery_failed"]:
             add_warn(f"recovery sources unavailable (non-blocking): {health['recovery_failed']}")
         if health["recovery_zero_parsed"]:
             add_warn(f"recovery sources fetched but parsed no supported streams (non-blocking): {health['recovery_zero_parsed']}")
-    write_guard_outputs(current, baseline, failures, warnings, statuses, migration_reason)
+        if health["candidate_failed"]:
+            add_warn(f"candidate-only sources unavailable (non-blocking): {health['candidate_failed']}")
+    else:
+        fail("source status evidence is missing", failures)
+    write_guard_outputs(current, baseline, failures, warnings, statuses, migration_reason, source_specs)
     if failures:
         print("Publish guard rejected this run; keeping previous published playlist unchanged.")
         return GUARD_REJECTED_EXIT_CODE

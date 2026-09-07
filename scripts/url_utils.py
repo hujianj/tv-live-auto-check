@@ -10,8 +10,10 @@ published to a TV player.
 from __future__ import annotations
 
 import html
+import math
 import re
-from urllib.parse import urlsplit
+from collections import Counter
+from urllib.parse import parse_qsl, urlsplit, urlunsplit
 
 
 STREAM_SCHEME_RE = r"(?:https?|rtmp)://"
@@ -47,7 +49,61 @@ def split_stream_urls(value: str) -> list[str]:
 def normalize_stream_url(value: str) -> str:
     """Compatibility helper returning the first split URL, if any."""
     parts = split_stream_urls(value)
-    return parts[0] if parts else ""
+    if not parts:
+        return ""
+    url = parts[0]
+    try:
+        parsed = urlsplit(url)
+        query = "&".join(dict.fromkeys(parsed.query.split("&")))
+        return urlunsplit((parsed.scheme, parsed.netloc, parsed.path, query, parsed.fragment))
+    except ValueError:
+        return url
+
+
+def opaque_key(value: str) -> bool:
+    """Distinguish ordinary public routing labels from credential-like values."""
+    if re.fullmatch(r"[a-fA-F0-9-]{24,}", value):
+        return True
+    if len(value) < 20:
+        return False
+    entropy = -sum((count / len(value)) * math.log2(count / len(value))
+                   for count in Counter(value).values())
+    return entropy >= 3.5 or len(value) > 64
+
+
+def sensitive_url_issue(url: str) -> str:
+    try:
+        parsed = urlsplit(url)
+    except ValueError:
+        return "invalid URL"
+    keys: dict[str, str] = {}
+    for key, value in parse_qsl(parsed.query, keep_blank_values=True):
+        key = key.lower()
+        if re.search(r"^(?:.*(?:token|secret|password|cookie|session)|auth(?:orization|_key)?|api[_-]?key|sign(?:ature)?|expires?|expiry|wstime|txtime|_upt|jwt)$|^x-(?:amz|goog)-", key):
+            return "credential or expiring query parameter"
+        if key == "key" and opaque_key(value):
+            return "opaque key parameter requires review"
+        if key in keys and keys[key] != value:
+            return "ambiguous duplicate query parameter"
+        keys[key] = value
+    if re.search(r"/(?:drm|license|widevine|playready)/", parsed.path, re.I):
+        return "DRM/license endpoint"
+    # Reject embedded serialized signatures instead of decoding and replaying them.
+    if any(len(segment) > 180 and re.fullmatch(r"[A-Za-z0-9_=-]+", segment) for segment in parsed.path.split("/")):
+        return "opaque signed path requires review"
+    return ""
+
+
+def redact_text(value: object) -> str:
+    def redact_url(match):
+        try:
+            parsed = urlsplit(match.group(0))
+            host = parsed.netloc.rsplit("@", 1)[-1]
+            path = "/".join("[redacted]" if len(segment) > 180 else segment for segment in parsed.path.split("/"))
+            return urlunsplit((parsed.scheme, host, path, "[redacted]" if parsed.query else "", ""))
+        except ValueError:
+            return "[redacted URL]"
+    return re.sub(r"https?://[^\s<>\"']+", redact_url, str(value))
 
 
 def publishable_url_issue(url: str) -> str:
@@ -90,6 +146,11 @@ def publishable_url_issue(url: str) -> str:
         return "trailing fragment marker"
     if "\\" in url:
         return "backslash in URL"
+    if "|" in url:
+        return "caller-supplied playback headers are not publishable"
+    sensitive = sensitive_url_issue(url)
+    if sensitive:
+        return sensitive
     return ""
 
 

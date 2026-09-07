@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
 import json
 from pathlib import Path
 import re
@@ -21,6 +22,19 @@ class SourceSpec:
     enabled: bool
     auto_recover: bool = False
     note: str = ""
+    format: str = "auto"
+    timeout_seconds: int = 20
+    update_method: str = "scheduled_fetch"
+    rights_status: str = "pending"
+    license: str = "unknown"
+    terms_url: str = ""
+    homepage: str = ""
+    reviewed_at: str = ""
+    permission_scope: str = "unconfirmed"
+
+    @property
+    def publish_allowed(self) -> bool:
+        return self.should_probe and self.rights_status == "approved" and self.format != "catalog"
 
     @property
     def mode(self) -> str:
@@ -68,7 +82,33 @@ def load_source_specs(path: Path = SOURCE_CONFIG) -> list[SourceSpec]:
             raise ValueError(f"source {name!r} enabled/auto_recover must be boolean")
         if enabled and auto_recover:
             raise ValueError(f"source {name!r} cannot be both enabled and auto_recover")
-        specs.append(SourceSpec(name, url, enabled, auto_recover, str(item.get("note") or "").strip()))
+        format = item.get("format", "auto")
+        if format not in {"auto", "m3u", "m3u8", "txt", "json", "xml", "catalog"}:
+            raise ValueError(f"source {name!r} has unsupported format")
+        timeout = item.get("timeout_seconds", 20)
+        if type(timeout) is not int or not 1 <= timeout <= 60:
+            raise ValueError(f"source {name!r} timeout_seconds must be 1..60")
+        rights = item.get("rights_status", "pending")
+        if rights not in {"pending", "approved", "restricted"}:
+            raise ValueError(f"source {name!r} rights_status is invalid")
+        if rights == "approved":
+            terms = item.get("terms_url")
+            reviewed = item.get("reviewed_at")
+            scope = item.get("permission_scope")
+            if not all(isinstance(value, str) and value.strip() for value in (terms, reviewed, scope)):
+                raise ValueError(f"source {name!r} approval requires dated permission evidence")
+            evidence_url = urlparse(terms)
+            if evidence_url.scheme not in {"http", "https"} or not evidence_url.hostname or evidence_url.username or evidence_url.password:
+                raise ValueError(f"source {name!r} terms_url must be an HTTP(S) evidence URL without credentials")
+            try:
+                date.fromisoformat(reviewed)
+            except ValueError as exc:
+                raise ValueError(f"source {name!r} reviewed_at must be an ISO calendar date") from exc
+        specs.append(SourceSpec(name, url, enabled, auto_recover, str(item.get("note") or "").strip(),
+                                format, timeout, str(item.get("update_method", "scheduled_fetch")), rights,
+                                str(item.get("license", "unknown")), str(item.get("terms_url", "")),
+                                str(item.get("homepage", url)), str(item.get("reviewed_at", "")),
+                                str(item.get("permission_scope", "unconfirmed"))))
 
     if not any(spec.enabled for spec in specs):
         raise ValueError("source config must contain at least one enabled source")

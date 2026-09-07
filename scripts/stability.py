@@ -84,16 +84,18 @@ def empty_history() -> dict:
 
 def load_json_history(path: Path) -> dict:
     try:
+        if path.stat().st_size > 5_000_000:
+            raise ValueError("history size budget exceeded")
         data = json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
+        if not isinstance(data, dict):
+            raise ValueError("history must be an object")
+        if data.get("version") in {None, 1}:
+            data["version"] = STATE_VERSION
+        data.setdefault("applied_observation_ids", [])
+        return validate_history(data)
+    except (OSError, ValueError, TypeError):
+        print(f"STABILITY WARN: ignoring invalid history {path.name}; starting with empty evidence", flush=True)
         return empty_history()
-    urls = data.get("urls")
-    if not isinstance(urls, dict):
-        data["urls"] = {}
-    if data.get("version") in {None, 1}:
-        data["version"] = STATE_VERSION
-    data.setdefault("applied_observation_ids", [])
-    return data
 
 
 def load_tsv_history(path: Path) -> dict:

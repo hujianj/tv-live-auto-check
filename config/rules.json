@@ -1,4 +1,26 @@
 {
+  "channel_scope": {
+    "mode": "domestic_chinese",
+    "network_validation": "current_execution_environment",
+    "countries": ["cn", "hk", "mo", "tw"],
+    "excluded_name_tokens": [
+      "CGTN", "英语", "英語", "英文", "法语", "法語", "西语", "西語", "西班牙语", "阿拉伯语", "俄语", "俄語", "日语", "日語", "韩语", "韓語",
+      "English", "Français", "Español", "Arabic", "Russian", "TVB Pearl", "明珠台", "ViuTVsix",
+      "美国", "美國", "加拿大", "新加坡", "马来西亚", "馬來西亞", "澳大利亚", "澳大利亞", "澳洲", "纽约", "紐約", "洛杉矶", "洛杉磯",
+      "新唐人", "希望之声", "希望之聲", "新传媒", "新傳媒", "狮城", "獅城", "Astro", "Mediacorp", "NTDTV", "凤凰美洲", "鳳凰美洲"
+    ],
+    "excluded_name_patterns": [
+      "^(?:RTHK|香港电台|香港電台|港台)[ _-]*(?:34|35)(?:[^0-9]|$)",
+      "^(?:TVB|RTHK|ViuTV|Phoenix)(?:HD|FHD|[0-9]+p)?$"
+    ],
+    "chinese_latin_name_patterns": [
+      "TVB[ _-]?(?:Jade|News|Finance|Entertainment|Classic|Plus)(?:HD)?",
+      "TVBS(?:[ _-]?(?:News|HD))?", "RTHK[ _-]?(?:31|32|33)(?:HD)?", "ViuTV99(?:HD)?",
+      "Phoenix[ _-]?(?:Chinese|InfoNews)(?:HD)?"
+    ],
+    "foreign_only_sources": ["utako_jp", "epg_sg", "epg_my"],
+    "foreign_group_tokens": ["海外华语", "海外華語", "国外", "國外", "美国", "美國", "加拿大", "新加坡", "马来西亚", "馬來西亞", "日本", "韩国", "韓國", "United States", "Singapore", "Malaysia", "Japan", "Korea"]
+  },
   "group_order": [
     "央视频道",
     "卫视频道",

@@ -252,6 +252,14 @@ def maintenance_failure_detail(path: str) -> str:
                 failures=" | ".join(str(item) for item in failures) or "none",
             )
         )
+        if recheck.get("status") == "aborted":
+            lines.append(
+                f"  Publication held: {recheck.get('abort_reason') or 'final recheck rejected'}; "
+                f"verified_candidate_rows={recheck.get('candidate_after_rows', 0)}, "
+                f"failed_unique_urls={recheck.get('post_retry_failed_unique_urls', 0)}, "
+                f"outputs_rewritten={recheck.get('outputs_rewritten', False)}. "
+                "The committed subscription was not updated."
+            )
     detail = "\n".join(lines)
     if len(detail) > MAX_FAILURE_DETAIL_CHARS:
         detail = detail[: MAX_FAILURE_DETAIL_CHARS - 80].rstrip() + "\n[diagnostic detail truncated; see artifact]"

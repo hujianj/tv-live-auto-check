@@ -9,8 +9,8 @@ from channel_utils import cctv_key
 
 
 _RESOLUTION_SUFFIX = re.compile(
-    r"(?:\((?:\d{3,4}p|HD|FHD|UHD|4K|\u9ad8\u6e05|\u8d85\u6e05|\u6807\u6e05|\u84dd\u5149)\)|"
-    r"[-_ ]?(?:\d{3,4}p|HD|FHD|UHD|4K|\u9ad8\u6e05|\u8d85\u6e05|\u6807\u6e05|\u84dd\u5149))$",
+    r"(?:\((?:\d{3,4}[pi]|HD|FHD|UHD|4K|\u9ad8\u6e05|\u8d85\u6e05|\u6807\u6e05|\u84dd\u5149)\)|"
+    r"[-_ ]?(?:\d{3,4}[pi]|HD|FHD|UHD|4K|\u9ad8\u6e05|\u8d85\u6e05|\u6807\u6e05|\u84dd\u5149))$",
     re.I,
 )
 _CCTV_NUMBERED_ALIAS_SUFFIX = re.compile(
@@ -30,11 +30,20 @@ _BROADCAST_TV_ORG_RE = re.compile(
     r"(?:\u5e7f\u64ad\u7535\u89c6\u53f0|\u5e7f\u64ad\u7535\u89c6|\u5e7f\u7535\u7f51\u7edc)",
     re.I,
 )
+_STATION_ALIASES = {
+    "brtv\u5317\u4eac\u536b\u89c6": "\u5317\u4eac\u536b\u89c6",
+    "btv\u5317\u4eac\u536b\u89c6": "\u5317\u4eac\u536b\u89c6",
+}
+
+
+def normalize_station_alias(name: str) -> str:
+    compact = re.sub(r"\s+", "", name.strip())
+    return _STATION_ALIASES.get(_RESOLUTION_SUFFIX.sub("", compact).casefold(), name)
 
 
 def canonical_channel_key(name: str) -> str:
     """Return the key used for line quotas, coverage, and refill accounting."""
-    text = re.sub(r"\s+", "", (name or "").strip())
+    text = re.sub(r"\s+", "", normalize_station_alias(name or "").strip())
     alias_match = _CCTV_NUMBERED_ALIAS_SUFFIX.match(text)
     if alias_match:
         text = alias_match.group(1)
