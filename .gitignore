@@ -24,3 +24,6 @@ stability-state.json
 stability-observation.json
 stability-report.md
 tmp-github-runs/
+tmp-*/
+source-inventory.json
+output/

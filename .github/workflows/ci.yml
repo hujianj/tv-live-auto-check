@@ -7,6 +7,7 @@ on:
     paths:
       - "scripts/*.py"
       - "config/*.json"
+      - "requirements.txt"
       - ".github/workflows/*.yml"
       - "live-curated.txt"
       - "live.txt"
@@ -32,6 +33,7 @@ on:
     paths:
       - "scripts/*.py"
       - "config/*.json"
+      - "requirements.txt"
       - ".github/workflows/*.yml"
       - "live-curated.txt"
       - "live.txt"
@@ -63,6 +65,7 @@ concurrency:
 
 jobs:
   validate:
+    name: Code and configuration
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -76,11 +79,32 @@ jobs:
           python-version: "3.12"
       - name: Compile Python sources
         run: python -m compileall -q scripts
+      - name: Install frame decoder
+        run: |
+          if ! command -v ffmpeg >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+          python -m pip install --disable-pip-version-check -r requirements.txt
       - name: Validate centralized publication configuration
         run: python scripts/publication_config.py --validate
       - name: Run unit tests
         run: python scripts/test_playlist_logic.py
+  publication:
+    name: Existing publication integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout without write credentials
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
       - name: Validate committed public publication bundle
         run: python scripts/validate_publish_bundle.py --committed-only
       - name: Validate committed public publication manifest
+        if: ${{ !cancelled() }}
         run: python scripts/validate_publication.py

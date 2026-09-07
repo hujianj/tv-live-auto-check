@@ -10,7 +10,7 @@ import shutil
 import sys
 import time
 from collections import Counter, defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from validate_playlist import validate_file, validate_text
@@ -29,6 +29,7 @@ from channel_utils import format_extinf
 from channel_identity import canonical_channel_key
 from playlist_order import canonicalize_channel_rows
 from url_utils import is_publishable_http_url
+from media_decode import MIN_DECODED_FRAMES, decoder_preflight
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -72,6 +73,44 @@ HISTORICAL_FALLBACK_GROUPS = frozenset(
 
 def max_failed_url_ratio() -> float:
     return float(os.getenv("IPTV_PUBLISHED_RECHECK_MAX_FAILED_RATIO", str(load_guard().get("max_published_recheck_failed_url_ratio", 0.25))))
+
+
+def require_decoded_result(result: CheckResult) -> CheckResult:
+    if result.ok and result.decoded_frames < MIN_DECODED_FRAMES:
+        return replace(result, ok=False, detail="final probe did not prove 3 decoded video frames")
+    return result
+
+
+def record_aborted_recheck(rows: list[Row], kept_rows: list[Row], checked: int,
+                           failed: int, elapsed: float, retry: dict, threshold: float) -> None:
+    """Record evidence without claiming the aborted candidate list was published."""
+    path = ROOT / SUMMARY_FILE
+    summary = json.loads(path.read_text(encoding="utf-8"))
+    summary["strict_video_checked_unique"] = checked if REQUIRE_VIDEO_TRACK else 0
+    summary["strict_progress_checked_unique"] = len({row.url for row in rows if requires_live_progress(row)}) if REQUIRE_BROADCAST_PROGRESS else 0
+    summary["published_recheck"] = {
+        "status": "aborted", "outputs_rewritten": False,
+        "abort_reason": "failed_url_ratio_exceeded",
+        "policy_version": RECHECK_POLICY_VERSION,
+        "require_video_track": REQUIRE_VIDEO_TRACK,
+        "require_frame_decode": True,
+        "candidate_frame_decoded_unique_urls": len({row.url for row in kept_rows}),
+        "broadcast_progress_required": REQUIRE_BROADCAST_PROGRESS,
+        "candidate_video_verified_unique_urls": len({row.url for row in kept_rows}) if REQUIRE_VIDEO_TRACK else 0,
+        "checked_unique_urls": checked, "initial_checked_unique_urls": checked,
+        "first_pass_failed_unique_urls": retry.get("first_pass_failed_unique_urls", failed),
+        "slow_retry_attempted_unique_urls": retry.get("attempted_unique_urls", 0),
+        "slow_retry_recovered_unique_urls": retry.get("recovered_unique_urls", 0),
+        "post_retry_failed_unique_urls": failed, "failed_unique_urls": failed,
+        "before_rows": len(rows), "after_rows": len(rows),
+        "candidate_after_rows": len(kept_rows), "removed_rows": 0, "net_row_delta": 0,
+        "failed_url_ratio": failed / max(1, checked), "max_failed_url_ratio": threshold,
+        "elapsed_seconds": round(elapsed, 3), "slow_retry": retry,
+        "refill": {"enabled": False, "refilled_rows": 0, "attempted_unique_urls": 0},
+    }
+    temporary = path.with_suffix(".tmp")
+    temporary.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
+    temporary.replace(path)
 
 
 def retry_failed_final_urls(
@@ -119,12 +158,13 @@ def retry_failed_final_urls(
                     core_override=core,
                     require_progress=REQUIRE_BROADCAST_PROGRESS and url in progress_urls,
                     require_video=REQUIRE_VIDEO_TRACK,
+                    require_decode=True,
                 )
                 futs[future] = url
             for future in cf.as_completed(futs):
                 url = futs[future]
                 attempted.add(url)
-                round_results[url] = future.result()
+                round_results[url] = require_decoded_result(future.result())
         for url in batch:
             retry = round_results[url]
             if retry.ok:
@@ -133,12 +173,18 @@ def retry_failed_final_urls(
                     results[url].cand,
                     True,
                     f"final slow retry ok attempt={attempt} first={first_details[url]}; {retry.detail}",
+                    retry.elapsed_seconds,
+                    retry.checked_at,
+                    retry.decoded_frames,
                 )
             else:
                 results[url] = CheckResult(
                     results[url].cand,
                     False,
                     f"final slow retry failed attempt={attempt} first={first_details[url]}; last={retry.detail}",
+                    retry.elapsed_seconds,
+                    retry.checked_at,
+                    retry.decoded_frames,
                 )
                 pending.append(url)
     return {
@@ -446,15 +492,19 @@ def write_results_csv(
     results: dict[str, CheckResult],
     attempted_refills: list[PoolCandidate] | None = None,
     refill_results: dict[str, CheckResult] | None = None,
+    *,
+    source_map: dict[tuple[str, str], str] | None = None,
 ) -> None:
     attempted_refills = attempted_refills or []
     refill_results = refill_results or {}
+    source_map = source_map if source_map is not None else load_source_map()
     with (ROOT / CSV_FILE).open("w", encoding="utf-8", newline="") as f:
         writer = csv.writer(f, lineterminator="\n")
-        writer.writerow(["phase", "ok", "group", "name", "url", "source", "origin", "detail"])
+        writer.writerow(["phase", "ok", "group", "name", "url", "source", "origin", "detail", "video_required", "progress_required", "checked_at", "elapsed_seconds", "decode_required", "decoded_frames"])
         for row in rows:
             result = results[row.url]
-            writer.writerow(["published", result.ok, row.group, row.name, row.url, "published_recheck", "current_publication", result.detail])
+            writer.writerow(["published", result.ok, row.group, row.name, row.url, source_for(row, source_map), "current_publication", result.detail,
+                             REQUIRE_VIDEO_TRACK, REQUIRE_BROADCAST_PROGRESS and requires_live_progress(row), result.checked_at, result.elapsed_seconds, True, result.decoded_frames])
         for candidate in attempted_refills:
             result = refill_results[candidate.row.url]
             writer.writerow([
@@ -466,6 +516,12 @@ def write_results_csv(
                 candidate.source,
                 candidate.origin,
                 result.detail,
+                REQUIRE_VIDEO_TRACK,
+                REQUIRE_BROADCAST_PROGRESS and requires_live_progress(candidate.row),
+                result.checked_at,
+                result.elapsed_seconds,
+                True,
+                result.decoded_frames,
             ])
 
 
@@ -648,11 +704,12 @@ def refill_missing_rows(
                     core_override=core,
                     require_progress=REQUIRE_BROADCAST_PROGRESS and requires_live_progress(candidate.row),
                     require_video=REQUIRE_VIDEO_TRACK,
+                    require_decode=True,
                 )
                 futs[fut] = (key, candidate)
             for fut in cf.as_completed(futs):
                 _key, candidate = futs[fut]
-                round_results[candidate.row.url] = fut.result()
+                round_results[candidate.row.url] = require_decoded_result(fut.result())
 
         # Apply in candidate-pool order, not thread completion order.
         for key, candidate in batch:
@@ -728,6 +785,9 @@ def update_summary(
         "stability": stability_summary,
         "published_recheck": {
             "enabled": True,
+            "status": "ok",
+            "outputs_rewritten": True,
+            "candidate_after_rows": len(after_rows),
             "policy_version": RECHECK_POLICY_VERSION,
             "checked_unique_urls": checked_urls,
             "initial_checked_unique_urls": len({row.url for row in before_rows}),
@@ -751,6 +811,9 @@ def update_summary(
             "broadcast_progress_required": REQUIRE_BROADCAST_PROGRESS,
             "progress_required_groups": sorted(LIVE_PROGRESS_GROUPS),
             "require_video_track": REQUIRE_VIDEO_TRACK,
+            "require_frame_decode": True,
+            "minimum_decoded_frames": MIN_DECODED_FRAMES,
+            "frame_decoded_unique_urls": len({row.url for row in after_rows}),
             "video_track_verified_unique_urls": len({row.url for row in after_rows}),
             "audio_only_rejected_unique_urls": sum(
                 1 for detail in all_failed_urls.values() if "audio/" in detail.lower() or " audio " in detail.lower()
@@ -776,20 +839,23 @@ def update_summary(
     path.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
 
 
-def write_report(before_rows: list[Row], after_rows: list[Row], failed_urls: dict[str, str], elapsed: float, refill_summary: dict | None = None) -> None:
+def write_report(before_rows: list[Row], after_rows: list[Row], failed_urls: dict[str, str], elapsed: float, refill_summary: dict | None = None, *, outputs_rewritten: bool = True) -> None:
     before_counts = Counter(row.group for row in before_rows)
     after_counts = Counter(row.group for row in after_rows)
     failed_rows = [row for row in before_rows if row.url in failed_urls]
     refill_summary = refill_summary or {}
+    result_label = "Rows after" if outputs_rewritten else "Candidate rows after (not promoted)"
     lines = [
         "# Published playlist recheck report",
         "",
+        f"Outputs rewritten: {outputs_rewritten}",
         f"Elapsed: {elapsed:.1f}s",
         f"Rows before: {len(before_rows)}",
-        f"Rows after: {len(after_rows)}",
-        f"Rows removed after strict recheck: {len(failed_rows)}",
+        f"{result_label}: {len(after_rows)}",
+        f"Rows removed from outputs: {len(failed_rows) if outputs_rewritten else 0}",
+        f"Candidate rows failing strict recheck: {len(failed_rows)}",
         f"Rows refilled after strict recheck: {refill_summary.get('refilled_rows', 0)}",
-        f"Net row delta: {len(after_rows) - len(before_rows):+d}",
+        f"Net output row delta: {len(after_rows) - len(before_rows) if outputs_rewritten else 0:+d}",
         f"Failed unique URLs after slow retry: {len(failed_urls)}",
         f"Slow retry attempted unique URLs: {refill_summary.get('initial_retry', {}).get('attempted_unique_urls', 0)}",
         f"Slow retry recovered unique URLs: {refill_summary.get('initial_retry', {}).get('recovered_unique_urls', 0)}",
@@ -895,6 +961,7 @@ def write_final_report(groups: list[str], rows: list[Row], failed_urls: dict[str
 
 def main() -> int:
     global ROOT
+    print(f"Frame decoder preflight: {decoder_preflight()}", flush=True)
     repository_root = ROOT
     recover_interrupted_promotion(repository_root)
     cleanup_stale_diagnostics()
@@ -935,16 +1002,18 @@ def main() -> int:
                 Candidate("published_recheck", row.group, row.name, row.url),
                 core,
                 REQUIRE_BROADCAST_PROGRESS and url in progress_urls,
+                require_decode=True,
             )
             futs[fut] = url
         for i, fut in enumerate(cf.as_completed(futs), 1):
             url = futs[fut]
-            results[url] = fut.result()
+            results[url] = require_decoded_result(fut.result())
             if i % 100 == 0 or i == len(futs):
                 ok_count = sum(1 for result in results.values() if result.ok)
                 print(f"published_recheck {i}/{len(futs)} ok_urls={ok_count}", flush=True)
 
     retry_summary = retry_failed_final_urls(by_url, results, core_urls, progress_urls)
+    write_results_csv(rows, results, [], {}, source_map=source_map)
     print("Published final slow retry", json.dumps(retry_summary, ensure_ascii=False, sort_keys=True), flush=True)
     failed_urls = {url: result.detail for url, result in results.items() if not result.ok}
     kept_rows = [row for row in rows if row.url not in failed_urls]
@@ -961,8 +1030,8 @@ def main() -> int:
             "unresolved_rows": len(rows) - len(kept_rows),
             "initial_retry": retry_summary,
         }
-        write_results_csv(rows, results)
-        write_report(rows, kept_rows, failed_urls, elapsed, refill_summary)
+        write_results_csv(rows, results, source_map=source_map)
+        write_report(rows, kept_rows, failed_urls, elapsed, refill_summary, outputs_rewritten=False)
         abort_lines = [
             "# Final TV-facing playlist report",
             "",
@@ -977,6 +1046,7 @@ def main() -> int:
             f"Elapsed: {elapsed:.1f}s",
         ]
         (ROOT / FINAL_REPORT_FILE).write_text("\n".join(abort_lines) + "\n", encoding="utf-8", newline="\n")
+        record_aborted_recheck(rows, kept_rows, len(by_url), len(failed_urls), elapsed, retry_summary, threshold)
         print(
             "Published recheck aborted: "
             f"failed_url_ratio={failed_ratio:.1%} threshold={threshold:.1%}; "
@@ -993,6 +1063,7 @@ def main() -> int:
     refill_summary["initial_retry"] = retry_summary
     for candidate in accepted_refills:
         source_map[(candidate.row.name, candidate.row.url)] = candidate.source
+    write_results_csv(rows, results, attempted_refills, refill_results, source_map=source_map)
 
     elapsed = time.time() - start
 
@@ -1055,7 +1126,7 @@ def main() -> int:
             family_summary,
             refill_summary,
         )
-        write_results_csv(rows, results, attempted_refills, refill_results)
+        write_results_csv(rows, results, attempted_refills, refill_results, source_map=source_map)
         write_observation(ROOT / PENDING_STABILITY_FILE, observation)
         for filename in [*TXT_FILES, M3U_FILE, *family_txt_files(), family_m3u_file()]:
             validate_file(ROOT / filename, require_categories=True)

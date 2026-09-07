@@ -16,6 +16,7 @@ from http.client import HTTPConnection, HTTPException, HTTPSConnection
 import socket
 import ssl
 import threading
+import time
 from functools import lru_cache
 from urllib.parse import urljoin, urlsplit
 from urllib.request import (
@@ -114,7 +115,10 @@ class PublicRedirectHandler(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):  # type: ignore[override]
         target = urljoin(req.full_url, newurl)
         validate_public_url(target)
-        return super().redirect_request(req, fp, code, msg, headers, target)
+        redirected = super().redirect_request(req, fp, code, msg, headers, target)
+        if redirected is not None and hasattr(req, "_iptv_deadline"):
+            redirected._iptv_deadline = req._iptv_deadline
+        return redirected
 
 
 def _connect_exact_address(
@@ -239,6 +243,12 @@ class _PublicAddressRetryHandler:
             addresses = addresses[:MAX_ADDRESS_ATTEMPTS]
         last_error: BaseException | None = None
         for address in addresses:
+            deadline = getattr(req, "_iptv_deadline", None)
+            if deadline:
+                remaining = deadline - time.monotonic()
+                if remaining <= 0:
+                    raise TimeoutError("URL total budget exceeded during connection retry")
+                req.timeout = min(req.timeout, remaining)
             def connection_factory(target_host, **kwargs):
                 return connection_class(
                     target_host,
@@ -302,16 +312,28 @@ class _RetryingPublicResponse:
         self._request = request
         self._timeout = timeout
         self._remaining_retries = MAX_READ_RETRIES
+        self._delivered = 0
 
     def __getattr__(self, name):
         return getattr(self._response, name)
 
     def read(self, *args, **kwargs):
+        return self._read("read", *args, **kwargs)
+
+    def read1(self, *args, **kwargs):
+        return self._read("read1", *args, **kwargs)
+
+    def _read(self, method, *args, **kwargs):
         while True:
+            deadline = getattr(self._request, "_iptv_deadline", None)
+            if deadline and time.monotonic() >= deadline:
+                raise TimeoutError("URL total budget exceeded during response read")
             try:
-                return self._response.read(*args, **kwargs)
+                payload = getattr(self._response, method, self._response.read)(*args, **kwargs)
+                self._delivered += len(payload)
+                return payload
             except (URLError, OSError, HTTPException):
-                if self._remaining_retries <= 0:
+                if self._remaining_retries <= 0 or self._delivered:
                     raise
                 self._remaining_retries -= 1
                 host = getattr(self._response, "_public_host", "")
@@ -320,7 +342,10 @@ class _RetryingPublicResponse:
                 if host and port and address:
                     _remember_bad_address(host, port, address)
                 self._response.close()
-                self._response = _PUBLIC_OPENER.open(self._request, timeout=self._timeout)
+                remaining = deadline - time.monotonic() if deadline else self._timeout
+                if remaining <= 0:
+                    raise TimeoutError("URL total budget exceeded during read retry")
+                self._response = _PUBLIC_OPENER.open(self._request, timeout=min(self._timeout, remaining))
 
     def close(self) -> None:
         self._response.close()

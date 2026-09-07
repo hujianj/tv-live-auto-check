@@ -11,6 +11,7 @@ on:
     paths:
       - "scripts/*.py"
       - "config/*.json"
+      - "requirements.txt"
       - ".github/workflows/update.yml"
 
 permissions:
@@ -31,8 +32,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
-      - name: Refuse publication from a non-default branch
-        if: ${{ github.ref_type != 'branch' || github.ref_name != github.event.repository.default_branch }}
+      - name: Refuse publication from a non-default branch except validation-only dispatch
+        if: ${{ github.ref_type != 'branch' || (github.ref_name != github.event.repository.default_branch && github.event_name != 'workflow_dispatch') }}
         run: |
           echo "Only the default branch may run the publication pipeline."
           echo "ref_type=${{ github.ref_type }} ref_name=${{ github.ref_name }} default=${{ github.event.repository.default_branch }}"
@@ -66,6 +67,15 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.12"
+      - name: Install and verify frame decoder
+        if: ${{ steps.preflight.outputs.stale != 'true' }}
+        run: |
+          if ! command -v ffmpeg >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install -y ffmpeg
+          fi
+          python -m pip install --disable-pip-version-check -r requirements.txt
+          python scripts/media_decode.py
       - name: Restore validated stability state from successful maintenance
         if: ${{ steps.preflight.outputs.stale != 'true' }}
         env:
@@ -133,6 +143,8 @@ jobs:
             alias-conflict-report.md
             published_recheck_results.csv
             sources_status.csv
+            source-inventory.json
+            output/
             source-report.md
             curated-report.md
             published-recheck-report.md
@@ -150,7 +162,7 @@ jobs:
             stability-observation.json
       - name: Commit verified playlist without overwriting newer code
         id: commit
-        if: ${{ steps.preflight.outputs.stale != 'true' && steps.maintenance.outcome == 'success' && steps.stability_state.outcome == 'success' }}
+        if: ${{ github.ref_name == github.event.repository.default_branch && steps.preflight.outputs.stale != 'true' && steps.maintenance.outcome == 'success' && steps.stability_state.outcome == 'success' }}
         env:
           TARGET_BRANCH: ${{ github.ref_name }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
@@ -227,7 +239,7 @@ jobs:
             cdn-health-report.md
             cdn-health-report.json
       - name: Notify hard maintenance failure
-        if: ${{ always() && (steps.maintenance.outcome == 'failure' || steps.stability_state.outcome == 'failure' || steps.commit.outcome == 'failure') }}
+        if: ${{ always() && github.ref_name == github.event.repository.default_branch && (steps.maintenance.outcome == 'failure' || steps.stability_state.outcome == 'failure' || steps.commit.outcome == 'failure') }}
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

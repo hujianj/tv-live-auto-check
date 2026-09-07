@@ -23,6 +23,8 @@ from channel_identity import aliases_are_compatible, canonical_channel_key
 from playlist_order import canonicalize_channel_rows
 from playlist_config import get_group_order, load_guard, load_quality
 from source_config import load_source_specs
+from source_policy import publication_issue
+from channel_scope import CHANNEL_SCOPE, NETWORK_SCOPE, domestic_chinese_issue
 from validate_playlist import split_unquoted_last_comma, validate_file
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -393,6 +395,9 @@ def _validate_summary(
     )
     if require_extended_schema:
         required_recheck_fields += (
+            "require_frame_decode",
+            "minimum_decoded_frames",
+            "frame_decoded_unique_urls",
             "policy_version",
             "broadcast_progress_required",
             "progress_required_groups",
@@ -433,6 +438,11 @@ def _validate_summary(
             )
     if recheck.get("require_video_track") is not True:
         errors.append("summary.published_recheck.require_video_track must be true")
+    if require_extended_schema or "require_frame_decode" in recheck:
+        if recheck.get("require_frame_decode") is not True or recheck.get("minimum_decoded_frames") != 3:
+            errors.append("summary.published_recheck must require at least 3 decoded frames")
+        _check_equal(recheck.get("frame_decoded_unique_urls"), full_urls,
+                     "summary.published_recheck.frame_decoded_unique_urls", errors)
     if recheck.get("public_network_policy_enabled") is not True:
         errors.append("summary.published_recheck.public_network_policy_enabled must be true")
     if "video_track_verified_unique_urls" in recheck:
@@ -938,6 +948,40 @@ def validate_publish_bundle(
             "summary.sources_contributing/sources_status",
             errors,
         )
+
+    if summary.get("channel_policy_version"):
+        _check_equal(summary.get("channel_scope"), CHANNEL_SCOPE, "summary.channel_scope", errors)
+        _check_equal(summary.get("network_scope"), NETWORK_SCOPE, "summary.network_scope", errors)
+        for row in full_rows:
+            issue = domestic_chinese_issue(row.name, row.group)
+            if issue:
+                errors.append(f"domestic Chinese scope rejected {row.name!r}: {issue}")
+    if require_artifacts and summary.get("source_policy_version"):
+        specs = {spec.name: spec for spec in load_source_specs(config_path)}
+        for row, source in zip(full_rows, sources):
+            issue = publication_issue(specs.get(source), row.url)
+            if issue:
+                errors.append(f"source publication policy rejected {source!r}/{row.name!r}: {issue}")
+        eligible = summary.get("eligible_candidates", -1)
+        excluded = summary.get("policy_excluded_candidates", -1)
+        if type(eligible) is not int or type(excluded) is not int or min(eligible, excluded) < 0:
+            errors.append("invalid eligible/excluded candidate counters")
+        elif eligible + excluded != summary.get("parsed_candidates"):
+            errors.append("parsed_candidates != eligible_candidates + policy_excluded_candidates")
+        evidence_path = root / "published_recheck_results.csv"
+        verified = set()
+        if evidence_path.is_file():
+            with evidence_path.open(encoding="utf-8", newline="") as handle:
+                for record in csv.DictReader(handle):
+                    try:
+                        frames = int(record.get("decoded_frames", "0"))
+                    except (ValueError, TypeError):
+                        frames = 0
+                    if record.get("ok") == "True" and record.get("decode_required") == "True" and frames >= 3:
+                        verified.add((record.get("name"), record.get("url"), record.get("source")))
+        for row, source in zip(full_rows, sources):
+            if (row.name, row.url, source) not in verified:
+                errors.append(f"missing per-URL decoded-frame evidence for {source!r}/{row.name!r}")
 
     _validate_summary(
         summary,

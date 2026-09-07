@@ -12,7 +12,7 @@ from pathlib import Path
 from playlist_config import get_group_order, load_guard, load_quality, load_rules
 from channel_utils import cctv_number, chinese_count as shared_chinese_count, is_latin_noise_name
 from channel_identity import is_audio_only_channel
-from url_utils import publishable_url_issue
+from url_utils import publishable_url_issue, redact_text
 
 RULES = load_rules()
 QUALITY = load_quality()
@@ -177,7 +177,7 @@ def validate_text(text: str, require_categories: bool = True) -> dict:
     if require_categories:
         validate_categories(groups, bad)
     if bad:
-        raise ValueError("invalid playlist rows: " + repr(bad[:40]))
+        raise ValueError("invalid playlist rows: " + redact_text(repr(bad[:40])))
     group_counts = Counter(g for g, _, _ in rows)
     return {
         "groups": dict(group_counts),
@@ -235,7 +235,7 @@ def validate_m3u_text(text: str, require_categories: bool = True) -> dict:
     if require_categories:
         validate_categories(groups, bad)
     if bad:
-        raise ValueError("invalid m3u rows: " + repr(bad[:40]))
+        raise ValueError("invalid m3u rows: " + redact_text(repr(bad[:40])))
     group_counts = Counter(g for g, _, _ in rows)
     return {
         "format": "m3u",

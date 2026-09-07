@@ -14,13 +14,15 @@ import re
 import sys
 import threading
 import time
-from collections import deque
-from dataclasses import dataclass
+import uuid
+from collections import Counter, deque
+from dataclasses import asdict, dataclass, replace
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from contextlib import contextmanager
 from typing import Iterable
-from urllib.parse import urljoin, urlparse, urlsplit
+from urllib.parse import quote, unquote, urljoin, urlparse, urlsplit
+from urllib.error import HTTPError, URLError
 from urllib.request import Request
 
 from channel_utils import cctv_number, format_extinf
@@ -29,6 +31,12 @@ from url_utils import is_publishable_http_url, normalize_stream_url, publishable
 from network_safety import public_urlopen
 from source_config import SourceSpec, configured_source_pairs, load_source_specs, probe_source_specs
 from media_probe import looks_media as probe_looks_media, probe_media
+from media_decode import DecodeResult, MAX_INIT_BYTES, MAX_SAMPLE_BYTES, decode_video
+from source_adapters import parse as parse_source_data
+from source_policy import POLICY_VERSION as SOURCE_POLICY_VERSION, discovery_links, publication_issue, source_record
+from channel_scope import CHANNEL_SCOPE, NETWORK_SCOPE, POLICY_VERSION as CHANNEL_POLICY_VERSION, domestic_chinese_issue
+from url_utils import redact_text
+from scan_checkpoint import ScanCheckpoint
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -58,6 +66,8 @@ HLS_PROGRESS_MAX_WAIT = float(os.getenv("IPTV_HLS_PROGRESS_MAX_WAIT", "14"))
 HLS_PROGRESS_TARGET_MULTIPLIER = float(os.getenv("IPTV_HLS_PROGRESS_TARGET_MULTIPLIER", "1.25"))
 REQUIRE_VIDEO_TRACK = os.getenv("IPTV_REQUIRE_VIDEO_TRACK", "1").strip().lower() not in {"0", "false", "no", "off"}
 UA = "Player"
+URL_BUDGET = max(10, int(os.getenv("IPTV_URL_BUDGET_SECONDS", "60")))
+_PROBE_CONTEXT = threading.local()
 SOURCE_CONFIG = ROOT / "config" / "sources.json"
 TRANSIENT_OUTPUTS = [
     "stream_check_results.csv",
@@ -104,6 +114,10 @@ class Candidate:
     group: str
     name: str
     url: str
+    tvg_id: str = ""
+    tvg_logo: str = ""
+    country: str = ""
+    language: str = ""
 
 @dataclass
 class SourceStatus:
@@ -116,12 +130,20 @@ class SourceStatus:
     error: str = ""
     mode: str = "enabled"
     contributed: bool = False
+    checked_at: str = ""
+    eligible: int = 0
+    excluded: dict | None = None
+    discovered_links: list[str] | None = None
+    transport: str = "direct"
 
 @dataclass
 class CheckResult:
     cand: Candidate
     ok: bool
     detail: str
+    elapsed_seconds: float = 0.0
+    checked_at: str = ""
+    decoded_frames: int = 0
 
 
 def order_source_statuses(statuses: Iterable[SourceStatus], sources: list[tuple[str, str]] | None = None) -> list[SourceStatus]:
@@ -161,7 +183,12 @@ def host_slot(url: str):
     host = stream_host_key(url)
     with _HOST_SEMAPHORES_LOCK:
         sem = _HOST_SEMAPHORES.setdefault(host, threading.BoundedSemaphore(HOST_WORKERS))
-    sem.acquire()
+    deadline = getattr(_PROBE_CONTEXT, "deadline", None)
+    if deadline:
+        if not sem.acquire(timeout=max(0, deadline - time.monotonic())):
+            raise TimeoutError("per-host admission deadline exceeded")
+    else:
+        sem.acquire()
     try:
         yield
     finally:
@@ -172,8 +199,31 @@ def host_slot(url: str):
 def limited_urlopen(req: Request, timeout: int):
     url = getattr(req, "full_url", str(req))
     with host_slot(url):
+        deadline = getattr(_PROBE_CONTEXT, "deadline", None)
+        deadline = deadline or time.monotonic() + timeout
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise TimeoutError("URL total budget exceeded")
+        req._iptv_deadline = deadline
+        timeout = min(timeout, remaining)
         with public_urlopen(req, timeout=timeout) as response:
             yield response
+
+
+def read_bounded(response, max_bytes: int) -> bytes:
+    read = getattr(response, "read1", response.read)
+    chunks = []
+    size = 0
+    while size < max_bytes:
+        deadline = getattr(_PROBE_CONTEXT, "deadline", None)
+        if deadline and time.monotonic() >= deadline:
+            raise TimeoutError("URL total budget exceeded while reading media")
+        chunk = read(min(65536, max_bytes - size))
+        if not chunk:
+            break
+        chunks.append(chunk)
+        size += len(chunk)
+    return b"".join(chunks)
 
 
 def _bounded_gzip_decompress(data: bytes, max_bytes: int) -> bytes:
@@ -193,13 +243,13 @@ def _bounded_gzip_decompress(data: bytes, max_bytes: int) -> bytes:
     return output
 
 
-def fetch_url(url: str, timeout: int = FETCH_TIMEOUT, max_bytes: int = MAX_SOURCE_BYTES) -> tuple[int, str, bytes, str, bool]:
-    req = Request(url, headers={"User-Agent": UA, "Accept": "*/*", "Connection": "close", "Accept-Encoding": "gzip"})
+def fetch_url(url: str, timeout: int = FETCH_TIMEOUT, max_bytes: int = MAX_SOURCE_BYTES, accept: str = "*/*") -> tuple[int, str, bytes, str, bool]:
+    req = Request(url, headers={"User-Agent": UA, "Accept": accept, "Connection": "close", "Accept-Encoding": "gzip"})
     with limited_urlopen(req, timeout=timeout) as r:
         code = getattr(r, "status", 200)
         ctype = r.headers.get("Content-Type") or ""
         content_encoding = (r.headers.get("Content-Encoding") or "").lower()
-        data = r.read(max_bytes + 1)
+        data = read_bounded(r, max_bytes + 1)
         final = r.geturl()
     truncated = len(data) > max_bytes
     if truncated:
@@ -277,75 +327,77 @@ def split_unquoted_last_comma(line: str) -> tuple[str, str]:
 
 
 def parse_m3u(text: str, source: str) -> list[Candidate]:
-    out: list[Candidate] = []
-    last_name = ""
-    last_group = ""
-    for raw in text.splitlines():
-        line = raw.strip().lstrip("﻿")
-        if not line:
-            continue
-        if line.startswith("#EXTINF"):
-            head, tail = split_unquoted_last_comma(line)
-            attrs = dict(re.findall(r'([\w-]+)="([^"]*)"', head))
-            # Prefer explicit tvg-name/title only when present. Otherwise use
-            # the final unquoted comma tail, which is the M3U display name.
-            last_name = normalize_name(attrs.get("tvg-name") or attrs.get("title") or tail or "")
-            last_group = html.unescape(attrs.get("group-title") or "")
-        elif line.startswith("#"):
-            continue
-        elif re.match(r"^[a-zA-Z][a-zA-Z0-9+.-]*://", line):
-            for url in split_stream_urls(line):
-                if is_publishable_http_url(url):
-                    name = normalize_name(last_name or urlparse(url).path.rsplit("/", 1)[-1])
-                    group = infer_group(name, last_group)
-                    out.append(Candidate(source, group, name, url))
-            last_name = ""
-            last_group = ""
-    return out
+    return parse_source_candidates(text, source, "m3u")
 
 def parse_txt(text: str, source: str) -> list[Candidate]:
-    out: list[Candidate] = []
-    group = ""
-    for raw in text.splitlines():
-        line = raw.strip().lstrip("\ufeff")
-        if not line or line.startswith("#"):
-            continue
-        if line.endswith(",#genre#"):
-            group = line.split(",", 1)[0].strip()
-            continue
-        if "," in line:
-            name, url = line.split(",", 1)
-        elif " " in line:
-            name, url = line.split(None, 1)
-        else:
-            continue
-        name = normalize_name(name)
-        for clean_url in split_stream_urls(url):
-            if is_publishable_http_url(clean_url):
-                out.append(Candidate(source, infer_group(name, group), name, clean_url))
-    return out
+    return parse_source_candidates(text, source, "txt")
 
 
 def parse_playlist(text: str, source: str) -> list[Candidate]:
-    if "#EXTM3U" in text[:2000] or "#EXTINF" in text[:5000]:
-        return parse_m3u(text, source)
-    return parse_txt(text, source)
+    return parse_source_candidates(text, source)
+
+
+def parse_source_candidates(text: str, source: str, format: str = "auto") -> list[Candidate]:
+    return [Candidate(source, channel.group, normalize_name(channel.name), channel.url,
+                      channel.tvg_id, channel.tvg_logo, channel.country, channel.language)
+            for channel in parse_source_data(text, format)]
+
+
+def eligible_candidates(candidates: list[Candidate], spec: SourceSpec) -> tuple[list[Candidate], dict[str, int]]:
+    from curate_ku9 import prepare_curated_row
+    from channel_scope import channel_countries
+
+    eligible: list[Candidate] = []
+    excluded: Counter = Counter()
+    for candidate in candidates:
+        reason = publication_issue(spec, candidate.url)
+        if not reason:
+            reason = domestic_chinese_issue(candidate.name, candidate.group, candidate.source,
+                                            candidate.tvg_id, candidate.country, candidate.language)
+        if not reason:
+            countries = channel_countries(candidate.country, candidate.tvg_id)
+            group = "\u6e2f\u6fb3\u53f0\u9891\u9053" if countries and countries.issubset({"hk", "mo", "tw"}) else candidate.group
+            row, reason, _detail = prepare_curated_row(candidate.name, candidate.url, group, candidate.source)
+            if row:
+                group, name, url, source = row
+                eligible.append(Candidate(source, group, name, url, candidate.tvg_id,
+                                          candidate.tvg_logo, candidate.country, candidate.language))
+                continue
+        excluded[reason or "invalid_channel"] += 1
+    return eligible, dict(excluded)
 
 
 def fetch_source(spec: SourceSpec) -> tuple[SourceStatus, list[Candidate]]:
     name, url = spec.name, spec.url
+    transport = "direct"
     try:
-        code, ctype, data, final, truncated = fetch_url(url)
+        try:
+            payload = fetch_url(url, timeout=spec.timeout_seconds)
+        except (TimeoutError, ConnectionError, URLError) as exc:
+            fallback = github_content_url(url)
+            if not fallback or isinstance(exc, HTTPError):
+                raise
+            payload = fetch_url(fallback, timeout=spec.timeout_seconds, accept="application/vnd.github.raw+json")
+            transport = "github_public_contents_api"
+        code, ctype, data, final, truncated = payload
+        if not 200 <= code < 300:
+            raise ValueError(f"upstream HTTP {code}")
         if truncated:
             raise ValueError("upstream playlist exceeded maximum fetch size; refusing partial parse")
         text = decode_bytes(data, ctype)
-        cands = parse_playlist(text, name)
+        if spec.format == "catalog":
+            return SourceStatus(name, url, True, bytes=len(data), mode=spec.mode,
+                                error="catalog only; child links not fetched or executed",
+                                checked_at=datetime.now(timezone.utc).isoformat(),
+                                discovered_links=discovery_links(text), transport=transport), []
+        cands = parse_source_candidates(text, name, spec.format)
         if len(cands) > MAX_CANDIDATES_PER_SOURCE:
             raise ValueError(
                 f"resource budget exceeded: source parsed {len(cands)} candidates "
                 f"> limit {MAX_CANDIDATES_PER_SOURCE}"
             )
-        warn = "" if cands else "WARN fetched but no publishable HTTP/HTTPS stream candidates"
+        eligible, excluded = eligible_candidates(cands, spec)
+        warn = "" if cands else "WARN fetched but no parseable HTTP/HTTPS stream candidates"
         st = SourceStatus(
             name=name,
             url=url,
@@ -356,8 +408,12 @@ def fetch_source(spec: SourceSpec) -> tuple[SourceStatus, list[Candidate]]:
             error=warn,
             mode=spec.mode,
             contributed=bool(cands),
+            checked_at=datetime.now(timezone.utc).isoformat(),
+            eligible=len(eligible),
+            excluded=excluded,
+            transport=transport,
         )
-        return st, cands
+        return st, eligible
     except Exception as e:
         message = str(e)
         return SourceStatus(
@@ -367,10 +423,27 @@ def fetch_source(spec: SourceSpec) -> tuple[SourceStatus, list[Candidate]]:
             bytes=0,
             parsed=0,
             truncated="maximum fetch size" in message,
-            error=repr(e)[:240],
+            error=redact_text(repr(e))[:240],
             mode=spec.mode,
             contributed=False,
+            checked_at=datetime.now(timezone.utc).isoformat(),
         ), []
+
+
+def github_content_url(url: str) -> str:
+    parsed = urlsplit(url)
+    if parsed.hostname != "raw.githubusercontent.com" or parsed.query:
+        return ""
+    parts = parsed.path.strip("/").split("/")
+    if len(parts) < 4:
+        return ""
+    owner, repo, *rest = parts
+    if rest[:2] == ["refs", "heads"]:
+        rest = rest[2:]
+    if len(rest) < 2:
+        return ""
+    ref, *path = rest
+    return f"https://api.github.com/repos/{quote(owner, safe='')}/{quote(repo, safe='')}/contents/{quote(unquote('/'.join(path)), safe='/')}?ref={quote(unquote(ref), safe='')}"
 
 
 def is_ipv6_url(url: str) -> bool:
@@ -386,7 +459,7 @@ def http_get_small(url: str, max_bytes: int = 65536, timeout: int = TIMEOUT) -> 
     with limited_urlopen(req, timeout=timeout) as r:
         code = getattr(r, "status", 200)
         ctype = (r.headers.get("Content-Type") or "").lower()
-        data = r.read(max_bytes)
+        data = read_bounded(r, max_bytes)
         final = r.geturl()
     return code, ctype, data, final
 
@@ -459,6 +532,7 @@ class HLSManifest:
     media_sequence: int | None
     target_duration: float | None
     endlist: bool
+    encrypted: bool = False
 
 
 def _quoted_uri(line: str) -> str:
@@ -475,6 +549,8 @@ def parse_hls_manifest(text: str, base: str) -> HLSManifest:
     media_sequence: int | None = None
     target_duration: float | None = None
     endlist = any(line.upper() == "#EXT-X-ENDLIST" for line in lines)
+    encrypted = any(line.upper().startswith(("#EXT-X-KEY:", "#EXT-X-SESSION-KEY:"))
+                    and "METHOD=NONE" not in line.upper() for line in lines)
     for i, line in enumerate(lines):
         upper = line.upper()
         if upper.startswith("#EXT-X-MEDIA-SEQUENCE:"):
@@ -518,6 +594,7 @@ def parse_hls_manifest(text: str, base: str) -> HLSManifest:
         media_sequence,
         target_duration,
         endlist,
+        encrypted,
     )
 
 
@@ -536,21 +613,28 @@ def media_detail(data: bytes, ctype: str) -> str:
     return f"{probe.kind}/{probe.container}: {probe.reason}"
 
 
-def check_aux_resources(manifest: HLSManifest, timeout: int, require_video: bool = False) -> tuple[bool, str]:
-    for key_url in manifest.keys[:1]:
-        code, ctype, data, _final = http_get_small(key_url, max_bytes=1024, timeout=timeout)
-        if code >= 400 or not data or looks_bad(data):
-            return False, f"key bad {code} {ctype} bytes={len(data)}"
-    for map_url in manifest.maps[:1]:
+def load_hls_initialization(manifest: HLSManifest, timeout: int, require_video: bool = False) -> tuple[bool, str, bytes]:
+    if manifest.encrypted or manifest.keys:
+        return False, "encrypted/DRM HLS excluded; no key or license requested", b""
+    if len(manifest.maps) > 1:
+        return False, "changing HLS initialization maps not supported", b""
+    prefix = b""
+    for map_url in manifest.maps:
         # The initialization segment contains the track table for CMAF/fMP4.
         # It is the authoritative place to reject audio-only HLS streams.
-        code, ctype, data, _final = http_get_small(map_url, max_bytes=65536, timeout=timeout)
+        code, ctype, data, _final = http_get_small(map_url, max_bytes=MAX_INIT_BYTES, timeout=timeout)
         if code >= 400 or not looks_media(data, ctype, require_video=require_video):
-            return False, f"map bad {code} {ctype} bytes={len(data)} {media_detail(data, ctype)}"
-    return True, f"keys={min(1, len(manifest.keys))} maps={min(1, len(manifest.maps))}"
+            return False, f"map bad {code} {ctype} bytes={len(data)} {media_detail(data, ctype)}", b""
+        prefix = data
+    return True, f"keys=0 maps={len(manifest.maps)}", prefix
 
 
-def check_media_segments(segments: list[str], limit: int = HLS_SEGMENT_CHECKS, timeout: int = TIMEOUT, require_video: bool | None = None) -> tuple[bool, str]:
+def check_aux_resources(manifest: HLSManifest, timeout: int, require_video: bool = False) -> tuple[bool, str]:
+    ok, detail, _prefix = load_hls_initialization(manifest, timeout, require_video)
+    return ok, detail
+
+
+def check_media_segments(segments: list[str], limit: int = HLS_SEGMENT_CHECKS, timeout: int = TIMEOUT, require_video: bool | None = None, init_data: bytes = b"") -> tuple[bool, str]:
     if not segments:
         return False, "no segment"
     if require_video is None:
@@ -564,10 +648,29 @@ def check_media_segments(segments: list[str], limit: int = HLS_SEGMENT_CHECKS, t
     for seg in segments[-max(1, limit):]:
         code, ctype, data, _final = http_get_small(seg, max_bytes=sample_bytes, timeout=timeout)
         checked += 1
-        if code >= 400 or not looks_media(data, ctype, require_video=require_video):
+        if code >= 400 or not data or looks_bad(data) or not looks_media(init_data + data, ctype, require_video=require_video):
             return False, f"segment bad {code} {ctype} bytes={len(data)} checked={checked} {media_detail(data, ctype)}"
     mode = "video" if require_video else "media"
     return True, f"segments ok checked={checked} required={mode}"
+
+
+def decode_manifest_sample(manifest: HLSManifest, timeout: int, prefix: bytes = b"") -> DecodeResult:
+    if manifest.encrypted or manifest.keys or not manifest.segments:
+        return DecodeResult(False, 0, "missing or encrypted media for decode")
+    if manifest.maps and not prefix:
+        return DecodeResult(False, 0, "missing HLS initialization for decode")
+    return decode_public_sample(manifest.segments[-1], timeout, prefix)
+
+
+def decode_public_sample(url: str, timeout: int, prefix: bytes = b"") -> DecodeResult:
+    for sample_size in (512 * 1024, MAX_SAMPLE_BYTES):
+        code, _ctype, data, _final = http_get_small(url, max_bytes=sample_size, timeout=timeout)
+        if code >= 400 or not data or looks_bad(data):
+            return DecodeResult(False, 0, "invalid media sample for decode")
+        result = decode_video(prefix + data, deadline=getattr(_PROBE_CONTEXT, "deadline", None))
+        if result.ok or len(data) < sample_size:
+            return result
+    return result
 
 
 def progress_wait_seconds(target_duration: float | None) -> float:
@@ -576,7 +679,7 @@ def progress_wait_seconds(target_duration: float | None) -> float:
     return min(HLS_PROGRESS_MAX_WAIT, max(HLS_PROGRESS_MIN_WAIT, target * HLS_PROGRESS_TARGET_MULTIPLIER))
 
 
-def check_hls_progress(playlist_url: str, initial: HLSManifest, timeout: int, require_video: bool | None = None) -> tuple[bool, str]:
+def check_hls_progress(playlist_url: str, initial: HLSManifest, timeout: int, require_video: bool | None = None, require_decode: bool = False) -> tuple[bool, str]:
     if require_video is None:
         require_video = REQUIRE_VIDEO_TRACK
     if initial.endlist:
@@ -589,6 +692,8 @@ def check_hls_progress(playlist_url: str, initial: HLSManifest, timeout: int, re
     if code >= 400 or looks_bad(data):
         return False, f"progress manifest bad {code}"
     later = parse_hls_manifest(data.decode("utf-8", "ignore"), final)
+    if later.endlist:
+        return False, "live manifest ended during progress check"
     sequence_advanced = (
         initial.media_sequence is not None
         and later.media_sequence is not None
@@ -603,9 +708,16 @@ def check_hls_progress(playlist_url: str, initial: HLSManifest, timeout: int, re
     # usable. Probe the newly advertised edge segment again; this rejects stale
     # manifests that advance while their latest media objects are already 404,
     # empty, HTML error pages, or audio-only payloads.
-    edge_ok, edge_detail = check_media_segments(later.segments, limit=1, timeout=timeout, require_video=require_video)
+    aux_ok, aux_detail, prefix = load_hls_initialization(later, timeout, require_video and not require_decode)
+    if not aux_ok:
+        return False, f"new edge initialization failed: {aux_detail}"
+    edge_ok, edge_detail = check_media_segments(later.segments, limit=1, timeout=timeout, require_video=require_video and not require_decode, init_data=prefix)
     if not edge_ok:
         return False, f"manifest advanced after {wait_seconds:.1f}s; new edge failed: {edge_detail}"
+    if require_decode:
+        decoded = decode_manifest_sample(later, timeout, prefix)
+        if not decoded.ok:
+            return False, f"new live edge failed: {decoded.detail}"
     return True, f"manifest advanced after {wait_seconds:.1f}s; new edge ok"
 
 
@@ -618,23 +730,43 @@ def parse_next_from_m3u8(text: str, base: str) -> tuple[str | None, str | None]:
     return None, None
 
 
-def _check_media_manifest(cand: Candidate, playlist_url: str, text: str, final: str, timeout: int, segment_limit: int, require_progress: bool, require_video: bool) -> CheckResult:
+def _check_media_manifest(cand: Candidate, playlist_url: str, text: str, final: str, timeout: int, segment_limit: int, require_progress: bool, require_video: bool, require_decode: bool = False) -> CheckResult:
     manifest = parse_hls_manifest(text, final)
-    aux_ok, aux_detail = check_aux_resources(manifest, timeout, require_video=require_video)
+    aux_ok, aux_detail, prefix = load_hls_initialization(manifest, timeout, require_video=require_video and not require_decode)
     if not aux_ok:
         return CheckResult(cand, False, aux_detail)
-    segments_ok, segment_detail = check_media_segments(manifest.segments, limit=segment_limit, timeout=timeout, require_video=require_video)
+    if require_decode and (manifest.endlist or "#EXT-X-BYTERANGE:" in text.upper()):
+        return CheckResult(cand, False, "VOD/endlist or unsupported byte-range media playlist")
+    # Short TS samples can contain only audio before the first video packet.
+    # Final checks prove video through decoding instead of this weaker heuristic.
+    segments_ok, segment_detail = check_media_segments(manifest.segments, limit=segment_limit, timeout=timeout, require_video=require_video and not require_decode, init_data=prefix)
     if not segments_ok:
         return CheckResult(cand, False, segment_detail)
+    decoded = decode_manifest_sample(manifest, timeout, prefix) if require_decode else DecodeResult(True, 0, "frame decode not requested")
+    if not decoded.ok:
+        return CheckResult(cand, False, f"{segment_detail}; {decoded.detail}", decoded_frames=decoded.frames)
     if require_progress:
-        progress_ok, progress_detail = check_hls_progress(final, manifest, timeout, require_video=require_video)
+        progress_ok, progress_detail = check_hls_progress(final, manifest, timeout, require_video=require_video, require_decode=require_decode)
         if not progress_ok:
-            return CheckResult(cand, False, f"{segment_detail}; {progress_detail}")
-        return CheckResult(cand, True, f"{segment_detail}; {aux_detail}; {progress_detail}")
-    return CheckResult(cand, True, f"{segment_detail}; {aux_detail}")
+            return CheckResult(cand, False, f"{segment_detail}; {decoded.detail}; {progress_detail}", decoded_frames=decoded.frames)
+        return CheckResult(cand, True, f"{segment_detail}; {aux_detail}; {progress_detail}; {decoded.detail}", decoded_frames=decoded.frames)
+    return CheckResult(cand, True, f"{segment_detail}; {aux_detail}; {decoded.detail}", decoded_frames=decoded.frames)
 
 
-def check_candidate(cand: Candidate, timeout: int = TIMEOUT, core_override: bool | None = None, require_progress: bool = False, require_video: bool | None = None) -> CheckResult:
+def check_candidate(cand: Candidate, timeout: int = TIMEOUT, core_override: bool | None = None, require_progress: bool = False, require_video: bool | None = None, require_decode: bool = False) -> CheckResult:
+    start = time.monotonic()
+    previous = getattr(_PROBE_CONTEXT, "deadline", None)
+    _PROBE_CONTEXT.deadline = previous or start + URL_BUDGET
+    try:
+        result = _check_candidate(cand, timeout, core_override, require_progress, require_video, require_decode)
+    finally:
+        _PROBE_CONTEXT.deadline = previous
+    result.elapsed_seconds = round(time.monotonic() - start, 3)
+    result.checked_at = datetime.now(timezone.utc).isoformat()
+    return result
+
+
+def _check_candidate(cand: Candidate, timeout: int = TIMEOUT, core_override: bool | None = None, require_progress: bool = False, require_video: bool | None = None, require_decode: bool = False) -> CheckResult:
     url = cand.url.strip()
     issue = publishable_url_issue(url)
     if issue:
@@ -652,6 +784,8 @@ def check_candidate(cand: Candidate, timeout: int = TIMEOUT, core_override: bool
         text = data.decode("utf-8", "ignore")
         if "#EXTM3U" in text or "mpegurl" in ctype or url.lower().endswith((".m3u8", ".m3u")):
             manifest = parse_hls_manifest(text, final)
+            if manifest.encrypted:
+                return CheckResult(cand, False, "encrypted/DRM master playlist excluded")
             if manifest.variants:
                 checked_variants = 0
                 last_detail = ""
@@ -670,33 +804,53 @@ def check_candidate(cand: Candidate, timeout: int = TIMEOUT, core_override: bool
                         segment_limit,
                         require_progress,
                         require_video,
+                        require_decode,
                     )
                     last_detail = result.detail
                     if result.ok:
-                        return CheckResult(cand, True, f"variant ok variants_checked={checked_variants} {result.detail}")
+                        return replace(result, detail=f"variant ok variants_checked={checked_variants} {result.detail}")
                 return CheckResult(cand, False, f"variant fail variants_checked={checked_variants} {last_detail}")
-            return _check_media_manifest(cand, url, text, final, timeout, segment_limit, require_progress, require_video)
+            return _check_media_manifest(cand, url, text, final, timeout, segment_limit, require_progress, require_video, require_decode)
         direct_probe = probe_media(data, ctype)
-        if require_progress and direct_probe.container in {"mp4/fmp4", "fmp4"}:
+        if (require_progress or require_decode) and direct_probe.container in {"mp4/fmp4", "fmp4"}:
             return CheckResult(
                 cand,
                 False,
                 "direct MP4/fMP4 cannot prove live broadcast progress; rejecting likely VOD",
             )
+        decoded = DecodeResult(True, 0, "frame decode not requested")
+        if require_decode and direct_probe.kind == "video":
+            decoded = decode_public_sample(url, timeout)
         return CheckResult(
             cand,
-            direct_probe.kind == "video" if require_video else direct_probe.kind in {"video", "audio"},
+            decoded.ok and (direct_probe.kind == "video" if require_video or require_decode else direct_probe.kind in {"video", "audio"}),
             f"direct {ctype} bytes={len(data)} {media_detail(data, ctype)} "
-            f"required={'video' if require_video else 'media'} progress={'required' if require_progress else 'not-required'}",
+            f"required={'video' if require_video else 'media'} progress={'required' if require_progress else 'not-required'}; {decoded.detail}",
+            decoded_frames=decoded.frames,
         )
     except Exception as exc:
-        return CheckResult(cand, False, repr(exc)[:160])
+        return CheckResult(cand, False, redact_text(repr(exc))[:160])
 
 
-def check_candidate_resilient(cand: Candidate, core_override: bool | None = None, require_progress: bool = False, require_video: bool | None = None) -> CheckResult:
+def check_candidate_resilient(cand: Candidate, core_override: bool | None = None, require_progress: bool = False, require_video: bool | None = None, require_decode: bool = False) -> CheckResult:
+    start = time.monotonic()
+    previous_deadline = getattr(_PROBE_CONTEXT, "deadline", None)
+    _PROBE_CONTEXT.deadline = previous_deadline or start + URL_BUDGET
+    try:
+        result = _check_candidate_resilient(cand, core_override, require_progress, require_video, require_decode)
+    except Exception as exc:
+        result = CheckResult(cand, False, redact_text(repr(exc))[:240])
+    finally:
+        _PROBE_CONTEXT.deadline = previous_deadline
+    result.elapsed_seconds = round(time.monotonic() - start, 3)
+    result.checked_at = datetime.now(timezone.utc).isoformat()
+    return result
+
+
+def _check_candidate_resilient(cand: Candidate, core_override: bool | None = None, require_progress: bool = False, require_video: bool | None = None, require_decode: bool = False) -> CheckResult:
     """Check a URL, with a slow retry for core family channels on transient failures."""
     is_core = is_core_family_candidate(cand) if core_override is None else core_override
-    first = check_candidate(cand, timeout=TIMEOUT, core_override=is_core, require_progress=require_progress, require_video=require_video)
+    first = check_candidate(cand, timeout=TIMEOUT, core_override=is_core, require_progress=require_progress, require_video=require_video, require_decode=require_decode)
     if first.ok or CORE_RETRY_ATTEMPTS <= 0:
         return first
     if not is_core or not looks_transient_failure(first.detail):
@@ -709,9 +863,10 @@ def check_candidate_resilient(cand: Candidate, core_override: bool | None = None
             core_override=is_core,
             require_progress=require_progress,
             require_video=require_video,
+            require_decode=require_decode,
         )
         if retry.ok:
-            return CheckResult(cand, True, f"core retry ok attempt={attempt} first={first.detail}; {retry.detail}")
+            return replace(retry, detail=f"core retry ok attempt={attempt} first={first.detail}; {retry.detail}")
         last = retry
         if not looks_transient_failure(retry.detail):
             break
@@ -745,7 +900,8 @@ def deduplicate_candidates(candidates: Iterable[Candidate]) -> dict[tuple[str, s
         url = normalize_stream_url(raw.url)
         if not name or len(url) > 1000 or not is_publishable_http_url(url):
             continue
-        candidate = Candidate(raw.source, infer_group(name, raw.group), name, url)
+        candidate = Candidate(raw.source, raw.group or infer_group(name), name, url,
+                              raw.tvg_id, raw.tvg_logo, raw.country, raw.language)
         key = (name, url)
         current = dedup.get(key)
         if current is None or prefer_score(candidate) < prefer_score(current):
@@ -831,6 +987,22 @@ def main() -> None:
     )
     statuses: list[SourceStatus] = []
     all_cands: list[Candidate] = []
+
+    def write_inventory() -> None:
+        by_name = {status.name: status for status in statuses}
+        inventory = {
+            "schema_version": 1, "network_scope": NETWORK_SCOPE,
+            "channel_scope": CHANNEL_SCOPE,
+            "sources": [source_record(spec, asdict(by_name[spec.name]) if spec.name in by_name else
+                                      {"status": "pending_fetch" if spec.should_probe else "disabled"})
+                        for spec in SOURCE_SPECS],
+        }
+        path = ROOT / "source-inventory.json"
+        temporary = path.with_suffix(".tmp")
+        temporary.write_text(json.dumps(inventory, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        temporary.replace(path)
+
+    write_inventory()
     with cf.ThreadPoolExecutor(max_workers=min(MAX_WORKERS, len(PROBE_SPECS))) as ex:
         futs = [ex.submit(fetch_source, spec) for spec in PROBE_SPECS]
         for fut in cf.as_completed(futs):
@@ -838,9 +1010,10 @@ def main() -> None:
             statuses.append(st)
             if st.contributed:
                 all_cands.extend(cands)
+            write_inventory()
             print(
                 f"source {'OK' if st.ok else 'FAIL'} {st.name} mode={st.mode} "
-                f"contributed={st.contributed}: parsed={st.parsed} bytes={st.bytes} {st.error}",
+                f"parsed={st.parsed} eligible={st.eligible} excluded={st.excluded or {}} bytes={st.bytes} {st.error}",
                 flush=True,
             )
 
@@ -849,14 +1022,15 @@ def main() -> None:
     budget_failures = [status for status in statuses if status.truncated or "resource budget exceeded" in status.error]
     if budget_failures:
         names = ", ".join(status.name for status in budget_failures)
-        raise RuntimeError(f"upstream source resource budget exceeded: {names}")
+        print(f"WARN rejected oversized upstream sources without blocking other sources: {names}", flush=True)
     if total_fetch_bytes > MAX_TOTAL_FETCH_BYTES:
         raise RuntimeError(
             f"total upstream fetch bytes {total_fetch_bytes} exceed budget {MAX_TOTAL_FETCH_BYTES}"
         )
-    if len(all_cands) > MAX_TOTAL_CANDIDATES:
+    parsed_candidates = sum(status.parsed for status in statuses)
+    if parsed_candidates > MAX_TOTAL_CANDIDATES:
         raise RuntimeError(
-            f"parsed candidate count {len(all_cands)} exceeds budget {MAX_TOTAL_CANDIDATES}"
+            f"parsed candidate count {parsed_candidates} exceeds budget {MAX_TOTAL_CANDIDATES}"
         )
 
     # Deduplicate before expensive checking.
@@ -886,16 +1060,32 @@ def main() -> None:
             f"unique stream URL count {len(to_check)} exceeds budget {MAX_UNIQUE_URLS}"
         )
     print(
-        f"Parsed candidates={len(all_cands)}, unique_name_url={len(dedup)}, "
+        f"Parsed candidates={parsed_candidates}, eligible={len(all_cands)}, unique_name_url={len(dedup)}, "
         f"unique_urls={len(url_to_candidates)}, checking_all_unique_urls={len(to_check)}, "
         f"workers={CHECK_WORKERS}, per_host={HOST_WORKERS}, timeout={TIMEOUT}s",
         flush=True,
     )
 
+    fingerprint = hashlib.sha256()
+    for filename in ("config/sources.json", "config/rules.json", "config/quality.json", "scripts/verify_sources.py",
+                     "scripts/media_probe.py", "scripts/url_utils.py", "scripts/network_safety.py", "scripts/channel_scope.py"):
+        fingerprint.update((ROOT / filename).read_bytes())
+    fingerprint.update(str((REQUIRE_VIDEO_TRACK, HLS_SEGMENT_CHECKS, CORE_HLS_SEGMENT_CHECKS, HLS_VARIANT_CHECKS)).encode())
+    checkpoint = ScanCheckpoint(ROOT / ".maintenance-staging" / "scan-results.jsonl",
+                                os.getenv("IPTV_SCAN_RUN_ID") or uuid.uuid4().hex, fingerprint.hexdigest())
     checked_by_url: dict[str, CheckResult] = {}
-    ok_count = 0
-    for i, result in enumerate(iter_bounded_check_results(to_check, core_by_url), 1):
+    for candidate in to_check:
+        saved = checkpoint.get(candidate.url, core_by_url[candidate.url])
+        if saved:
+            checked_by_url[candidate.url] = CheckResult(candidate, True, saved["detail"], saved["elapsed_seconds"], saved["checked_at"])
+    reused = len(checked_by_url)
+    pending_candidates = [candidate for candidate in to_check if candidate.url not in checked_by_url]
+    print(f"Current-run successful checkpoints reused={reused}; fresh probes={len(pending_candidates)}", flush=True)
+    ok_count = reused
+    for i, result in enumerate(iter_bounded_check_results(pending_candidates, core_by_url), reused + 1):
         checked_by_url[result.cand.url] = result
+        checkpoint.record(result.cand.url, core_by_url[result.cand.url], result.ok, result.detail,
+                          result.checked_at, result.elapsed_seconds)
         if result.ok:
             ok_count += 1
         if i % 100 == 0 or i == len(to_check):
@@ -905,7 +1095,7 @@ def main() -> None:
     for url, arr in url_to_candidates.items():
         r = checked_by_url[url]
         for c in arr:
-            results.append(CheckResult(c, r.ok, r.detail))
+            results.append(CheckResult(c, r.ok, r.detail, r.elapsed_seconds, r.checked_at))
 
     valid_by_name: dict[str, list[Candidate]] = {}
     for r in results:
@@ -970,6 +1160,7 @@ def main() -> None:
         "sources_total": len(PROBE_SPECS),
         "sources_fetched_ok": sum(1 for s in statuses if s.ok),
         "sources_contributing": sum(1 for s in statuses if s.contributed),
+        "sources_contributing_semantics": "legacy: fetched and parsed rows before permission/scope filtering; not media-eligible or finally published sources",
         "upstream_fetch_bytes": total_fetch_bytes,
         "resource_budgets": {
             "max_candidates_per_source": MAX_CANDIDATES_PER_SOURCE,
@@ -985,7 +1176,18 @@ def main() -> None:
             "workers": CHECK_WORKERS,
             "workers_per_host": HOST_WORKERS,
         },
-        "parsed_candidates": len(all_cands),
+        "parsed_candidates": parsed_candidates,
+        "eligible_candidates": len(all_cands),
+        "policy_excluded_candidates": parsed_candidates - len(all_cands),
+        "policy_exclusions": dict(sum((Counter(status.excluded or {}) for status in statuses), Counter())),
+        "source_policy_version": SOURCE_POLICY_VERSION,
+        "channel_policy_version": CHANNEL_POLICY_VERSION,
+        "channel_scope": CHANNEL_SCOPE,
+        "network_scope": NETWORK_SCOPE,
+        "language_validation": "channel identity and upstream metadata; not speech recognition",
+        "sources_media_eligible": sum(status.eligible > 0 for status in statuses),
+        "same_run_successful_probes_reused": reused,
+        "url_budget_seconds": URL_BUDGET,
         "unique_candidates": len(url_to_candidates),
         "unique_name_url_candidates": len(dedup),
         # The first pass checks every distinct URL for real media bytes. It
@@ -1026,9 +1228,10 @@ def main() -> None:
 
     with (ROOT / "stream_check_results.csv").open("w", encoding="utf-8", newline="") as f:
         w = csv.writer(f, lineterminator="\n")
-        w.writerow(["ok", "group", "name", "url", "source", "detail"])
+        w.writerow(["ok", "group", "name", "url", "source", "detail", "elapsed_seconds", "checked_at", "tvg_id", "tvg_logo", "country", "language"])
         for r in sorted(results, key=lambda x: (not x.ok, x.cand.group, x.cand.name)):
-            w.writerow([r.ok, r.cand.group, r.cand.name, r.cand.url, r.cand.source, r.detail])
+            w.writerow([r.ok, r.cand.group, r.cand.name, r.cand.url, r.cand.source, redact_text(r.detail),
+                        r.elapsed_seconds, r.checked_at, r.cand.tvg_id, r.cand.tvg_logo, r.cand.country, r.cand.language])
 
     ok_sources: dict[str, int] = {}
     for c in valid:
@@ -1043,8 +1246,13 @@ def main() -> None:
         f"Sources configured: {len(SOURCE_SPECS)} (enabled={sum(1 for spec in SOURCE_SPECS if spec.enabled)}, recovery={sum(1 for spec in SOURCE_SPECS if spec.auto_recover)}, disabled={sum(1 for spec in SOURCE_SPECS if not spec.should_probe)})",
         f"Sources probed: {len(PROBE_SPECS)}",
         f"Sources fetched OK: {sum(1 for s in statuses if s.ok)}",
-        f"Sources contributing candidates: {sum(1 for s in statuses if s.contributed)}",
-        f"Parsed candidates: {len(all_cands)}",
+        f"Sources with parsed rows (before policy filters): {sum(1 for s in statuses if s.contributed)}",
+        f"Sources with media-eligible candidates: {sum(status.eligible > 0 for status in statuses)}",
+        f"Network scope: {NETWORK_SCOPE}; no region or home-broadband qualification",
+        f"Channel scope: {CHANNEL_SCOPE}",
+        f"Parsed candidates: {parsed_candidates}",
+        f"Policy-excluded candidates (not media-checked): {parsed_candidates - len(all_cands)}",
+        f"Eligible candidates before URL deduplication: {len(all_cands)}",
         f"Unique name+URL candidates: {len(dedup)}",
         f"Unique stream URLs: {len(url_to_candidates)}",
         f"Checked unique stream URLs: {len(to_check)}",
@@ -1057,11 +1265,13 @@ def main() -> None:
         "",
         "## Source fetch status",
         "",
-        "| Source | Mode | Fetch | Contributes | Parsed | Bytes | Truncated | Error |",
-        "|---|---|---:|---:|---:|---:|---:|---|",
+        "The legacy contributed CSV flag means parsed rows, not permission approval or final publication.",
+        "",
+        "| Source | Mode | Fetch | Has parsed rows | Parsed | Media eligible | Bytes | Truncated | Error |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---|",
     ]
     for st in statuses:
-        report.append(f"| {st.name} | {st.mode} | {'OK' if st.ok else 'FAIL'} | {'YES' if st.contributed else 'NO'} | {st.parsed} | {st.bytes} | {st.truncated} | {st.error.replace('|','/')} |")
+        report.append(f"| {st.name} | {st.mode} | {'OK' if st.ok else 'FAIL'} | {'YES' if st.contributed else 'NO'} | {st.parsed} | {st.eligible} | {st.bytes} | {st.truncated} | {st.error.replace('|','/')} |")
     report += ["", "## Pre-curation playable lines by source", "", "| Source | Lines |", "|---|---:|"]
     for src, n in sorted(ok_sources.items(), key=lambda x: (-x[1], x[0])):
         report.append(f"| {src} | {n} |")
