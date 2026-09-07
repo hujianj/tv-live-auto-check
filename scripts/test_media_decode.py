@@ -70,6 +70,33 @@ class MediaDecodeTests(unittest.TestCase):
         self.assertFalse(require_decoded_result(result).ok)
         self.assertTrue(require_decoded_result(dataclasses.replace(result, decoded_frames=3)).ok)
 
+    def test_short_audio_prefix_defers_to_actual_video_decoder(self):
+        url = 'https://tv.test/live.m3u8'
+        manifest = '#EXTM3U\n#EXTINF:1,\nseg.ts\n'
+        with patch.object(verify, 'check_media_segments', return_value=(True, 'audio/media prefix')) as segments, \
+                patch.object(verify, 'decode_manifest_sample', return_value=decoder.DecodeResult(True, 3, 'decoded')):
+            result = verify._check_media_manifest(verify.Candidate('fixture', '', 'CCTV-1', url),
+                                                  url, manifest, url, 1, 2, False, True, True)
+        self.assertTrue(result.ok)
+        self.assertFalse(segments.call_args.kwargs['require_video'])
+
+    def test_progress_failure_preserves_successful_decode_evidence(self):
+        url = 'https://tv.test/live.m3u8'
+        with patch.object(verify, 'check_media_segments', return_value=(True, 'media')) , \
+                patch.object(verify, 'decode_manifest_sample', return_value=decoder.DecodeResult(True, 3, 'decoded')), \
+                patch.object(verify, 'check_hls_progress', return_value=(False, 'manifest did not advance')):
+            result = verify._check_media_manifest(verify.Candidate('fixture', '', 'CCTV-1', url),
+                url, '#EXTM3U\n#EXTINF:1,\na.ts', url, 1, 2, True, True, True)
+        self.assertFalse(result.ok)
+        self.assertEqual(result.decoded_frames, 3)
+
+    def test_small_decodable_sample_does_not_download_large_fallback(self):
+        with patch.object(verify, 'http_get_small', return_value=(200, 'video/mp2t', self.ts, 'https://tv.test/seg.ts')) as fetch:
+            result = verify.decode_public_sample('https://tv.test/seg.ts', 1)
+        self.assertTrue(result.ok)
+        self.assertEqual(fetch.call_count, 1)
+        self.assertEqual(fetch.call_args.kwargs['max_bytes'], 512 * 1024)
+
 
 def run_tests():
     return unittest.TextTestRunner(verbosity=1).run(

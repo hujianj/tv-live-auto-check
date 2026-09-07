@@ -659,10 +659,18 @@ def decode_manifest_sample(manifest: HLSManifest, timeout: int, prefix: bytes = 
         return DecodeResult(False, 0, "missing or encrypted media for decode")
     if manifest.maps and not prefix:
         return DecodeResult(False, 0, "missing HLS initialization for decode")
-    code, _ctype, data, _final = http_get_small(manifest.segments[-1], max_bytes=MAX_SAMPLE_BYTES, timeout=timeout)
-    if code >= 400 or not data or looks_bad(data):
-        return DecodeResult(False, 0, "invalid HLS media sample for decode")
-    return decode_video(prefix + data, deadline=getattr(_PROBE_CONTEXT, "deadline", None))
+    return decode_public_sample(manifest.segments[-1], timeout, prefix)
+
+
+def decode_public_sample(url: str, timeout: int, prefix: bytes = b"") -> DecodeResult:
+    for sample_size in (512 * 1024, MAX_SAMPLE_BYTES):
+        code, _ctype, data, _final = http_get_small(url, max_bytes=sample_size, timeout=timeout)
+        if code >= 400 or not data or looks_bad(data):
+            return DecodeResult(False, 0, "invalid media sample for decode")
+        result = decode_video(prefix + data, deadline=getattr(_PROBE_CONTEXT, "deadline", None))
+        if result.ok or len(data) < sample_size:
+            return result
+    return result
 
 
 def progress_wait_seconds(target_duration: float | None) -> float:
@@ -671,7 +679,7 @@ def progress_wait_seconds(target_duration: float | None) -> float:
     return min(HLS_PROGRESS_MAX_WAIT, max(HLS_PROGRESS_MIN_WAIT, target * HLS_PROGRESS_TARGET_MULTIPLIER))
 
 
-def check_hls_progress(playlist_url: str, initial: HLSManifest, timeout: int, require_video: bool | None = None) -> tuple[bool, str]:
+def check_hls_progress(playlist_url: str, initial: HLSManifest, timeout: int, require_video: bool | None = None, require_decode: bool = False) -> tuple[bool, str]:
     if require_video is None:
         require_video = REQUIRE_VIDEO_TRACK
     if initial.endlist:
@@ -684,6 +692,8 @@ def check_hls_progress(playlist_url: str, initial: HLSManifest, timeout: int, re
     if code >= 400 or looks_bad(data):
         return False, f"progress manifest bad {code}"
     later = parse_hls_manifest(data.decode("utf-8", "ignore"), final)
+    if later.endlist:
+        return False, "live manifest ended during progress check"
     sequence_advanced = (
         initial.media_sequence is not None
         and later.media_sequence is not None
@@ -698,12 +708,16 @@ def check_hls_progress(playlist_url: str, initial: HLSManifest, timeout: int, re
     # usable. Probe the newly advertised edge segment again; this rejects stale
     # manifests that advance while their latest media objects are already 404,
     # empty, HTML error pages, or audio-only payloads.
-    aux_ok, aux_detail, prefix = load_hls_initialization(later, timeout, require_video)
+    aux_ok, aux_detail, prefix = load_hls_initialization(later, timeout, require_video and not require_decode)
     if not aux_ok:
         return False, f"new edge initialization failed: {aux_detail}"
-    edge_ok, edge_detail = check_media_segments(later.segments, limit=1, timeout=timeout, require_video=require_video, init_data=prefix)
+    edge_ok, edge_detail = check_media_segments(later.segments, limit=1, timeout=timeout, require_video=require_video and not require_decode, init_data=prefix)
     if not edge_ok:
         return False, f"manifest advanced after {wait_seconds:.1f}s; new edge failed: {edge_detail}"
+    if require_decode:
+        decoded = decode_manifest_sample(later, timeout, prefix)
+        if not decoded.ok:
+            return False, f"new live edge failed: {decoded.detail}"
     return True, f"manifest advanced after {wait_seconds:.1f}s; new edge ok"
 
 
@@ -718,21 +732,23 @@ def parse_next_from_m3u8(text: str, base: str) -> tuple[str | None, str | None]:
 
 def _check_media_manifest(cand: Candidate, playlist_url: str, text: str, final: str, timeout: int, segment_limit: int, require_progress: bool, require_video: bool, require_decode: bool = False) -> CheckResult:
     manifest = parse_hls_manifest(text, final)
-    aux_ok, aux_detail, prefix = load_hls_initialization(manifest, timeout, require_video=require_video)
+    aux_ok, aux_detail, prefix = load_hls_initialization(manifest, timeout, require_video=require_video and not require_decode)
     if not aux_ok:
         return CheckResult(cand, False, aux_detail)
     if require_decode and (manifest.endlist or "#EXT-X-BYTERANGE:" in text.upper()):
         return CheckResult(cand, False, "VOD/endlist or unsupported byte-range media playlist")
-    segments_ok, segment_detail = check_media_segments(manifest.segments, limit=segment_limit, timeout=timeout, require_video=require_video, init_data=prefix)
+    # Short TS samples can contain only audio before the first video packet.
+    # Final checks prove video through decoding instead of this weaker heuristic.
+    segments_ok, segment_detail = check_media_segments(manifest.segments, limit=segment_limit, timeout=timeout, require_video=require_video and not require_decode, init_data=prefix)
     if not segments_ok:
         return CheckResult(cand, False, segment_detail)
     decoded = decode_manifest_sample(manifest, timeout, prefix) if require_decode else DecodeResult(True, 0, "frame decode not requested")
     if not decoded.ok:
         return CheckResult(cand, False, f"{segment_detail}; {decoded.detail}", decoded_frames=decoded.frames)
     if require_progress:
-        progress_ok, progress_detail = check_hls_progress(final, manifest, timeout, require_video=require_video)
+        progress_ok, progress_detail = check_hls_progress(final, manifest, timeout, require_video=require_video, require_decode=require_decode)
         if not progress_ok:
-            return CheckResult(cand, False, f"{segment_detail}; {progress_detail}")
+            return CheckResult(cand, False, f"{segment_detail}; {decoded.detail}; {progress_detail}", decoded_frames=decoded.frames)
         return CheckResult(cand, True, f"{segment_detail}; {aux_detail}; {progress_detail}; {decoded.detail}", decoded_frames=decoded.frames)
     return CheckResult(cand, True, f"{segment_detail}; {aux_detail}; {decoded.detail}", decoded_frames=decoded.frames)
 
@@ -804,8 +820,7 @@ def _check_candidate(cand: Candidate, timeout: int = TIMEOUT, core_override: boo
             )
         decoded = DecodeResult(True, 0, "frame decode not requested")
         if require_decode and direct_probe.kind == "video":
-            code, _ctype, sample, _final = http_get_small(url, max_bytes=MAX_SAMPLE_BYTES, timeout=timeout)
-            decoded = decode_video(sample, deadline=getattr(_PROBE_CONTEXT, "deadline", None)) if code < 400 else DecodeResult(False, 0, f"media sample HTTP {code}")
+            decoded = decode_public_sample(url, timeout)
         return CheckResult(
             cand,
             decoded.ok and (direct_probe.kind == "video" if require_video or require_decode else direct_probe.kind in {"video", "audio"}),
