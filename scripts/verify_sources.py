@@ -1108,6 +1108,7 @@ def main() -> None:
         "sources_total": len(PROBE_SPECS),
         "sources_fetched_ok": sum(1 for s in statuses if s.ok),
         "sources_contributing": sum(1 for s in statuses if s.contributed),
+        "sources_contributing_semantics": "legacy: fetched and parsed rows before permission/scope filtering; not media-eligible or finally published sources",
         "upstream_fetch_bytes": total_fetch_bytes,
         "resource_budgets": {
             "max_candidates_per_source": MAX_CANDIDATES_PER_SOURCE,
@@ -1193,7 +1194,8 @@ def main() -> None:
         f"Sources configured: {len(SOURCE_SPECS)} (enabled={sum(1 for spec in SOURCE_SPECS if spec.enabled)}, recovery={sum(1 for spec in SOURCE_SPECS if spec.auto_recover)}, disabled={sum(1 for spec in SOURCE_SPECS if not spec.should_probe)})",
         f"Sources probed: {len(PROBE_SPECS)}",
         f"Sources fetched OK: {sum(1 for s in statuses if s.ok)}",
-        f"Sources contributing candidates: {sum(1 for s in statuses if s.contributed)}",
+        f"Sources with parsed rows (before policy filters): {sum(1 for s in statuses if s.contributed)}",
+        f"Sources with media-eligible candidates: {sum(status.eligible > 0 for status in statuses)}",
         f"Network scope: {NETWORK_SCOPE}; no region or home-broadband qualification",
         f"Channel scope: {CHANNEL_SCOPE}",
         f"Parsed candidates: {parsed_candidates}",
@@ -1211,11 +1213,13 @@ def main() -> None:
         "",
         "## Source fetch status",
         "",
-        "| Source | Mode | Fetch | Contributes | Parsed | Bytes | Truncated | Error |",
-        "|---|---|---:|---:|---:|---:|---:|---|",
+        "The legacy contributed CSV flag means parsed rows, not permission approval or final publication.",
+        "",
+        "| Source | Mode | Fetch | Has parsed rows | Parsed | Media eligible | Bytes | Truncated | Error |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---|",
     ]
     for st in statuses:
-        report.append(f"| {st.name} | {st.mode} | {'OK' if st.ok else 'FAIL'} | {'YES' if st.contributed else 'NO'} | {st.parsed} | {st.bytes} | {st.truncated} | {st.error.replace('|','/')} |")
+        report.append(f"| {st.name} | {st.mode} | {'OK' if st.ok else 'FAIL'} | {'YES' if st.contributed else 'NO'} | {st.parsed} | {st.eligible} | {st.bytes} | {st.truncated} | {st.error.replace('|','/')} |")
     report += ["", "## Pre-curation playable lines by source", "", "| Source | Lines |", "|---|---:|"]
     for src, n in sorted(ok_sources.items(), key=lambda x: (-x[1], x[0])):
         report.append(f"| {src} | {n} |")

@@ -17,7 +17,7 @@ def cctv_key(name: str) -> str | None:
     CCTV-4FHD and CCTV-4中文国际 are deliberately not counted as the base core
     CCTV channel; this keeps coverage and quality reports honest.
     """
-    m = re.match(r"^CCTV[-_ ]?(\d+)(\+?)(?:\((?:\d+p|HD|FHD|4K|高清|超清)\))?$", (name or "").strip(), re.I)
+    m = re.match(r"^CCTV[-_ ]?(\d+)(\+?)(?:\((?:\d+[pi]|HD|FHD|4K|高清|超清)\))?$", (name or "").strip(), re.I)
     if not m:
         return None
     return f"CCTV-{int(m.group(1))}{'+' if m.group(2) else ''}"

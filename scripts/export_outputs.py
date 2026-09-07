@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 import argparse
-from collections import Counter
+from collections import Counter, defaultdict
 import csv
 from datetime import datetime, timezone
 import hashlib
@@ -12,6 +12,7 @@ from pathlib import Path
 from channel_scope import CHANNEL_SCOPE, NETWORK_SCOPE, domestic_chinese_issue
 from channel_utils import escape_m3u_attr
 from channel_utils import cctv_number
+from channel_identity import canonical_channel_key
 from curate_ku9 import prepare_curated_row, resolve_url_aliases, sort_key
 from source_config import load_source_specs
 from source_policy import publication_issue
@@ -59,15 +60,39 @@ def export_outputs(root: Path, maintenance: dict | None = None) -> dict:
     maintenance = maintenance or read_json(root / "maintenance-run.json", {})
     specs = {spec.name: spec for spec in load_source_specs(root / "config" / "sources.json")}
     inventory = read_json(root / "source-inventory.json", {"sources": []})
-    metadata = {item["url"]: item for item in read_csv(root / "stream_check_results.csv") if item.get("ok") == "True"}
-    origins = {(item["name"], item["url"]): item["source"] for item in read_csv(root / "curated-source-map.csv")}
-    rows, checks = [], []
+    broad = read_csv(root / "stream_check_results.csv")
+    metadata = {(canonical_channel_key(item["name"]), item["url"], item["source"]): item for item in broad}
+    broad_origins = defaultdict(set)
+    for identity, url, source in metadata:
+        broad_origins[(identity, url)].add(source)
+    origins = {(canonical_channel_key(item["name"]), item["url"]): item["source"] for item in read_csv(root / "curated-source-map.csv")}
+    rows, checks_by_key = [], {}
     config_matches = summary.get("source_config_sha256") == hashlib.sha256((root / "config" / "sources.json").read_bytes()).hexdigest()
+    for item in broad:
+        key = (canonical_channel_key(item["name"]), item["url"], item["source"])
+        current = config_matches and recent_check(item.get("checked_at", ""), maintenance.get("started_utc", ""))
+        checks_by_key[key] = {
+            "name": item["name"], "source": item["source"],
+            "url": item["url"] if is_publishable_http_url(item["url"]) else "[excluded]",
+            "broad_probe_ok": item.get("ok") == "True", "strict_probe_ok": None, "video_probe_ok": None,
+            "eligible_current_result": False, "evidence_is_current": current,
+            "stage": "broad_probe", "status": "not_rechecked" if item.get("ok") == "True" else "failed",
+            "checked_at": item.get("checked_at", ""), "elapsed_seconds": item.get("elapsed_seconds", ""),
+            "reason": "not strictly rechecked" if item.get("ok") == "True" else redact_text(item.get("detail", "")),
+        }
     for item in read_csv(root / "published_recheck_results.csv"):
         url = item.get("url", "")
         name = item.get("name", "")
-        evidence = metadata.get(url, {})
-        source = origins.get((name, url), evidence.get("source", item.get("source", "")))
+        identity = canonical_channel_key(name)
+        source = item.get("source", "")
+        if source not in specs:
+            source = origins.get((identity, url), "")
+            candidates = broad_origins.get((identity, url), set())
+            if not source and len(candidates) == 1:
+                source = next(iter(candidates))
+        source = source or "unknown"
+        key = (identity, url, source)
+        evidence = metadata.get(key, {})
         checked_now = (config_matches
                        and recent_check(item.get("checked_at", ""), summary.get("generated_utc", ""))
                        and recent_check(item.get("checked_at", ""), maintenance.get("started_utc", "")))
@@ -80,14 +105,25 @@ def export_outputs(root: Path, maintenance: dict | None = None) -> dict:
             issue = issue or "live progress was not checked"
         row, reason, _detail = prepare_curated_row(name, url, item.get("group", ""), source)
         playable = checked_now and item.get("ok") == "True" and item.get("video_required") == "True" and not issue and row is not None
-        checks.append({"name": name, "source": source, "url": url if is_publishable_http_url(url) else "[excluded]",
-                       "video_probe_ok": item.get("ok") == "True", "eligible_current_result": playable,
-                       "checked_at": item.get("checked_at", ""), "elapsed_seconds": item.get("elapsed_seconds", ""),
-                       "reason": issue or reason or redact_text(item.get("detail", ""))})
+        checks_by_key[key] = {
+            "name": name, "source": source, "url": url if is_publishable_http_url(url) else "[excluded]",
+            "broad_probe_ok": evidence.get("ok") == "True" if evidence else None,
+            "strict_probe_ok": item.get("ok") == "True",
+            "video_probe_ok": item.get("ok") == "True" if item.get("video_required") == "True" else None,
+            "eligible_current_result": playable, "evidence_is_current": checked_now,
+            "stage": "strict_recheck", "status": "passed" if playable else "failed_or_excluded",
+            "checked_at": item.get("checked_at", ""), "elapsed_seconds": item.get("elapsed_seconds", ""),
+            "reason": issue or reason or redact_text(item.get("detail", "")),
+        }
         if playable:
             rows.append(row)
     rows, conflicts = resolve_url_aliases(rows)
     rows.sort(key=sort_key)
+    accepted = {(canonical_channel_key(row[1]), row[2], row[3]) for row in rows}
+    for key, check in checks_by_key.items():
+        if check["eligible_current_result"] and key not in accepted:
+            check.update(eligible_current_result=False, status="excluded", reason="duplicate or conflicting channel identity")
+    checks = sorted(checks_by_key.values(), key=lambda item: (item["name"], item["source"], item["url"]))
     history_status = "not_available"
     history = empty_history()
     try:
@@ -99,8 +135,8 @@ def export_outputs(root: Path, maintenance: dict | None = None) -> dict:
 
     def render(values) -> str:
         lines = ["#EXTM3U"]
-        for group, name, url, _source in values:
-            entry = metadata.get(url, {})
+        for group, name, url, source in values:
+            entry = metadata.get((canonical_channel_key(name), url, source), {})
             logo = entry.get("tvg_logo", "")
             logo = logo if is_publishable_http_url(logo) else ""
             attrs = {"tvg-id": entry.get("tvg_id", ""), "tvg-name": name, "tvg-logo": logo, "group-title": group}
@@ -108,19 +144,26 @@ def export_outputs(root: Path, maintenance: dict | None = None) -> dict:
             lines.append(url)
         return "\n".join(lines) + "\n"
 
-    report = {"schema_version": 1, "network_scope": NETWORK_SCOPE, "channel_scope": CHANNEL_SCOPE,
+    report = {"schema_version": 2, "network_scope": NETWORK_SCOPE, "channel_scope": CHANNEL_SCOPE,
               "maintenance_status": maintenance.get("status", "not_run"),
               "subscription_replaced_by_export": False,
-              "publication_ready": maintenance.get("status") == "ok" and summary.get("publish_guard", {}).get("status") == "ok",
+              "publication_ready": (maintenance.get("status") == "ok" and config_matches and bool(rows)
+                                    and summary.get("publish_guard", {}).get("status") == "ok"
+                                    and summary.get("published_recheck", {}).get("outputs_rewritten") is True),
               "playlist_role": "diagnostic_only_until_publication_gates_pass",
               "generated_utc": summary.get("generated_utc", ""),
               "counts": {"parsed": summary.get("parsed_candidates", 0), "eligible": summary.get("eligible_candidates", 0),
                          "checked_unique": summary.get("checked_candidates", 0), "final_video_rows": len(rows), "stable_rows": len(stable)},
+              "reported_unique_urls": len({item["url"] for item in checks if item["url"] != "[excluded]"}),
+              "strict_recheck_unique_urls": len({item["url"] for item in checks if item["stage"] == "strict_recheck"}),
+              "recheck": summary.get("published_recheck", {"status": "not_run"}),
+              "coverage": summary.get("coverage", {"status": "not_run"}),
+              "policy_exclusions": summary.get("policy_exclusions", {}),
               "final_sources": dict(Counter(row[3] for row in rows)),
               "groups_by_source": {group: dict(Counter(row[3] for row in rows if row[0] == group)) for group in dict.fromkeys(row[0] for row in rows)},
               "groups": dict(Counter(row[0] for row in rows)), "checks": checks, "sources": inventory.get("sources", []),
               "identity_conflicts_excluded": len(conflicts), "history_status": history_status,
-              "stable_rule": "current video check passed and at least 3 prior consecutive successful observations within 30 days; not a long-term guarantee",
+              "stable_rule": "current video check passed and at least 3 consecutive successful recorded observations within 30 days; not a long-term guarantee",
               "failed_stage": maintenance.get("failed_stage"),
               "language_validation": "upstream metadata and channel identity, not audio transcription"}
     output = root / "output"
@@ -131,8 +174,8 @@ def export_outputs(root: Path, maintenance: dict | None = None) -> dict:
              "Scope: domestic Chinese channels, current execution environment only.",
              "These exports do not replace the guarded public subscription.",
              f"Counts: {report['counts']}", f"History: {history_status}. Stable list may be empty during warm-up.", "",
-             "| Channel | Current video check | Source |", "|---|---|---|"]
-    lines.extend(f"| {item['name'].replace('|', '/')} | {'PASS' if item['eligible_current_result'] else 'FAIL/EXCLUDED'} | {item['source']} |" for item in checks)
+             "| Channel | Stage | Result | Source | Reason |", "|---|---|---|---|---|"]
+    lines.extend(f"| {item['name'].replace('|', '/')} | {item['stage']} | {item['status']} | {item['source']} | {item['reason'].replace('|', '/').replace(chr(10), ' ')[:200]} |" for item in checks)
     files["report.md"] = "\n".join(lines) + "\n"
     for name, payload in files.items():
         temporary = output / (name + ".tmp")

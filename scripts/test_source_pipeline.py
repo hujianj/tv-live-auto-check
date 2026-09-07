@@ -16,6 +16,28 @@ from url_utils import normalize_stream_url, publishable_url_issue
 import verify_sources as verify
 
 
+def write_csv_fixture(root, filename, rows):
+    fields = list(dict.fromkeys(key for row in rows for key in row))
+    with (root / filename).open('w', encoding='utf-8', newline='') as handle:
+        writer = csv.DictWriter(handle, fieldnames=fields)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def prepare_export_fixture(root):
+    now = datetime.now(timezone.utc).isoformat()
+    (root / 'config').mkdir()
+    config = root / 'config/sources.json'
+    config.write_text(json.dumps([{
+        'name': name, 'url': f'https://catalog.test/{name}', 'enabled': True,
+        'rights_status': 'approved', 'terms_url': 'https://catalog.test/terms',
+        'reviewed_at': '2026-09-07', 'permission_scope': 'synthetic unit test fixture only',
+    } for name in ('fixture', 'backup')]), encoding='utf-8')
+    summary = {'generated_utc': now, 'source_config_sha256': hashlib.sha256(config.read_bytes()).hexdigest()}
+    (root / 'full-check-summary.json').write_text(json.dumps(summary), encoding='utf-8')
+    return now
+
+
 class SourcePipelineTests(unittest.TestCase):
     def test_domestic_chinese_and_specific_hk_channels(self):
         for name in ("CCTV-1", "CCTV-17", "CCTV-5+", "CETV-1", "\u8fbd\u5b81\u536b\u89c6", "\u6cb3\u5317\u536b\u89c6", "\u7fe1\u7fe0\u53f0", "TVB Jade", "TVBS", "RTHK31"):
@@ -148,6 +170,139 @@ class SourcePipelineTests(unittest.TestCase):
         kept, _excluded = verify.eligible_candidates([channel], approved)
         self.assertEqual(kept[0].group, "\u6e2f\u6fb3\u53f0\u9891\u9053")
 
+    def test_interlaced_resolution_preserves_cctv_identity_end_to_end(self):
+        from channel_identity import canonical_channel_key
+        from curate_ku9 import prepare_curated_row
+        spec = SourceSpec('fixture', 'https://catalog.test/list', True, rights_status='approved')
+        for resolution in ('576i', '1080i', '1080p'):
+            text = f'#EXTM3U\n#EXTINF:-1 tvg-id="CCTV9.cn@SD",CCTV-9 ({resolution})\nhttps://tv.test/live\n'
+            candidate = verify.parse_source_candidates(text, spec.name, 'm3u')[0]
+            self.assertFalse(domestic_chinese_issue(f'CCTV-9 ({resolution})'))
+            kept, _excluded = verify.eligible_candidates([candidate], spec)
+            self.assertEqual(len(kept), 1)
+            row, reason, _detail = prepare_curated_row(kept[0].name, kept[0].url, kept[0].group, spec.name)
+            self.assertEqual(reason, '')
+            self.assertEqual(row[0], '\u592e\u89c6\u9891\u9053')
+            self.assertEqual(canonical_channel_key(row[1]), 'CCTV-9')
+        self.assertNotEqual(canonical_channel_key('CCTV-4K'), 'CCTV-4')
+        self.assertTrue(domestic_chinese_issue('CCTV-9 English (576i)'))
+
+    def test_aborted_recheck_preserves_playlists_records_failure_and_restores_checkpoint(self):
+        import recheck_published as recheck
+        import run_maintenance as maintenance
+        now = datetime.now(timezone.utc).isoformat()
+        rows = [recheck.Row(group, name, f'https://tv.test/{number}') for number, (group, name) in enumerate([
+            ('\u592e\u89c6\u9891\u9053', 'CCTV-1'), ('\u536b\u89c6\u9891\u9053', '\u6e56\u5357\u536b\u89c6'),
+            ('\u5730\u65b9\u9891\u9053', '\u6e56\u5357\u7ecf\u89c6'),
+        ], 1)]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for name in recheck.TXT_FILES:
+                (root / name).write_text(recheck.render_txt([row.group for row in rows], rows), encoding='utf-8')
+            (root / recheck.M3U_FILE).write_text(recheck.render_m3u(rows), encoding='utf-8')
+            (root / recheck.SUMMARY_FILE).write_text('{"generated_utc":"' + now + '"}', encoding='utf-8')
+            (root / recheck.CANDIDATE_POOL_FILE).write_text('selection_key,group,name,url,source,origin\n', encoding='utf-8')
+            write_csv_fixture(root, recheck.SOURCE_MAP_FILE, [
+                {'group': row.group, 'name': row.name, 'url': row.url, 'source': 'fixture'} for row in rows])
+            original = {name: (root / name).read_bytes() for name in maintenance.CHECKPOINT_FILES}
+            maintenance.save_curate_checkpoint(root)
+
+            def checker(candidate, *_args):
+                return verify.CheckResult(candidate, not candidate.url.endswith('/2'), 'synthetic media result', 0.1, now)
+
+            retry = {'first_pass_failed_unique_urls': 1, 'attempted_unique_urls': 1,
+                     'recovered_unique_urls': 0, 'still_failed_unique_urls': 1}
+            with patch.object(recheck, 'ROOT', root), patch.object(recheck, 'MAX_WORKERS', 1), \
+                    patch.object(recheck, 'check_candidate_resilient', side_effect=checker), \
+                    patch.object(recheck, 'retry_failed_final_urls', return_value=retry), \
+                    patch.object(recheck, 'max_failed_url_ratio', return_value=0.25):
+                self.assertEqual(recheck.main(), 1)
+            full_summary = json.loads((root / recheck.SUMMARY_FILE).read_text(encoding='utf-8'))
+            self.assertEqual(full_summary['strict_video_checked_unique'], 3)
+            self.assertEqual(full_summary['strict_progress_checked_unique'], 3)
+            summary = full_summary['published_recheck']
+            self.assertEqual(summary['status'], 'aborted')
+            self.assertFalse(summary['outputs_rewritten'])
+            self.assertEqual((summary['before_rows'], summary['after_rows'], summary['candidate_after_rows']), (3, 3, 2))
+            self.assertEqual(summary['removed_rows'], 0)
+            self.assertEqual(summary['post_retry_failed_unique_urls'], 1)
+            for name in (*recheck.TXT_FILES, recheck.M3U_FILE, recheck.SOURCE_MAP_FILE):
+                self.assertEqual((root / name).read_bytes(), original[name])
+            with (root / recheck.CSV_FILE).open(encoding='utf-8', newline='') as handle:
+                results = list(csv.DictReader(handle))
+            self.assertEqual([item['source'] for item in results], ['fixture'] * 3)
+            self.assertEqual([item['ok'] for item in results], ['True', 'False', 'True'])
+            self.assertFalse((root / recheck.PENDING_STABILITY_FILE).exists())
+            evidence = maintenance.collect_attempt_evidence(root)['published_recheck']
+            self.assertEqual(evidence['status'], 'aborted')
+            self.assertEqual(evidence['candidate_after_rows'], 2)
+            maintenance.restore_curate_checkpoint(root)
+            self.assertEqual({name: (root / name).read_bytes() for name in original}, original)
+
+    def test_export_includes_broad_failures_without_losing_recheck_origins(self):
+        from export_outputs import export_outputs
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            now = prepare_export_fixture(root)
+            rows = [{'name': f'CCTV-{number}', 'url': f'https://tv.test/{number}', 'source': 'fixture',
+                     'group': '\u592e\u89c6\u9891\u9053', 'ok': 'False' if number == 3 else 'True',
+                     'detail': 'media' if number != 3 else 'connection timed out', 'checked_at': now} for number in (1, 2, 3, 4)]
+            write_csv_fixture(root, 'stream_check_results.csv', rows)
+            write_csv_fixture(root, 'published_recheck_results.csv', [
+                dict(row, source='published_recheck', ok='True' if row['name'] == 'CCTV-1' else 'False',
+                     video_required='True', progress_required='True') for row in rows[:2]])
+            write_csv_fixture(root, 'curated-source-map.csv', [rows[0]])
+            counts = export_outputs(root, {'status': 'failed', 'started_utc': now})
+            report = json.loads((root / 'output/report.json').read_text(encoding='utf-8'))
+            checks = {item['name']: item for item in report['checks']}
+            self.assertEqual(len(report['checks']), 4)
+            self.assertEqual(report['reported_unique_urls'], 4)
+            self.assertEqual(report['strict_recheck_unique_urls'], 2)
+            self.assertEqual(checks['CCTV-2']['source'], 'fixture')
+            self.assertFalse(checks['CCTV-2']['strict_probe_ok'])
+            self.assertIsNone(checks['CCTV-3']['video_probe_ok'])
+            self.assertFalse(checks['CCTV-3']['broad_probe_ok'])
+            self.assertEqual(checks['CCTV-4']['status'], 'not_rechecked')
+            self.assertIsNone(checks['CCTV-4']['strict_probe_ok'])
+            self.assertEqual(counts['final_video_rows'], sum(item['eligible_current_result'] for item in checks.values()))
+
+    def test_export_metadata_is_keyed_by_channel_identity_not_only_url(self):
+        from export_outputs import export_outputs
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            now = prepare_export_fixture(root)
+            common = {'url': 'https://tv.test/shared', 'source': 'fixture', 'ok': 'True', 'checked_at': now,
+                      'video_required': 'True', 'progress_required': 'True', 'group': '\u592e\u89c6\u9891\u9053'}
+            rows = [dict(common, name='CCTV-1', tvg_id='CCTV1.cn'),
+                    dict(common, name='\u4e2d\u6587\u65b0\u95fb', tvg_id='ChineseNews.us')]
+            write_csv_fixture(root, 'stream_check_results.csv', rows)
+            write_csv_fixture(root, 'published_recheck_results.csv', rows)
+            self.assertEqual(export_outputs(root, {'status': 'failed', 'started_utc': now})['final_video_rows'], 1)
+            report = json.loads((root / 'output/report.json').read_text(encoding='utf-8'))
+            checks = {item['name']: item for item in report['checks']}
+            self.assertTrue(checks['CCTV-1']['eligible_current_result'])
+            self.assertFalse(checks['\u4e2d\u6587\u65b0\u95fb']['eligible_current_result'])
+            self.assertIn('tvg-id="CCTV1.cn"', (root / 'output/live.m3u').read_text(encoding='utf-8'))
+
+    def test_export_excludes_ambiguous_origins_and_channel_alias_conflicts(self):
+        from export_outputs import export_outputs
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            now = prepare_export_fixture(root)
+            common = {'url': 'https://tv.test/shared', 'name': 'CCTV-1', 'ok': 'True', 'checked_at': now,
+                      'video_required': 'True', 'progress_required': 'True', 'group': '\u592e\u89c6\u9891\u9053'}
+            rows = [dict(common, source=source) for source in ('fixture', 'backup')]
+            write_csv_fixture(root, 'stream_check_results.csv', rows)
+            write_csv_fixture(root, 'published_recheck_results.csv', [dict(common, source='published_recheck')])
+            self.assertEqual(export_outputs(root, {'status': 'failed', 'started_utc': now})['final_video_rows'], 0)
+            rows = [dict(common, name=f'CCTV-{number}', source='fixture') for number in (1, 2)]
+            write_csv_fixture(root, 'stream_check_results.csv', rows)
+            write_csv_fixture(root, 'published_recheck_results.csv', rows)
+            self.assertEqual(export_outputs(root, {'status': 'failed', 'started_utc': now})['final_video_rows'], 0)
+            report = json.loads((root / 'output/report.json').read_text(encoding='utf-8'))
+            self.assertEqual(report['identity_conflicts_excluded'], 1)
+            self.assertFalse(any(item['eligible_current_result'] for item in report['checks']))
+
     def test_checkpoint_success_only_same_run_and_policy(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "check.jsonl"
@@ -218,8 +373,12 @@ class SourcePipelineTests(unittest.TestCase):
             self.assertEqual(report['final_sources'], {'fixture': 1})
             self.assertFalse((root / 'live.m3u').exists())
             summary['source_config_sha256'] = 'wrong-config'
+            summary['publish_guard'] = {'status': 'ok'}
+            summary['published_recheck'] = {'outputs_rewritten': True}
             (root / 'full-check-summary.json').write_text(json.dumps(summary), encoding='utf-8')
-            self.assertEqual(export_outputs(root, {'status': 'failed', 'started_utc': now})['final_video_rows'], 0)
+            self.assertEqual(export_outputs(root, {'status': 'ok', 'started_utc': now})['final_video_rows'], 0)
+            report = json.loads((root / 'output/report.json').read_text(encoding='utf-8'))
+            self.assertFalse(report['publication_ready'])
             self.assertEqual((root / 'output/live.m3u').read_text(encoding='utf-8'), '#EXTM3U\n')
 
     def test_invalid_stability_history_is_not_deferred_until_after_network_probes(self):
