@@ -10,7 +10,7 @@ import shutil
 import sys
 import time
 from collections import Counter, defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 from validate_playlist import validate_file, validate_text
@@ -29,6 +29,7 @@ from channel_utils import format_extinf
 from channel_identity import canonical_channel_key
 from playlist_order import canonicalize_channel_rows
 from url_utils import is_publishable_http_url
+from media_decode import MIN_DECODED_FRAMES, decoder_preflight
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -74,6 +75,12 @@ def max_failed_url_ratio() -> float:
     return float(os.getenv("IPTV_PUBLISHED_RECHECK_MAX_FAILED_RATIO", str(load_guard().get("max_published_recheck_failed_url_ratio", 0.25))))
 
 
+def require_decoded_result(result: CheckResult) -> CheckResult:
+    if result.ok and result.decoded_frames < MIN_DECODED_FRAMES:
+        return replace(result, ok=False, detail="final probe did not prove 3 decoded video frames")
+    return result
+
+
 def record_aborted_recheck(rows: list[Row], kept_rows: list[Row], checked: int,
                            failed: int, elapsed: float, retry: dict, threshold: float) -> None:
     """Record evidence without claiming the aborted candidate list was published."""
@@ -86,6 +93,8 @@ def record_aborted_recheck(rows: list[Row], kept_rows: list[Row], checked: int,
         "abort_reason": "failed_url_ratio_exceeded",
         "policy_version": RECHECK_POLICY_VERSION,
         "require_video_track": REQUIRE_VIDEO_TRACK,
+        "require_frame_decode": True,
+        "candidate_frame_decoded_unique_urls": len({row.url for row in kept_rows}),
         "broadcast_progress_required": REQUIRE_BROADCAST_PROGRESS,
         "candidate_video_verified_unique_urls": len({row.url for row in kept_rows}) if REQUIRE_VIDEO_TRACK else 0,
         "checked_unique_urls": checked, "initial_checked_unique_urls": checked,
@@ -149,12 +158,13 @@ def retry_failed_final_urls(
                     core_override=core,
                     require_progress=REQUIRE_BROADCAST_PROGRESS and url in progress_urls,
                     require_video=REQUIRE_VIDEO_TRACK,
+                    require_decode=True,
                 )
                 futs[future] = url
             for future in cf.as_completed(futs):
                 url = futs[future]
                 attempted.add(url)
-                round_results[url] = future.result()
+                round_results[url] = require_decoded_result(future.result())
         for url in batch:
             retry = round_results[url]
             if retry.ok:
@@ -165,6 +175,7 @@ def retry_failed_final_urls(
                     f"final slow retry ok attempt={attempt} first={first_details[url]}; {retry.detail}",
                     retry.elapsed_seconds,
                     retry.checked_at,
+                    retry.decoded_frames,
                 )
             else:
                 results[url] = CheckResult(
@@ -173,6 +184,7 @@ def retry_failed_final_urls(
                     f"final slow retry failed attempt={attempt} first={first_details[url]}; last={retry.detail}",
                     retry.elapsed_seconds,
                     retry.checked_at,
+                    retry.decoded_frames,
                 )
                 pending.append(url)
     return {
@@ -488,11 +500,11 @@ def write_results_csv(
     source_map = source_map if source_map is not None else load_source_map()
     with (ROOT / CSV_FILE).open("w", encoding="utf-8", newline="") as f:
         writer = csv.writer(f, lineterminator="\n")
-        writer.writerow(["phase", "ok", "group", "name", "url", "source", "origin", "detail", "video_required", "progress_required", "checked_at", "elapsed_seconds"])
+        writer.writerow(["phase", "ok", "group", "name", "url", "source", "origin", "detail", "video_required", "progress_required", "checked_at", "elapsed_seconds", "decode_required", "decoded_frames"])
         for row in rows:
             result = results[row.url]
             writer.writerow(["published", result.ok, row.group, row.name, row.url, source_for(row, source_map), "current_publication", result.detail,
-                             REQUIRE_VIDEO_TRACK, REQUIRE_BROADCAST_PROGRESS and requires_live_progress(row), result.checked_at, result.elapsed_seconds])
+                             REQUIRE_VIDEO_TRACK, REQUIRE_BROADCAST_PROGRESS and requires_live_progress(row), result.checked_at, result.elapsed_seconds, True, result.decoded_frames])
         for candidate in attempted_refills:
             result = refill_results[candidate.row.url]
             writer.writerow([
@@ -508,6 +520,8 @@ def write_results_csv(
                 REQUIRE_BROADCAST_PROGRESS and requires_live_progress(candidate.row),
                 result.checked_at,
                 result.elapsed_seconds,
+                True,
+                result.decoded_frames,
             ])
 
 
@@ -690,11 +704,12 @@ def refill_missing_rows(
                     core_override=core,
                     require_progress=REQUIRE_BROADCAST_PROGRESS and requires_live_progress(candidate.row),
                     require_video=REQUIRE_VIDEO_TRACK,
+                    require_decode=True,
                 )
                 futs[fut] = (key, candidate)
             for fut in cf.as_completed(futs):
                 _key, candidate = futs[fut]
-                round_results[candidate.row.url] = fut.result()
+                round_results[candidate.row.url] = require_decoded_result(fut.result())
 
         # Apply in candidate-pool order, not thread completion order.
         for key, candidate in batch:
@@ -796,6 +811,9 @@ def update_summary(
             "broadcast_progress_required": REQUIRE_BROADCAST_PROGRESS,
             "progress_required_groups": sorted(LIVE_PROGRESS_GROUPS),
             "require_video_track": REQUIRE_VIDEO_TRACK,
+            "require_frame_decode": True,
+            "minimum_decoded_frames": MIN_DECODED_FRAMES,
+            "frame_decoded_unique_urls": len({row.url for row in after_rows}),
             "video_track_verified_unique_urls": len({row.url for row in after_rows}),
             "audio_only_rejected_unique_urls": sum(
                 1 for detail in all_failed_urls.values() if "audio/" in detail.lower() or " audio " in detail.lower()
@@ -943,6 +961,7 @@ def write_final_report(groups: list[str], rows: list[Row], failed_urls: dict[str
 
 def main() -> int:
     global ROOT
+    print(f"Frame decoder preflight: {decoder_preflight()}", flush=True)
     repository_root = ROOT
     recover_interrupted_promotion(repository_root)
     cleanup_stale_diagnostics()
@@ -983,11 +1002,12 @@ def main() -> int:
                 Candidate("published_recheck", row.group, row.name, row.url),
                 core,
                 REQUIRE_BROADCAST_PROGRESS and url in progress_urls,
+                require_decode=True,
             )
             futs[fut] = url
         for i, fut in enumerate(cf.as_completed(futs), 1):
             url = futs[fut]
-            results[url] = fut.result()
+            results[url] = require_decoded_result(fut.result())
             if i % 100 == 0 or i == len(futs):
                 ok_count = sum(1 for result in results.values() if result.ok)
                 print(f"published_recheck {i}/{len(futs)} ok_urls={ok_count}", flush=True)

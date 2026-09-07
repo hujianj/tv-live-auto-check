@@ -71,6 +71,7 @@ STALE_RUN_OUTPUTS: tuple[str, ...] = (
     "stability-observation.json",
     "source-inventory.json",
     "output/live.m3u",
+    "output/live.txt",
     "output/current-network.m3u",
     "output/stable.m3u",
     "output/report.json",
