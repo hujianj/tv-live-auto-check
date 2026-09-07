@@ -99,6 +99,8 @@ Actions 的运行摘要会列出每阶段耗时、是否超时、复检中止原
 
 维护 workflow 完成后，独立的 `.github/workflows/cdn-reconcile.yml` 会只对 GitHub Raw 和电视主 jsDelivr 地址执行多轮 purge/check；它不会重复 2.8 万条媒体 URL 检测。CDN 暂时滞后与媒体检测失败使用不同告警 Issue，CDN 恢复时不会误关闭媒体检测告警。
 
+CDN 巡检会先检查仓库中的预期订阅内容。若本地预期列表本身无效，会直接记录 `invalid_publication` 并停止，不清缓存、不将其误报为 CDN 滞后；`raw_current` 和 `primary_current` 为 `null`，表示未检测。手动修复分支的验证任务不会触发正式 CDN 刷新。
+
 大体积诊断文件不会再进入 Git 历史，只作为 GitHub Actions artifact 保存 30 天：
 
 ```text

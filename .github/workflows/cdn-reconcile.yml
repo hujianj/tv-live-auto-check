@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   reconcile:
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main') }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -35,6 +35,9 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.12"
+      - name: Validate publication before touching CDN caches
+        id: publication
+        run: python scripts/check_publication_endpoints.py --repo "${{ github.repository }}" --branch main --validate-only
       - name: Reconcile authoritative Raw and primary television CDN
         id: reconcile
         continue-on-error: true
@@ -82,6 +85,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python scripts/notify_maintenance.py cdn_pending --scope cdn --message "独立 CDN 收敛任务在多轮 purge/check 后仍未追上 GitHub Raw；旧版列表仍可用，下一轮将继续复验。"
+      - name: Report invalid publication without a false CDN alert
+        if: ${{ failure() && steps.publication.outcome == 'failure' }}
+        continue-on-error: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cat cdn-health-report.md >> "$GITHUB_STEP_SUMMARY"
+          python scripts/notify_maintenance.py failure --scope maintenance --message "仓库中现有订阅未通过格式或地址安全校验。本轮没有检测或清除 CDN 缓存，不能归因为 CDN 滞后；需先生成通过完整发布门禁的新订阅。"
       - name: Close recovered CDN issue
         if: steps.reconcile.outcome == 'success'
         continue-on-error: true

@@ -23,6 +23,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from network_safety import public_urlopen
 from publication_config import endpoint_urls, load_publication_config
 from validate_playlist import validate_text
+from url_utils import redact_text
 
 
 @dataclass(frozen=True)
@@ -219,6 +220,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--timeout", type=int, default=0, help="override per-request timeout; 0 uses config")
     parser.add_argument("--retry-wait", type=float, default=5.0)
     parser.add_argument("--global-deadline", type=int, default=240)
+    parser.add_argument("--validate-only", action="store_true", help="validate local expected bytes without any CDN request")
     parser.add_argument(
         "--required-only",
         action="store_true",
@@ -226,8 +228,33 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    expected = Path(args.expected).read_bytes()
-    validate_text(expected.decode("utf-8", "strict"), require_categories=True)
+    try:
+        expected = Path(args.expected).read_bytes()
+        validated = validate_text(expected.decode("utf-8", "strict"), require_categories=True)
+        if validated["rows"] < 1:
+            raise ValueError("expected playlist has no channel rows")
+    except (OSError, UnicodeError, ValueError) as exc:
+        reason = redact_text(str(exc))[:1500]
+        report = ("# Publication preflight failed\n\n"
+                  "The committed expected playlist is invalid. No CDN endpoints were checked.\n"
+                  "Cache purging cannot fix invalid source bytes; repair the publication first.\n\n"
+                  f"Reason: {reason}\n")
+        Path(args.report).write_text(report, encoding="utf-8", newline="\n")
+        Path(args.json_path).write_text(json.dumps({
+            "schema_version": 2, "status": "invalid_publication", "failure_scope": "publication",
+            "expected_file": Path(args.expected).name, "error": reason,
+            "endpoints_checked": 0, "endpoints": [], "raw_current": None, "primary_current": None,
+        }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
+        print(report, file=sys.stderr)
+        return 2
+    if args.validate_only:
+        Path(args.report).write_text("# Publication preflight passed\n\nInput valid; no CDN requests performed.\n", encoding="utf-8", newline="\n")
+        Path(args.json_path).write_text(json.dumps({
+            "schema_version": 2, "status": "input_valid", "expected_file": Path(args.expected).name,
+            "endpoints_checked": 0, "endpoints": [], "raw_current": None, "primary_current": None,
+        }, indent=2) + "\n", encoding="utf-8", newline="\n")
+        print("Publication input valid; no endpoint requests performed.")
+        return 0
     expected_hash = hashlib.sha256(expected).hexdigest()
     max_bytes = max(2_000_000, len(expected) * 3)
     endpoints = endpoint_matrix(args.repo, args.branch, required_only=args.required_only)

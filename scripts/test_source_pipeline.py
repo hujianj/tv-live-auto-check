@@ -481,6 +481,34 @@ class SourcePipelineTests(unittest.TestCase):
             self.assertIn('too many failed URLs', detail)
             self.assertIn('subscription was not updated', detail)
 
+    def test_invalid_publication_is_not_reported_as_cdn_lag(self):
+        import check_publication_endpoints as endpoints
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            expected = root / 'live.txt'
+            report = root / 'report.md'
+            machine = root / 'report.json'
+            args = ['--repo', 'fixture/repo', '--expected', str(expected),
+                    '--report', str(report), '--json', str(machine)]
+            expected.write_text('<html>error</html>', encoding='utf-8')
+            with patch.object(endpoints.cf, 'ThreadPoolExecutor') as pool:
+                self.assertEqual(endpoints.main(args), 2)
+            pool.assert_not_called()
+            data = json.loads(machine.read_text(encoding='utf-8'))
+            self.assertEqual(data['failure_scope'], 'publication')
+            self.assertIsNone(data['primary_current'])
+            self.assertEqual(data['endpoints_checked'], 0)
+            categories = '央视频道,#genre#\n卫视频道,#genre#\n地方频道,#genre#\n'
+            expected.write_text(categories, encoding='utf-8')
+            with patch.object(endpoints.cf, 'ThreadPoolExecutor') as pool:
+                self.assertEqual(endpoints.main(args + ['--validate-only']), 2)
+            pool.assert_not_called()
+            expected.write_text('央视频道,#genre#\nCCTV-1,https://tv.test/live.m3u8\n卫视频道,#genre#\n地方频道,#genre#\n', encoding='utf-8')
+            with patch.object(endpoints.cf, 'ThreadPoolExecutor') as pool:
+                self.assertEqual(endpoints.main(args + ['--validate-only']), 0)
+            pool.assert_not_called()
+            self.assertEqual(json.loads(machine.read_text(encoding='utf-8'))['status'], 'input_valid')
+
 
 def run_tests():
     result = unittest.TextTestRunner(verbosity=1).run(unittest.defaultTestLoader.loadTestsFromTestCase(SourcePipelineTests))
