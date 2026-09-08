@@ -68,15 +68,10 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install and verify frame decoder
+        id: bootstrap
+        timeout-minutes: 7
         if: ${{ steps.preflight.outputs.stale != 'true' }}
-        run: |
-          if ! command -v ffmpeg >/dev/null; then
-            timeout --signal=TERM --kill-after=15s 240s sudo apt-get update
-            timeout --signal=TERM --kill-after=15s 240s sudo apt-get install -y ffmpeg
-          fi
-          timeout --signal=TERM --kill-after=15s 240s \
-            python -m pip install --disable-pip-version-check --no-input --retries 2 --timeout 30 -r requirements.txt
-          timeout --signal=TERM --kill-after=15s 30s python scripts/media_decode.py
+        run: python scripts/bootstrap_runtime.py --budget 360
       - name: Restore validated stability state from successful maintenance
         if: ${{ steps.preflight.outputs.stale != 'true' }}
         env:
@@ -120,7 +115,7 @@ jobs:
           if-no-files-found: error
           path: stability-state.json
       - name: Upload full diagnostic artifacts
-        if: ${{ always() && steps.preflight.outputs.stale != 'true' }}
+        if: ${{ always() && steps.preflight.outputs.stale != 'true' && (steps.maintenance.outcome == 'success' || steps.maintenance.outcome == 'failure') }}
         continue-on-error: true
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
@@ -161,6 +156,15 @@ jobs:
             maintenance-attempt-*
             stability-state.json
             stability-observation.json
+      - name: Upload bootstrap diagnostics
+        if: ${{ always() && (steps.bootstrap.outcome == 'success' || steps.bootstrap.outcome == 'failure') }}
+        continue-on-error: true
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: bootstrap-${{ github.run_id }}
+          retention-days: 7
+          if-no-files-found: warn
+          path: bootstrap-report.json
       - name: Commit verified playlist without overwriting newer code
         id: commit
         if: ${{ github.ref_name == github.event.repository.default_branch && steps.preflight.outputs.stale != 'true' && steps.maintenance.outcome == 'success' && steps.stability_state.outcome == 'success' }}
@@ -240,12 +244,15 @@ jobs:
             cdn-health-report.md
             cdn-health-report.json
       - name: Notify hard maintenance failure
-        if: ${{ always() && github.ref_name == github.event.repository.default_branch && (steps.maintenance.outcome == 'failure' || steps.stability_state.outcome == 'failure' || steps.commit.outcome == 'failure') }}
+        if: ${{ always() && github.ref_name == github.event.repository.default_branch && (steps.bootstrap.outcome == 'failure' || steps.maintenance.outcome == 'failure' || steps.stability_state.outcome == 'failure' || steps.commit.outcome == 'failure') }}
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ "${{ steps.maintenance.outcome }}" = "failure" ]; then
+          if [ "${{ steps.bootstrap.outcome }}" = "failure" ]; then
+            python scripts/notify_maintenance.py failure --report bootstrap-report.json --message "Dependency installation or decoder preflight failed within the shared 360-second bootstrap budget. No media scan ran and no new playlist was published."
+            exit 0
+          elif [ "${{ steps.maintenance.outcome }}" = "failure" ]; then
             message="The media verification or publication validation pipeline failed."
           elif [ "${{ steps.stability_state.outcome }}" = "failure" ]; then
             message="The playlist passed validation, but the required stability-state artifact could not be saved; publication was stopped."

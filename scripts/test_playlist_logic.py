@@ -20,6 +20,7 @@ import zlib
 import zipfile
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
+from unittest import mock
 from urllib.request import Request
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -136,10 +137,11 @@ def test_workflow_is_pinned_and_refuses_stale_publication() -> None:
     assert "name: Code and configuration" in fast_workflow
     assert "name: Existing publication integrity" in fast_workflow
     assert "continue-on-error" not in fast_workflow
-    assert "timeout --signal=TERM --kill-after=15s 240s sudo apt-get update" in fast_workflow
-    assert "--no-input --retries 2 --timeout 30 -r requirements.txt" in fast_workflow
-    assert "timeout --signal=TERM --kill-after=15s 240s sudo apt-get update" in workflow
-    assert "timeout --signal=TERM --kill-after=15s 30s python scripts/media_decode.py" in workflow
+    assert "python scripts/bootstrap_runtime.py --budget 360" in fast_workflow
+    assert "python scripts/bootstrap_runtime.py --budget 360" in workflow
+    assert "steps.bootstrap.outcome == 'failure'" in workflow
+    artifact_step = workflow.split("- name: Upload full diagnostic artifacts", 1)[1].split("- name:", 1)[0]
+    assert "steps.maintenance.outcome == 'success' || steps.maintenance.outcome == 'failure'" in artifact_step
 
 
 def test_publication_config_rejects_ambiguous_roles_and_unsafe_paths() -> None:
@@ -620,7 +622,8 @@ def test_quality_audit_detects_host_single_point() -> None:
         ("\u592e\u89c6\u9891\u9053", "CCTV-1", "http://same.example/cctv1-b.m3u8"),
         ("\u592e\u89c6\u9891\u9053", "CCTV-1", "http://same.example/cctv1-c.m3u8"),
     ]
-    result, failures, _warnings = quality_module.build_audit(rows)
+    with mock.patch.object(quality_module, "coverage_is_required", return_value=True):
+        result, failures, _warnings = quality_module.build_audit(rows)
     assert result["host_diversity"]["unique_hosts"] == 1
     cctv1 = next(item for item in result["required_cctv"] if item["name"] == "CCTV-1")
     assert cctv1["unique_hosts"] == 1
@@ -1925,7 +1928,8 @@ def test_publish_bundle_validator_enforces_cross_file_invariants() -> None:
             for index, group in enumerate(required_groups[:-1])
         ]
         _write_test_publish_bundle(root, full_rows=rows, family_rows=rows)
-        _assert_bundle_failure(root, "missing required groups")
+        with mock.patch("validate_publish_bundle.coverage_is_required", return_value=True):
+            _assert_bundle_failure(root, "missing required groups")
 
     with tempfile.TemporaryDirectory() as td:
         root = Path(td)

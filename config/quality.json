@@ -1,4 +1,5 @@
 {
+  "full_catalog": true,
   "description": "TV-facing quality rules: keep family-use mainland channels clean, preserve core channels, and cap low-value categories.",
   "strict_drop_name_tokens": [
     "Geo-blocked",
