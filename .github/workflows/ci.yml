@@ -82,10 +82,11 @@ jobs:
       - name: Install frame decoder
         run: |
           if ! command -v ffmpeg >/dev/null; then
-            sudo apt-get update
-            sudo apt-get install -y ffmpeg
+            timeout --signal=TERM --kill-after=15s 240s sudo apt-get update
+            timeout --signal=TERM --kill-after=15s 240s sudo apt-get install -y ffmpeg
           fi
-          python -m pip install --disable-pip-version-check -r requirements.txt
+          timeout --signal=TERM --kill-after=15s 240s \
+            python -m pip install --disable-pip-version-check --no-input --retries 2 --timeout 30 -r requirements.txt
       - name: Validate centralized publication configuration
         run: python scripts/publication_config.py --validate
       - name: Run unit tests

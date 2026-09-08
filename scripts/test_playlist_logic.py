@@ -136,6 +136,10 @@ def test_workflow_is_pinned_and_refuses_stale_publication() -> None:
     assert "name: Code and configuration" in fast_workflow
     assert "name: Existing publication integrity" in fast_workflow
     assert "continue-on-error" not in fast_workflow
+    assert "timeout --signal=TERM --kill-after=15s 240s sudo apt-get update" in fast_workflow
+    assert "--no-input --retries 2 --timeout 30 -r requirements.txt" in fast_workflow
+    assert "timeout --signal=TERM --kill-after=15s 240s sudo apt-get update" in workflow
+    assert "timeout --signal=TERM --kill-after=15s 30s python scripts/media_decode.py" in workflow
 
 
 def test_publication_config_rejects_ambiguous_roles_and_unsafe_paths() -> None:

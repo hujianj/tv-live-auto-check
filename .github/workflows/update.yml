@@ -71,11 +71,12 @@ jobs:
         if: ${{ steps.preflight.outputs.stale != 'true' }}
         run: |
           if ! command -v ffmpeg >/dev/null; then
-            sudo apt-get update
-            sudo apt-get install -y ffmpeg
+            timeout --signal=TERM --kill-after=15s 240s sudo apt-get update
+            timeout --signal=TERM --kill-after=15s 240s sudo apt-get install -y ffmpeg
           fi
-          python -m pip install --disable-pip-version-check -r requirements.txt
-          python scripts/media_decode.py
+          timeout --signal=TERM --kill-after=15s 240s \
+            python -m pip install --disable-pip-version-check --no-input --retries 2 --timeout 30 -r requirements.txt
+          timeout --signal=TERM --kill-after=15s 30s python scripts/media_decode.py
       - name: Restore validated stability state from successful maintenance
         if: ${{ steps.preflight.outputs.stale != 'true' }}
         env:
