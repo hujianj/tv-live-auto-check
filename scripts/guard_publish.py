@@ -10,7 +10,7 @@ import sys
 from pathlib import Path
 
 from maintenance_contract import GUARD_REJECTED_EXIT_CODE
-from playlist_config import load_guard, load_quality
+from playlist_config import coverage_is_required, load_guard, load_quality, publication_policy
 from channel_identity import canonical_channel_key
 from source_config import SourceSpec, load_source_specs
 
@@ -236,6 +236,7 @@ def write_guard_outputs(
     zero_parsed = health["enabled_zero_parsed"]
     unavailable_sources = sorted(set(failed_sources + zero_parsed))
     guard = {
+        "publication_policy": publication_policy(),
         "schema_version": 3,
         "coverage_metric": GUARD.get("coverage_metric", "lines"),
         "channel_coverage": current.get("guard_channel_coverage", {}),
@@ -345,8 +346,12 @@ def main() -> int:
         warnings.append(msg)
         warn(msg)
 
-    if cur_lines < min_lines:
-        fail(f"curated lines {cur_lines} < minimum {min_lines}", failures)
+    coverage_problem = (lambda message: fail(message, failures)) if coverage_is_required() else add_warn
+
+    if cur_lines <= 0:
+        fail("no verified channel rows; keeping previous publication", failures)
+    elif cur_lines < min_lines:
+        coverage_problem(f"curated lines {cur_lines} < minimum {min_lines}")
     if channel_metric:
         from audit_coverage import parse_txt
         metrics = channel_coverage(parse_txt(ROOT / "live-curated.txt"))
@@ -355,14 +360,14 @@ def main() -> int:
         if not base_metrics:
             add_warn("no comparable independent-channel baseline; absolute coverage remains enforced")
         for message in coverage_failures(metrics, base_metrics, migration=bool(migration_reason)):
-            fail(message, failures)
+            coverage_problem(message)
     if base_lines > 0 and not channel_metric:
         if migration_reason:
             add_warn(f"relative drop guards skipped for one policy migration: {migration_reason}")
         else:
             drop = (base_lines - cur_lines) / base_lines
             if drop > max_drop_ratio:
-                fail(f"curated lines dropped {drop:.1%}: baseline={base_lines} current={cur_lines}", failures)
+                coverage_problem(f"curated lines dropped {drop:.1%}: baseline={base_lines} current={cur_lines}")
             else:
                 print(f"GUARD OK total lines baseline={base_lines} current={cur_lines} drop={drop:.1%}")
     elif not base_lines:
@@ -372,13 +377,13 @@ def main() -> int:
     for group, minimum in MIN_GROUPS.items():
         cur = int(groups.get(group, 0))
         if cur < minimum:
-            fail(f"group {group} count {cur} < minimum {minimum}", failures)
+            coverage_problem(f"group {group} count {cur} < minimum {minimum}")
         base = int(base_groups.get(group, 0)) if base_groups else 0
         if base > 0 and base >= minimum and not migration_reason and not channel_metric:
             drop = (base - cur) / base
             max_group_drop = MAX_GROUP_DROP_RATIOS.get(group, 0.45)
             if drop > max_group_drop:
-                fail(f"group {group} dropped {drop:.1%}: baseline={base} current={cur} max={max_group_drop:.0%}", failures)
+                coverage_problem(f"group {group} dropped {drop:.1%}: baseline={base} current={cur} max={max_group_drop:.0%}")
     if current.get("checked_all_unique") is not True:
         fail("checked_all_unique is not true", failures)
     if current.get("checked_candidates") != current.get("unique_candidates") or "checked_candidates" not in current:
