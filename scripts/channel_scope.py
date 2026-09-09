@@ -45,6 +45,20 @@ def channel_countries(country: str = "", tvg_id: str = "") -> set[str]:
     return countries
 
 
+def known_domestic_name(name: str, tvg_id: str, source: str) -> str:
+    """Translate only an exact reviewed channel ID/name pair, retaining warnings."""
+    aliases = load_rules().get("domestic_channel_aliases", {})
+    if source not in aliases.get("sources", []):
+        return name
+    entry = aliases.get("channels", {}).get(tvg_id.split("@", 1)[0])
+    if not entry:
+        return name
+    base = re.sub(r"\s*\((?:\d{3,4}[pi]|HD|FHD|UHD|4K)\)\s*$", "", name, flags=re.I).strip()
+    if base.casefold() not in {value.casefold() for value in entry["aliases"]}:
+        return name
+    return entry["name"]
+
+
 def domestic_chinese_issue(name: str, group: str = "", source: str = "",
                            tvg_id: str = "", country: str = "", language: str = "") -> str:
     """Return a rejection reason; metadata is not proof of the spoken audio."""
