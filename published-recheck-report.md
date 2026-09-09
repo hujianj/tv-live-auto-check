@@ -1,120 +1,37 @@
 # Published playlist recheck report
 
-Elapsed: 567.5s
-Rows before: 2315
-Rows after: 1948
-Rows removed after strict recheck: 462
-Rows refilled after strict recheck: 95
-Net row delta: -367
-Failed unique URLs after slow retry: 462
-Slow retry attempted unique URLs: 485
-Slow retry recovered unique URLs: 23
+Outputs rewritten: True
+Elapsed: 40.9s
+Rows before: 11
+Rows after: 12
+Rows removed from outputs: 1
+Candidate rows failing strict recheck: 1
+Rows refilled after strict recheck: 2
+Net output row delta: +1
+Failed unique URLs after slow retry: 1
+Slow retry attempted unique URLs: 1
+Slow retry recovered unique URLs: 0
 Core live-progress check required: True
 Broadcast live-progress check required: True
 Live-progress groups: 卫视频道, 地方频道, 央视频道
 Video track required: True
-Video-track verified final unique URLs: 1948
-Refill attempted unique URLs: 135
-Refill playable unique URLs: 95
-Refilled rows: 95
-Historical fallback candidates attempted: 95
-Historical fallback rows accepted: 85
-Unresolved refill rows: 434
+Video-track verified final unique URLs: 12
+Refill attempted unique URLs: 3
+Refill playable unique URLs: 2
+Refilled rows: 2
+Historical fallback candidates attempted: 3
+Historical fallback rows accepted: 2
+Unresolved refill rows: 2
 
 ## Group deltas
 
 | Group | Before | After | Net delta |
 |---|---:|---:|---:|
-| 央视频道 | 129 | 130 | +1 |
-| 卫视频道 | 165 | 181 | +16 |
-| 地方频道 | 687 | 348 | -339 |
-| 影视剧场 | 180 | 180 | +0 |
-| 少儿动漫 | 31 | 31 | +0 |
-| 体育纪实 | 57 | 57 | +0 |
-| 音乐综艺 | 28 | 18 | -10 |
-| 生活休闲 | 72 | 68 | -4 |
-| 综合娱乐 | 900 | 878 | -22 |
-| 港澳台频道 | 66 | 57 | -9 |
+| 央视频道 | 7 | 7 | +0 |
+| 卫视频道 | 1 | 0 | -1 |
+| 地方频道 | 1 | 3 | +2 |
+| 港澳台频道 | 2 | 2 | +0 |
 
 ## First failed rows
 
-- 央视频道 / CCTV-6 / http://112.30.73.119:229/tsfile/live/0006_2.m3u8?key=txiptv&playlive=0&authid=0 / final slow retry failed attempt=1 first=URLError(TimeoutError('timed out')) (core retry after first=URLError(TimeoutError('timed out'))); last=URLError(TimeoutError('timed out'))
-- 央视频道 / CCTV-6 / http://8.138.7.223/tv/1905.php?id=LIVE3YPYZ30E7V1R0 / final slow retry failed attempt=1 first=direct MP4/fMP4 cannot prove live broadcast progress; rejecting likely VOD; last=direct MP4/fMP4 cannot prove live broadcast progress; rejecting likely VOD
-- 央视频道 / CCTV-13 / http://ali-m-l.cztv.com/channels/lantian/channel21/1080p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=3 required=video; manifest did not advance after 10.0s; last=segments ok checked=3 required=video; manifest did not advance after 10.0s
-- 央视频道 / CCTV-17 / https://stream1.freetv.fun/285af64b005f433180a2972c9632537859a8918e821604a7cd85f10d7001d1b3.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segments ok checked=3 required=video; manifest did not advance after 12.5s; last=variant fail variants_checked=1 segments ok checked=3 required=video; manifest did not advance after 12.5s
-- 卫视频道 / 浙江卫视 / http://ali-m-l.cztv.com/channels/lantian/channel01/1080p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=3 required=video; manifest did not advance after 10.0s; last=segments ok checked=3 required=video; manifest did not advance after 10.0s
-- 卫视频道 / 浙江卫视 / http://ali-m-l.cztv.com/channels/lantian/channel001/1080p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=3 required=video; manifest did not advance after 10.0s; last=segments ok checked=3 required=video; manifest did not advance after 10.0s
-- 卫视频道 / 浙江卫视 / http://ali-m-l.cztv.com:80/channels/lantian/channel001/1080p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=3 required=video; manifest did not advance after 10.0s; last=segments ok checked=3 required=video; manifest did not advance after 10.0s
-- 卫视频道 / 湖南卫视 / http://8.138.7.223/tv/api.php?id=hnws4k / final slow retry failed attempt=1 first=<HTTPError 302: 'The HTTP server returned a redirect error that would lead to an infinite loop.\nThe last 30x error message was:\nFound'>; last=direct MP4/fMP4 cannot prove live broadcast progress; rejecting likely VOD
-- 卫视频道 / 广东卫视 / http://113.57.140.161:10081/newlive/live/hls/34/live.m3u8 / final slow retry failed attempt=1 first=segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PMT advertises video but only audio PID carries media payload; last=segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PMT advertises video but only audio PID carries media payload
-- 卫视频道 / 广东卫视 / https://txmov2.a.kwimgs.com/upic/2023/01/26/09/BMjAyMzAxMjYwOTE3NDVfNzM5MzQzNzIyXzk0NjI1OTUwNTA3XzBfMw==_b_B81ddda927d33445d544befd008e60109.mp4 / final slow retry failed attempt=1 first=direct MP4/fMP4 cannot prove live broadcast progress; rejecting likely VOD; last=direct MP4/fMP4 cannot prove live broadcast progress; rejecting likely VOD
-- 卫视频道 / 厦门卫视 / http://58.56.162.102:4466/newlive/live/hls/28/live.m3u8 / final slow retry failed attempt=1 first=segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PMT advertises video but only audio PID carries media payload; last=segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PMT advertises video but only audio PID carries media payload
-- 卫视频道 / 大湾区卫视 / http://222.128.55.152:9080/live/dwq.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segments ok checked=3 required=video; manifest did not advance after 14.0s; last=variant fail variants_checked=1 segments ok checked=3 required=video; manifest did not advance after 14.0s
-- 卫视频道 / 安多卫视 / https://stream1.freetv.fun/52d0df257c5c3cec42f2ae19268dbbc261256ff391b27bd83553bea941d0c186.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segments ok checked=3 required=video; VOD/endlist manifest is not a live channel; last=variant fail variants_checked=1 segments ok checked=3 required=video; VOD/endlist manifest is not a live channel
-- 卫视频道 / 山东卫视 / http://120.40.39.246:352/newlive/live/hls/35/live.m3u8 / final slow retry failed attempt=1 first=segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PMT advertises video but only audio PID carries media payload; last=segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PMT advertises video but only audio PID carries media payload
-- 卫视频道 / 新疆卫视 / http://218.84.12.186:8001/hls/main/playlist.m3u8zxinjd / final slow retry failed attempt=1 first=segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PMT advertises video but only audio PID carries media payload; last=segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PMT advertises video but only audio PID carries media payload
-- 卫视频道 / 星空卫视 / https://stream1.freetv.fun/xing-kong-wei-shi-4.ctv / final slow retry failed attempt=1 first=segments ok checked=3 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=3 required=video; VOD/endlist manifest is not a live channel
-- 卫视频道 / 星空卫视 / https://stream1.freetv.fun/xing-kong-wei-shi-12.m3u8 / final slow retry failed attempt=1 first=segments ok checked=3 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=3 required=video; VOD/endlist manifest is not a live channel
-- 卫视频道 / 星空卫视 / https://stream1.freetv.fun/xing-kong-wei-shi-10.m3u8 / final slow retry failed attempt=1 first=segments ok checked=3 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=3 required=video; VOD/endlist manifest is not a live channel
-- 卫视频道 / 星空卫视 / https://stream1.freetv.fun/xing-kong-wei-shi-11.m3u8 / final slow retry failed attempt=1 first=segments ok checked=3 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=3 required=video; VOD/endlist manifest is not a live channel
-- 卫视频道 / 海峡卫视 / http://120.40.39.246:352/newlive/live/hls/27/live.m3u8 / final slow retry failed attempt=1 first=segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PMT advertises video but only audio PID carries media payload; last=segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PMT advertises video but only audio PID carries media payload
-- 卫视频道 / 澳亚卫视 / https://stream1.freetv.fun/ao-ya-wei-shi-1.ctv / final slow retry failed attempt=1 first=segments ok checked=3 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=3 required=video; VOD/endlist manifest is not a live channel
-- 卫视频道 / 香港卫视 / https://stream1.freetv.fun/5335c88a9a7d8b74173b491f480d4f94e8d3bd596af54478106aa2399e6c7917.ctv / final slow retry failed attempt=1 first=segments ok checked=3 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=3 required=video; VOD/endlist manifest is not a live channel
-- 卫视频道 / 香港卫视 / https://stream1.freetv.fun/c751876ae5ceaa0d82b5cf2badc152342aa92a4b45bf504d12ee45966b2fc644.ctv / final slow retry failed attempt=1 first=segments ok checked=3 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=3 required=video; VOD/endlist manifest is not a live channel
-- 卫视频道 / 香港卫视 / https://stream1.freetv.fun/5335c88a9a7d8b74173b491f480d4f94e8d3bd596af54478106aa2399e6c7917.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segments ok checked=3 required=video; VOD/endlist manifest is not a live channel; last=variant fail variants_checked=1 segments ok checked=3 required=video; VOD/endlist manifest is not a live channel
-- 卫视频道 / 香港卫视 / https://stream1.freetv.fun/ae7eaf28d8610cdc1651ef6a1f7dbb24b49c5a87627d0d881330afaea37a1616.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segments ok checked=3 required=video; VOD/endlist manifest is not a live channel; last=variant fail variants_checked=1 segments ok checked=3 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 三明新闻综合 / http://ls.qingting.fm/live/4885.m3u8 / final slow retry failed attempt=1 first=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
-- 地方频道 / 三明新闻综合 / https://ls.qingting.fm/live/5022100/64k.m3u8 / final slow retry failed attempt=1 first=segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PMT advertises video but only audio PID carries media payload; last=segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: PMT advertises video but only audio PID carries media payload
-- 地方频道 / 上海动感101 / http://ls.qingting.fm/live/274.m3u8 / final slow retry failed attempt=1 first=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
-- 地方频道 / 上海第一财经 / https://satellitepull.cnr.cn/live/wx32dycjgb/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: audio elementary PID carries media payload; last=variant fail variants_checked=1 segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: audio elementary PID carries media payload
-- 地方频道 / 上海纪实 / https://stream1.freetv.fun/shang-hai-ji-shi-ren-wen-1.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 上海纪实 / https://stream1.freetv.fun/ipv6-shang-hai-ji-shi-ren-wen-2.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 上海纪实 / https://stream1.freetv.fun/ipv6-shang-hai-ji-shi-ren-wen-3.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 上海纪实 / https://stream1.freetv.fun/ipv6-shang-hai-ji-shi-ren-wen-5.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 上海都市 / https://stream1.freetv.fun/ipv6-shang-hai-du-shi-3.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 上海都市 / https://stream1.freetv.fun/ipv6-shang-hai-du-shi-8.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 上海都市 / https://stream1.freetv.fun/ipv6-shang-hai-du-shi-4.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 上虞新商都 / https://stream1.freetv.fun/shang-yu-xin-shang-du-5.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 上虞新闻综合 / http://l.cztvcloud.com/channels/lantian/SXshangyu1/720p.m3u8?zzhed / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=video; manifest did not advance after 10.0s
-- 地方频道 / 东丰综合 / http://stream3.jlntv.cn:80/aac_dfgb/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=variant fail variants_checked=1 segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
-- 地方频道 / 中国蓝新闻 / http://ali-m-l.cztv.com/channels/lantian/channel009/1080p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; manifest did not advance after 10.0s
-- 地方频道 / 临平新闻频道 / http://l.cztvcloud.com/channels/lantian/SXyuhang2/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; manifest did not advance after 10.0s
-- 地方频道 / 乐山新闻综合 / https://stream1.freetv.fun/le-shan-xin-wen-zong-he-1.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 乐山新闻综合 / https://stream1.freetv.fun/le-shan-xin-wen-zong-he-2.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 仁寿综合 / https://play.scrstv.com.cn/DT/live.m3u8?auth_key=60001724663204-0-0-c1cc4ded9841ac34f63cdbd3aec647ef / final slow retry failed attempt=1 first=URLError(TimeoutError('timed out')); last=URLError(TimeoutError('timed out'))
-- 地方频道 / 余姚姚江文化 / https://l.cztvcloud.com/channels/lantian/SXyuyao3/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 12.5s; last=segments ok checked=2 required=video; manifest did not advance after 12.5s
-- 地方频道 / 余姚姚江文化 / http://l.cztvcloud.com/channels/lantian/SXyuyao3/720p.m3u8?zzhed / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=video; manifest did not advance after 12.5s
-- 地方频道 / 余姚姚江文化 / http://l.cztvcloud.com/channels/lantian/SXyuyao3/720p.m3u8 / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=video; manifest did not advance after 12.5s
-- 地方频道 / 余姚新闻综合 / http://l.cztvcloud.com/channels/lantian/SXyuyao1/720p.m3u8?cWlkPSZzPTg3OWMwYmMyZDMzYTFhZGY3NDQxMjgyYTg1MmUzNTY0JmVzPTE3MDY2Nzc4NzMmdXVpZD0yMjdiY2MzNGNiNGY0MThlYjRiY2IxYzcwNmZjODNkMS02NzQ3NDY2NyZ2PTImYXM9MCZjZG5leF9pZD10eF9waG9uZV9saXZl / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=video; manifest did not advance after 10.0s
-- 地方频道 / 余姚新闻综合 / http://l.cztvcloud.com/channels/lantian/SXyuyao1/720p.m3u8 / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=video; manifest did not advance after 10.0s
-- 地方频道 / 余姚综合 / http://l.cztvcloud.com/channels/lantian/SXyuyao1/720p.m3u8? / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=video; manifest did not advance after 10.0s
-- 地方频道 / 余姚综合 / http://l.cztvcloud.com/channels/lantian/SXyuyao1/720p.m3u8?zzhed / final slow retry failed attempt=1 first=URLError(TimeoutError('timed out')); last=segments ok checked=2 required=video; manifest did not advance after 10.0s
-- 地方频道 / 余杭未来E / http://l.cztvcloud.com/channels/lantian/SXyuhang3/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 10.0s; last=segments ok checked=2 required=video; manifest did not advance after 10.0s
-- 地方频道 / 余杭未来E / http://l.cztvcloud.com/channels/lantian/SXyuhang3/720p.m3u8?zzhed / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=video; manifest did not advance after 10.0s
-- 地方频道 / 余杭综合 / http://l.cztvcloud.com/channels/lantian/SXyuhang1/720p.m3u8 / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=video; manifest did not advance after 10.0s
-- 地方频道 / 余杭综合 / http://l.cztvcloud.com/channels/lantian/SXyuhang1/720p.m3u8?zzhed / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=video; manifest did not advance after 10.0s
-- 地方频道 / 六安公共 / http://ls.qingting.fm/live/1794199.m3u8 / final slow retry failed attempt=1 first=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
-- 地方频道 / 六安新闻综合 / http://ls.qingting.fm/live/267.m3u8 / final slow retry failed attempt=1 first=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
-- 地方频道 / 兰溪新闻综合 / http://l.cztvcloud.com/channels/lantian/SXlanxi1/720p.m3u8 / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=video; manifest did not advance after 10.0s
-- 地方频道 / 兰溪新闻综合 / https://t.freetv.fun/live/lan-xi-xin-wen-zong-he.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 兰溪新闻综合 / https://t.freetv.fun/live/lan-xi-xin-wen-zong-he-1.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 兰溪新闻综合 / https://stream1.freetv.fun/lan-xi-xin-wen-zong-he-1.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 兰溪新闻综合 / https://stream1.freetv.fun/lan-xi-xin-wen-zong-he-3.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 北京新闻 / https://satellitepull.cnr.cn/live/wxbjxwgb/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: audio elementary PID carries media payload; last=variant fail variants_checked=1 segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: audio elementary PID carries media payload
-- 地方频道 / 南宁新闻综合 / https://stream1.freetv.fun/nan-zhu-xin-wen-zong-he-3.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 南宁新闻综合 / https://stream1.freetv.fun/nan-zhu-xin-wen-zong-he-1.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 南宁新闻综合 / https://stream1.freetv.fun/nan-zhu-xin-wen-zong-he-4.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 南宁都市生活 / https://t.freetv.fun/live/nan-zhu-du-shi-sheng-huo-1.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 南宁都市生活 / https://stream1.freetv.fun/nan-zhu-du-shi-sheng-huo-1.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 南宁都市生活 / https://stream1.freetv.fun/nan-zhu-du-shi-sheng-huo-2.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 南宁都市生活 / https://stream1.freetv.fun/nan-zhu-du-shi-sheng-huo-3.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 双辽综合 / http://stream3.jlntv.cn:80/aac_slgb/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed; last=variant fail variants_checked=1 segment bad 200 application/octet-stream bytes=32768 checked=1 audio/mpeg-audio: MPEG audio frame observed
-- 地方频道 / 叙州新闻综合 / https://stream1.freetv.fun/xu-zhou-xin-wen-zong-he-6.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 叙州新闻综合 / https://stream1.freetv.fun/xu-zhou-xin-wen-zong-he-2.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 叙州新闻综合 / https://stream1.freetv.fun/xu-zhou-xin-wen-zong-he-7.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 叙州新闻综合 / https://stream1.freetv.fun/xu-zhou-xin-wen-zong-he-3.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 可克达拉综合 / http://file.loulannews.cn/nmip-media/channellive/channel103824/playlist.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; manifest did not advance after 7.5s; last=segments ok checked=2 required=video; manifest did not advance after 7.5s
-- 地方频道 / 吉林乡村 / https://satellitepull.cnr.cn/live/wxjlxcgb/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: audio elementary PID carries media payload; last=variant fail variants_checked=1 segment bad 200 video/mp2t bytes=32768 checked=1 audio/mpeg-ts: audio elementary PID carries media payload
-- 地方频道 / 周口新闻综合 / https://stream1.freetv.fun/zhou-kou-xin-wen-zong-he-1.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 周口新闻综合 / https://stream1.freetv.fun/zhou-kou-xin-wen-zong-he-2.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
-- 地方频道 / 四川科教 / https://stream1.freetv.fun/si-chuan-ke-jiao-3.ctv / final slow retry failed attempt=1 first=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel; last=segments ok checked=2 required=video; VOD/endlist manifest is not a live channel
+- 卫视频道 / 北京卫视 / http://go.bkpcp.top/mg/bjws / final slow retry failed attempt=1 first=PublicURLPolicyError('host resolves to non-public address(es): jxcbn.ws01-cdn.gitv.tv -> 127.0.0.1'); last=PublicURLPolicyError('host resolves to non-public address(es): jxcbn.ws01-cdn.gitv.tv -> 127.0.0.1')

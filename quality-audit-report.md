@@ -1,78 +1,86 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 1948
-Unique channel names: 1379
-Unique canonical channel identities: 1379
-Unique URLs: 1948
+Rows: 12
+Unique channel names: 12
+Unique canonical channel identities: 12
+Unique URLs: 12
 Strict filter residue count: 0
 Latin/noise-like review count: 0
 Channel unique URL limit violations: 0
 URL identity conflicts: 0
-Unique stream hosts: 148
-Top stream host share: 24.5%
-Top five stream host share: 60.6%
+Unique stream hosts: 10
+Top stream host share: 25.0%
+Top five stream host share: 58.3%
 
 ## Core CCTV quality
 
-Minimum exact CCTV independent URLs: 3
-Minimum independent hosts per core channel: 2
+Minimum exact CCTV independent URLs: 1
+Minimum independent hosts per core channel: 1
 
 | Channel | Published rows | Unique URLs | Unique hosts | Status |
 |---|---:|---:|---:|---|
-| CCTV-1 | 6 | 6 | 6 | OK |
-| CCTV-2 | 6 | 6 | 5 | OK |
-| CCTV-3 | 6 | 6 | 5 | OK |
-| CCTV-4 | 6 | 6 | 6 | OK |
-| CCTV-5 | 6 | 6 | 6 | OK |
-| CCTV-6 | 6 | 6 | 4 | OK |
-| CCTV-7 | 6 | 6 | 6 | OK |
-| CCTV-8 | 6 | 6 | 6 | OK |
-| CCTV-9 | 6 | 6 | 5 | OK |
-| CCTV-10 | 6 | 6 | 6 | OK |
-| CCTV-11 | 6 | 6 | 6 | OK |
-| CCTV-12 | 6 | 6 | 6 | OK |
-| CCTV-13 | 6 | 6 | 4 | OK |
-| CCTV-14 | 6 | 6 | 6 | OK |
-| CCTV-15 | 6 | 6 | 6 | OK |
-| CCTV-16 | 6 | 6 | 6 | OK |
-| CCTV-17 | 6 | 6 | 3 | OK |
-| CCTV-5+ | 6 | 6 | 5 | OK |
+| CCTV-1 | 0 | 0 | 0 | LOW |
+| CCTV-2 | 0 | 0 | 0 | LOW |
+| CCTV-3 | 0 | 0 | 0 | LOW |
+| CCTV-4 | 0 | 0 | 0 | LOW |
+| CCTV-5 | 0 | 0 | 0 | LOW |
+| CCTV-6 | 0 | 0 | 0 | LOW |
+| CCTV-7 | 0 | 0 | 0 | LOW |
+| CCTV-8 | 0 | 0 | 0 | LOW |
+| CCTV-9 | 1 | 1 | 1 | OK |
+| CCTV-10 | 0 | 0 | 0 | LOW |
+| CCTV-11 | 0 | 0 | 0 | LOW |
+| CCTV-12 | 0 | 0 | 0 | LOW |
+| CCTV-13 | 1 | 1 | 1 | OK |
+| CCTV-14 | 0 | 0 | 0 | LOW |
+| CCTV-15 | 0 | 0 | 0 | LOW |
+| CCTV-16 | 0 | 0 | 0 | LOW |
+| CCTV-17 | 0 | 0 | 0 | LOW |
+| CCTV-5+ | 1 | 1 | 1 | OK |
 
 ## Important satellite quality
 
-Minimum important satellite independent URLs: 3
+Minimum important satellite independent URLs: 1
 
 | Channel | Published rows | Unique URLs | Unique hosts | Status |
 |---|---:|---:|---:|---|
-| 辽宁卫视 | 6 | 6 | 6 | OK |
-| 河北卫视 | 6 | 6 | 6 | OK |
-| 河南卫视 | 6 | 6 | 6 | OK |
-| 北京卫视 | 6 | 6 | 5 | OK |
-| 东方卫视 | 6 | 6 | 6 | OK |
-| 浙江卫视 | 6 | 6 | 6 | OK |
-| 江苏卫视 | 6 | 6 | 6 | OK |
-| 湖南卫视 | 5 | 5 | 4 | OK |
-| 广东卫视 | 6 | 6 | 6 | OK |
-| 深圳卫视 | 6 | 6 | 6 | OK |
+| 辽宁卫视 | 0 | 0 | 0 | LOW |
+| 河北卫视 | 0 | 0 | 0 | LOW |
+| 河南卫视 | 0 | 0 | 0 | LOW |
+| 北京卫视 | 0 | 0 | 0 | LOW |
+| 东方卫视 | 0 | 0 | 0 | LOW |
+| 浙江卫视 | 0 | 0 | 0 | LOW |
+| 江苏卫视 | 0 | 0 | 0 | LOW |
+| 湖南卫视 | 0 | 0 | 0 | LOW |
+| 广东卫视 | 0 | 0 | 0 | LOW |
+| 深圳卫视 | 0 | 0 | 0 | LOW |
 
 ## Stream host concentration
 
 | Host | Rows | Share |
 |---|---:|---:|
-| www.goodiptv.club | 477 | 24.5% |
-| stream1.freetv.fun | 393 | 20.2% |
-| cloud.video.taobao.com | 188 | 9.7% |
-| vodcdn.video.taobao.com | 72 | 3.7% |
-| 63.141.230.178 | 51 | 2.6% |
-| vd3.bdstatic.com | 48 | 2.5% |
-| 38.75.136.137 | 46 | 2.4% |
-| live.metshop.top | 46 | 2.4% |
-| 107.150.60.122 | 41 | 2.1% |
-| live.ottiptv.cc | 33 | 1.7% |
+| 74.91.26.218 | 3 | 25.0% |
+| dash2.antik.sk | 1 | 8.3% |
+| myip.pdtvhd.com | 1 | 8.3% |
+| xykt-fix.github.io | 1 | 8.3% |
+| go.bkpcp.top | 1 | 8.3% |
+| live.zohi.tv | 1 | 8.3% |
+| 222.179.155.21 | 1 | 8.3% |
+| live.shaoxing.com.cn | 1 | 8.3% |
+| www.dalitv.com.tw | 1 | 8.3% |
+| mobile.ccdntech.com | 1 | 8.3% |
 
 ## Family playlist audit
 
 Status: ok
-Rows: 1007
-Unique URLs: 1007
+Rows: 12
+Unique URLs: 12
+
+## Warnings
+
+- core CCTV channels below independent URL minimum: CCTV-1=0, CCTV-2=0, CCTV-3=0, CCTV-4=0, CCTV-5=0, CCTV-6=0, CCTV-7=0, CCTV-8=0, CCTV-10=0, CCTV-11=0, CCTV-12=0, CCTV-14=0, CCTV-15=0, CCTV-16=0, CCTV-17=0
+- important satellite channels below independent URL minimum: 辽宁卫视=0, 河北卫视=0, 河南卫视=0, 北京卫视=0, 东方卫视=0, 浙江卫视=0, 江苏卫视=0, 湖南卫视=0, 广东卫视=0, 深圳卫视=0
+- core channels below independent host minimum: CCTV-1=0, CCTV-2=0, CCTV-3=0, CCTV-4=0, CCTV-5=0, CCTV-6=0, CCTV-7=0, CCTV-8=0, CCTV-10=0, CCTV-11=0, CCTV-12=0, CCTV-14=0, CCTV-15=0, CCTV-16=0, CCTV-17=0, 辽宁卫视=0, 河北卫视=0, 河南卫视=0, 北京卫视=0, 东方卫视=0, 浙江卫视=0, 江苏卫视=0, 湖南卫视=0, 广东卫视=0, 深圳卫视=0
+- core CCTV channels below independent URL warning target: CCTV-9=1, CCTV-13=1, CCTV-5+=1
+- core channels below independent host warning target: CCTV-9=1, CCTV-13=1, CCTV-5+=1
