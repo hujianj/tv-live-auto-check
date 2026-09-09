@@ -1,5 +1,8 @@
 # Core channel coverage report
 
+Coverage status: incomplete (25/52 target channels)
+A successful maintenance job does not mean all requested channels are available.
+
 Minimum independent URLs per important channel: 1
 
 Fail on missing CCTV: False
@@ -9,23 +12,23 @@ Fail on missing important satellite: False
 
 | Channel | Published rows | Unique URLs | Status |
 |---|---:|---:|---|
-| CCTV-1 | 0 | 0 | MISSING |
-| CCTV-2 | 0 | 0 | MISSING |
-| CCTV-3 | 0 | 0 | MISSING |
+| CCTV-1 | 1 | 1 | OK |
+| CCTV-2 | 1 | 1 | OK |
+| CCTV-3 | 2 | 2 | OK |
 | CCTV-4 | 0 | 0 | MISSING |
-| CCTV-5 | 0 | 0 | MISSING |
-| CCTV-6 | 0 | 0 | MISSING |
-| CCTV-7 | 0 | 0 | MISSING |
-| CCTV-8 | 0 | 0 | MISSING |
-| CCTV-9 | 1 | 1 | OK |
-| CCTV-10 | 0 | 0 | MISSING |
-| CCTV-11 | 0 | 0 | MISSING |
-| CCTV-12 | 0 | 0 | MISSING |
-| CCTV-13 | 1 | 1 | OK |
-| CCTV-14 | 0 | 0 | MISSING |
-| CCTV-15 | 0 | 0 | MISSING |
+| CCTV-5 | 1 | 1 | OK |
+| CCTV-6 | 1 | 1 | OK |
+| CCTV-7 | 1 | 1 | OK |
+| CCTV-8 | 1 | 1 | OK |
+| CCTV-9 | 2 | 2 | OK |
+| CCTV-10 | 1 | 1 | OK |
+| CCTV-11 | 1 | 1 | OK |
+| CCTV-12 | 1 | 1 | OK |
+| CCTV-13 | 2 | 2 | OK |
+| CCTV-14 | 1 | 1 | OK |
+| CCTV-15 | 1 | 1 | OK |
 | CCTV-16 | 0 | 0 | MISSING |
-| CCTV-17 | 0 | 0 | MISSING |
+| CCTV-17 | 1 | 1 | OK |
 | CCTV-5+ | 1 | 1 | OK |
 
 ## Important satellite coverage
@@ -37,17 +40,38 @@ Fail on missing important satellite: False
 | 河南卫视 | 0 | 0 | MISSING |
 | 北京卫视 | 0 | 0 | MISSING |
 | 东方卫视 | 0 | 0 | MISSING |
-| 浙江卫视 | 0 | 0 | MISSING |
+| 浙江卫视 | 1 | 1 | OK |
 | 江苏卫视 | 0 | 0 | MISSING |
-| 湖南卫视 | 0 | 0 | MISSING |
+| 湖南卫视 | 1 | 1 | OK |
 | 广东卫视 | 0 | 0 | MISSING |
-| 深圳卫视 | 0 | 0 | MISSING |
+| 深圳卫视 | 1 | 1 | OK |
+| 天津卫视 | 0 | 0 | MISSING |
+| 山西卫视 | 1 | 1 | OK |
+| 内蒙古卫视 | 1 | 1 | OK |
+| 吉林卫视 | 0 | 0 | MISSING |
+| 黑龙江卫视 | 0 | 0 | MISSING |
+| 安徽卫视 | 0 | 0 | MISSING |
+| 东南卫视 | 1 | 1 | OK |
+| 江西卫视 | 1 | 1 | OK |
+| 山东卫视 | 0 | 0 | MISSING |
+| 湖北卫视 | 0 | 0 | MISSING |
+| 广西卫视 | 0 | 0 | MISSING |
+| 海南卫视 | 0 | 0 | MISSING |
+| 重庆卫视 | 0 | 0 | MISSING |
+| 四川卫视 | 0 | 0 | MISSING |
+| 贵州卫视 | 0 | 0 | MISSING |
+| 云南卫视 | 0 | 0 | MISSING |
+| 西藏卫视 | 0 | 0 | MISSING |
+| 陕西卫视 | 0 | 0 | MISSING |
+| 甘肃卫视 | 0 | 0 | MISSING |
+| 青海卫视 | 1 | 1 | OK |
+| 宁夏卫视 | 0 | 0 | MISSING |
+| 新疆卫视 | 1 | 1 | OK |
+| 兵团卫视 | 0 | 0 | MISSING |
+| 厦门卫视 | 0 | 0 | MISSING |
 
 ## CCTV variants not counted as exact core coverage
 
 | Core channel | Variant rows | Variant unique URLs |
 |---|---:|---:|
-| CCTV-4 | 2 | 2 |
-| CCTV-8 | 1 | 1 |
-| CCTV-9 | 1 | 1 |
-| CCTV-15 | 1 | 1 |
+| CCTV-4 | 3 | 3 |
