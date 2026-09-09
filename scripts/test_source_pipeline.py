@@ -53,6 +53,12 @@ class SourcePipelineTests(unittest.TestCase):
         self.assertTrue(domestic_chinese_issue("\u9999\u6e2f\u7535\u89c6", country="hk", language="eng"))
         self.assertFalse(domestic_chinese_issue("\u53f0\u89c6\u65b0\u95fb", country="tw", language="cmn"))
 
+    def test_foreign_movie_channels_are_not_chinese_by_title_alone(self):
+        for name in ('欧美大片1', '欧美大片2', '歐美大片', '日韩影院', '原声电影'):
+            with self.subTest(name=name):
+                self.assertTrue(domestic_chinese_issue(name))
+        self.assertFalse(domestic_chinese_issue('CCTV-6电影'))
+
     def test_country_names_are_not_split_into_letter_pairs(self):
         for country in ("China", "CHN", "Hong Kong", "Macau", "Taiwan", "cn hk", "China;Hong Kong", "\u4e2d\u56fd"):
             with self.subTest(country=country):
