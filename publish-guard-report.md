@@ -2,18 +2,18 @@
 
 Status: ok
 Baseline lines: 12
-Current lines: 12
-Total drop ratio: 0.0%
+Current lines: 13
+Total drop ratio: -8.3%
 Relative baseline comparable: True
 Relative guard migration: none
 Coverage metric: canonical_channels
-Independent channel coverage: {'total': 12, 'groups': {'央视频道': 7, '地方频道': 3, '港澳台频道': 2}}
+Independent channel coverage: {'total': 13, 'groups': {'央视频道': 8, '地方频道': 3, '港澳台频道': 2}}
 
 ## Group deltas
 
 | Group | Baseline | Current | Delta | Drop | Minimum |
 |---|---:|---:|---:|---:|---:|
-| 央视频道 | 7 | 7 | 0 | 0.0% | 1 |
+| 央视频道 | 7 | 8 | 1 | -14.3% | 1 |
 | 卫视频道 | 0 | 0 | 0 | n/a | 1 |
 | 地方频道 | 3 | 3 | 0 | 0.0% | 1 |
 | 影视剧场 | 0 | 0 | 0 | n/a | 0 |
@@ -37,8 +37,8 @@ Independent channel coverage: {'total': 12, 'groups': {'央视频道': 7, '地�
 
 ## Warnings
 
-- unique channels 12 < minimum 29
-- group 央视频道 unique channels 7 < minimum 18
+- unique channels 13 < minimum 29
+- group 央视频道 unique channels 8 < minimum 18
 - group 卫视频道 unique channels 0 < minimum 10
 - group 卫视频道 count 0 < minimum 1
 - candidate-only sources unavailable (non-blocking): ['mursor_yy', 'mursor_bililive', 'freetv_huya', 'freetv_douyu']

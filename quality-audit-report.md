@@ -1,17 +1,17 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 12
-Unique channel names: 12
-Unique canonical channel identities: 12
-Unique URLs: 12
+Rows: 13
+Unique channel names: 13
+Unique canonical channel identities: 13
+Unique URLs: 13
 Strict filter residue count: 0
 Latin/noise-like review count: 0
 Channel unique URL limit violations: 0
 URL identity conflicts: 0
-Unique stream hosts: 10
-Top stream host share: 25.0%
-Top five stream host share: 58.3%
+Unique stream hosts: 11
+Top stream host share: 23.1%
+Top five stream host share: 53.8%
 
 ## Core CCTV quality
 
@@ -60,22 +60,22 @@ Minimum important satellite independent URLs: 1
 
 | Host | Rows | Share |
 |---|---:|---:|
-| 74.91.26.218 | 3 | 25.0% |
-| dash2.antik.sk | 1 | 8.3% |
-| myip.pdtvhd.com | 1 | 8.3% |
-| xykt-fix.github.io | 1 | 8.3% |
-| go.bkpcp.top | 1 | 8.3% |
-| live.zohi.tv | 1 | 8.3% |
-| 222.179.155.21 | 1 | 8.3% |
-| live.shaoxing.com.cn | 1 | 8.3% |
-| www.dalitv.com.tw | 1 | 8.3% |
-| mobile.ccdntech.com | 1 | 8.3% |
+| 74.91.26.218 | 3 | 23.1% |
+| dash2.antik.sk | 1 | 7.7% |
+| myip.pdtvhd.com | 1 | 7.7% |
+| 192.151.150.154 | 1 | 7.7% |
+| xykt-fix.github.io | 1 | 7.7% |
+| go.bkpcp.top | 1 | 7.7% |
+| live.zohi.tv | 1 | 7.7% |
+| 222.179.155.21 | 1 | 7.7% |
+| live.shaoxing.com.cn | 1 | 7.7% |
+| www.dalitv.com.tw | 1 | 7.7% |
 
 ## Family playlist audit
 
 Status: ok
-Rows: 12
-Unique URLs: 12
+Rows: 13
+Unique URLs: 13
 
 ## Warnings
 

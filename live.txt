@@ -2,6 +2,7 @@
 CCTV-4中文国际（亚）,http://74.91.26.218:82/live/cctv4hd.m3u8
 CCTV-4中文国际（欧）,https://dash2.antik.sk/live/test_cctv_tizen/playlist.m3u8
 CCTV-5+,https://myip.pdtvhd.com/Sports/streams/CCTV5pul.m3u8
+CCTV-8K(1080p),http://192.151.150.154/live/cctv8k.m3u8
 CCTV-9,https://xykt-fix.github.io/Y77.m3u8
 CCTV-9纪录,http://74.91.26.218:82/live/cctv9hd.m3u8
 CCTV-13,http://go.bkpcp.top/mg/cctv13
