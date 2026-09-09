@@ -22,12 +22,12 @@
     "format": "txt",
     "timeout_seconds": 20,
     "update_method": "scheduled_fetch",
-    "rights_status": "pending",
-    "license": "unknown",
-    "homepage": "https://live.zbds.top/tv/iptv4.txt",
-    "terms_url": "",
-    "reviewed_at": "2026-09-06",
-    "permission_scope": "unconfirmed; retained as a candidate, no automatic media publication"
+    "rights_status": "approved",
+    "license": "GPL-3.0; explicit attributed playlist reuse statement",
+    "homepage": "https://github.com/vbskycn/iptv",
+    "terms_url": "https://live.zbds.top/",
+    "reviewed_at": "2026-09-09",
+    "permission_scope": "Homepage offers public player subscription and explicitly permits references in other repositories with attribution and license compliance. Link catalog selection only; no media relay or content relicensing. See docs/source-permissions.md."
   },
   {
     "name": "migu_interface",
@@ -122,12 +122,12 @@
     "format": "m3u",
     "timeout_seconds": 20,
     "update_method": "scheduled_fetch",
-    "rights_status": "pending",
-    "license": "unknown",
-    "homepage": "https://live.zbds.top/tv/iptv4.m3u",
-    "terms_url": "",
-    "reviewed_at": "2026-09-06",
-    "permission_scope": "unconfirmed; retained as a candidate, no automatic media publication"
+    "rights_status": "approved",
+    "license": "GPL-3.0; explicit attributed playlist reuse statement",
+    "homepage": "https://github.com/vbskycn/iptv",
+    "terms_url": "https://live.zbds.top/",
+    "reviewed_at": "2026-09-09",
+    "permission_scope": "Same attributed public link catalog as zbds_iptv4_txt. No media relay or content relicensing. See docs/source-permissions.md."
   },
   {
     "name": "burningc4_ipv4",
@@ -165,12 +165,12 @@
     "format": "txt",
     "timeout_seconds": 20,
     "update_method": "scheduled_fetch",
-    "rights_status": "pending",
-    "license": "unknown",
-    "homepage": "https://live.zbds.top/tv/iptv6.txt",
-    "terms_url": "",
-    "reviewed_at": "2026-09-06",
-    "permission_scope": "unconfirmed; retained as a candidate, no automatic media publication"
+    "rights_status": "approved",
+    "license": "GPL-3.0; explicit attributed playlist reuse statement",
+    "homepage": "https://github.com/vbskycn/iptv",
+    "terms_url": "https://live.zbds.top/",
+    "reviewed_at": "2026-09-09",
+    "permission_scope": "Same attributed public link catalog as zbds_iptv4_txt; IPv6 must pass in the current runner. No media relay or content relicensing. See docs/source-permissions.md."
   },
   {
     "name": "zbds_iptv6_m3u",
@@ -179,12 +179,12 @@
     "format": "m3u",
     "timeout_seconds": 20,
     "update_method": "scheduled_fetch",
-    "rights_status": "pending",
-    "license": "unknown",
-    "homepage": "https://live.zbds.top/tv/iptv6.m3u",
-    "terms_url": "",
-    "reviewed_at": "2026-09-06",
-    "permission_scope": "unconfirmed; retained as a candidate, no automatic media publication"
+    "rights_status": "approved",
+    "license": "GPL-3.0; explicit attributed playlist reuse statement",
+    "homepage": "https://github.com/vbskycn/iptv",
+    "terms_url": "https://live.zbds.top/",
+    "reviewed_at": "2026-09-09",
+    "permission_scope": "Same attributed public link catalog as zbds_iptv4_txt; IPv6 must pass in the current runner. No media relay or content relicensing. See docs/source-permissions.md."
   },
   {
     "name": "fanmingming_ipv6_raw",

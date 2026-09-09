@@ -204,6 +204,57 @@ class SourcePipelineTests(unittest.TestCase):
         self.assertEqual(clean_name('CCTV-4K'), 'CCTV-4K')
         self.assertEqual(clean_name('CCTV-4(RTHK33)'), 'CCTV-4(RTHK33)')
 
+    def test_domestic_english_labels_are_normalized_before_scope_filter(self):
+        spec = SourceSpec('iptv_org_cn', 'https://catalog.test/list', True, rights_status='approved')
+        pairs = [('AnhuiTV.cn@SD', 'Anhui TV (1080p)', '\u5b89\u5fbd\u536b\u89c6'),
+                 ('HunanTV.cn@SD', 'Hunan TV (2160p)', '\u6e56\u5357\u536b\u89c6'),
+                 ('BRTVKakuChildrensChannel.cn@SD', 'BRTV Kaku Childrens Channel', '\u5361\u9177\u5c11\u513f'),
+                 ('HeilongjiangTV.cn@SD', '\u9ed1\u9f99\u6c5f (1080p)', '\u9ed1\u9f99\u6c5f\u536b\u89c6')]
+        for tvg_id, name, expected in pairs:
+            with self.subTest(name=name):
+                candidate = verify.Candidate(spec.name, 'Undefined', name, 'https://tv.test/live', tvg_id)
+                kept, excluded = verify.eligible_candidates([candidate], spec)
+                self.assertEqual(excluded, {})
+                self.assertEqual([row.name for row in kept], [expected])
+                self.assertEqual(kept[0].url, candidate.url)
+
+    def test_domestic_alias_does_not_override_negative_metadata_or_status(self):
+        from dataclasses import replace
+        from channel_scope import known_domestic_name
+        spec = SourceSpec('iptv_org_cn', 'https://catalog.test/list', True, rights_status='approved')
+        good = verify.Candidate(spec.name, 'Undefined', 'Anhui TV', 'https://tv.test/live', 'AnhuiTV.cn@SD')
+        for change in ({'country': 'us'}, {'language': 'eng'}, {'tvg_id': 'AnhuiTV.us'},
+                       {'name': 'Anhui TV English'}, {'name': 'Anhui TV [Geo-blocked]'},
+                       {'name': 'Anhui TV [Not 24/7]'}, {'source': 'unreviewed'}):
+            with self.subTest(change=change):
+                self.assertEqual(verify.eligible_candidates([replace(good, **change)], spec)[0], [])
+        self.assertEqual(known_domestic_name('Xinjiang TV 2', 'XinjiangTV2.cn', spec.name), 'Xinjiang TV 2')
+        self.assertEqual(known_domestic_name('Ando TV', 'AndoTV.cn', spec.name), 'Ando TV')
+
+    def test_cctv_descriptions_merge_only_the_correct_number(self):
+        from channel_identity import aliases_are_compatible, canonical_channel_key
+        from curate_ku9 import clean_name
+        from audit_coverage import build_coverage
+        self.assertEqual(clean_name('CCTV-9\u7eaa\u5f55(1080p)'), 'CCTV-9')
+        self.assertEqual(clean_name('CCTV-15\u97f3\u4e50'), 'CCTV-15')
+        self.assertTrue(aliases_are_compatible(['CCTV-9', 'CCTV-9\u7eaa\u5f55']))
+        self.assertNotEqual(canonical_channel_key('CCTV-9\u97f3\u4e50'), 'CCTV-9')
+        self.assertNotEqual(canonical_channel_key('CCTV-4\u4e2d\u6587\u56fd\u9645\uff08\u6b27\uff09'), 'CCTV-4')
+        self.assertNotEqual(canonical_channel_key('CCTV-9 English'), 'CCTV-9')
+        report = build_coverage([('g', 'CCTV-9\u7eaa\u5f55', 'https://tv.test/live')],
+                                {'required_cctv': ['CCTV-9', 'CCTV-1']})
+        self.assertEqual(report['missing_cctv'], ['CCTV-1'])
+        self.assertEqual(report['status'], 'incomplete')
+        self.assertEqual(report['covered_target_channels'], 1)
+
+    def test_coverage_targets_include_all_requested_provincial_satellites(self):
+        from playlist_config import load_rules
+        targets = load_rules()['coverage']
+        self.assertTrue({f'CCTV-{number}' for number in range(1, 18)} <= set(targets['required_cctv']))
+        for name in ('\u9ed1\u9f99\u6c5f\u536b\u89c6', '\u56db\u5ddd\u536b\u89c6', '\u6e56\u5357\u536b\u89c6', '\u8fbd\u5b81\u536b\u89c6'):
+            self.assertIn(name, targets['important_satellite'])
+        self.assertEqual(len(targets['important_satellite']), len(set(targets['important_satellite'])))
+
     def test_source_approval_needs_valid_evidence_and_supported_adapter(self):
         from source_config import load_source_specs
         valid = {'name': 'fixture', 'url': 'https://catalog.test/list', 'enabled': True,
