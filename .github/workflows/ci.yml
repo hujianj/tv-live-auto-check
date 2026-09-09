@@ -1,6 +1,12 @@
 name: Fast publication and code validation
 
 on:
+  workflow_dispatch:
+  workflow_run:
+    workflows:
+      - Verify and publish IPTV auto-check playlist
+    types:
+      - completed
   push:
     branches:
       - main
@@ -66,6 +72,7 @@ concurrency:
 jobs:
   validate:
     name: Code and configuration
+    if: ${{ github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -73,6 +80,7 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_run' && 'main' || github.sha }}
       - name: Set up Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
@@ -88,6 +96,7 @@ jobs:
         run: python scripts/test_playlist_logic.py
   publication:
     name: Existing publication integrity
+    if: ${{ github.event_name != 'workflow_run' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main') }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -95,6 +104,7 @@ jobs:
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
         with:
           persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_run' && 'main' || github.sha }}
       - name: Set up Python
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:

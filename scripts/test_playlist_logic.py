@@ -136,6 +136,12 @@ def test_workflow_is_pinned_and_refuses_stale_publication() -> None:
     assert "validate_publication.py" in fast_workflow
     assert "name: Code and configuration" in fast_workflow
     assert "name: Existing publication integrity" in fast_workflow
+    assert "  workflow_dispatch:" in fast_workflow
+    assert "  workflow_run:" in fast_workflow
+    assert "      - Verify and publish IPTV auto-check playlist" in fast_workflow
+    assert fast_workflow.count("github.event.workflow_run.head_branch == 'main'") == 2
+    assert fast_workflow.count("github.event_name == 'workflow_run' && 'main' || github.sha") == 2
+    assert "contents: write" not in fast_workflow
     assert "continue-on-error" not in fast_workflow
     assert "python scripts/bootstrap_runtime.py --budget 360" in fast_workflow
     assert "python scripts/bootstrap_runtime.py --budget 360" in workflow
