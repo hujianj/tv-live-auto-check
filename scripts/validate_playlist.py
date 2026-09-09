@@ -9,7 +9,7 @@ import sys
 from collections import Counter
 from pathlib import Path
 
-from playlist_config import get_group_order, load_guard, load_quality, load_rules
+from playlist_config import coverage_is_required, get_group_order, load_guard, load_quality, load_rules
 from channel_utils import cctv_number, chinese_count as shared_chinese_count, is_latin_noise_name
 from channel_identity import is_audio_only_channel
 from url_utils import publishable_url_issue, redact_text
@@ -145,7 +145,7 @@ def validate_channel_semantics(group: str, name: str, url: str, lineno: int, lin
 
 
 def validate_categories(groups: list[str], bad: list[tuple[int, str, str]]) -> None:
-    missing = [g for g in REQUIRED_GROUPS if g not in groups]
+    missing = [g for g in REQUIRED_GROUPS if g not in groups] if coverage_is_required() else []
     for g in missing:
         bad.append((0, "missing category", f"{g},#genre#"))
     for old in OBSOLETE_CATEGORIES:

@@ -27,3 +27,4 @@ tmp-github-runs/
 tmp-*/
 source-inventory.json
 output/
+bootstrap-report.json

@@ -10,7 +10,7 @@ from urllib.parse import urlsplit
 from channel_utils import cctv_key, is_latin_noise_name
 from channel_identity import aliases_are_compatible, canonical_channel_key
 from curate_ku9 import per_channel_limit, strict_quality_drop_reason
-from playlist_config import get_group_order, load_quality, load_rules
+from playlist_config import coverage_is_required, full_catalog_enabled, get_group_order, load_quality, load_rules, publication_policy
 from validate_playlist import validate_file
 from channel_scope import domestic_chinese_issue
 
@@ -166,22 +166,25 @@ def build_audit(rows: list[tuple[str, str, str]]) -> tuple[dict, list[str], list
     ]
     group_limit_violations: list[dict] = []
     group_max_rows = {str(k): int(v) for k, v in quality.get("group_max_rows", {}).items()}
-    for group, limit in group_max_rows.items():
+    for group, limit in ({} if full_catalog_enabled() else group_max_rows).items():
         count = int(group_counts.get(group, 0))
         if limit > 0 and count > limit:
             group_limit_violations.append({"group": group, "count": count, "limit": limit})
 
     failures: list[str] = []
     warnings: list[str] = []
+    coverage_messages = failures if coverage_is_required() else warnings
+    if not rows:
+        failures.append("playlist has no verified channel rows")
     scope_residue = [name for group, name, _url in rows if domestic_chinese_issue(name, group)]
     if scope_residue:
         failures.append(f"domestic Chinese channel scope violations: {len(scope_residue)}")
     if audit_cfg.get("fail_on_strict_filter_residue", True) and strict_residue:
         failures.append(f"strict filtered channel residue remains: {len(strict_residue)} rows")
     if missing_cctv_quality:
-        failures.append("core CCTV channels below independent URL minimum: " + ", ".join(f"{x['name']}={x['unique_urls']}" for x in missing_cctv_quality))
+        coverage_messages.append("core CCTV channels below independent URL minimum: " + ", ".join(f"{x['name']}={x['unique_urls']}" for x in missing_cctv_quality))
     if missing_satellite_quality:
-        failures.append("important satellite channels below independent URL minimum: " + ", ".join(f"{x['name']}={x['unique_urls']}" for x in missing_satellite_quality))
+        coverage_messages.append("important satellite channels below independent URL minimum: " + ", ".join(f"{x['name']}={x['unique_urls']}" for x in missing_satellite_quality))
     if audit_cfg.get("fail_on_channel_limit_violation", True) and channel_limit_violations:
         failures.append(f"channel unique URL limit violations: {len(channel_limit_violations)}")
     if audit_cfg.get("fail_on_group_limit_violation", True) and group_limit_violations:
@@ -191,7 +194,7 @@ def build_audit(rows: list[tuple[str, str, str]]) -> tuple[dict, list[str], list
     if url_identity_conflicts:
         failures.append(f"URLs assigned to incompatible channel identities: {len(url_identity_conflicts)}")
     if missing_core_host_diversity:
-        failures.append(
+        coverage_messages.append(
             "core channels below independent host minimum: "
             + ", ".join(f"{x['name']}={x['unique_hosts']}" for x in missing_core_host_diversity)
         )
@@ -221,6 +224,7 @@ def build_audit(rows: list[tuple[str, str, str]]) -> tuple[dict, list[str], list
         warnings.append(f"top five stream host share is high: {top5_host_share:.1%} > {warn_top5_host_share:.1%}")
 
     result = {
+        "publication_policy": publication_policy(),
         "status": "rejected" if failures else "ok",
         "channel_scope_violation_count": len(scope_residue),
         "channel_scope_violation_sample": scope_residue[:40],
@@ -280,6 +284,8 @@ def build_family_audit(rows: list[tuple[str, str, str]]) -> tuple[dict, list[str
     for row in rows:
         by_identity[canonical_channel_key(row[1])].append(row)
     failures: list[str] = []
+    warnings: list[str] = []
+    coverage_messages = failures if coverage_is_required() else warnings
     min_lines = int(profile.get("min_lines", 0) or 0)
     max_lines = int(profile.get("max_lines", 0) or 0)
     if min_lines and len(rows) < min_lines:
@@ -289,9 +295,9 @@ def build_family_audit(rows: list[tuple[str, str, str]]) -> tuple[dict, list[str
     missing_cctv = [x for x in core["required_cctv"] if x["unique_urls"] < core["min_cctv"]]
     missing_satellite = [x for x in core["important_satellite"] if x["unique_urls"] < core["min_satellite"]]
     if missing_cctv:
-        failures.append("family CCTV below independent URL minimum: " + ", ".join(f"{x['name']}={x['unique_urls']}" for x in missing_cctv))
+        coverage_messages.append("family CCTV below independent URL minimum: " + ", ".join(f"{x['name']}={x['unique_urls']}" for x in missing_cctv))
     if missing_satellite:
-        failures.append("family satellite below independent URL minimum: " + ", ".join(f"{x['name']}={x['unique_urls']}" for x in missing_satellite))
+        coverage_messages.append("family satellite below independent URL minimum: " + ", ".join(f"{x['name']}={x['unique_urls']}" for x in missing_satellite))
     group_max = {str(k): int(v) for k, v in (profile.get("group_max_rows") or {}).items()}
     group_violations = [{"group": g, "count": groups[g], "limit": limit} for g, limit in group_max.items() if limit > 0 and groups[g] > limit]
     if group_violations:
@@ -308,6 +314,8 @@ def build_family_audit(rows: list[tuple[str, str, str]]) -> tuple[dict, list[str
     if per_identity_violations:
         failures.append(f"family per-channel unique URL limit violations: {len(per_identity_violations)}")
     return {
+        "publication_policy": publication_policy(),
+        "warnings": warnings,
         "status": "rejected" if failures else "ok",
         "rows": len(rows),
         "unique_names": len({name for _, name, _ in rows}),

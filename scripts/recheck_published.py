@@ -23,8 +23,8 @@ from verify_sources import (
     is_core_family_candidate,
 )
 from stability import build_observation, preview_observation, write_observation
-from playlist_config import get_group_order, load_guard, load_quality, load_rules
-from curate_ku9 import per_channel_limit
+from playlist_config import coverage_is_required, full_catalog_enabled, get_group_order, load_guard, load_quality, load_rules, publication_policy
+from curate_ku9 import per_channel_limit, url_score
 from channel_utils import format_extinf
 from channel_identity import canonical_channel_key
 from playlist_order import canonicalize_channel_rows
@@ -82,7 +82,8 @@ def require_decoded_result(result: CheckResult) -> CheckResult:
 
 
 def record_aborted_recheck(rows: list[Row], kept_rows: list[Row], checked: int,
-                           failed: int, elapsed: float, retry: dict, threshold: float) -> None:
+                           failed: int, elapsed: float, retry: dict, threshold: float,
+                           refill: dict | None = None, refill_failed: int = 0) -> None:
     """Record evidence without claiming the aborted candidate list was published."""
     path = ROOT / SUMMARY_FILE
     summary = json.loads(path.read_text(encoding="utf-8"))
@@ -90,23 +91,25 @@ def record_aborted_recheck(rows: list[Row], kept_rows: list[Row], checked: int,
     summary["strict_progress_checked_unique"] = len({row.url for row in rows if requires_live_progress(row)}) if REQUIRE_BROADCAST_PROGRESS else 0
     summary["published_recheck"] = {
         "status": "aborted", "outputs_rewritten": False,
-        "abort_reason": "failed_url_ratio_exceeded",
+        "abort_reason": "no_verified_channels" if not kept_rows else "unresolved_after_refill",
+        "publication_policy": publication_policy(),
         "policy_version": RECHECK_POLICY_VERSION,
         "require_video_track": REQUIRE_VIDEO_TRACK,
         "require_frame_decode": True,
         "candidate_frame_decoded_unique_urls": len({row.url for row in kept_rows}),
         "broadcast_progress_required": REQUIRE_BROADCAST_PROGRESS,
         "candidate_video_verified_unique_urls": len({row.url for row in kept_rows}) if REQUIRE_VIDEO_TRACK else 0,
-        "checked_unique_urls": checked, "initial_checked_unique_urls": checked,
+        "checked_unique_urls": checked, "initial_checked_unique_urls": len({row.url for row in rows}),
         "first_pass_failed_unique_urls": retry.get("first_pass_failed_unique_urls", failed),
         "slow_retry_attempted_unique_urls": retry.get("attempted_unique_urls", 0),
         "slow_retry_recovered_unique_urls": retry.get("recovered_unique_urls", 0),
-        "post_retry_failed_unique_urls": failed, "failed_unique_urls": failed,
+        "post_retry_failed_unique_urls": failed, "failed_unique_urls": failed + refill_failed,
+        "refill_failed_unique_urls": refill_failed,
         "before_rows": len(rows), "after_rows": len(rows),
         "candidate_after_rows": len(kept_rows), "removed_rows": 0, "net_row_delta": 0,
         "failed_url_ratio": failed / max(1, checked), "max_failed_url_ratio": threshold,
         "elapsed_seconds": round(elapsed, 3), "slow_retry": retry,
-        "refill": {"enabled": False, "refilled_rows": 0, "attempted_unique_urls": 0},
+        "refill": refill or {"enabled": False, "refilled_rows": 0, "attempted_unique_urls": 0},
     }
     temporary = path.with_suffix(".tmp")
     temporary.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
@@ -758,6 +761,7 @@ def update_summary(
     refill_summary: dict,
     retry_summary: dict[str, int],
     strict_progress_checked_unique: int,
+    backup_trimmed_rows: int = 0,
 ) -> None:
     path = ROOT / SUMMARY_FILE
     summary = json.loads(path.read_text(encoding="utf-8"))
@@ -766,6 +770,7 @@ def update_summary(
     group_source_cnt = Counter(f"{row.group}|{source_for(row, source_map)}" for row in after_rows)
     removed_rows = sum(1 for row in before_rows if row.url in initial_failed_urls)
     summary.update({
+        "publication_policy": publication_policy(),
         "curated_published_lines": len(after_rows),
         "curated_channel_names": len({row.name for row in after_rows}),
         "curated_groups": dict(cnt),
@@ -784,6 +789,12 @@ def update_summary(
         "family_playlist": family_summary,
         "stability": stability_summary,
         "published_recheck": {
+            "publication_policy": publication_policy(),
+            "backup_trimmed_rows": backup_trimmed_rows,
+            "failure_ratio_is_blocking": coverage_is_required(),
+            "post_retry_failed_url_ratio": len(initial_failed_urls) / max(1, len({row.url for row in before_rows})),
+            "warnings": (["High strict-check failure ratio; only verified survivors are included."]
+                         if len(initial_failed_urls) / max(1, len({row.url for row in before_rows})) > max_failed_url_ratio() else []),
             "enabled": True,
             "status": "ok",
             "outputs_rewritten": True,
@@ -959,6 +970,25 @@ def write_final_report(groups: list[str], rows: list[Row], failed_urls: dict[str
     (ROOT / FINAL_REPORT_FILE).write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8", newline="\n")
 
 
+def limit_verified_backups(rows: list[Row], results: dict[str, CheckResult], source_map: dict[tuple[str, str], str]) -> list[Row]:
+    """Limit only redundant URLs after decoding, never distinct channels."""
+    by_key: dict[tuple[str, str], list[Row]] = defaultdict(list)
+    for row in rows:
+        result = results.get(row.url)
+        if result is None or not require_decoded_result(result).ok:
+            raise ValueError("final selection contains a URL without successful frame evidence")
+        by_key[row_identity(row)].append(row)
+    selected: list[Row] = []
+    for candidates in by_key.values():
+        def rank(row: Row) -> tuple:
+            score = url_score(row.url, source_for(row, source_map))
+            return score[0], results[row.url].elapsed_seconds, score[1:], row.url
+        candidates.sort(key=rank)
+        limit = max(1, per_channel_limit(candidates[0].group, candidates[0].name))
+        selected.extend(candidates[:limit])
+    return canonicalize_rows(get_group_order(), selected)
+
+
 def main() -> int:
     global ROOT
     print(f"Frame decoder preflight: {decoder_preflight()}", flush=True)
@@ -1019,51 +1049,53 @@ def main() -> int:
     kept_rows = [row for row in rows if row.url not in failed_urls]
     failed_ratio = len(failed_urls) / max(1, len(by_url))
     threshold = max_failed_url_ratio()
-    if failed_ratio > threshold:
+
+    final_rows, refill_results, refill_summary, attempted_refills, accepted_refills = refill_missing_rows(
+        rows, kept_rows, failed_urls, candidate_pool,
+    )
+    refill_summary["initial_retry"] = retry_summary
+    refill_summary["initial_failed_url_ratio"] = failed_ratio
+    unresolved_ratio = refill_summary.get("unresolved_rows", 0) / max(
+        1, len(rows) + refill_summary.get("historical_target_rows", 0)
+    )
+    refill_summary["unresolved_target_row_ratio"] = unresolved_ratio
+    for candidate in accepted_refills:
+        source_map[(candidate.row.name, candidate.row.url)] = candidate.source
+    write_results_csv(rows, results, attempted_refills, refill_results, source_map=source_map)
+    if not final_rows or (coverage_is_required() and unresolved_ratio > threshold):
         elapsed = time.time() - start
-        refill_summary = {
-            "enabled": False,
-            "skipped_reason": "initial_failed_ratio_exceeded",
-            "attempted_unique_urls": 0,
-            "playable_unique_urls": 0,
-            "refilled_rows": 0,
-            "unresolved_rows": len(rows) - len(kept_rows),
-            "initial_retry": retry_summary,
-        }
-        write_results_csv(rows, results, source_map=source_map)
-        write_report(rows, kept_rows, failed_urls, elapsed, refill_summary, outputs_rewritten=False)
+        write_report(rows, final_rows, failed_urls, elapsed, refill_summary, outputs_rewritten=False)
         abort_lines = [
             "# Final TV-facing playlist report",
             "",
-            "ABORTED: final published-URL recheck failed too many URLs, so playlist files were not rewritten.",
+            "ABORTED: no verified channels or required coverage still missing after refill. Playlist files were not rewritten.",
             "",
             f"Rows before: {len(rows)}",
             f"Candidate rows after failed URL removal: {len(kept_rows)}",
             f"Failed unique URLs: {len(failed_urls)}",
             f"Checked unique URLs: {len(by_url)}",
             f"Failed URL ratio: {failed_ratio:.1%}",
+            f"Unresolved target row ratio after refill: {unresolved_ratio:.1%}",
             f"Maximum allowed failed URL ratio: {threshold:.1%}",
             f"Elapsed: {elapsed:.1f}s",
         ]
         (ROOT / FINAL_REPORT_FILE).write_text("\n".join(abort_lines) + "\n", encoding="utf-8", newline="\n")
-        record_aborted_recheck(rows, kept_rows, len(by_url), len(failed_urls), elapsed, retry_summary, threshold)
+        record_aborted_recheck(rows, final_rows, len(by_url) + len(refill_results), len(failed_urls),
+                               elapsed, retry_summary, threshold, refill_summary,
+                               sum(not result.ok for result in refill_results.values()))
         print(
             "Published recheck aborted: "
             f"failed_url_ratio={failed_ratio:.1%} threshold={threshold:.1%}; "
             "not rewriting playlist outputs"
         )
         return 1
-
-    final_rows, refill_results, refill_summary, attempted_refills, accepted_refills = refill_missing_rows(
-        rows,
-        kept_rows,
-        failed_urls,
-        candidate_pool,
-    )
-    refill_summary["initial_retry"] = retry_summary
-    for candidate in accepted_refills:
-        source_map[(candidate.row.name, candidate.row.url)] = candidate.source
-    write_results_csv(rows, results, attempted_refills, refill_results, source_map=source_map)
+    if failed_ratio > threshold:
+        print(f"RECHECK WARN: strict failures={failed_ratio:.1%}; verified rows after refill={len(final_rows)}", flush=True)
+    backup_trimmed_rows = 0
+    if full_catalog_enabled():
+        selected_rows = limit_verified_backups(final_rows, {**results, **refill_results}, source_map)
+        backup_trimmed_rows = len(final_rows) - len(selected_rows)
+        final_rows = selected_rows
 
     elapsed = time.time() - start
 
@@ -1114,6 +1146,7 @@ def main() -> int:
             refill_summary,
             retry_summary,
             strict_progress_checked_unique,
+            backup_trimmed_rows,
         )
         write_report(rows, final_rows, failed_urls, elapsed, refill_summary)
         write_final_report(

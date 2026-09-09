@@ -13,6 +13,7 @@ from url_utils import is_publishable_http_url, normalize_stream_url
 from channel_scope import domestic_chinese_issue
 from source_config import load_source_specs
 from source_policy import publication_issue
+from playlist_config import full_catalog_enabled
 
 ROOT = Path(__file__).resolve().parents[1]
 IN = ROOT / "stream_check_results.csv"
@@ -651,13 +652,15 @@ def main():
     channel_limit_stats = Counter()
     for key, arr in normalized_by_key.items():
         name = arr[0][1]
-        limit = max(1, per_channel_limit(arr[0][0], name))
+        limit = len(arr) if full_catalog_enabled() else max(1, per_channel_limit(arr[0][0], name))
         if len(arr) > limit:
             channel_limit_trimmed += len(arr) - limit
             channel_limit_stats[arr[0][0]] += len(arr) - limit
         pub.extend(arr[:limit])
     pub.sort(key=sort_key)
-    pub, group_limit_trimmed = apply_group_limits(pub)
+    group_limit_trimmed = {}
+    if not full_catalog_enabled():
+        pub, group_limit_trimmed = apply_group_limits(pub)
     pub.sort(key=sort_key)
     with CURATED_SOURCE_MAP.open('w', encoding='utf-8', newline='') as f:
         w = csv.writer(f, lineterminator="\n")
@@ -700,6 +703,8 @@ def main():
     else:
         summary = {}
     summary.update({
+        'full_catalog': full_catalog_enabled(),
+        'limits_applied_after_strict_recheck': full_catalog_enabled(),
         'pre_recheck_curated_lines': len(pub),
         'pre_recheck_curated_channel_names': published_unique_names,
         'pre_recheck_curated_groups': dict(cnt),
