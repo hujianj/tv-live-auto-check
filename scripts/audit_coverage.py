@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 from collections import Counter, defaultdict
 from pathlib import Path
 
@@ -45,7 +46,7 @@ def build_coverage(rows: list[tuple[str, str, str]], coverage: dict) -> dict:
         identity = canonical_channel_key(name)
         by_key_urls[identity].add(url)
         by_key_rows[identity] += 1
-        key = cctv_key(name)
+        key = cctv_key(identity)
         if key:
             cctv_urls[key].add(url)
             cctv_rows[key] += 1
@@ -88,6 +89,9 @@ def build_coverage(rows: list[tuple[str, str, str]], coverage: dict) -> dict:
     missing_cctv = [x["name"] for x in cctv_items if x["unique_urls"] < min_urls]
     missing_satellite = [x["name"] for x in sat_items if x["unique_urls"] < min_urls]
     return {
+        "status": "incomplete" if missing_cctv or missing_satellite else "complete",
+        "target_channels": len(cctv_items) + len(sat_items),
+        "covered_target_channels": len(cctv_items) + len(sat_items) - len(missing_cctv) - len(missing_satellite),
         "minimum_unique_urls_per_important_channel": min_urls,
         "min_sources_per_important_name": min_urls,
         "publication_policy": publication_policy(),
@@ -111,6 +115,9 @@ def main() -> int:
     min_urls = result["minimum_unique_urls_per_important_channel"]
     lines = [
         "# Core channel coverage report",
+        "",
+        f"Coverage status: {result['status']} ({result['covered_target_channels']}/{result['target_channels']} target channels)",
+        "A successful maintenance job does not mean all requested channels are available.",
         "",
         f"Minimum independent URLs per important channel: {min_urls}",
         "",
@@ -148,6 +155,8 @@ def main() -> int:
         return 1
     if result["missing_cctv"] or result["missing_satellite"]:
         print("Coverage warning: missing channels are reported, not replaced with unverified URLs.")
+        if os.getenv("GITHUB_ACTIONS") == "true":
+            print(f"::warning title=Channel coverage incomplete::{result['covered_target_channels']}/{result['target_channels']} requested channels available; see coverage-report.md for missing channels.")
     return 0
 
 

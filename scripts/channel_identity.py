@@ -13,10 +13,16 @@ _RESOLUTION_SUFFIX = re.compile(
     r"[-_ ]?(?:\d{3,4}[pi]|HD|FHD|UHD|4K|\u9ad8\u6e05|\u8d85\u6e05|\u6807\u6e05|\u84dd\u5149))$",
     re.I,
 )
-_CCTV_NUMBERED_ALIAS_SUFFIX = re.compile(
-    r"^(CCTV[-_ ]?\d+\+?)(?:\u5965\u6797\u5339\u514b|\u4f53\u80b2\u8d5b\u4e8b|\u4e2d\u6587\u56fd\u9645)$",
-    re.I,
-)
+_CCTV_DESCRIPTIONS = {
+    "1": {"\u7efc\u5408"}, "2": {"\u8d22\u7ecf"}, "3": {"\u7efc\u827a"},
+    "4": {"\u4e2d\u6587\u56fd\u9645"}, "5": {"\u4f53\u80b2"},
+    "5+": {"\u4f53\u80b2\u8d5b\u4e8b"}, "6": {"\u7535\u5f71"},
+    "7": {"\u56fd\u9632\u519b\u4e8b", "\u519b\u4e8b\u519c\u4e1a"},
+    "8": {"\u7535\u89c6\u5267"}, "9": {"\u7eaa\u5f55"}, "10": {"\u79d1\u6559"},
+    "11": {"\u620f\u66f2"}, "12": {"\u793e\u4f1a\u4e0e\u6cd5"},
+    "13": {"\u65b0\u95fb"}, "14": {"\u5c11\u513f"}, "15": {"\u97f3\u4e50"},
+    "16": {"\u5965\u6797\u5339\u514b"}, "17": {"\u519c\u4e1a\u519c\u6751"},
+}
 _CHANNEL_SUFFIX = re.compile(
     r"(?:\u9ad8\u6e05\u9891\u9053|\u8d85\u6e05\u9891\u9053|\u6807\u6e05\u9891\u9053|\u9891\u9053)$",
     re.I,
@@ -44,9 +50,10 @@ def normalize_station_alias(name: str) -> str:
 def canonical_channel_key(name: str) -> str:
     """Return the key used for line quotas, coverage, and refill accounting."""
     text = re.sub(r"\s+", "", normalize_station_alias(name or "").strip())
-    alias_match = _CCTV_NUMBERED_ALIAS_SUFFIX.match(text)
-    if alias_match:
-        text = alias_match.group(1)
+    text = _RESOLUTION_SUFFIX.sub("", text)
+    alias_match = re.fullmatch(r"CCTV[-_ ]?(\d+\+?)(.+)", text, re.I)
+    if alias_match and alias_match.group(2) in _CCTV_DESCRIPTIONS.get(alias_match.group(1), set()):
+        text = "CCTV-" + alias_match.group(1)
     exact_cctv = cctv_key(text)
     if exact_cctv:
         return exact_cctv

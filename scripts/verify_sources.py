@@ -34,7 +34,7 @@ from media_probe import looks_media as probe_looks_media, probe_media
 from media_decode import DecodeResult, MAX_INIT_BYTES, MAX_SAMPLE_BYTES, decode_video
 from source_adapters import parse as parse_source_data
 from source_policy import POLICY_VERSION as SOURCE_POLICY_VERSION, discovery_links, publication_issue, source_record
-from channel_scope import CHANNEL_SCOPE, NETWORK_SCOPE, POLICY_VERSION as CHANNEL_POLICY_VERSION, domestic_chinese_issue
+from channel_scope import CHANNEL_SCOPE, NETWORK_SCOPE, POLICY_VERSION as CHANNEL_POLICY_VERSION, domestic_chinese_issue, known_domestic_name
 from url_utils import redact_text
 from scan_checkpoint import ScanCheckpoint
 
@@ -354,6 +354,10 @@ def eligible_candidates(candidates: list[Candidate], spec: SourceSpec) -> tuple[
         if not reason:
             reason = domestic_chinese_issue(candidate.name, candidate.group, candidate.source,
                                             candidate.tvg_id, candidate.country, candidate.language)
+            if reason in {"", "chinese_channel_identity_unconfirmed"}:
+                candidate = replace(candidate, name=known_domestic_name(candidate.name, candidate.tvg_id, candidate.source))
+                reason = domestic_chinese_issue(candidate.name, candidate.group, candidate.source,
+                                                candidate.tvg_id, candidate.country, candidate.language)
         if not reason:
             countries = channel_countries(candidate.country, candidate.tvg_id)
             group = "\u6e2f\u6fb3\u53f0\u9891\u9053" if countries and countries.issubset({"hk", "mo", "tw"}) else candidate.group
