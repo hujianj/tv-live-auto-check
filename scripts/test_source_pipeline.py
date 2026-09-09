@@ -421,6 +421,28 @@ class SourcePipelineTests(unittest.TestCase):
             self.assertTrue(all(command[0] == 'timeout' for command, _ in calls))
             self.assertTrue((Path(directory) / 'bootstrap-report.json').is_file())
 
+    def test_bootstrap_apt_commands_can_ignore_unrelated_repositories(self):
+        import bootstrap_runtime as bootstrap
+        with patch.object(bootstrap, 'apt_official_source_options', return_value=[
+                '-o', 'Dir::Etc::sourcelist=/etc/apt/sources.list.d/ubuntu.sources',
+                '-o', 'Dir::Etc::sourceparts=-']):
+            with tempfile.TemporaryDirectory() as directory:
+                calls = []
+
+                def runner(command, **kwargs):
+                    calls.append(command)
+
+                with patch.object(bootstrap.sys, 'platform', 'linux'):
+                    result = bootstrap.bootstrap(Path(directory), 100, runner=runner,
+                                                 clock=lambda: 0.0,
+                                                 which=lambda _: None)
+                self.assertEqual(result['status'], 'ok')
+                self.assertEqual(len(calls), 4)
+                apt_calls = [command for command in calls if 'apt-get' in command]
+                self.assertEqual(len(apt_calls), 2)
+                for command in apt_calls:
+                    self.assertIn('Dir::Etc::sourceparts=-', command)
+
     def test_export_includes_broad_failures_without_losing_recheck_origins(self):
         from export_outputs import export_outputs
         with tempfile.TemporaryDirectory() as directory:

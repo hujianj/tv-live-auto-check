@@ -15,6 +15,31 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def apt_official_source_options() -> list[str]:
+    """Restrict apt to the runner's Ubuntu source when it is available.
+
+    Hosted runner images may contain unrelated third-party repositories (for
+    example the Chrome repository). A transient index mismatch in one of
+    those repositories must not prevent installing the only system package
+    this project needs. The option list is safe to pass to both ``update``
+    and ``install``; older images without the deb822 source file use the
+    traditional Ubuntu sources.list instead.
+    """
+    candidates = (
+        Path("/etc/apt/sources.list.d/ubuntu.sources"),
+        Path("/etc/apt/sources.list"),
+    )
+    for source in candidates:
+        if source.is_file():
+            return [
+                "-o", f"Dir::Etc::sourcelist={source}",
+                "-o", "Dir::Etc::sourceparts=-",
+            ]
+    # Keep compatibility with non-standard runner images. This is only used
+    # when no canonical Ubuntu source file can be identified.
+    return []
+
+
 def bootstrap(root: Path = ROOT, budget: int = 360, *, runner=None, clock=None, which=None) -> dict:
     runner = runner or subprocess.run
     clock = clock or time.monotonic
@@ -27,7 +52,7 @@ def bootstrap(root: Path = ROOT, budget: int = 360, *, runner=None, clock=None, 
     steps = []
     if sys.platform.startswith("linux") and not which("ffmpeg"):
         apt = ["sudo", "apt-get", "-o", "Acquire::Retries=1", "-o", "Acquire::http::Timeout=20",
-               "-o", "Acquire::https::Timeout=20"]
+               "-o", "Acquire::https::Timeout=20", *apt_official_source_options()]
         steps.extend([
             ("apt update", [*apt, "update"]),
             ("install ffmpeg", [*apt, "install", "-y", "--no-install-recommends", "ffmpeg"]),
