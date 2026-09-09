@@ -122,6 +122,8 @@ alias-conflict-report.md
 
 `curated-source-map.csv` 和 `curated-candidate-pool.csv` 每次都会生成，但只存放在 Actions artifact 中，不是仓库内的公开订阅文件。`full-check-summary.json` 会用 `*_generated` 和 `*_artifact_only` 字段明确区分这两种语义。
 
+旧版 `stability-history.tsv` / `stability-history.json` 仅作为本地迁移输入，不再随仓库提交；正常运行从最近一次成功维护的 `stability-state` artifact 恢复，artifact 不可用时安全从空历史启动。
+
 严格复检使用不可变的整理阶段 checkpoint。每次重试前都会核对 SHA256 并恢复同一份输入；复检输出先在 `.maintenance-staging` 中完整生成和校验，再通过带事务日志与回滚备份的文件组提升替换工作区结果。稳定性 observation 只在覆盖、质量、防缩水、完整 bundle 和发布 manifest 全部通过后应用一次，单次运行重试不会重复累计证据。
 
 `publish-manifest.json` 是最终公开产物清单。它记录除自身以外的所有发布文件最终大小和 SHA256；清单自身不记录自己的哈希，从设计上避免 `full-check-summary.json` 过去那种“写回审计数据后自身大小和哈希立即失效”的循环依赖。另有只读、无仓库写凭据的轻量 CI，会在代码或公开产物被直接修改时运行单元测试和清单校验，不触发三万 URL 的昂贵全量检测。

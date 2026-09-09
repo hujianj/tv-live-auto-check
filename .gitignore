@@ -21,6 +21,9 @@ maintenance-run.json
 maintenance-attempt-*
 .maintenance-staging/
 stability-state.json
+# Legacy stability snapshots are migration input only and must never be tracked.
+stability-history.tsv
+stability-history.json
 stability-observation.json
 stability-report.md
 tmp-github-runs/
