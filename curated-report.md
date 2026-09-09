@@ -2,8 +2,8 @@
 
 This report is generated immediately after curation and before the final published URL recheck. See `final-publish-report.md` for the TV-facing result after recheck.
 
-Pre-recheck candidate lines: 11
-Published channel names: 11
+Pre-recheck candidate lines: 10
+Published channel names: 10
 Stability history URLs loaded: 4874
 Home priority URLs loaded: ok=0, failed=0, enabled=False
 
@@ -23,7 +23,7 @@ Home priority URLs loaded: ok=0, failed=0, enabled=False
 - none
 
 ## Groups
-- 央视频道: 7
+- 央视频道: 6
 - 卫视频道: 1
 - 地方频道: 1
 - 港澳台频道: 2
@@ -33,14 +33,14 @@ Home priority URLs loaded: ok=0, failed=0, enabled=False
 | Source | Lines |
 |---|---:|
 | free_tv_world | 5 |
-| iptv_org_cn | 4 |
+| iptv_org_cn | 3 |
 | iptv_org_tw | 2 |
 
 ## Top sources per group
 
 ### 央视频道
 - free_tv_world: 4
-- iptv_org_cn: 3
+- iptv_org_cn: 2
 
 ### 卫视频道
 - iptv_org_cn: 1
