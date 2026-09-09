@@ -4,6 +4,7 @@
     "network_validation": "current_execution_environment",
     "countries": ["cn", "hk", "mo", "tw"],
     "excluded_name_tokens": [
+      "欧美大片", "歐美大片", "日韩影院", "日韓影院", "原声电影", "原聲電影",
       "CGTN", "英语", "英語", "英文", "法语", "法語", "西语", "西語", "西班牙语", "阿拉伯语", "俄语", "俄語", "日语", "日語", "韩语", "韓語",
       "English", "Français", "Español", "Arabic", "Russian", "TVB Pearl", "明珠台", "ViuTVsix",
       "美国", "美國", "加拿大", "新加坡", "马来西亚", "馬來西亞", "澳大利亚", "澳大利亞", "澳洲", "纽约", "紐約", "洛杉矶", "洛杉磯",

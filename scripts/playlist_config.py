@@ -48,6 +48,21 @@ def load_quality() -> dict:
     return load_json_config("quality.json")
 
 
+def publication_policy() -> str:
+    policy = load_guard().get("publication_policy", "required_coverage")
+    if policy not in {"required_coverage", "available_channels"}:
+        raise ValueError(f"unknown publication_policy: {policy!r}")
+    return policy
+
+
+def coverage_is_required() -> bool:
+    return publication_policy() == "required_coverage"
+
+
+def full_catalog_enabled() -> bool:
+    return load_quality().get("full_catalog", False) is True
+
+
 def _parse_utc_timestamp(value: object) -> datetime | None:
     text = str(value or "").strip()
     if not text:

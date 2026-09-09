@@ -9,6 +9,7 @@ from pathlib import Path
 from channel_utils import cctv_key, cctv_variant_base
 from channel_identity import canonical_channel_key
 from validate_playlist import validate_file
+from playlist_config import coverage_is_required, publication_policy
 
 ROOT = Path(__file__).resolve().parents[1]
 RULES_PATH = ROOT / "config" / "rules.json"
@@ -89,8 +90,9 @@ def build_coverage(rows: list[tuple[str, str, str]], coverage: dict) -> dict:
     return {
         "minimum_unique_urls_per_important_channel": min_urls,
         "min_sources_per_important_name": min_urls,
-        "fail_on_missing_cctv": bool(coverage.get("fail_on_missing_cctv", True)),
-        "fail_on_missing_satellite": bool(coverage.get("fail_on_missing_satellite", False)),
+        "publication_policy": publication_policy(),
+        "fail_on_missing_cctv": coverage_is_required() and bool(coverage.get("fail_on_missing_cctv", True)),
+        "fail_on_missing_satellite": coverage_is_required() and bool(coverage.get("fail_on_missing_satellite", False)),
         "required_cctv": cctv_items,
         "required_cctv_variants": variant_items,
         "important_satellite": sat_items,
@@ -144,6 +146,8 @@ def main() -> int:
     if failures:
         print("Coverage audit failed: " + "; ".join(failures))
         return 1
+    if result["missing_cctv"] or result["missing_satellite"]:
+        print("Coverage warning: missing channels are reported, not replaced with unverified URLs.")
     return 0
 
 

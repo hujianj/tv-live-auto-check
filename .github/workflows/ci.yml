@@ -80,12 +80,8 @@ jobs:
       - name: Compile Python sources
         run: python -m compileall -q scripts
       - name: Install frame decoder
-        run: |
-          if ! command -v ffmpeg >/dev/null; then
-            sudo apt-get update
-            sudo apt-get install -y ffmpeg
-          fi
-          python -m pip install --disable-pip-version-check -r requirements.txt
+        timeout-minutes: 7
+        run: python scripts/bootstrap_runtime.py --budget 360
       - name: Validate centralized publication configuration
         run: python scripts/publication_config.py --validate
       - name: Run unit tests

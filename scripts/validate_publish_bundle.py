@@ -21,7 +21,7 @@ from pathlib import Path
 
 from channel_identity import aliases_are_compatible, canonical_channel_key
 from playlist_order import canonicalize_channel_rows
-from playlist_config import get_group_order, load_guard, load_quality
+from playlist_config import coverage_is_required, full_catalog_enabled, get_group_order, load_guard, load_quality, publication_policy
 from source_config import load_source_specs
 from source_policy import publication_issue
 from channel_scope import CHANNEL_SCOPE, NETWORK_SCOPE, domestic_chinese_issue
@@ -140,8 +140,10 @@ def _validate_document_invariants(label: str, groups: list[str], rows: list[Row]
         if int(minimum) > 0
     ]
     missing_required_groups = [group for group in required_groups if group not in row_groups]
-    if missing_required_groups:
+    if missing_required_groups and coverage_is_required():
         errors.append(f"{label}: missing required groups: {missing_required_groups!r}")
+    if not rows:
+        errors.append(f"{label}: no verified channel rows")
     duplicates = [row for row, count in Counter(rows).items() if count > 1]
     if duplicates:
         errors.append(f"{label}: exact duplicate rows found: {duplicates[:10]!r}")
@@ -327,9 +329,9 @@ def _validate_summary(
         errors.append("summary.coverage must be an object")
         coverage = {}
     _require_fields(coverage, ("missing_cctv", "missing_satellite"), "summary.coverage", errors)
-    if coverage.get("missing_cctv"):
+    if coverage_is_required() and coverage.get("missing_cctv"):
         errors.append(f"summary.coverage.missing_cctv is not empty: {coverage.get('missing_cctv')!r}")
-    if coverage.get("missing_satellite"):
+    if coverage_is_required() and coverage.get("missing_satellite"):
         errors.append(f"summary.coverage.missing_satellite is not empty: {coverage.get('missing_satellite')!r}")
 
     quality = summary.get("quality_audit")
@@ -364,7 +366,7 @@ def _validate_summary(
     if quality.get("status") != "ok":
         errors.append(f"summary.quality_audit.status is not ok: {quality.get('status')!r}")
     for field in ("strict_filter_residue", "missing_cctv_quality", "missing_satellite_quality"):
-        if quality.get(field):
+        if quality.get(field) and (field == "strict_filter_residue" or coverage_is_required()):
             errors.append(f"summary.quality_audit.{field} is not empty")
     if quality.get("latin_noise_review_count") != 0:
         errors.append(
@@ -475,6 +477,7 @@ def _validate_summary(
         "after_rows",
         "removed_rows",
         "net_row_delta",
+        "backup_trimmed_rows",
     )
     for field in numeric_fields:
         if field not in recheck:
@@ -559,7 +562,7 @@ def _validate_summary(
             errors.append("summary.published_recheck.refill.refilled_rows exceeds playable_unique_urls")
         if "net_row_delta" in recheck:
             if recheck["after_rows"] != (
-                recheck["before_rows"] - recheck["removed_rows"] + refill["refilled_rows"]
+                recheck["before_rows"] - recheck["removed_rows"] + refill["refilled_rows"] - recheck.get("backup_trimmed_rows", 0)
             ):
                 errors.append("summary.published_recheck removed/refilled row counts are inconsistent")
             if recheck["net_row_delta"] != recheck["after_rows"] - recheck["before_rows"]:
@@ -957,6 +960,11 @@ def validate_publish_bundle(
             if issue:
                 errors.append(f"domestic Chinese scope rejected {row.name!r}: {issue}")
     if require_artifacts and summary.get("source_policy_version"):
+        _check_equal(summary.get("publication_policy"), publication_policy(), "summary.publication_policy", errors)
+        _check_equal((summary.get("coverage") or {}).get("publication_policy"), publication_policy(),
+                     "summary.coverage.publication_policy", errors)
+        _check_equal((summary.get("quality_audit") or {}).get("publication_policy"), publication_policy(),
+                     "summary.quality_audit.publication_policy", errors)
         specs = {spec.name: spec for spec in load_source_specs(config_path)}
         for row, source in zip(full_rows, sources):
             issue = publication_issue(specs.get(source), row.url)
@@ -970,9 +978,12 @@ def validate_publish_bundle(
             errors.append("parsed_candidates != eligible_candidates + policy_excluded_candidates")
         evidence_path = root / "published_recheck_results.csv"
         verified = set()
+        initially_checked = set()
         if evidence_path.is_file():
             with evidence_path.open(encoding="utf-8", newline="") as handle:
                 for record in csv.DictReader(handle):
+                    if record.get("phase") == "published":
+                        initially_checked.add(record.get("url"))
                     try:
                         frames = int(record.get("decoded_frames", "0"))
                     except (ValueError, TypeError):
@@ -982,6 +993,11 @@ def validate_publish_bundle(
         for row, source in zip(full_rows, sources):
             if (row.name, row.url, source) not in verified:
                 errors.append(f"missing per-URL decoded-frame evidence for {source!r}/{row.name!r}")
+        if full_catalog_enabled():
+            with (root / CANDIDATE_POOL_FILE).open(encoding="utf-8", newline="") as handle:
+                current_urls = {item["url"] for item in csv.DictReader(handle) if item.get("origin") == "current_scan"}
+            if current_urls != initially_checked:
+                errors.append("full catalog did not strictly check every current candidate-pool URL")
 
     _validate_summary(
         summary,

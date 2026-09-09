@@ -1,4 +1,5 @@
 {
+  "publication_policy": "available_channels",
   "min_lines": 1,
   "coverage_metric": "canonical_channels",
   "min_channels": 29,

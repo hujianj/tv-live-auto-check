@@ -53,6 +53,12 @@ class SourcePipelineTests(unittest.TestCase):
         self.assertTrue(domestic_chinese_issue("\u9999\u6e2f\u7535\u89c6", country="hk", language="eng"))
         self.assertFalse(domestic_chinese_issue("\u53f0\u89c6\u65b0\u95fb", country="tw", language="cmn"))
 
+    def test_foreign_movie_channels_are_not_chinese_by_title_alone(self):
+        for name in ('欧美大片1', '欧美大片2', '歐美大片', '日韩影院', '原声电影'):
+            with self.subTest(name=name):
+                self.assertTrue(domestic_chinese_issue(name))
+        self.assertFalse(domestic_chinese_issue('CCTV-6电影'))
+
     def test_country_names_are_not_split_into_letter_pairs(self):
         for country in ("China", "CHN", "Hong Kong", "Macau", "Taiwan", "cn hk", "China;Hong Kong", "\u4e2d\u56fd"):
             with self.subTest(country=country):
@@ -241,6 +247,7 @@ class SourcePipelineTests(unittest.TestCase):
             with patch.object(recheck, 'ROOT', root), patch.object(recheck, 'MAX_WORKERS', 1), \
                     patch.object(recheck, 'check_candidate_resilient', side_effect=checker), \
                     patch.object(recheck, 'retry_failed_final_urls', return_value=retry), \
+                    patch.object(recheck, 'coverage_is_required', return_value=True), \
                     patch.object(recheck, 'max_failed_url_ratio', return_value=0.25):
                 self.assertEqual(recheck.main(), 1)
             full_summary = json.loads((root / recheck.SUMMARY_FILE).read_text(encoding='utf-8'))
@@ -264,6 +271,104 @@ class SourcePipelineTests(unittest.TestCase):
             self.assertEqual(evidence['candidate_after_rows'], 2)
             maintenance.restore_curate_checkpoint(root)
             self.assertEqual({name: (root / name).read_bytes() for name in original}, original)
+
+    def test_available_policy_reports_missing_channels_but_preserves_quality_gates(self):
+        from audit_quality import build_audit, build_family_audit
+        from audit_coverage import build_coverage
+        from playlist_config import load_rules
+        from validate_playlist import validate_text
+        rows = [('央视频道', 'CCTV-1', 'https://tv.test/1')]
+        result, failures, warnings = build_audit(rows)
+        self.assertEqual(result['status'], 'ok')
+        self.assertFalse(failures)
+        self.assertTrue(warnings)
+        self.assertTrue(result['missing_satellite_quality'])
+        family, failures = build_family_audit(rows)
+        self.assertFalse(failures)
+        self.assertTrue(family['warnings'])
+        coverage = build_coverage(rows, load_rules()['coverage'])
+        self.assertTrue(coverage['missing_satellite'])
+        self.assertFalse(coverage['fail_on_missing_satellite'])
+        validate_text('央视频道,#genre#\nCCTV-1,https://tv.test/1\n')
+        self.assertTrue(build_audit([])[1])
+        self.assertTrue(build_audit([('央视频道', 'CNN', 'https://tv.test/2')])[1])
+        with self.assertRaises(ValueError):
+            validate_text('央视频道,#genre#\ntvg-logo=bad,CCTV-1,https://tv.test/1\n')
+
+    def test_final_backup_limits_preserve_every_distinct_channel_and_require_frames(self):
+        import recheck_published as recheck
+        from dataclasses import replace
+        rows = [recheck.Row('央视频道', 'CCTV-1', f'https://tv.test/1/{i}') for i in range(12)]
+        rows += [recheck.Row('影视剧场', f'中文剧场{i}', f'https://tv.test/movie/{i}') for i in range(220)]
+        results = {row.url: verify.CheckResult(verify.Candidate('fixture', row.group, row.name, row.url),
+                   True, 'synthetic frames', 0.1, '2026-09-09T00:00:00Z', 3) for row in rows}
+        chosen = recheck.limit_verified_backups(rows, results, {})
+        self.assertEqual(len({row.name for row in chosen}), 221)
+        self.assertEqual(sum(row.name == 'CCTV-1' for row in chosen), recheck.per_channel_limit('央视频道', 'CCTV-1'))
+        results[rows[0].url] = replace(results[rows[0].url], decoded_frames=0)
+        with self.assertRaises(ValueError):
+            recheck.limit_verified_backups(rows, results, {})
+
+    def test_recheck_partial_empty_and_refill_policies_end_to_end(self):
+        import recheck_published as recheck
+        from dataclasses import replace
+        now = datetime.now(timezone.utc).isoformat()
+        rows = [recheck.Row('央视频道', f'CCTV-{i}', f'https://tv.test/{i}') for i in (1, 2)]
+        backup = recheck.PoolCandidate(recheck.row_identity(rows[1])[1],
+                   replace(rows[1], url='https://tv.test/backup'), 'fixture', 'current_scan')
+        for mode in ('partial', 'empty', 'refill'):
+            with self.subTest(mode=mode), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                for filename in recheck.TXT_FILES:
+                    (root / filename).write_text(recheck.render_txt(['央视频道'], rows), encoding='utf-8')
+                (root / recheck.SUMMARY_FILE).write_text(json.dumps({'generated_utc': now}), encoding='utf-8')
+                (root / recheck.CANDIDATE_POOL_FILE).touch()
+                original = (root / recheck.TXT_FILES[0]).read_bytes()
+                def check(cand, *_args, **kwargs):
+                    self.assertTrue(kwargs['require_decode'])
+                    ok = mode != 'empty' and cand.url.endswith(('/1', '/backup'))
+                    return verify.CheckResult(cand, ok, 'synthetic', 0.1, now, 3 if ok else 0)
+                pool = [backup] if mode == 'refill' else []
+                real_refill = recheck.refill_missing_rows
+                def refill(*args):
+                    return real_refill(*args, checker=check)
+                retry = {'first_pass_failed_unique_urls': 2 if mode == 'empty' else 1,
+                         'attempted_unique_urls': 0, 'recovered_unique_urls': 0,
+                         'still_failed_unique_urls': 2 if mode == 'empty' else 1}
+                with patch.object(recheck, 'ROOT', root), patch.object(recheck, 'MAX_WORKERS', 1), \
+                     patch.object(recheck, 'load_candidate_pool', return_value=pool), \
+                     patch.object(recheck, 'check_candidate_resilient', side_effect=check), \
+                     patch.object(recheck, 'refill_missing_rows', side_effect=refill) as refiller, \
+                     patch.object(recheck, 'retry_failed_final_urls', return_value=retry), \
+                     patch.object(recheck, 'coverage_is_required', return_value=(mode == 'refill')):
+                    self.assertEqual(recheck.main(), 1 if mode == 'empty' else 0)
+                self.assertEqual(refiller.call_count, 1)
+                summary = json.loads((root / recheck.SUMMARY_FILE).read_text(encoding='utf-8'))['published_recheck']
+                if mode == 'empty':
+                    self.assertEqual(summary['abort_reason'], 'no_verified_channels')
+                    self.assertEqual((root / recheck.TXT_FILES[0]).read_bytes(), original)
+                else:
+                    self.assertEqual(summary['after_rows'], 2 if mode == 'refill' else 1)
+                    self.assertEqual(summary['frame_decoded_unique_urls'], summary['after_rows'])
+                    self.assertNotIn('https://tv.test/2', (root / recheck.TXT_FILES[0]).read_text(encoding='utf-8'))
+
+    def test_bootstrap_uses_one_budget_and_reports_failure_before_media(self):
+        import bootstrap_runtime as bootstrap
+        with tempfile.TemporaryDirectory() as directory:
+            elapsed = [0.0]
+            calls = []
+            def runner(command, **kwargs):
+                calls.append((command, kwargs['timeout']))
+                elapsed[0] += 80
+            with patch.object(bootstrap.sys, 'platform', 'linux'):
+                result = bootstrap.bootstrap(Path(directory), 100, runner=runner,
+                         clock=lambda: elapsed[0], which=lambda _: None)
+            self.assertEqual(result['status'], 'failed')
+            self.assertEqual(result['failed_step'], 'python dependencies')
+            self.assertEqual(len(calls), 2)
+            self.assertLess(calls[1][1], calls[0][1])
+            self.assertTrue(all(command[0] == 'timeout' for command, _ in calls))
+            self.assertTrue((Path(directory) / 'bootstrap-report.json').is_file())
 
     def test_export_includes_broad_failures_without_losing_recheck_origins(self):
         from export_outputs import export_outputs
