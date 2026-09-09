@@ -1,9 +1,9 @@
 # IPTV source verification report
 
-Generated: 2026-09-09 11:03:23
-Generated UTC: 2026-09-09T11:03:23Z
-Generated Beijing: 2026-09-09 19:03:23 Asia/Shanghai
-Elapsed: 63.9s
+Generated: 2026-09-09 11:18:12
+Generated UTC: 2026-09-09T11:18:12Z
+Generated Beijing: 2026-09-09 19:18:12 Asia/Shanghai
+Elapsed: 65.6s
 Sources configured: 42 (enabled=33, recovery=2, disabled=7)
 Sources probed: 35
 Sources fetched OK: 31
@@ -11,18 +11,18 @@ Sources with parsed rows (before policy filters): 27
 Sources with media-eligible candidates: 5
 Network scope: current_execution_environment; no region or home-broadband qualification
 Channel scope: domestic_chinese
-Parsed candidates: 24128
-Policy-excluded candidates (not media-checked): 23924
+Parsed candidates: 24126
+Policy-excluded candidates (not media-checked): 23922
 Eligible candidates before URL deduplication: 204
 Unique name+URL candidates: 142
 Unique stream URLs: 130
 Checked unique stream URLs: 130
 Checked all unique URLs: True
-Playable channel names: 34
-Playable unique URLs: 23
-Playable name+URL lines: 35
-Playable URLs found (legacy line count): 35
-Pre-curated published playable lines: 35
+Playable channel names: 33
+Playable unique URLs: 22
+Playable name+URL lines: 34
+Playable URLs found (legacy line count): 34
+Pre-curated published playable lines: 34
 
 ## Source fetch status
 
@@ -49,9 +49,9 @@ The legacy contributed CSV flag means parsed rows, not permission approval or fi
 | yang_gather | enabled | OK | YES | 127 | 0 | 27353 | False |  |
 | iptv_org_all | enabled | OK | YES | 10294 | 64 | 2511985 | False |  |
 | epg_cn | enabled | OK | YES | 2149 | 0 | 683907 | False |  |
-| epg_hk | enabled | OK | YES | 46 | 0 | 14636 | False |  |
+| epg_hk | enabled | OK | YES | 45 | 0 | 14331 | False |  |
 | epg_mo | enabled | OK | YES | 19 | 0 | 6134 | False |  |
-| epg_tw | enabled | OK | YES | 65 | 0 | 23447 | False |  |
+| epg_tw | enabled | OK | YES | 64 | 0 | 23110 | False |  |
 | iptv_org_tw | enabled | OK | YES | 25 | 4 | 4949 | False |  |
 | epg_sg | enabled | OK | YES | 11 | 0 | 3507 | False |  |
 | epg_my | enabled | OK | YES | 21 | 0 | 6723 | False |  |
@@ -71,7 +71,7 @@ The legacy contributed CSV flag means parsed rows, not permission approval or fi
 | Source | Lines |
 |---|---:|
 | free_tv_world | 17 |
-| iptv_org_cn | 16 |
+| iptv_org_cn | 15 |
 | iptv_org_tw | 2 |
 
 ## First 80 pre-curation playable channel candidates
@@ -105,7 +105,6 @@ The legacy contributed CSV flag means parsed rows, not permission approval or fi
 - 央视频道 / CCTV-7国防军事 / free_tv_world
 - 央视频道 / CCTV-8 / iptv_org_cn
 - 央视频道 / CCTV-8电视剧 / free_tv_world
-- 央视频道 / CCTV-9 / iptv_org_cn
 - 央视频道 / CCTV-9纪录 / free_tv_world
 - 卫视频道 / 北京卫视 / iptv_org_cn
 - 地方频道 / FZTV-1News新闻综合频道 / free_tv_world
