@@ -1,40 +1,40 @@
 # Published playlist recheck report
 
 Outputs rewritten: True
-Elapsed: 283.5s
-Rows before: 429
-Rows after: 293
-Rows removed from outputs: 136
-Candidate rows failing strict recheck: 136
+Elapsed: 263.5s
+Rows before: 491
+Rows after: 344
+Rows removed from outputs: 147
+Candidate rows failing strict recheck: 147
 Rows refilled after strict recheck: 0
-Net output row delta: -136
-Failed unique URLs after slow retry: 136
-Slow retry attempted unique URLs: 140
-Slow retry recovered unique URLs: 4
+Net output row delta: -147
+Failed unique URLs after slow retry: 147
+Slow retry attempted unique URLs: 154
+Slow retry recovered unique URLs: 7
 Core live-progress check required: True
 Broadcast live-progress check required: True
 Live-progress groups: 卫视频道, 地方频道, 央视频道
 Video track required: True
-Video-track verified final unique URLs: 293
+Video-track verified final unique URLs: 344
 Refill attempted unique URLs: 0
 Refill playable unique URLs: 0
 Refilled rows: 0
 Historical fallback candidates attempted: 0
 Historical fallback rows accepted: 0
-Unresolved refill rows: 136
+Unresolved refill rows: 147
 
 ## Group deltas
 
 | Group | Before | After | Net delta |
 |---|---:|---:|---:|
-| 央视频道 | 24 | 23 | -1 |
-| 卫视频道 | 26 | 21 | -5 |
-| 地方频道 | 267 | 155 | -112 |
-| 影视剧场 | 24 | 21 | -3 |
+| 央视频道 | 27 | 26 | -1 |
+| 卫视频道 | 28 | 23 | -5 |
+| 地方频道 | 269 | 156 | -113 |
+| 影视剧场 | 66 | 63 | -3 |
 | 少儿动漫 | 2 | 2 | +0 |
-| 体育纪实 | 31 | 18 | -13 |
-| 音乐综艺 | 2 | 1 | -1 |
-| 综合娱乐 | 49 | 48 | -1 |
+| 体育纪实 | 24 | 18 | -6 |
+| 音乐综艺 | 19 | 1 | -18 |
+| 综合娱乐 | 52 | 51 | -1 |
 | 港澳台频道 | 4 | 4 | +0 |
 
 ## First failed rows
@@ -64,6 +64,7 @@ Unresolved refill rows: 136
 - 地方频道 / 兰溪新闻综合 / http://l.cztvcloud.com/channels/lantian/SXlanxi1/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 北京新闻 / https://satellitepull.cnr.cn/live/wxbjxwgb/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segments ok checked=2 required=media; frame decode failed frames=0 exit=234; last=variant fail variants_checked=1 segments ok checked=2 required=media; frame decode failed frames=0 exit=234
 - 地方频道 / 双辽综合 / http://stream3.jlntv.cn:80/aac_slgb/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segments ok checked=2 required=media; frame decode failed frames=0 exit=234; last=variant fail variants_checked=1 segments ok checked=2 required=media; frame decode failed frames=0 exit=234
+- 地方频道 / 古县综合 / https://l2fpdktp.live.sxmty.com/live/hls/e4c3b363cc4549788e2d983f403e07db/d99ce1eb686e41b9afc888110bd95aa7.m3u8?zshanxd / final slow retry failed attempt=1 first=URLError(TimeoutError('timed out')); last=URLError(TimeoutError('timed out'))
 - 地方频道 / 可克达拉综合 / http://file.loulannews.cn/nmip-media/channellive/channel103824/playlist.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 7.5s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 7.5s
 - 地方频道 / 吉林乡村 / https://satellitepull.cnr.cn/live/wxjlxcgb/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segments ok checked=2 required=media; frame decode failed frames=0 exit=234; last=variant fail variants_checked=1 segments ok checked=2 required=media; frame decode failed frames=0 exit=234
 - 地方频道 / 大宁综合 / http://live.daningtv.com/aac_dngb/playlist.m3u8 / final slow retry failed attempt=1 first=variant fail variants_checked=1 segments ok checked=2 required=media; frame decode failed frames=0 exit=234; last=variant fail variants_checked=1 segments ok checked=2 required=media; frame decode failed frames=0 exit=234
@@ -78,12 +79,12 @@ Unresolved refill rows: 136
 - 地方频道 / 开化国家公园 / http://l.cztvcloud.com/channels/lantian/SXkaihua2/720p.m3u8zzhed / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 开化国家公园 / http://l.cztvcloud.com/channels/lantian/SXkaihua2/720p.m3u8?zzhed / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 开化新闻综合 / http://l.cztvcloud.com/channels/lantian/SXkaihua1/720p.m3u8?zzhed / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
+- 地方频道 / 快乐垂钓 / http://drive.mxmy.net:8888/udp/239.3.1.164:8001 / final slow retry failed attempt=1 first=direct application/octet-stream bytes=1316 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed required=video progress=required; frame decode not requested; last=direct application/octet-stream bytes=1316 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed required=video progress=required; frame decode not requested
 - 地方频道 / 文成新闻综合 / http://l.cztvcloud.com/channels/lantian/SXwencheng1/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 文成综合 / http://l.cztvcloud.com/channels/lantian/SXwencheng1/720p.m3u8?zzhed / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 文成综合 / http://l.cztvcloud.com/channels/lantian/SXwencheng1/720p.m3u8?zzhed? / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 新昌新闻综合 / https://l.cztvcloud.com/channels/lantian/SXxinchang1/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 新闻综合 / https://m3u8channel.yunxya.com/nmip-media/channellive/channel100028/playlist.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 7.5s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 7.5s
-- 地方频道 / 普陀电视台 / http://l.cztvcloud.com/channels/lantian/SXputuo1/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 普陀电视台 / https://l.cztvcloud.com/channels/lantian/SXputuo1/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 朝天综合 / https://m3u8.channel.dzsm.com/nmip-media/channellive/channel104601/playlist.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 柳河综合 / http://stream3.jlntv.cn:80/aac_lhgb/sd/live.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode failed frames=0 exit=234; last=segments ok checked=2 required=media; frame decode failed frames=0 exit=234
@@ -101,21 +102,20 @@ Unresolved refill rows: 136
 - 地方频道 / 浙江休闲台 / http://ali-m-l.cztv.com/channels/lantian/channel006/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 浙江公共新闻 / http://ali-m-l.cztv.com/channels/lantian/channel07/1080p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 浙江公共新闻 / http://ali-m-l.cztv.com/channels/lantian/channel007/1080p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
-- 地方频道 / 浙江国际 / http://ali-vl.cztv.com/channels/lantian/channel010/360p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
+- 地方频道 / 浙江国际 / http://ali-vl.cztv.com/channels/lantian/channel010/360p.m3u8 / final slow retry failed attempt=1 first=URLError(TimeoutError('timed out')); last=URLError(TimeoutError('timed out'))
 - 地方频道 / 浙江国际 / http://ali-m-l.cztv.com/channels/lantian/channel010/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 浙江国际 / http://ali-m-l.cztv.com/channels/lantian/channel010/1080p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 浙江国际 / https://ali-m-l.cztv.com/channels/lantian/channel010/1080p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
-- 地方频道 / 浙江少儿 / http://ali-vl.cztv.com/channels/lantian/channel008/360p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
+- 地方频道 / 浙江少儿 / http://ali-vl.cztv.com/channels/lantian/channel008/360p.m3u8 / final slow retry failed attempt=1 first=URLError(TimeoutError('timed out')); last=URLError(TimeoutError('timed out'))
 - 地方频道 / 浙江少儿 / http://ali-m-l.cztv.com/channels/lantian/channel008/1080p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 浙江少儿 / https://ali-m-l.cztv.com/channels/lantian/channel008/1080p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 浙江教科 / http://ali-m-l.cztv.com/channels/lantian/channel004/1080p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
-- 地方频道 / 浙江教科影视 / http://ali-vl.cztv.com/channels/lantian/channel004/360p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
+- 地方频道 / 浙江教科影视 / http://ali-vl.cztv.com/channels/lantian/channel004/360p.m3u8 / final slow retry failed attempt=1 first=URLError(TimeoutError('timed out')); last=URLError(TimeoutError('timed out'))
 - 地方频道 / 浙江教科影视 / http://ali-m-l.cztv.com/channels/lantian/channel04/1080p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 浙江教科影视 / https://ali-m-l.cztv.com/channels/lantian/channel004/1080p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 浙江教育 / http://ali-m-l.cztv.com/channels/lantian/channel04/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 浙江数码时代 / http://ali-m-l.cztv.com/channels/lantian/channel12/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 浙江数码时代 / http://ali-m-l.cztv.com/channels/lantian/channel12/720p.m3u8?zzhed / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 浙江新闻 / http://ali-m-l.cztv.com/channels/lantian/channel07/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
-- 地方频道 / 浙江新闻 / http://ali-vl.cztv.com/channels/lantian/channel007/360p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
+- 地方频道 / 浙江新闻 / http://ali-vl.cztv.com/channels/lantian/channel007/360p.m3u8 / final slow retry failed attempt=1 first=URLError(TimeoutError('timed out')); last=URLError(TimeoutError('timed out'))
 - 地方频道 / 浙江新闻 / http://ali-m-l.cztv.com/channels/lantian/channel007/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
-- 地方频道 / 浙江民生 / http://ali-m-l.cztv.com/channels/lantian/channel06/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
