@@ -1,6 +1,6 @@
 # Core channel coverage report
 
-Coverage status: incomplete (27/52 target channels)
+Coverage status: incomplete (28/52 target channels)
 A successful maintenance job does not mean all requested channels are available.
 
 Minimum independent URLs per important channel: 1
@@ -38,7 +38,7 @@ Fail on missing important satellite: False
 | 辽宁卫视 | 0 | 0 | MISSING |
 | 河北卫视 | 0 | 0 | MISSING |
 | 河南卫视 | 0 | 0 | MISSING |
-| 北京卫视 | 0 | 0 | MISSING |
+| 北京卫视 | 1 | 1 | OK |
 | 东方卫视 | 3 | 3 | OK |
 | 浙江卫视 | 1 | 1 | OK |
 | 江苏卫视 | 0 | 0 | MISSING |
