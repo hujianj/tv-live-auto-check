@@ -1,17 +1,17 @@
 {
-  "generated": "2026-09-14 23:09:34",
-  "generated_utc": "2026-09-14T23:09:34Z",
-  "generated_beijing": "2026-09-15 07:09:34 Asia/Shanghai",
+  "generated": "2026-09-15 13:35:38",
+  "generated_utc": "2026-09-15T13:35:38Z",
+  "generated_beijing": "2026-09-15 21:35:38 Asia/Shanghai",
   "source_config_sha256": "29567021a7cb502a6dd8992105b4303f459b1c1a1a083f3a796c891bc8fce6f4",
   "sources_configured_total": 42,
   "sources_enabled_total": 33,
   "sources_recovery_total": 2,
   "sources_disabled_total": 7,
   "sources_total": 35,
-  "sources_fetched_ok": 30,
-  "sources_contributing": 26,
+  "sources_fetched_ok": 31,
+  "sources_contributing": 27,
   "sources_contributing_semantics": "legacy: fetched and parsed rows before permission/scope filtering; not media-eligible or finally published sources",
-  "upstream_fetch_bytes": 5946425,
+  "upstream_fetch_bytes": 5946634,
   "resource_budgets": {
     "max_candidates_per_source": 50000,
     "max_total_candidates": 250000,
@@ -22,18 +22,18 @@
   },
   "probe_scheduling": {
     "strategy": "host_aware_bounded_futures",
-    "initial_host_count": 183,
+    "initial_host_count": 179,
     "workers": 192,
     "workers_per_host": 8
   },
-  "parsed_candidates": 24250,
-  "eligible_candidates": 1397,
-  "policy_excluded_candidates": 22853,
+  "parsed_candidates": 24196,
+  "eligible_candidates": 1295,
+  "policy_excluded_candidates": 22901,
   "policy_exclusions": {
+    "source permission pending or restricted": 10509,
     "foreign_or_non_chinese_channel": 146,
-    "chinese_channel_identity_unconfirmed": 185,
-    "source permission pending or restricted": 10470,
-    "foreign_channel_origin": 11976,
+    "chinese_channel_identity_unconfirmed": 186,
+    "foreign_channel_origin": 11984,
     "strict_quality_filter": 35,
     "unstable_or_wrong_alias": 29,
     "latin_noise_name": 11,
@@ -47,13 +47,13 @@
   "sources_media_eligible": 7,
   "same_run_successful_probes_reused": 0,
   "url_budget_seconds": 60,
-  "unique_candidates": 774,
-  "unique_name_url_candidates": 790,
-  "checked_candidates": 774,
-  "broad_media_probe_checked": 774,
+  "unique_candidates": 700,
+  "unique_name_url_candidates": 714,
+  "checked_candidates": 700,
+  "broad_media_probe_checked": 700,
   "broad_checked_all_unique": true,
-  "strict_video_checked_unique": 515,
-  "strict_progress_checked_unique": 342,
+  "strict_video_checked_unique": 461,
+  "strict_progress_checked_unique": 305,
   "checked_all_unique": true,
   "first_pass_validation": {
     "require_video_track": false,
@@ -61,45 +61,45 @@
     "hls_segment_checks": 2,
     "core_hls_segment_checks": 3
   },
-  "playable_channel_names": 435,
-  "playable_unique_urls": 527,
-  "playable_name_url_lines": 541,
-  "playable_urls_found": 541,
-  "all_playable_lines": 541,
-  "pre_curated_published_lines": 541,
-  "primary_published_lines": 350,
+  "playable_channel_names": 410,
+  "playable_unique_urls": 472,
+  "playable_name_url_lines": 484,
+  "playable_urls_found": 484,
+  "all_playable_lines": 484,
+  "pre_curated_published_lines": 484,
+  "primary_published_lines": 315,
   "full_catalog": true,
   "limits_applied_after_strict_recheck": true,
-  "pre_recheck_curated_lines": 515,
-  "pre_recheck_curated_channel_names": 427,
+  "pre_recheck_curated_lines": 461,
+  "pre_recheck_curated_channel_names": 402,
   "pre_recheck_curated_groups": {
-    "央视频道": 40,
-    "卫视频道": 39,
-    "地方频道": 263,
-    "影视剧场": 66,
+    "央视频道": 22,
+    "卫视频道": 24,
+    "地方频道": 259,
+    "影视剧场": 49,
     "少儿动漫": 2,
     "体育纪实": 31,
     "音乐综艺": 19,
-    "综合娱乐": 52,
-    "港澳台频道": 3
+    "综合娱乐": 51,
+    "港澳台频道": 4
   },
   "pre_recheck_curated_sources": {
-    "zbds_iptv4_txt": 498,
+    "zbds_iptv4_txt": 444,
     "iptv_org_cn": 12,
     "free_tv_world": 3,
     "iptv_org_tw": 2
   },
   "pre_recheck_per_group_unique_names": {
-    "央视频道": 19,
-    "卫视频道": 27,
-    "地方频道": 214,
-    "影视剧场": 66,
+    "央视频道": 18,
+    "卫视频道": 16,
+    "地方频道": 218,
+    "影视剧场": 49,
     "少儿动漫": 2,
     "体育纪实": 25,
     "音乐综艺": 19,
     "生活休闲": 0,
-    "综合娱乐": 52,
-    "港澳台频道": 3,
+    "综合娱乐": 51,
+    "港澳台频道": 4,
     "海外华语频道": 0
   },
   "stability_history_loaded": true,
@@ -138,41 +138,41 @@
     "added_to_candidate_pool": 0,
     "requires_current_media_recheck": true
   },
-  "curated_published_lines": 350,
-  "curated_channel_names": 308,
+  "curated_published_lines": 315,
+  "curated_channel_names": 287,
   "curated_groups": {
-    "央视频道": 33,
-    "卫视频道": 25,
-    "地方频道": 154,
-    "影视剧场": 63,
+    "央视频道": 21,
+    "卫视频道": 18,
+    "地方频道": 156,
+    "影视剧场": 46,
     "少儿动漫": 2,
     "体育纪实": 18,
     "音乐综艺": 1,
-    "综合娱乐": 51,
+    "综合娱乐": 50,
     "港澳台频道": 3
   },
   "curated_sources": {
-    "zbds_iptv4_txt": 333,
+    "zbds_iptv4_txt": 298,
     "iptv_org_cn": 12,
     "free_tv_world": 3,
     "iptv_org_tw": 2
   },
   "per_group_unique_names": {
-    "央视频道": 19,
-    "卫视频道": 27,
-    "地方频道": 214,
-    "影视剧场": 66,
+    "央视频道": 18,
+    "卫视频道": 16,
+    "地方频道": 218,
+    "影视剧场": 49,
     "少儿动漫": 2,
     "体育纪实": 25,
     "音乐综艺": 19,
     "生活休闲": 0,
-    "综合娱乐": 52,
-    "港澳台频道": 3,
+    "综合娱乐": 51,
+    "港澳台频道": 4,
     "海外华语频道": 0
   },
   "alias_resolution": {
-    "conflicting_urls_excluded": 12,
-    "conflicting_alias_rows_excluded": 26,
+    "conflicting_urls_excluded": 11,
+    "conflicting_alias_rows_excluded": 23,
     "report_file": "alias-conflict-report.md",
     "candidate_pool_file": "curated-candidate-pool.csv"
   },
@@ -183,7 +183,7 @@
     "group_limit_trimmed_counts": {},
     "strict_filter_dropped_rows": 0,
     "drop_counts": {
-      "ambiguous_url_identity": 26
+      "ambiguous_url_identity": 23
     },
     "top_strict_drop_reasons": {},
     "group_max_rows": {
@@ -213,20 +213,20 @@
     }
   },
   "final_primary_file": "live-curated.txt",
-  "final_primary_published_lines": 350,
+  "final_primary_published_lines": 315,
   "publication_policy": "available_channels",
   "curated_group_sources": {
-    "央视频道|zbds_iptv4_txt": 19,
+    "央视频道|zbds_iptv4_txt": 7,
     "央视频道|iptv_org_cn": 11,
     "央视频道|free_tv_world": 3,
-    "卫视频道|zbds_iptv4_txt": 24,
     "卫视频道|iptv_org_cn": 1,
-    "地方频道|zbds_iptv4_txt": 154,
-    "影视剧场|zbds_iptv4_txt": 63,
+    "卫视频道|zbds_iptv4_txt": 17,
+    "地方频道|zbds_iptv4_txt": 156,
+    "影视剧场|zbds_iptv4_txt": 46,
     "少儿动漫|zbds_iptv4_txt": 2,
     "体育纪实|zbds_iptv4_txt": 18,
     "音乐综艺|zbds_iptv4_txt": 1,
-    "综合娱乐|zbds_iptv4_txt": 51,
+    "综合娱乐|zbds_iptv4_txt": 50,
     "港澳台频道|iptv_org_tw": 2,
     "港澳台频道|zbds_iptv4_txt": 1
   },
@@ -238,18 +238,18 @@
       "live-family.txt"
     ],
     "m3u_file": "family.m3u",
-    "lines": 344,
-    "unique_names": 308,
-    "unique_urls": 344,
+    "lines": 310,
+    "unique_names": 287,
+    "unique_urls": 310,
     "groups": {
-      "央视频道": 33,
-      "卫视频道": 25,
-      "地方频道": 150,
-      "影视剧场": 63,
+      "央视频道": 21,
+      "卫视频道": 18,
+      "地方频道": 153,
+      "影视剧场": 46,
       "少儿动漫": 2,
       "体育纪实": 16,
       "音乐综艺": 1,
-      "综合娱乐": 51,
+      "综合娱乐": 50,
       "港澳台频道": 3
     },
     "min_lines": 1,
@@ -260,20 +260,20 @@
     "history_file": "stability-state.json",
     "state_artifact_only": true,
     "state_update_mode": "deferred_until_maintenance_success",
-    "observation_id": "34907383208:021754895197034ba47c03c1b64a4185d7daf0ce",
+    "observation_id": "34975744565:cbf0b7ff529fee06c676a7ee5c42d5a2cc0c93da",
     "observation_applied": false,
     "tracked_urls_before": 0,
-    "tracked_urls_after": 515,
+    "tracked_urls_after": 461,
     "max_entries": 5000,
     "evidence_counter_cap": 20,
     "streak_cap": 10,
     "last_seen_granularity": "beijing_week_start",
-    "new_urls": 515,
-    "updated_urls": 515,
-    "ok_updates": 350,
-    "fail_updates": 165,
+    "new_urls": 461,
+    "updated_urls": 461,
+    "ok_updates": 315,
+    "fail_updates": 146,
     "trimmed_urls": 0,
-    "last_updated_beijing": "2026-09-15T07:14:57+08:00",
+    "last_updated_beijing": "2026-09-15T21:40:27+08:00",
     "current_adjustment_min": -11,
     "current_adjustment_max": 55,
     "observation_pending": true
@@ -282,28 +282,28 @@
     "publication_policy": "available_channels",
     "backup_trimmed_rows": 0,
     "failure_ratio_is_blocking": false,
-    "post_retry_failed_url_ratio": 0.32038834951456313,
+    "post_retry_failed_url_ratio": 0.31670281995661603,
     "warnings": [
       "High strict-check failure ratio; only verified survivors are included."
     ],
     "enabled": true,
     "status": "ok",
     "outputs_rewritten": true,
-    "candidate_after_rows": 350,
+    "candidate_after_rows": 315,
     "policy_version": 1,
-    "checked_unique_urls": 515,
-    "initial_checked_unique_urls": 515,
-    "before_rows": 515,
-    "after_rows": 350,
-    "removed_rows": 165,
-    "net_row_delta": -165,
-    "first_pass_failed_unique_urls": 174,
-    "slow_retry_attempted_unique_urls": 174,
-    "slow_retry_recovered_unique_urls": 9,
-    "post_retry_failed_unique_urls": 165,
-    "initial_failed_unique_urls": 165,
+    "checked_unique_urls": 461,
+    "initial_checked_unique_urls": 461,
+    "before_rows": 461,
+    "after_rows": 315,
+    "removed_rows": 146,
+    "net_row_delta": -146,
+    "first_pass_failed_unique_urls": 152,
+    "slow_retry_attempted_unique_urls": 152,
+    "slow_retry_recovered_unique_urls": 6,
+    "post_retry_failed_unique_urls": 146,
+    "initial_failed_unique_urls": 146,
     "refill_failed_unique_urls": 0,
-    "failed_unique_urls": 165,
+    "failed_unique_urls": 146,
     "core_progress_required": true,
     "broadcast_progress_required": true,
     "progress_required_groups": [
@@ -314,19 +314,19 @@
     "require_video_track": true,
     "require_frame_decode": true,
     "minimum_decoded_frames": 3,
-    "frame_decoded_unique_urls": 350,
-    "video_track_verified_unique_urls": 350,
-    "audio_only_rejected_unique_urls": 1,
-    "unknown_track_rejected_unique_urls": 1,
+    "frame_decoded_unique_urls": 315,
+    "video_track_verified_unique_urls": 315,
+    "audio_only_rejected_unique_urls": 0,
+    "unknown_track_rejected_unique_urls": 0,
     "public_network_policy_enabled": true,
     "refill": {
       "enabled": true,
-      "channels_with_deficit": 129,
-      "target_rows": 165,
+      "channels_with_deficit": 118,
+      "target_rows": 146,
       "attempted_unique_urls": 0,
       "playable_unique_urls": 0,
       "refilled_rows": 0,
-      "unresolved_rows": 165,
+      "unresolved_rows": 146,
       "historical_candidates_available": 0,
       "historical_target_rows": 0,
       "historical_attempted_unique_urls": 0,
@@ -336,14 +336,14 @@
         "configured_attempts": 1,
         "timeout_seconds": 14,
         "workers": 16,
-        "first_pass_failed_unique_urls": 174,
-        "initial_failed_unique_urls": 174,
-        "attempted_unique_urls": 174,
-        "recovered_unique_urls": 9,
-        "still_failed_unique_urls": 165
+        "first_pass_failed_unique_urls": 152,
+        "initial_failed_unique_urls": 152,
+        "attempted_unique_urls": 152,
+        "recovered_unique_urls": 6,
+        "still_failed_unique_urls": 146
       },
-      "initial_failed_url_ratio": 0.32038834951456313,
-      "unresolved_target_row_ratio": 0.32038834951456313
+      "initial_failed_url_ratio": 0.31670281995661603,
+      "unresolved_target_row_ratio": 0.31670281995661603
     },
     "historical_fallback": {
       "enabled": true,
@@ -362,18 +362,18 @@
       "configured_attempts": 1,
       "timeout_seconds": 14,
       "workers": 16,
-      "first_pass_failed_unique_urls": 174,
-      "initial_failed_unique_urls": 174,
-      "attempted_unique_urls": 174,
-      "recovered_unique_urls": 9,
-      "still_failed_unique_urls": 165
+      "first_pass_failed_unique_urls": 152,
+      "initial_failed_unique_urls": 152,
+      "attempted_unique_urls": 152,
+      "recovered_unique_urls": 6,
+      "still_failed_unique_urls": 146
     },
-    "elapsed_seconds": 322.0
+    "elapsed_seconds": 288.6
   },
   "coverage": {
     "status": "incomplete",
     "target_channels": 52,
-    "covered_target_channels": 31,
+    "covered_target_channels": 26,
     "minimum_unique_urls_per_important_channel": 1,
     "min_sources_per_important_name": 1,
     "publication_policy": "available_channels",
@@ -382,21 +382,21 @@
     "required_cctv": [
       {
         "name": "CCTV-1",
-        "published_rows": 2,
-        "unique_urls": 2,
-        "count": 2
+        "published_rows": 1,
+        "unique_urls": 1,
+        "count": 1
       },
       {
         "name": "CCTV-2",
-        "published_rows": 2,
-        "unique_urls": 2,
-        "count": 2
+        "published_rows": 1,
+        "unique_urls": 1,
+        "count": 1
       },
       {
         "name": "CCTV-3",
-        "published_rows": 3,
-        "unique_urls": 3,
-        "count": 3
+        "published_rows": 2,
+        "unique_urls": 2,
+        "count": 2
       },
       {
         "name": "CCTV-4",
@@ -406,33 +406,33 @@
       },
       {
         "name": "CCTV-5",
-        "published_rows": 3,
-        "unique_urls": 3,
-        "count": 3
+        "published_rows": 1,
+        "unique_urls": 1,
+        "count": 1
       },
       {
         "name": "CCTV-6",
-        "published_rows": 2,
-        "unique_urls": 2,
-        "count": 2
+        "published_rows": 1,
+        "unique_urls": 1,
+        "count": 1
       },
       {
         "name": "CCTV-7",
-        "published_rows": 2,
-        "unique_urls": 2,
-        "count": 2
+        "published_rows": 1,
+        "unique_urls": 1,
+        "count": 1
       },
       {
         "name": "CCTV-8",
-        "published_rows": 3,
-        "unique_urls": 3,
-        "count": 3
+        "published_rows": 1,
+        "unique_urls": 1,
+        "count": 1
       },
       {
         "name": "CCTV-9",
-        "published_rows": 3,
-        "unique_urls": 3,
-        "count": 3
+        "published_rows": 2,
+        "unique_urls": 2,
+        "count": 2
       },
       {
         "name": "CCTV-10",
@@ -466,15 +466,15 @@
       },
       {
         "name": "CCTV-15",
-        "published_rows": 2,
-        "unique_urls": 2,
-        "count": 2
-      },
-      {
-        "name": "CCTV-16",
         "published_rows": 1,
         "unique_urls": 1,
         "count": 1
+      },
+      {
+        "name": "CCTV-16",
+        "published_rows": 0,
+        "unique_urls": 0,
+        "count": 0
       },
       {
         "name": "CCTV-17",
@@ -506,9 +506,9 @@
       },
       {
         "name": "河北卫视",
-        "published_rows": 1,
-        "unique_urls": 1,
-        "count": 1
+        "published_rows": 0,
+        "unique_urls": 0,
+        "count": 0
       },
       {
         "name": "河南卫视",
@@ -524,9 +524,9 @@
       },
       {
         "name": "东方卫视",
-        "published_rows": 3,
-        "unique_urls": 3,
-        "count": 3
+        "published_rows": 0,
+        "unique_urls": 0,
+        "count": 0
       },
       {
         "name": "浙江卫视",
@@ -554,9 +554,9 @@
       },
       {
         "name": "深圳卫视",
-        "published_rows": 2,
-        "unique_urls": 2,
-        "count": 2
+        "published_rows": 1,
+        "unique_urls": 1,
+        "count": 1
       },
       {
         "name": "天津卫视",
@@ -578,9 +578,9 @@
       },
       {
         "name": "吉林卫视",
-        "published_rows": 1,
-        "unique_urls": 1,
-        "count": 1
+        "published_rows": 0,
+        "unique_urls": 0,
+        "count": 0
       },
       {
         "name": "黑龙江卫视",
@@ -590,9 +590,9 @@
       },
       {
         "name": "安徽卫视",
-        "published_rows": 1,
-        "unique_urls": 1,
-        "count": 1
+        "published_rows": 0,
+        "unique_urls": 0,
+        "count": 0
       },
       {
         "name": "东南卫视",
@@ -704,15 +704,20 @@
       }
     ],
     "missing_cctv": [
-      "CCTV-4"
+      "CCTV-4",
+      "CCTV-16"
     ],
     "missing_satellite": [
       "辽宁卫视",
+      "河北卫视",
       "河南卫视",
+      "东方卫视",
       "江苏卫视",
       "广东卫视",
       "天津卫视",
+      "吉林卫视",
       "黑龙江卫视",
+      "安徽卫视",
       "山东卫视",
       "湖北卫视",
       "广西卫视",
@@ -734,19 +739,19 @@
     "status": "ok",
     "channel_scope_violation_count": 0,
     "channel_scope_violation_sample": [],
-    "rows": 350,
-    "unique_channel_identities": 308,
-    "unique_names": 308,
-    "unique_urls": 350,
+    "rows": 315,
+    "unique_channel_identities": 287,
+    "unique_names": 287,
+    "unique_urls": 315,
     "groups": {
-      "央视频道": 33,
-      "卫视频道": 25,
-      "地方频道": 154,
-      "影视剧场": 63,
+      "央视频道": 21,
+      "卫视频道": 18,
+      "地方频道": 156,
+      "影视剧场": 46,
       "少儿动漫": 2,
       "体育纪实": 18,
       "音乐综艺": 1,
-      "综合娱乐": 51,
+      "综合娱乐": 50,
       "港澳台频道": 3
     },
     "min_exact_cctv_unique_urls": 1,
@@ -754,24 +759,24 @@
     "required_cctv": [
       {
         "name": "CCTV-1",
-        "published_rows": 2,
-        "unique_urls": 2,
-        "unique_hosts": 2,
-        "count": 2
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
       },
       {
         "name": "CCTV-2",
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
+      },
+      {
+        "name": "CCTV-3",
         "published_rows": 2,
         "unique_urls": 2,
         "unique_hosts": 2,
         "count": 2
-      },
-      {
-        "name": "CCTV-3",
-        "published_rows": 3,
-        "unique_urls": 3,
-        "unique_hosts": 3,
-        "count": 3
       },
       {
         "name": "CCTV-4",
@@ -782,38 +787,38 @@
       },
       {
         "name": "CCTV-5",
-        "published_rows": 3,
-        "unique_urls": 3,
-        "unique_hosts": 3,
-        "count": 3
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
       },
       {
         "name": "CCTV-6",
-        "published_rows": 2,
-        "unique_urls": 2,
-        "unique_hosts": 2,
-        "count": 2
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
       },
       {
         "name": "CCTV-7",
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
+      },
+      {
+        "name": "CCTV-8",
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
+      },
+      {
+        "name": "CCTV-9",
         "published_rows": 2,
         "unique_urls": 2,
         "unique_hosts": 2,
         "count": 2
-      },
-      {
-        "name": "CCTV-8",
-        "published_rows": 3,
-        "unique_urls": 3,
-        "unique_hosts": 3,
-        "count": 3
-      },
-      {
-        "name": "CCTV-9",
-        "published_rows": 3,
-        "unique_urls": 3,
-        "unique_hosts": 3,
-        "count": 3
       },
       {
         "name": "CCTV-10",
@@ -852,17 +857,17 @@
       },
       {
         "name": "CCTV-15",
-        "published_rows": 2,
-        "unique_urls": 2,
-        "unique_hosts": 2,
-        "count": 2
-      },
-      {
-        "name": "CCTV-16",
         "published_rows": 1,
         "unique_urls": 1,
         "unique_hosts": 1,
         "count": 1
+      },
+      {
+        "name": "CCTV-16",
+        "published_rows": 0,
+        "unique_urls": 0,
+        "unique_hosts": 0,
+        "count": 0
       },
       {
         "name": "CCTV-17",
@@ -889,10 +894,10 @@
       },
       {
         "name": "河北卫视",
-        "published_rows": 1,
-        "unique_urls": 1,
-        "unique_hosts": 1,
-        "count": 1
+        "published_rows": 0,
+        "unique_urls": 0,
+        "unique_hosts": 0,
+        "count": 0
       },
       {
         "name": "河南卫视",
@@ -910,10 +915,10 @@
       },
       {
         "name": "东方卫视",
-        "published_rows": 3,
-        "unique_urls": 3,
-        "unique_hosts": 1,
-        "count": 3
+        "published_rows": 0,
+        "unique_urls": 0,
+        "unique_hosts": 0,
+        "count": 0
       },
       {
         "name": "浙江卫视",
@@ -945,10 +950,10 @@
       },
       {
         "name": "深圳卫视",
-        "published_rows": 2,
-        "unique_urls": 2,
-        "unique_hosts": 2,
-        "count": 2
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
       },
       {
         "name": "天津卫视",
@@ -973,10 +978,10 @@
       },
       {
         "name": "吉林卫视",
-        "published_rows": 1,
-        "unique_urls": 1,
-        "unique_hosts": 1,
-        "count": 1
+        "published_rows": 0,
+        "unique_urls": 0,
+        "unique_hosts": 0,
+        "count": 0
       },
       {
         "name": "黑龙江卫视",
@@ -987,10 +992,10 @@
       },
       {
         "name": "安徽卫视",
-        "published_rows": 1,
-        "unique_urls": 1,
-        "unique_hosts": 1,
-        "count": 1
+        "published_rows": 0,
+        "unique_urls": 0,
+        "unique_hosts": 0,
+        "count": 0
       },
       {
         "name": "东南卫视",
@@ -1126,6 +1131,13 @@
         "unique_urls": 0,
         "unique_hosts": 0,
         "count": 0
+      },
+      {
+        "name": "CCTV-16",
+        "published_rows": 0,
+        "unique_urls": 0,
+        "unique_hosts": 0,
+        "count": 0
       }
     ],
     "missing_satellite_quality": [
@@ -1137,7 +1149,21 @@
         "count": 0
       },
       {
+        "name": "河北卫视",
+        "published_rows": 0,
+        "unique_urls": 0,
+        "unique_hosts": 0,
+        "count": 0
+      },
+      {
         "name": "河南卫视",
+        "published_rows": 0,
+        "unique_urls": 0,
+        "unique_hosts": 0,
+        "count": 0
+      },
+      {
+        "name": "东方卫视",
         "published_rows": 0,
         "unique_urls": 0,
         "unique_hosts": 0,
@@ -1165,7 +1191,21 @@
         "count": 0
       },
       {
+        "name": "吉林卫视",
+        "published_rows": 0,
+        "unique_urls": 0,
+        "unique_hosts": 0,
+        "count": 0
+      },
+      {
         "name": "黑龙江卫视",
+        "published_rows": 0,
+        "unique_urls": 0,
+        "unique_hosts": 0,
+        "count": 0
+      },
+      {
+        "name": "安徽卫视",
         "published_rows": 0,
         "unique_urls": 0,
         "unique_hosts": 0,
@@ -1273,59 +1313,59 @@
     "weak_cctv": [
       {
         "name": "CCTV-1",
-        "published_rows": 2,
-        "unique_urls": 2,
-        "unique_hosts": 2,
-        "count": 2
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
       },
       {
         "name": "CCTV-2",
-        "published_rows": 2,
-        "unique_urls": 2,
-        "unique_hosts": 2,
-        "count": 2
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
       },
       {
         "name": "CCTV-3",
-        "published_rows": 3,
-        "unique_urls": 3,
-        "unique_hosts": 3,
-        "count": 3
+        "published_rows": 2,
+        "unique_urls": 2,
+        "unique_hosts": 2,
+        "count": 2
       },
       {
         "name": "CCTV-5",
-        "published_rows": 3,
-        "unique_urls": 3,
-        "unique_hosts": 3,
-        "count": 3
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
       },
       {
         "name": "CCTV-6",
-        "published_rows": 2,
-        "unique_urls": 2,
-        "unique_hosts": 2,
-        "count": 2
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
       },
       {
         "name": "CCTV-7",
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
+      },
+      {
+        "name": "CCTV-8",
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
+      },
+      {
+        "name": "CCTV-9",
         "published_rows": 2,
         "unique_urls": 2,
         "unique_hosts": 2,
         "count": 2
-      },
-      {
-        "name": "CCTV-8",
-        "published_rows": 3,
-        "unique_urls": 3,
-        "unique_hosts": 3,
-        "count": 3
-      },
-      {
-        "name": "CCTV-9",
-        "published_rows": 3,
-        "unique_urls": 3,
-        "unique_hosts": 3,
-        "count": 3
       },
       {
         "name": "CCTV-10",
@@ -1364,13 +1404,6 @@
       },
       {
         "name": "CCTV-15",
-        "published_rows": 2,
-        "unique_urls": 2,
-        "unique_hosts": 2,
-        "count": 2
-      },
-      {
-        "name": "CCTV-16",
         "published_rows": 1,
         "unique_urls": 1,
         "unique_hosts": 1,
@@ -1393,25 +1426,11 @@
     ],
     "weak_satellite": [
       {
-        "name": "河北卫视",
-        "published_rows": 1,
-        "unique_urls": 1,
-        "unique_hosts": 1,
-        "count": 1
-      },
-      {
         "name": "北京卫视",
         "published_rows": 1,
         "unique_urls": 1,
         "unique_hosts": 1,
         "count": 1
-      },
-      {
-        "name": "东方卫视",
-        "published_rows": 3,
-        "unique_urls": 3,
-        "unique_hosts": 1,
-        "count": 3
       },
       {
         "name": "浙江卫视",
@@ -1429,10 +1448,10 @@
       },
       {
         "name": "深圳卫视",
-        "published_rows": 2,
-        "unique_urls": 2,
-        "unique_hosts": 2,
-        "count": 2
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
       },
       {
         "name": "山西卫视",
@@ -1443,20 +1462,6 @@
       },
       {
         "name": "内蒙古卫视",
-        "published_rows": 1,
-        "unique_urls": 1,
-        "unique_hosts": 1,
-        "count": 1
-      },
-      {
-        "name": "吉林卫视",
-        "published_rows": 1,
-        "unique_urls": 1,
-        "unique_hosts": 1,
-        "count": 1
-      },
-      {
-        "name": "安徽卫视",
         "published_rows": 1,
         "unique_urls": 1,
         "unique_hosts": 1,
@@ -1492,9 +1497,9 @@
       }
     ],
     "host_diversity": {
-      "unique_hosts": 84,
-      "top_host_share": 0.22,
-      "top5_host_share": 0.5514285714285714,
+      "unique_hosts": 80,
+      "top_host_share": 0.24126984126984127,
+      "top5_host_share": 0.5523809523809524,
       "max_top_host_share": 0.5,
       "max_top5_host_share": 0.8,
       "warn_top_host_share": 0.3,
@@ -1505,59 +1510,66 @@
       "top_hosts": [
         {
           "host": "gcalic.v.myalicdn.com",
-          "rows": 77,
-          "share": 0.22
+          "rows": 76,
+          "share": 0.24126984126984127
         },
         {
           "host": "live.metshop.top",
-          "rows": 63,
-          "share": 0.18
+          "rows": 46,
+          "share": 0.14603174603174604
         },
         {
           "host": "l.cztvcloud.com",
           "rows": 28,
-          "share": 0.08
+          "share": 0.08888888888888889
         },
         {
           "host": "74.91.26.218",
           "rows": 14,
-          "share": 0.04
-        },
-        {
-          "host": "101.66.198.81",
-          "rows": 11,
-          "share": 0.03142857142857143
+          "share": 0.044444444444444446
         },
         {
           "host": "stream5.jlntv.cn",
           "rows": 10,
-          "share": 0.02857142857142857
+          "share": 0.031746031746031744
         },
         {
           "host": "stream.hrbtv.net",
           "rows": 8,
-          "share": 0.022857142857142857
+          "share": 0.025396825396825397
         },
         {
           "host": "stream8.jlntv.cn",
           "rows": 8,
-          "share": 0.022857142857142857
+          "share": 0.025396825396825397
         },
         {
           "host": "play.kankanlive.com",
           "rows": 7,
-          "share": 0.02
+          "share": 0.022222222222222223
         },
         {
-          "host": "gmxw.7766.org",
-          "rows": 6,
-          "share": 0.017142857142857144
+          "host": "38.64.72.148",
+          "rows": 4,
+          "share": 0.012698412698412698
+        },
+        {
+          "host": "live-auth.51kandianshi.com",
+          "rows": 4,
+          "share": 0.012698412698412698
         }
       ]
     },
     "missing_core_host_diversity": [
       {
         "name": "CCTV-4",
+        "published_rows": 0,
+        "unique_urls": 0,
+        "unique_hosts": 0,
+        "count": 0
+      },
+      {
+        "name": "CCTV-16",
         "published_rows": 0,
         "unique_urls": 0,
         "unique_hosts": 0,
@@ -1571,7 +1583,21 @@
         "count": 0
       },
       {
+        "name": "河北卫视",
+        "published_rows": 0,
+        "unique_urls": 0,
+        "unique_hosts": 0,
+        "count": 0
+      },
+      {
         "name": "河南卫视",
+        "published_rows": 0,
+        "unique_urls": 0,
+        "unique_hosts": 0,
+        "count": 0
+      },
+      {
+        "name": "东方卫视",
         "published_rows": 0,
         "unique_urls": 0,
         "unique_hosts": 0,
@@ -1599,7 +1625,21 @@
         "count": 0
       },
       {
+        "name": "吉林卫视",
+        "published_rows": 0,
+        "unique_urls": 0,
+        "unique_hosts": 0,
+        "count": 0
+      },
+      {
         "name": "黑龙江卫视",
+        "published_rows": 0,
+        "unique_urls": 0,
+        "unique_hosts": 0,
+        "count": 0
+      },
+      {
+        "name": "安徽卫视",
         "published_rows": 0,
         "unique_urls": 0,
         "unique_hosts": 0,
@@ -1707,27 +1747,55 @@
     "weak_core_host_diversity": [
       {
         "name": "CCTV-1",
-        "published_rows": 2,
-        "unique_urls": 2,
-        "unique_hosts": 2,
-        "count": 2
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
       },
       {
         "name": "CCTV-2",
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
+      },
+      {
+        "name": "CCTV-3",
         "published_rows": 2,
         "unique_urls": 2,
         "unique_hosts": 2,
         "count": 2
+      },
+      {
+        "name": "CCTV-5",
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
       },
       {
         "name": "CCTV-6",
-        "published_rows": 2,
-        "unique_urls": 2,
-        "unique_hosts": 2,
-        "count": 2
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
       },
       {
         "name": "CCTV-7",
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
+      },
+      {
+        "name": "CCTV-8",
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
+      },
+      {
+        "name": "CCTV-9",
         "published_rows": 2,
         "unique_urls": 2,
         "unique_hosts": 2,
@@ -1770,13 +1838,6 @@
       },
       {
         "name": "CCTV-15",
-        "published_rows": 2,
-        "unique_urls": 2,
-        "unique_hosts": 2,
-        "count": 2
-      },
-      {
-        "name": "CCTV-16",
         "published_rows": 1,
         "unique_urls": 1,
         "unique_hosts": 1,
@@ -1797,25 +1858,11 @@
         "count": 1
       },
       {
-        "name": "河北卫视",
-        "published_rows": 1,
-        "unique_urls": 1,
-        "unique_hosts": 1,
-        "count": 1
-      },
-      {
         "name": "北京卫视",
         "published_rows": 1,
         "unique_urls": 1,
         "unique_hosts": 1,
         "count": 1
-      },
-      {
-        "name": "东方卫视",
-        "published_rows": 3,
-        "unique_urls": 3,
-        "unique_hosts": 1,
-        "count": 3
       },
       {
         "name": "浙江卫视",
@@ -1833,10 +1880,10 @@
       },
       {
         "name": "深圳卫视",
-        "published_rows": 2,
-        "unique_urls": 2,
-        "unique_hosts": 2,
-        "count": 2
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
       },
       {
         "name": "山西卫视",
@@ -1847,20 +1894,6 @@
       },
       {
         "name": "内蒙古卫视",
-        "published_rows": 1,
-        "unique_urls": 1,
-        "unique_hosts": 1,
-        "count": 1
-      },
-      {
-        "name": "吉林卫视",
-        "published_rows": 1,
-        "unique_urls": 1,
-        "unique_hosts": 1,
-        "count": 1
-      },
-      {
-        "name": "安徽卫视",
         "published_rows": 1,
         "unique_urls": 1,
         "unique_hosts": 1,
@@ -1908,57 +1941,57 @@
     "url_identity_conflict_count": 0,
     "failures": [],
     "warnings": [
-      "core CCTV channels below independent URL minimum: CCTV-4=0",
-      "important satellite channels below independent URL minimum: 辽宁卫视=0, 河南卫视=0, 江苏卫视=0, 广东卫视=0, 天津卫视=0, 黑龙江卫视=0, 山东卫视=0, 湖北卫视=0, 广西卫视=0, 海南卫视=0, 重庆卫视=0, 四川卫视=0, 贵州卫视=0, 云南卫视=0, 西藏卫视=0, 陕西卫视=0, 甘肃卫视=0, 宁夏卫视=0, 兵团卫视=0, 厦门卫视=0",
-      "core channels below independent host minimum: CCTV-4=0, 辽宁卫视=0, 河南卫视=0, 江苏卫视=0, 广东卫视=0, 天津卫视=0, 黑龙江卫视=0, 山东卫视=0, 湖北卫视=0, 广西卫视=0, 海南卫视=0, 重庆卫视=0, 四川卫视=0, 贵州卫视=0, 云南卫视=0, 西藏卫视=0, 陕西卫视=0, 甘肃卫视=0, 宁夏卫视=0, 兵团卫视=0, 厦门卫视=0",
-      "core CCTV channels below independent URL warning target: CCTV-1=2, CCTV-2=2, CCTV-3=3, CCTV-5=3, CCTV-6=2, CCTV-7=2, CCTV-8=3, CCTV-9=3, CCTV-10=1, CCTV-11=1, CCTV-12=1, CCTV-13=2, CCTV-14=1, CCTV-15=2, CCTV-16=1, CCTV-17=1, CCTV-5+=1",
-      "important satellite channels below independent URL warning target: 河北卫视=1, 北京卫视=1, 东方卫视=3, 浙江卫视=1, 湖南卫视=1, 深圳卫视=2, 山西卫视=1, 内蒙古卫视=1, 吉林卫视=1, 安徽卫视=1, 东南卫视=1, 江西卫视=1, 青海卫视=1, 新疆卫视=1",
-      "core channels below independent host warning target: CCTV-1=2, CCTV-2=2, CCTV-6=2, CCTV-7=2, CCTV-10=1, CCTV-11=1, CCTV-12=1, CCTV-13=2, CCTV-14=1, CCTV-15=2, CCTV-16=1, CCTV-17=1, CCTV-5+=1, 河北卫视=1, 北京卫视=1, 东方卫视=1, 浙江卫视=1, 湖南卫视=1, 深圳卫视=2, 山西卫视=1, 内蒙古卫视=1, 吉林卫视=1, 安徽卫视=1, 东南卫视=1, 江西卫视=1, 青海卫视=1, 新疆卫视=1"
+      "core CCTV channels below independent URL minimum: CCTV-4=0, CCTV-16=0",
+      "important satellite channels below independent URL minimum: 辽宁卫视=0, 河北卫视=0, 河南卫视=0, 东方卫视=0, 江苏卫视=0, 广东卫视=0, 天津卫视=0, 吉林卫视=0, 黑龙江卫视=0, 安徽卫视=0, 山东卫视=0, 湖北卫视=0, 广西卫视=0, 海南卫视=0, 重庆卫视=0, 四川卫视=0, 贵州卫视=0, 云南卫视=0, 西藏卫视=0, 陕西卫视=0, 甘肃卫视=0, 宁夏卫视=0, 兵团卫视=0, 厦门卫视=0",
+      "core channels below independent host minimum: CCTV-4=0, CCTV-16=0, 辽宁卫视=0, 河北卫视=0, 河南卫视=0, 东方卫视=0, 江苏卫视=0, 广东卫视=0, 天津卫视=0, 吉林卫视=0, 黑龙江卫视=0, 安徽卫视=0, 山东卫视=0, 湖北卫视=0, 广西卫视=0, 海南卫视=0, 重庆卫视=0, 四川卫视=0, 贵州卫视=0, 云南卫视=0, 西藏卫视=0, 陕西卫视=0, 甘肃卫视=0, 宁夏卫视=0, 兵团卫视=0, 厦门卫视=0",
+      "core CCTV channels below independent URL warning target: CCTV-1=1, CCTV-2=1, CCTV-3=2, CCTV-5=1, CCTV-6=1, CCTV-7=1, CCTV-8=1, CCTV-9=2, CCTV-10=1, CCTV-11=1, CCTV-12=1, CCTV-13=2, CCTV-14=1, CCTV-15=1, CCTV-17=1, CCTV-5+=1",
+      "important satellite channels below independent URL warning target: 北京卫视=1, 浙江卫视=1, 湖南卫视=1, 深圳卫视=1, 山西卫视=1, 内蒙古卫视=1, 东南卫视=1, 江西卫视=1, 青海卫视=1, 新疆卫视=1",
+      "core channels below independent host warning target: CCTV-1=1, CCTV-2=1, CCTV-3=2, CCTV-5=1, CCTV-6=1, CCTV-7=1, CCTV-8=1, CCTV-9=2, CCTV-10=1, CCTV-11=1, CCTV-12=1, CCTV-13=2, CCTV-14=1, CCTV-15=1, CCTV-17=1, CCTV-5+=1, 北京卫视=1, 浙江卫视=1, 湖南卫视=1, 深圳卫视=1, 山西卫视=1, 内蒙古卫视=1, 东南卫视=1, 江西卫视=1, 青海卫视=1, 新疆卫视=1"
     ]
   },
   "family_quality_audit": {
     "publication_policy": "available_channels",
     "warnings": [
-      "family CCTV below independent URL minimum: CCTV-4=0",
-      "family satellite below independent URL minimum: 辽宁卫视=0, 河南卫视=0, 江苏卫视=0, 广东卫视=0, 天津卫视=0, 黑龙江卫视=0, 山东卫视=0, 湖北卫视=0, 广西卫视=0, 海南卫视=0, 重庆卫视=0, 四川卫视=0, 贵州卫视=0, 云南卫视=0, 西藏卫视=0, 陕西卫视=0, 甘肃卫视=0, 宁夏卫视=0, 兵团卫视=0, 厦门卫视=0"
+      "family CCTV below independent URL minimum: CCTV-4=0, CCTV-16=0",
+      "family satellite below independent URL minimum: 辽宁卫视=0, 河北卫视=0, 河南卫视=0, 东方卫视=0, 江苏卫视=0, 广东卫视=0, 天津卫视=0, 吉林卫视=0, 黑龙江卫视=0, 安徽卫视=0, 山东卫视=0, 湖北卫视=0, 广西卫视=0, 海南卫视=0, 重庆卫视=0, 四川卫视=0, 贵州卫视=0, 云南卫视=0, 西藏卫视=0, 陕西卫视=0, 甘肃卫视=0, 宁夏卫视=0, 兵团卫视=0, 厦门卫视=0"
     ],
     "status": "ok",
-    "rows": 344,
-    "unique_names": 308,
-    "unique_channel_identities": 308,
-    "unique_urls": 344,
+    "rows": 310,
+    "unique_names": 287,
+    "unique_channel_identities": 287,
+    "unique_urls": 310,
     "groups": {
-      "央视频道": 33,
-      "卫视频道": 25,
-      "地方频道": 150,
-      "影视剧场": 63,
+      "央视频道": 21,
+      "卫视频道": 18,
+      "地方频道": 153,
+      "影视剧场": 46,
       "少儿动漫": 2,
       "体育纪实": 16,
       "音乐综艺": 1,
-      "综合娱乐": 51,
+      "综合娱乐": 50,
       "港澳台频道": 3
     },
     "required_cctv": [
       {
         "name": "CCTV-1",
-        "published_rows": 2,
-        "unique_urls": 2,
-        "unique_hosts": 2,
-        "count": 2
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
       },
       {
         "name": "CCTV-2",
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
+      },
+      {
+        "name": "CCTV-3",
         "published_rows": 2,
         "unique_urls": 2,
         "unique_hosts": 2,
         "count": 2
-      },
-      {
-        "name": "CCTV-3",
-        "published_rows": 3,
-        "unique_urls": 3,
-        "unique_hosts": 3,
-        "count": 3
       },
       {
         "name": "CCTV-4",
@@ -1969,38 +2002,38 @@
       },
       {
         "name": "CCTV-5",
-        "published_rows": 3,
-        "unique_urls": 3,
-        "unique_hosts": 3,
-        "count": 3
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
       },
       {
         "name": "CCTV-6",
-        "published_rows": 2,
-        "unique_urls": 2,
-        "unique_hosts": 2,
-        "count": 2
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
       },
       {
         "name": "CCTV-7",
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
+      },
+      {
+        "name": "CCTV-8",
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
+      },
+      {
+        "name": "CCTV-9",
         "published_rows": 2,
         "unique_urls": 2,
         "unique_hosts": 2,
         "count": 2
-      },
-      {
-        "name": "CCTV-8",
-        "published_rows": 3,
-        "unique_urls": 3,
-        "unique_hosts": 3,
-        "count": 3
-      },
-      {
-        "name": "CCTV-9",
-        "published_rows": 3,
-        "unique_urls": 3,
-        "unique_hosts": 3,
-        "count": 3
       },
       {
         "name": "CCTV-10",
@@ -2039,17 +2072,17 @@
       },
       {
         "name": "CCTV-15",
-        "published_rows": 2,
-        "unique_urls": 2,
-        "unique_hosts": 2,
-        "count": 2
-      },
-      {
-        "name": "CCTV-16",
         "published_rows": 1,
         "unique_urls": 1,
         "unique_hosts": 1,
         "count": 1
+      },
+      {
+        "name": "CCTV-16",
+        "published_rows": 0,
+        "unique_urls": 0,
+        "unique_hosts": 0,
+        "count": 0
       },
       {
         "name": "CCTV-17",
@@ -2076,10 +2109,10 @@
       },
       {
         "name": "河北卫视",
-        "published_rows": 1,
-        "unique_urls": 1,
-        "unique_hosts": 1,
-        "count": 1
+        "published_rows": 0,
+        "unique_urls": 0,
+        "unique_hosts": 0,
+        "count": 0
       },
       {
         "name": "河南卫视",
@@ -2097,10 +2130,10 @@
       },
       {
         "name": "东方卫视",
-        "published_rows": 3,
-        "unique_urls": 3,
-        "unique_hosts": 1,
-        "count": 3
+        "published_rows": 0,
+        "unique_urls": 0,
+        "unique_hosts": 0,
+        "count": 0
       },
       {
         "name": "浙江卫视",
@@ -2132,10 +2165,10 @@
       },
       {
         "name": "深圳卫视",
-        "published_rows": 2,
-        "unique_urls": 2,
-        "unique_hosts": 2,
-        "count": 2
+        "published_rows": 1,
+        "unique_urls": 1,
+        "unique_hosts": 1,
+        "count": 1
       },
       {
         "name": "天津卫视",
@@ -2160,10 +2193,10 @@
       },
       {
         "name": "吉林卫视",
-        "published_rows": 1,
-        "unique_urls": 1,
-        "unique_hosts": 1,
-        "count": 1
+        "published_rows": 0,
+        "unique_urls": 0,
+        "unique_hosts": 0,
+        "count": 0
       },
       {
         "name": "黑龙江卫视",
@@ -2174,10 +2207,10 @@
       },
       {
         "name": "安徽卫视",
-        "published_rows": 1,
-        "unique_urls": 1,
-        "unique_hosts": 1,
-        "count": 1
+        "published_rows": 0,
+        "unique_urls": 0,
+        "unique_hosts": 0,
+        "count": 0
       },
       {
         "name": "东南卫视",
@@ -2315,6 +2348,13 @@
         "unique_urls": 0,
         "unique_hosts": 0,
         "count": 0
+      },
+      {
+        "name": "CCTV-16",
+        "published_rows": 0,
+        "unique_urls": 0,
+        "unique_hosts": 0,
+        "count": 0
       }
     ],
     "missing_satellite_quality": [
@@ -2326,7 +2366,21 @@
         "count": 0
       },
       {
+        "name": "河北卫视",
+        "published_rows": 0,
+        "unique_urls": 0,
+        "unique_hosts": 0,
+        "count": 0
+      },
+      {
         "name": "河南卫视",
+        "published_rows": 0,
+        "unique_urls": 0,
+        "unique_hosts": 0,
+        "count": 0
+      },
+      {
+        "name": "东方卫视",
         "published_rows": 0,
         "unique_urls": 0,
         "unique_hosts": 0,
@@ -2354,7 +2408,21 @@
         "count": 0
       },
       {
+        "name": "吉林卫视",
+        "published_rows": 0,
+        "unique_urls": 0,
+        "unique_hosts": 0,
+        "count": 0
+      },
+      {
         "name": "黑龙江卫视",
+        "published_rows": 0,
+        "unique_urls": 0,
+        "unique_hosts": 0,
+        "count": 0
+      },
+      {
+        "name": "安徽卫视",
         "published_rows": 0,
         "unique_urls": 0,
         "unique_hosts": 0,
@@ -2464,16 +2532,16 @@
     "failures": []
   },
   "guard_channel_coverage": {
-    "total": 308,
+    "total": 287,
     "groups": {
-      "央视频道": 19,
-      "卫视频道": 18,
-      "地方频道": 135,
-      "影视剧场": 63,
+      "央视频道": 18,
+      "卫视频道": 14,
+      "地方频道": 137,
+      "影视剧场": 46,
       "少儿动漫": 2,
       "体育纪实": 16,
       "音乐综艺": 1,
-      "综合娱乐": 51,
+      "综合娱乐": 50,
       "港澳台频道": 3
     }
   },
@@ -2482,16 +2550,16 @@
     "schema_version": 3,
     "coverage_metric": "canonical_channels",
     "channel_coverage": {
-      "total": 308,
+      "total": 287,
       "groups": {
-        "央视频道": 19,
-        "卫视频道": 18,
-        "地方频道": 135,
-        "影视剧场": 63,
+        "央视频道": 18,
+        "卫视频道": 14,
+        "地方频道": 137,
+        "影视剧场": 46,
         "少儿动漫": 2,
         "体育纪实": 16,
         "音乐综艺": 1,
-        "综合娱乐": 51,
+        "综合娱乐": 50,
         "港澳台频道": 3
       }
     },
@@ -2503,9 +2571,9 @@
     },
     "source_outages_block_publication": false,
     "status": "ok",
-    "baseline_lines": 341,
-    "current_lines": 350,
-    "total_drop_ratio": -0.026392961876832845,
+    "baseline_lines": 350,
+    "current_lines": 315,
+    "total_drop_ratio": 0.1,
     "min_lines": 1,
     "max_total_drop_ratio": 0.2,
     "max_failed_sources": 5,
@@ -2521,28 +2589,28 @@
     "recheck_policy_version": 1,
     "group_deltas": {
       "央视频道": {
-        "baseline": 23,
-        "current": 33,
-        "delta": 10,
-        "drop_ratio": -0.43478260869565216
+        "baseline": 33,
+        "current": 21,
+        "delta": -12,
+        "drop_ratio": 0.36363636363636365
       },
       "卫视频道": {
-        "baseline": 21,
-        "current": 25,
-        "delta": 4,
-        "drop_ratio": -0.19047619047619047
+        "baseline": 25,
+        "current": 18,
+        "delta": -7,
+        "drop_ratio": 0.28
       },
       "地方频道": {
-        "baseline": 159,
-        "current": 154,
-        "delta": -5,
-        "drop_ratio": 0.031446540880503145
+        "baseline": 154,
+        "current": 156,
+        "delta": 2,
+        "drop_ratio": -0.012987012987012988
       },
       "影视剧场": {
-        "baseline": 62,
-        "current": 63,
-        "delta": 1,
-        "drop_ratio": -0.016129032258064516
+        "baseline": 63,
+        "current": 46,
+        "delta": -17,
+        "drop_ratio": 0.2698412698412698
       },
       "少儿动漫": {
         "baseline": 2,
@@ -2570,15 +2638,15 @@
       },
       "综合娱乐": {
         "baseline": 51,
-        "current": 51,
-        "delta": 0,
-        "drop_ratio": 0.0
+        "current": 50,
+        "delta": -1,
+        "drop_ratio": 0.0196078431372549
       },
       "港澳台频道": {
-        "baseline": 4,
+        "baseline": 3,
         "current": 3,
-        "delta": -1,
-        "drop_ratio": 0.25
+        "delta": 0,
+        "drop_ratio": 0.0
       },
       "海外华语频道": {
         "baseline": 0,
@@ -2597,7 +2665,6 @@
     "disabled_reported_sources": [],
     "invalid_mode_sources": [],
     "candidate_failed_sources": [
-      "iyouhun_zb",
       "mursor_yy",
       "mursor_bililive",
       "freetv_huya",
@@ -2606,7 +2673,7 @@
     "candidate_zero_parsed_sources": [],
     "failures": [],
     "warnings": [
-      "candidate-only sources unavailable (non-blocking): ['iyouhun_zb', 'mursor_yy', 'mursor_bililive', 'freetv_huya', 'freetv_douyu']"
+      "candidate-only sources unavailable (non-blocking): ['mursor_yy', 'mursor_bililive', 'freetv_huya', 'freetv_douyu']"
     ]
   },
   "publish_size": {
@@ -2619,39 +2686,39 @@
     ],
     "manifest_file": "publish-manifest.json",
     "files": {
-      "live-curated.txt": 25151,
-      "live.txt": 25151,
-      "live-verified.txt": 25151,
-      "ku9-live.txt": 25151,
-      "live.m3u": 47710,
-      "ku9-family.txt": 24729,
-      "live-family.txt": 24729,
-      "family.m3u": 46916,
-      "final-publish-report.md": 10510,
-      "coverage-report.md": 2200,
-      "quality-audit-report.md": 4676,
-      "publish-guard-report.md": 1588,
-      "published-recheck-report.md": 28663,
-      "source-report.md": 7869,
-      "check-report.md": 7869,
-      "curated-report.md": 1861,
-      "sources_status.csv": 4193
+      "live-curated.txt": 22568,
+      "live.txt": 22568,
+      "live-verified.txt": 22568,
+      "ku9-live.txt": 22568,
+      "live.m3u": 42967,
+      "ku9-family.txt": 22209,
+      "live-family.txt": 22209,
+      "family.m3u": 42298,
+      "final-publish-report.md": 10862,
+      "coverage-report.md": 2225,
+      "quality-audit-report.md": 4732,
+      "publish-guard-report.md": 1563,
+      "published-recheck-report.md": 26874,
+      "source-report.md": 8126,
+      "check-report.md": 8126,
+      "curated-report.md": 1860,
+      "sources_status.csv": 4139
     },
     "txt_alias_same_hash": true,
     "family_txt_alias_same_hash": true,
     "txt_alias_hashes": {
-      "live-curated.txt": "997000383c89c79ef40fad994248048a8f2fd0b34dd668b8293d2b15286322d9",
-      "live.txt": "997000383c89c79ef40fad994248048a8f2fd0b34dd668b8293d2b15286322d9",
-      "live-verified.txt": "997000383c89c79ef40fad994248048a8f2fd0b34dd668b8293d2b15286322d9",
-      "ku9-live.txt": "997000383c89c79ef40fad994248048a8f2fd0b34dd668b8293d2b15286322d9"
+      "live-curated.txt": "345116b29ae064129de0704b866a24b471b6f3f7bf69dbea5f3aa3a4f9920261",
+      "live.txt": "345116b29ae064129de0704b866a24b471b6f3f7bf69dbea5f3aa3a4f9920261",
+      "live-verified.txt": "345116b29ae064129de0704b866a24b471b6f3f7bf69dbea5f3aa3a4f9920261",
+      "ku9-live.txt": "345116b29ae064129de0704b866a24b471b6f3f7bf69dbea5f3aa3a4f9920261"
     },
     "family_txt_alias_hashes": {
-      "ku9-family.txt": "05945134c909bb0811ccab722cf0272a0f76cb94fede5f300adfb0740c87f740",
-      "live-family.txt": "05945134c909bb0811ccab722cf0272a0f76cb94fede5f300adfb0740c87f740"
+      "ku9-family.txt": "665059abe95d9dd6b51f51a0ce078967a0cb9f855c3914dd34dfcd675f74dde3",
+      "live-family.txt": "665059abe95d9dd6b51f51a0ce078967a0cb9f855c3914dd34dfcd675f74dde3"
     },
-    "working_tree_payload_bytes": 314117,
-    "unique_payload_blob_bytes": 206066,
-    "duplicate_txt_worktree_bytes": 75453,
+    "working_tree_payload_bytes": 288462,
+    "unique_payload_blob_bytes": 190423,
+    "duplicate_txt_worktree_bytes": 67704,
     "max_unique_payload_blob_bytes": 2500000,
     "forbidden_tracked_artifacts": [],
     "failures": [],
