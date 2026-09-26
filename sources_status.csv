@@ -16,11 +16,11 @@ fanmingming_ipv6_mirror,https://live.fanmingming.cn/tv/m3u/ipv6.m3u,enabled,True
 kimentanm_aptv,https://raw.githubusercontent.com/Kimentanm/aptv/master/m3u/iptv.m3u,enabled,True,True,21944,119,False,
 bigbiggrandg_gather,https://raw.githubusercontent.com/BigBigGrandG/IPTV-URL/release/Gather.m3u,enabled,True,True,329793,1900,False,
 yang_gather,https://raw.githubusercontent.com/YanG-1989/m3u/main/Gather.m3u,enabled,True,True,26227,123,False,
-iptv_org_all,https://iptv-org.github.io/iptv/index.m3u,enabled,True,True,2466518,10218,False,
-epg_cn,https://epg.pw/test_channels.m3u,enabled,True,True,199837,608,False,
+iptv_org_all,https://iptv-org.github.io/iptv/index.m3u,enabled,True,True,2467812,10224,False,
+epg_cn,https://epg.pw/test_channels.m3u,enabled,True,True,193855,589,False,
 epg_hk,https://epg.pw/test_channels_hong_kong.m3u,enabled,True,True,4176,13,False,
 epg_mo,https://epg.pw/test_channels_macau.m3u,enabled,True,True,6134,19,False,
-epg_tw,https://epg.pw/test_channels_taiwan.m3u,enabled,True,True,8354,15,False,
+epg_tw,https://epg.pw/test_channels_taiwan.m3u,enabled,True,True,8999,17,False,
 iptv_org_tw,https://iptv-org.github.io/iptv/countries/tw.m3u,enabled,True,True,4747,25,False,
 epg_sg,https://epg.pw/test_channels_singapore.m3u,enabled,True,True,390,1,False,
 epg_my,https://epg.pw/test_channels_malaysia.m3u,enabled,True,True,376,1,False,
@@ -29,7 +29,7 @@ mursor_yy,https://gongdian.top/tv/Mursor/yylunbo.m3u,enabled,False,False,0,0,Fal
 mursor_bililive,https://gongdian.top/tv/Mursor/bililive.m3u,enabled,False,False,0,0,False,PublicURLPolicyError('DNS resolution failed for gongdian.top: [Errno -5] No address associated with hostname')
 freetv_huya,https://live.freetv.top/huyayqk.m3u,recovery,False,False,0,0,False,TimeoutError('URL total budget exceeded during connection retry')
 freetv_douyu,https://live.freetv.top/douyuyqk.m3u,recovery,False,False,0,0,False,TimeoutError('URL total budget exceeded during connection retry')
-iptv_org_cn,https://iptv-org.github.io/iptv/countries/cn.m3u,enabled,True,True,29075,122,False,
+iptv_org_cn,https://iptv-org.github.io/iptv/countries/cn.m3u,enabled,True,True,29257,123,False,
 tvapp_catalog,https://raw.githubusercontent.com/youhunwl/TVAPP/main/README.md,enabled,False,True,36783,0,False,catalog only; child links not fetched or executed
 qist_catalog,https://raw.githubusercontent.com/qist/tvbox/master/README.md,enabled,False,True,6958,0,False,catalog only; child links not fetched or executed
 yingshitv_catalog,https://raw.githubusercontent.com/Huameng11/yingshiTV/master/README.md,enabled,False,True,2788,0,False,catalog only; child links not fetched or executed
