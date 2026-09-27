@@ -1,6 +1,6 @@
 # Core channel coverage report
 
-Coverage status: incomplete (24/52 target channels)
+Coverage status: incomplete (25/52 target channels)
 A successful maintenance job does not mean all requested channels are available.
 
 Minimum independent URLs per important channel: 1
@@ -20,7 +20,7 @@ Fail on missing important satellite: False
 | CCTV-6 | 1 | 1 | OK |
 | CCTV-7 | 1 | 1 | OK |
 | CCTV-8 | 2 | 2 | OK |
-| CCTV-9 | 1 | 1 | OK |
+| CCTV-9 | 2 | 2 | OK |
 | CCTV-10 | 1 | 1 | OK |
 | CCTV-11 | 1 | 1 | OK |
 | CCTV-12 | 1 | 1 | OK |
@@ -52,7 +52,7 @@ Fail on missing important satellite: False
 | 黑龙江卫视 | 0 | 0 | MISSING |
 | 安徽卫视 | 1 | 1 | OK |
 | 东南卫视 | 1 | 1 | OK |
-| 江西卫视 | 0 | 0 | MISSING |
+| 江西卫视 | 1 | 1 | OK |
 | 山东卫视 | 0 | 0 | MISSING |
 | 湖北卫视 | 0 | 0 | MISSING |
 | 广西卫视 | 0 | 0 | MISSING |
