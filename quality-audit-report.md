@@ -1,17 +1,17 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 305
-Unique channel names: 285
-Unique canonical channel identities: 285
-Unique URLs: 305
+Rows: 295
+Unique channel names: 277
+Unique canonical channel identities: 277
+Unique URLs: 295
 Strict filter residue count: 0
 Latin/noise-like review count: 0
 Channel unique URL limit violations: 0
 URL identity conflicts: 0
-Unique stream hosts: 79
-Top stream host share: 25.2%
-Top five stream host share: 57.4%
+Unique stream hosts: 74
+Top stream host share: 26.1%
+Top five stream host share: 59.3%
 
 ## Core CCTV quality
 
@@ -84,22 +84,22 @@ Minimum important satellite independent URLs: 1
 
 | Host | Rows | Share |
 |---|---:|---:|
-| gcalic.v.myalicdn.com | 77 | 25.2% |
-| live.metshop.top | 66 | 21.6% |
-| 74.91.26.218 | 14 | 4.6% |
-| stream5.jlntv.cn | 10 | 3.3% |
-| stream8.jlntv.cn | 8 | 2.6% |
-| play.kankanlive.com | 7 | 2.3% |
-| stream.hrbtv.net | 6 | 2.0% |
-| gmxw.7766.org | 5 | 1.6% |
-| 38.64.72.148 | 4 | 1.3% |
-| live-auth.51kandianshi.com | 4 | 1.3% |
+| gcalic.v.myalicdn.com | 77 | 26.1% |
+| live.metshop.top | 66 | 22.4% |
+| 74.91.26.218 | 14 | 4.7% |
+| stream5.jlntv.cn | 10 | 3.4% |
+| stream8.jlntv.cn | 8 | 2.7% |
+| play.kankanlive.com | 7 | 2.4% |
+| gmxw.7766.org | 5 | 1.7% |
+| stream.hrbtv.net | 5 | 1.7% |
+| 38.64.72.148 | 4 | 1.4% |
+| live-auth.51kandianshi.com | 4 | 1.4% |
 
 ## Family playlist audit
 
 Status: ok
-Rows: 301
-Unique URLs: 301
+Rows: 291
+Unique URLs: 291
 
 ## Warnings
 
