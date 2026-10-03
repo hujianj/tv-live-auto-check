@@ -1,21 +1,21 @@
 # Publish guard report
 
 Status: ok
-Baseline lines: 318
-Current lines: 304
-Total drop ratio: 4.4%
+Baseline lines: 304
+Current lines: 311
+Total drop ratio: -2.3%
 Relative baseline comparable: True
 Relative guard migration: none
 Coverage metric: canonical_channels
-Independent channel coverage: {'total': 283, 'groups': {'央视频道': 18, '卫视频道': 13, '地方频道': 118, '影视剧场': 63, '少儿动漫': 2, '体育纪实': 16, '音乐综艺': 1, '综合娱乐': 51, '港澳台频道': 1}}
+Independent channel coverage: {'total': 288, 'groups': {'央视频道': 18, '卫视频道': 14, '地方频道': 122, '影视剧场': 63, '少儿动漫': 2, '体育纪实': 16, '音乐综艺': 1, '综合娱乐': 51, '港澳台频道': 1}}
 
 ## Group deltas
 
 | Group | Baseline | Current | Delta | Drop | Minimum |
 |---|---:|---:|---:|---:|---:|
 | 央视频道 | 21 | 21 | 0 | 0.0% | 1 |
-| 卫视频道 | 21 | 17 | -4 | 19.0% | 1 |
-| 地方频道 | 140 | 130 | -10 | 7.1% | 1 |
+| 卫视频道 | 17 | 20 | 3 | -17.6% | 1 |
+| 地方频道 | 130 | 134 | 4 | -3.1% | 1 |
 | 影视剧场 | 63 | 63 | 0 | 0.0% | 0 |
 | 少儿动漫 | 2 | 2 | 0 | 0.0% | 0 |
 | 体育纪实 | 18 | 18 | 0 | 0.0% | 0 |

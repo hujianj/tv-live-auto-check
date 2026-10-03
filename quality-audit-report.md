@@ -1,17 +1,17 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 304
-Unique channel names: 283
-Unique canonical channel identities: 283
-Unique URLs: 304
+Rows: 311
+Unique channel names: 288
+Unique canonical channel identities: 288
+Unique URLs: 311
 Strict filter residue count: 0
 Latin/noise-like review count: 0
 Channel unique URL limit violations: 0
 URL identity conflicts: 0
-Unique stream hosts: 77
-Top stream host share: 25.3%
-Top five stream host share: 57.6%
+Unique stream hosts: 80
+Top stream host share: 24.8%
+Top five stream host share: 56.3%
 
 ## Core CCTV quality
 
@@ -49,7 +49,7 @@ Minimum important satellite independent URLs: 1
 | 河北卫视 | 0 | 0 | 0 | LOW |
 | 河南卫视 | 0 | 0 | 0 | LOW |
 | 北京卫视 | 0 | 0 | 0 | LOW |
-| 东方卫视 | 0 | 0 | 0 | LOW |
+| 东方卫视 | 3 | 3 | 1 | OK |
 | 浙江卫视 | 0 | 0 | 0 | LOW |
 | 江苏卫视 | 0 | 0 | 0 | LOW |
 | 湖南卫视 | 1 | 1 | 1 | OK |
@@ -84,10 +84,10 @@ Minimum important satellite independent URLs: 1
 
 | Host | Rows | Share |
 |---|---:|---:|
-| gcalic.v.myalicdn.com | 77 | 25.3% |
-| live.metshop.top | 66 | 21.7% |
-| 74.91.26.218 | 14 | 4.6% |
-| stream5.jlntv.cn | 10 | 3.3% |
+| gcalic.v.myalicdn.com | 77 | 24.8% |
+| live.metshop.top | 66 | 21.2% |
+| 74.91.26.218 | 14 | 4.5% |
+| stream5.jlntv.cn | 10 | 3.2% |
 | stream.hrbtv.net | 8 | 2.6% |
 | stream8.jlntv.cn | 8 | 2.6% |
 | play.kankanlive.com | 7 | 2.3% |
@@ -98,14 +98,14 @@ Minimum important satellite independent URLs: 1
 ## Family playlist audit
 
 Status: ok
-Rows: 300
-Unique URLs: 300
+Rows: 307
+Unique URLs: 307
 
 ## Warnings
 
 - core CCTV channels below independent URL minimum: CCTV-4=0, CCTV-5+=0
-- important satellite channels below independent URL minimum: 辽宁卫视=0, 河北卫视=0, 河南卫视=0, 北京卫视=0, 东方卫视=0, 浙江卫视=0, 江苏卫视=0, 广东卫视=0, 天津卫视=0, 吉林卫视=0, 黑龙江卫视=0, 山东卫视=0, 湖北卫视=0, 广西卫视=0, 海南卫视=0, 重庆卫视=0, 四川卫视=0, 贵州卫视=0, 云南卫视=0, 西藏卫视=0, 陕西卫视=0, 甘肃卫视=0, 宁夏卫视=0, 兵团卫视=0, 厦门卫视=0
-- core channels below independent host minimum: CCTV-4=0, CCTV-5+=0, 辽宁卫视=0, 河北卫视=0, 河南卫视=0, 北京卫视=0, 东方卫视=0, 浙江卫视=0, 江苏卫视=0, 广东卫视=0, 天津卫视=0, 吉林卫视=0, 黑龙江卫视=0, 山东卫视=0, 湖北卫视=0, 广西卫视=0, 海南卫视=0, 重庆卫视=0, 四川卫视=0, 贵州卫视=0, 云南卫视=0, 西藏卫视=0, 陕西卫视=0, 甘肃卫视=0, 宁夏卫视=0, 兵团卫视=0, 厦门卫视=0
+- important satellite channels below independent URL minimum: 辽宁卫视=0, 河北卫视=0, 河南卫视=0, 北京卫视=0, 浙江卫视=0, 江苏卫视=0, 广东卫视=0, 天津卫视=0, 吉林卫视=0, 黑龙江卫视=0, 山东卫视=0, 湖北卫视=0, 广西卫视=0, 海南卫视=0, 重庆卫视=0, 四川卫视=0, 贵州卫视=0, 云南卫视=0, 西藏卫视=0, 陕西卫视=0, 甘肃卫视=0, 宁夏卫视=0, 兵团卫视=0, 厦门卫视=0
+- core channels below independent host minimum: CCTV-4=0, CCTV-5+=0, 辽宁卫视=0, 河北卫视=0, 河南卫视=0, 北京卫视=0, 浙江卫视=0, 江苏卫视=0, 广东卫视=0, 天津卫视=0, 吉林卫视=0, 黑龙江卫视=0, 山东卫视=0, 湖北卫视=0, 广西卫视=0, 海南卫视=0, 重庆卫视=0, 四川卫视=0, 贵州卫视=0, 云南卫视=0, 西藏卫视=0, 陕西卫视=0, 甘肃卫视=0, 宁夏卫视=0, 兵团卫视=0, 厦门卫视=0
 - core CCTV channels below independent URL warning target: CCTV-1=1, CCTV-2=1, CCTV-3=1, CCTV-5=1, CCTV-6=1, CCTV-7=1, CCTV-8=2, CCTV-9=2, CCTV-10=1, CCTV-11=1, CCTV-12=1, CCTV-13=1, CCTV-14=1, CCTV-15=2, CCTV-16=1, CCTV-17=1
-- important satellite channels below independent URL warning target: 湖南卫视=1, 深圳卫视=1, 山西卫视=1, 内蒙古卫视=1, 安徽卫视=1, 东南卫视=1, 江西卫视=1, 青海卫视=1, 新疆卫视=1
-- core channels below independent host warning target: CCTV-1=1, CCTV-2=1, CCTV-3=1, CCTV-5=1, CCTV-6=1, CCTV-7=1, CCTV-8=2, CCTV-9=2, CCTV-10=1, CCTV-11=1, CCTV-12=1, CCTV-13=1, CCTV-14=1, CCTV-15=2, CCTV-16=1, CCTV-17=1, 湖南卫视=1, 深圳卫视=1, 山西卫视=1, 内蒙古卫视=1, 安徽卫视=1, 东南卫视=1, 江西卫视=1, 青海卫视=1, 新疆卫视=1
+- important satellite channels below independent URL warning target: 东方卫视=3, 湖南卫视=1, 深圳卫视=1, 山西卫视=1, 内蒙古卫视=1, 安徽卫视=1, 东南卫视=1, 江西卫视=1, 青海卫视=1, 新疆卫视=1
+- core channels below independent host warning target: CCTV-1=1, CCTV-2=1, CCTV-3=1, CCTV-5=1, CCTV-6=1, CCTV-7=1, CCTV-8=2, CCTV-9=2, CCTV-10=1, CCTV-11=1, CCTV-12=1, CCTV-13=1, CCTV-14=1, CCTV-15=2, CCTV-16=1, CCTV-17=1, 东方卫视=1, 湖南卫视=1, 深圳卫视=1, 山西卫视=1, 内蒙古卫视=1, 安徽卫视=1, 东南卫视=1, 江西卫视=1, 青海卫视=1, 新疆卫视=1
