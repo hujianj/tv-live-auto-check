@@ -1,17 +1,17 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 313
+Rows: 312
 Unique channel names: 288
 Unique canonical channel identities: 288
-Unique URLs: 313
+Unique URLs: 312
 Strict filter residue count: 0
 Latin/noise-like review count: 0
 Channel unique URL limit violations: 0
 URL identity conflicts: 0
-Unique stream hosts: 76
-Top stream host share: 24.6%
-Top five stream host share: 55.9%
+Unique stream hosts: 80
+Top stream host share: 24.7%
+Top five stream host share: 56.1%
 
 ## Core CCTV quality
 
@@ -84,22 +84,22 @@ Minimum important satellite independent URLs: 1
 
 | Host | Rows | Share |
 |---|---:|---:|
-| gcalic.v.myalicdn.com | 77 | 24.6% |
-| live.metshop.top | 66 | 21.1% |
+| gcalic.v.myalicdn.com | 77 | 24.7% |
+| live.metshop.top | 66 | 21.2% |
 | 74.91.26.218 | 14 | 4.5% |
 | stream5.jlntv.cn | 10 | 3.2% |
-| l.cztvcloud.com | 8 | 2.6% |
 | stream.hrbtv.net | 8 | 2.6% |
 | stream8.jlntv.cn | 8 | 2.6% |
 | play.kankanlive.com | 7 | 2.2% |
 | gmxw.7766.org | 6 | 1.9% |
+| l.cztvcloud.com | 5 | 1.6% |
 | 38.64.72.148 | 4 | 1.3% |
 
 ## Family playlist audit
 
 Status: ok
-Rows: 309
-Unique URLs: 309
+Rows: 308
+Unique URLs: 308
 
 ## Warnings
 
