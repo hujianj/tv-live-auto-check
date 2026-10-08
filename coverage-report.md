@@ -1,6 +1,6 @@
 # Core channel coverage report
 
-Coverage status: incomplete (25/52 target channels)
+Coverage status: incomplete (24/52 target channels)
 A successful maintenance job does not mean all requested channels are available.
 
 Minimum independent URLs per important channel: 1
@@ -27,7 +27,7 @@ Fail on missing important satellite: False
 | CCTV-13 | 1 | 1 | OK |
 | CCTV-14 | 1 | 1 | OK |
 | CCTV-15 | 2 | 2 | OK |
-| CCTV-16 | 1 | 1 | OK |
+| CCTV-16 | 0 | 0 | MISSING |
 | CCTV-17 | 1 | 1 | OK |
 | CCTV-5+ | 0 | 0 | MISSING |
 
