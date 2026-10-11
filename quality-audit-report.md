@@ -2,8 +2,8 @@
 
 Status: ok
 Rows: 332
-Unique channel names: 301
-Unique canonical channel identities: 301
+Unique channel names: 300
+Unique canonical channel identities: 300
 Unique URLs: 332
 Strict filter residue count: 0
 Latin/noise-like review count: 0
@@ -11,7 +11,7 @@ Channel unique URL limit violations: 0
 URL identity conflicts: 0
 Unique stream hosts: 79
 Top stream host share: 23.2%
-Top five stream host share: 58.7%
+Top five stream host share: 59.0%
 
 ## Core CCTV quality
 
@@ -86,7 +86,7 @@ Minimum important satellite independent URLs: 1
 |---|---:|---:|
 | gcalic.v.myalicdn.com | 77 | 23.2% |
 | live.metshop.top | 66 | 19.9% |
-| l.cztvcloud.com | 28 | 8.4% |
+| l.cztvcloud.com | 29 | 8.7% |
 | 74.91.26.218 | 14 | 4.2% |
 | stream5.jlntv.cn | 10 | 3.0% |
 | stream.hrbtv.net | 8 | 2.4% |
