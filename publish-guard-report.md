@@ -1,28 +1,28 @@
 # Publish guard report
 
 Status: ok
-Baseline lines: 140
-Current lines: 331
-Total drop ratio: -136.4%
+Baseline lines: 331
+Current lines: 332
+Total drop ratio: -0.3%
 Relative baseline comparable: True
 Relative guard migration: none
 Coverage metric: canonical_channels
-Independent channel coverage: {'total': 300, 'groups': {'央视频道': 17, '卫视频道': 14, '地方频道': 131, '影视剧场': 66, '少儿动漫': 2, '体育纪实': 16, '音乐综艺': 1, '综合娱乐': 51, '港澳台频道': 2}}
+Independent channel coverage: {'total': 302, 'groups': {'央视频道': 17, '卫视频道': 14, '地方频道': 134, '影视剧场': 66, '少儿动漫': 2, '体育纪实': 16, '音乐综艺': 1, '综合娱乐': 51, '港澳台频道': 1}}
 
 ## Group deltas
 
 | Group | Baseline | Current | Delta | Drop | Minimum |
 |---|---:|---:|---:|---:|---:|
-| 央视频道 | 17 | 20 | 3 | -17.6% | 1 |
-| 卫视频道 | 11 | 20 | 9 | -81.8% | 1 |
-| 地方频道 | 83 | 151 | 68 | -81.9% | 1 |
-| 影视剧场 | 2 | 66 | 64 | -3200.0% | 0 |
+| 央视频道 | 20 | 19 | -1 | 5.0% | 1 |
+| 卫视频道 | 20 | 18 | -2 | 10.0% | 1 |
+| 地方频道 | 151 | 156 | 5 | -3.3% | 1 |
+| 影视剧场 | 66 | 66 | 0 | 0.0% | 0 |
 | 少儿动漫 | 2 | 2 | 0 | 0.0% | 0 |
-| 体育纪实 | 22 | 18 | -4 | 18.2% | 0 |
-| 音乐综艺 | 0 | 1 | 1 | n/a | 0 |
+| 体育纪实 | 18 | 18 | 0 | 0.0% | 0 |
+| 音乐综艺 | 1 | 1 | 0 | 0.0% | 0 |
 | 生活休闲 | 0 | 0 | 0 | n/a | 0 |
-| 综合娱乐 | 3 | 51 | 48 | -1600.0% | 0 |
-| 港澳台频道 | 0 | 2 | 2 | n/a | 0 |
+| 综合娱乐 | 51 | 51 | 0 | 0.0% | 0 |
+| 港澳台频道 | 2 | 1 | -1 | 50.0% | 0 |
 | 海外华语频道 | 0 | 0 | 0 | n/a | 0 |
 
 ## Source health
