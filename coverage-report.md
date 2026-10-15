@@ -39,14 +39,14 @@ Fail on missing important satellite: False
 | 河北卫视 | 0 | 0 | MISSING |
 | 河南卫视 | 0 | 0 | MISSING |
 | 北京卫视 | 0 | 0 | MISSING |
-| 东方卫视 | 0 | 0 | MISSING |
+| 东方卫视 | 3 | 3 | OK |
 | 浙江卫视 | 1 | 1 | OK |
 | 江苏卫视 | 0 | 0 | MISSING |
 | 湖南卫视 | 1 | 1 | OK |
 | 广东卫视 | 0 | 0 | MISSING |
 | 深圳卫视 | 2 | 2 | OK |
 | 天津卫视 | 0 | 0 | MISSING |
-| 山西卫视 | 1 | 1 | OK |
+| 山西卫视 | 0 | 0 | MISSING |
 | 内蒙古卫视 | 1 | 1 | OK |
 | 吉林卫视 | 0 | 0 | MISSING |
 | 黑龙江卫视 | 0 | 0 | MISSING |
