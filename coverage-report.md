@@ -1,6 +1,6 @@
 # Core channel coverage report
 
-Coverage status: incomplete (25/52 target channels)
+Coverage status: incomplete (35/52 target channels)
 A successful maintenance job does not mean all requested channels are available.
 
 Minimum independent URLs per important channel: 1
@@ -27,7 +27,7 @@ Fail on missing important satellite: False
 | CCTV-13 | 1 | 1 | OK |
 | CCTV-14 | 1 | 1 | OK |
 | CCTV-15 | 2 | 2 | OK |
-| CCTV-16 | 0 | 0 | MISSING |
+| CCTV-16 | 1 | 1 | OK |
 | CCTV-17 | 1 | 1 | OK |
 | CCTV-5+ | 0 | 0 | MISSING |
 
@@ -35,32 +35,32 @@ Fail on missing important satellite: False
 
 | Channel | Published rows | Unique URLs | Status |
 |---|---:|---:|---|
-| 辽宁卫视 | 0 | 0 | MISSING |
-| 河北卫视 | 0 | 0 | MISSING |
-| 河南卫视 | 0 | 0 | MISSING |
+| 辽宁卫视 | 2 | 2 | OK |
+| 河北卫视 | 2 | 2 | OK |
+| 河南卫视 | 2 | 2 | OK |
 | 北京卫视 | 0 | 0 | MISSING |
 | 东方卫视 | 3 | 3 | OK |
-| 浙江卫视 | 1 | 1 | OK |
+| 浙江卫视 | 0 | 0 | MISSING |
 | 江苏卫视 | 0 | 0 | MISSING |
 | 湖南卫视 | 1 | 1 | OK |
-| 广东卫视 | 0 | 0 | MISSING |
+| 广东卫视 | 2 | 2 | OK |
 | 深圳卫视 | 2 | 2 | OK |
 | 天津卫视 | 0 | 0 | MISSING |
-| 山西卫视 | 0 | 0 | MISSING |
+| 山西卫视 | 1 | 1 | OK |
 | 内蒙古卫视 | 1 | 1 | OK |
-| 吉林卫视 | 0 | 0 | MISSING |
+| 吉林卫视 | 2 | 2 | OK |
 | 黑龙江卫视 | 0 | 0 | MISSING |
 | 安徽卫视 | 1 | 1 | OK |
-| 东南卫视 | 1 | 1 | OK |
-| 江西卫视 | 1 | 1 | OK |
-| 山东卫视 | 0 | 0 | MISSING |
+| 东南卫视 | 3 | 3 | OK |
+| 江西卫视 | 2 | 2 | OK |
+| 山东卫视 | 1 | 1 | OK |
 | 湖北卫视 | 0 | 0 | MISSING |
-| 广西卫视 | 0 | 0 | MISSING |
+| 广西卫视 | 2 | 2 | OK |
 | 海南卫视 | 0 | 0 | MISSING |
 | 重庆卫视 | 0 | 0 | MISSING |
 | 四川卫视 | 0 | 0 | MISSING |
-| 贵州卫视 | 0 | 0 | MISSING |
-| 云南卫视 | 0 | 0 | MISSING |
+| 贵州卫视 | 1 | 1 | OK |
+| 云南卫视 | 2 | 2 | OK |
 | 西藏卫视 | 0 | 0 | MISSING |
 | 陕西卫视 | 0 | 0 | MISSING |
 | 甘肃卫视 | 0 | 0 | MISSING |
