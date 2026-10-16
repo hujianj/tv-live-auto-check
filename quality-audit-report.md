@@ -1,17 +1,17 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 306
-Unique channel names: 286
-Unique canonical channel identities: 286
-Unique URLs: 306
+Rows: 367
+Unique channel names: 320
+Unique canonical channel identities: 320
+Unique URLs: 367
 Strict filter residue count: 0
 Latin/noise-like review count: 0
 Channel unique URL limit violations: 0
 URL identity conflicts: 0
-Unique stream hosts: 79
-Top stream host share: 25.2%
-Top five stream host share: 57.2%
+Unique stream hosts: 83
+Top stream host share: 21.0%
+Top five stream host share: 54.8%
 
 ## Core CCTV quality
 
@@ -45,32 +45,32 @@ Minimum important satellite independent URLs: 1
 
 | Channel | Published rows | Unique URLs | Unique hosts | Status |
 |---|---:|---:|---:|---|
-| 辽宁卫视 | 0 | 0 | 0 | LOW |
-| 河北卫视 | 0 | 0 | 0 | LOW |
-| 河南卫视 | 0 | 0 | 0 | LOW |
+| 辽宁卫视 | 2 | 2 | 2 | OK |
+| 河北卫视 | 2 | 2 | 2 | OK |
+| 河南卫视 | 2 | 2 | 2 | OK |
 | 北京卫视 | 0 | 0 | 0 | LOW |
-| 东方卫视 | 0 | 0 | 0 | LOW |
-| 浙江卫视 | 1 | 1 | 1 | OK |
+| 东方卫视 | 3 | 3 | 1 | OK |
+| 浙江卫视 | 0 | 0 | 0 | LOW |
 | 江苏卫视 | 0 | 0 | 0 | LOW |
 | 湖南卫视 | 1 | 1 | 1 | OK |
-| 广东卫视 | 0 | 0 | 0 | LOW |
-| 深圳卫视 | 1 | 1 | 1 | OK |
+| 广东卫视 | 2 | 2 | 2 | OK |
+| 深圳卫视 | 2 | 2 | 2 | OK |
 | 天津卫视 | 0 | 0 | 0 | LOW |
 | 山西卫视 | 1 | 1 | 1 | OK |
 | 内蒙古卫视 | 1 | 1 | 1 | OK |
-| 吉林卫视 | 0 | 0 | 0 | LOW |
-| 黑龙江卫视 | 0 | 0 | 0 | LOW |
+| 吉林卫视 | 2 | 2 | 2 | OK |
+| 黑龙江卫视 | 2 | 2 | 2 | OK |
 | 安徽卫视 | 1 | 1 | 1 | OK |
-| 东南卫视 | 1 | 1 | 1 | OK |
-| 江西卫视 | 1 | 1 | 1 | OK |
-| 山东卫视 | 0 | 0 | 0 | LOW |
-| 湖北卫视 | 0 | 0 | 0 | LOW |
-| 广西卫视 | 0 | 0 | 0 | LOW |
+| 东南卫视 | 3 | 3 | 3 | OK |
+| 江西卫视 | 3 | 3 | 3 | OK |
+| 山东卫视 | 2 | 2 | 2 | OK |
+| 湖北卫视 | 2 | 2 | 2 | OK |
+| 广西卫视 | 2 | 2 | 2 | OK |
 | 海南卫视 | 0 | 0 | 0 | LOW |
 | 重庆卫视 | 0 | 0 | 0 | LOW |
 | 四川卫视 | 0 | 0 | 0 | LOW |
-| 贵州卫视 | 0 | 0 | 0 | LOW |
-| 云南卫视 | 0 | 0 | 0 | LOW |
+| 贵州卫视 | 2 | 2 | 2 | OK |
+| 云南卫视 | 2 | 2 | 2 | OK |
 | 西藏卫视 | 0 | 0 | 0 | LOW |
 | 陕西卫视 | 0 | 0 | 0 | LOW |
 | 甘肃卫视 | 0 | 0 | 0 | LOW |
@@ -84,28 +84,28 @@ Minimum important satellite independent URLs: 1
 
 | Host | Rows | Share |
 |---|---:|---:|
-| gcalic.v.myalicdn.com | 77 | 25.2% |
-| live.metshop.top | 66 | 21.6% |
-| 74.91.26.218 | 14 | 4.6% |
-| stream5.jlntv.cn | 10 | 3.3% |
-| stream8.jlntv.cn | 8 | 2.6% |
-| stream.hrbtv.net | 7 | 2.3% |
-| play.kankanlive.com | 7 | 2.3% |
-| gmxw.7766.org | 5 | 1.6% |
-| 38.64.72.148 | 4 | 1.3% |
-| bp-livetytv.bestv.cn | 4 | 1.3% |
+| gcalic.v.myalicdn.com | 77 | 21.0% |
+| live.metshop.top | 66 | 18.0% |
+| l.cztvcloud.com | 29 | 7.9% |
+| 101.66.195.192 | 15 | 4.1% |
+| 74.91.26.218 | 14 | 3.8% |
+| 101.66.195.137 | 14 | 3.8% |
+| stream5.jlntv.cn | 10 | 2.7% |
+| stream.hrbtv.net | 8 | 2.2% |
+| stream8.jlntv.cn | 8 | 2.2% |
+| play.kankanlive.com | 7 | 1.9% |
 
 ## Family playlist audit
 
 Status: ok
-Rows: 302
-Unique URLs: 302
+Rows: 361
+Unique URLs: 361
 
 ## Warnings
 
 - core CCTV channels below independent URL minimum: CCTV-4=0, CCTV-5+=0
-- important satellite channels below independent URL minimum: 辽宁卫视=0, 河北卫视=0, 河南卫视=0, 北京卫视=0, 东方卫视=0, 江苏卫视=0, 广东卫视=0, 天津卫视=0, 吉林卫视=0, 黑龙江卫视=0, 山东卫视=0, 湖北卫视=0, 广西卫视=0, 海南卫视=0, 重庆卫视=0, 四川卫视=0, 贵州卫视=0, 云南卫视=0, 西藏卫视=0, 陕西卫视=0, 甘肃卫视=0, 宁夏卫视=0, 兵团卫视=0, 厦门卫视=0
-- core channels below independent host minimum: CCTV-4=0, CCTV-5+=0, 辽宁卫视=0, 河北卫视=0, 河南卫视=0, 北京卫视=0, 东方卫视=0, 江苏卫视=0, 广东卫视=0, 天津卫视=0, 吉林卫视=0, 黑龙江卫视=0, 山东卫视=0, 湖北卫视=0, 广西卫视=0, 海南卫视=0, 重庆卫视=0, 四川卫视=0, 贵州卫视=0, 云南卫视=0, 西藏卫视=0, 陕西卫视=0, 甘肃卫视=0, 宁夏卫视=0, 兵团卫视=0, 厦门卫视=0
+- important satellite channels below independent URL minimum: 北京卫视=0, 浙江卫视=0, 江苏卫视=0, 天津卫视=0, 海南卫视=0, 重庆卫视=0, 四川卫视=0, 西藏卫视=0, 陕西卫视=0, 甘肃卫视=0, 宁夏卫视=0, 兵团卫视=0, 厦门卫视=0
+- core channels below independent host minimum: CCTV-4=0, CCTV-5+=0, 北京卫视=0, 浙江卫视=0, 江苏卫视=0, 天津卫视=0, 海南卫视=0, 重庆卫视=0, 四川卫视=0, 西藏卫视=0, 陕西卫视=0, 甘肃卫视=0, 宁夏卫视=0, 兵团卫视=0, 厦门卫视=0
 - core CCTV channels below independent URL warning target: CCTV-1=1, CCTV-2=1, CCTV-3=1, CCTV-5=1, CCTV-6=1, CCTV-7=1, CCTV-8=2, CCTV-9=2, CCTV-10=1, CCTV-11=1, CCTV-12=1, CCTV-13=1, CCTV-14=1, CCTV-15=2, CCTV-16=1, CCTV-17=1
-- important satellite channels below independent URL warning target: 浙江卫视=1, 湖南卫视=1, 深圳卫视=1, 山西卫视=1, 内蒙古卫视=1, 安徽卫视=1, 东南卫视=1, 江西卫视=1, 青海卫视=1, 新疆卫视=1
-- core channels below independent host warning target: CCTV-1=1, CCTV-2=1, CCTV-3=1, CCTV-5=1, CCTV-6=1, CCTV-7=1, CCTV-8=2, CCTV-9=2, CCTV-10=1, CCTV-11=1, CCTV-12=1, CCTV-13=1, CCTV-14=1, CCTV-15=2, CCTV-16=1, CCTV-17=1, 浙江卫视=1, 湖南卫视=1, 深圳卫视=1, 山西卫视=1, 内蒙古卫视=1, 安徽卫视=1, 东南卫视=1, 江西卫视=1, 青海卫视=1, 新疆卫视=1
+- important satellite channels below independent URL warning target: 辽宁卫视=2, 河北卫视=2, 河南卫视=2, 东方卫视=3, 湖南卫视=1, 广东卫视=2, 深圳卫视=2, 山西卫视=1, 内蒙古卫视=1, 吉林卫视=2, 黑龙江卫视=2, 安徽卫视=1, 东南卫视=3, 江西卫视=3, 山东卫视=2, 湖北卫视=2, 广西卫视=2, 贵州卫视=2, 云南卫视=2, 青海卫视=1, 新疆卫视=1
+- core channels below independent host warning target: CCTV-1=1, CCTV-2=1, CCTV-3=1, CCTV-5=1, CCTV-6=1, CCTV-7=1, CCTV-8=2, CCTV-9=2, CCTV-10=1, CCTV-11=1, CCTV-12=1, CCTV-13=1, CCTV-14=1, CCTV-15=2, CCTV-16=1, CCTV-17=1, 辽宁卫视=2, 河北卫视=2, 河南卫视=2, 东方卫视=1, 湖南卫视=1, 广东卫视=2, 深圳卫视=2, 山西卫视=1, 内蒙古卫视=1, 吉林卫视=2, 黑龙江卫视=2, 安徽卫视=1, 山东卫视=2, 湖北卫视=2, 广西卫视=2, 贵州卫视=2, 云南卫视=2, 青海卫视=1, 新疆卫视=1
