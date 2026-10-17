@@ -2,34 +2,34 @@
 
 Status: ok
 Measurement scope: publication payload files only; summary, this report, and the manifest are checked separately
-Working-tree payload bytes: 284367
-Unique payload blob bytes: 187651
+Working-tree payload bytes: 321168
+Unique payload blob bytes: 210140
 Max unique payload blob bytes: 2500000
 TXT alias same hash: True
 Family TXT alias same hash: True
-Duplicate TXT working-tree bytes: 66762
+Duplicate TXT working-tree bytes: 77649
 
 ## Public files
 
 | File | Bytes | SHA256 | Git blob |
 |---|---:|---|---|
-| live-curated.txt | 22254 | e0d445668aef94b3fbfced88c38758146972a96f70e8eebf0d074495ce27bb83 | 753d9749e63c6b785a6ba13c38de7b6230aaf377 |
-| live.txt | 22254 | e0d445668aef94b3fbfced88c38758146972a96f70e8eebf0d074495ce27bb83 | 753d9749e63c6b785a6ba13c38de7b6230aaf377 |
-| live-verified.txt | 22254 | e0d445668aef94b3fbfced88c38758146972a96f70e8eebf0d074495ce27bb83 | 753d9749e63c6b785a6ba13c38de7b6230aaf377 |
-| ku9-live.txt | 22254 | e0d445668aef94b3fbfced88c38758146972a96f70e8eebf0d074495ce27bb83 | 753d9749e63c6b785a6ba13c38de7b6230aaf377 |
-| live.m3u | 42662 | 9adbd1412115ab2220224cb1c0598c6b650d04e864f56e25ff59baed586a812e | 815af1b4e4f2a0dc83e68a2fc411a2e3b2076e02 |
-| ku9-family.txt | 21906 | 3ed76b9c209b82ffcf72f1a1ae89f5c96ff794ccf317454250b4b4d2a9f431cf | ea68e6d504213c46af7b28704f37b9258fc560ab |
-| live-family.txt | 21906 | 3ed76b9c209b82ffcf72f1a1ae89f5c96ff794ccf317454250b4b4d2a9f431cf | ea68e6d504213c46af7b28704f37b9258fc560ab |
-| family.m3u | 42004 | e2d2c24bf79b09bdbbbb1ce6f73fb218679f002dac701bb67d4800f33d3b7c93 | 7a7d4a8b062570a41310213dbc9632548bd13fac |
-| final-publish-report.md | 11096 | 2361e5f267b6b7041ebf96e317426c622d629ebf817e73afe18dce9574d67734 | 6c926405b0ea43c33eca142620ccc1817df117e1 |
-| coverage-report.md | 2275 | e2ec2e48abefd042df0355436367b4c1759d724c6a2b839d2a5570e825fc000d | f8c97a2a95982049b6f9bc2f663ed1c6a3bcdfb9 |
-| quality-audit-report.md | 4736 | 4d1b38ecc5671c2a00affa142765d12ee3a91805664ed8fbe0aef115abf2c1fb | bfe3817d4dc68a4bf871dcad7226cb2da69dce6a |
-| publish-guard-report.md | 1653 | 35312671a12ae624f5d711924823c722251bbd5c3650282eaba2924356815b61 | 033c60ca0e1b71a1ab12827d1458425b4c785445 |
-| published-recheck-report.md | 25134 | b8f5c606d3223418b229bec6c9f9f1bfa7cc8aef37776ca9035741184c87c51c | 51676a52b4fd4ef5be9204af7aba5a78b31a2ba5 |
-| source-report.md | 8048 | 2fd78d4dd17b951d23143d92fedc0748c36f0a50f53cec7c025aa0d6a4e76e0b | 590f9965681be9a42fb522501b1a4045014f3eb8 |
-| check-report.md | 8048 | 2fd78d4dd17b951d23143d92fedc0748c36f0a50f53cec7c025aa0d6a4e76e0b | 590f9965681be9a42fb522501b1a4045014f3eb8 |
-| curated-report.md | 1804 | b81b4da8ae3c9feaa0065827a3ab0fe949cb5ad8d4c353995cbb8dab7d28af2b | 41d9c4d386b1640f82b17fcc9dd97056b92fe4f0 |
-| sources_status.csv | 4079 | c701b5dad90c4e518f83c19a957ffd3c8e5b246beb55fb32e8143283a6ba3804 | 82b191a6e080b8e28eb11ceca6bc7ddb9e7eb280 |
+| live-curated.txt | 25883 | a92f083f11d08f2a672149b4b1fb32ae84218c76cdc38eb1b8961f6747dad8f9 | b3446389fb9b3375ad8f9c8da6de8dea4c616b28 |
+| live.txt | 25883 | a92f083f11d08f2a672149b4b1fb32ae84218c76cdc38eb1b8961f6747dad8f9 | b3446389fb9b3375ad8f9c8da6de8dea4c616b28 |
+| live-verified.txt | 25883 | a92f083f11d08f2a672149b4b1fb32ae84218c76cdc38eb1b8961f6747dad8f9 | b3446389fb9b3375ad8f9c8da6de8dea4c616b28 |
+| ku9-live.txt | 25883 | a92f083f11d08f2a672149b4b1fb32ae84218c76cdc38eb1b8961f6747dad8f9 | b3446389fb9b3375ad8f9c8da6de8dea4c616b28 |
+| live.m3u | 48978 | 4d8ae44407b97c9ebb24b6df4680772d6aa06518f785e28f6ec510845469d990 | 094e80d454e14ea7a84f912cf94428316daddcb1 |
+| ku9-family.txt | 25423 | 08f254c733419f17736a228b1ddbb4723f9bbe1ea0a428c54ddb2453f9cf57c5 | 80b31eb45ce051f754f632b09693986a1308dfe1 |
+| live-family.txt | 25423 | 08f254c733419f17736a228b1ddbb4723f9bbe1ea0a428c54ddb2453f9cf57c5 | 80b31eb45ce051f754f632b09693986a1308dfe1 |
+| family.m3u | 48146 | 9bdf1b87e22874a8bcd9a069faae2c0cedc2455bb73f5ef8e3a71172afec2a1d | 785024054f4169a661cff8ed6a7722a5899b092e |
+| final-publish-report.md | 10827 | 6bb71497e7adc430a60db07de91eb1156b287dc688fce1f9ef7ca09b18bf71e5 | 594553ffba83c943c470efa3f16a2fe85e740589 |
+| coverage-report.md | 2175 | 5e0ffa5627c812937f5e43b31925c7b4c605a36efd9ac61c1eb3c5dd8a9c533a | cf488e8f435ab4016055cf3667f4c5dd71a884b9 |
+| quality-audit-report.md | 4682 | 18119863e48d0ee0dd86f24486d4256a85ff67597fa1c5f4ad6965c2c7c202ec | c4c6c93f5684982449fdc4430a602b85b5071739 |
+| publish-guard-report.md | 1565 | ad2181d780d35e903bc87d98ce3abb6448045c42e632c4bbc05027958e05a93e | 92fa34ec112ef399c04d17e248ed7965e650b621 |
+| published-recheck-report.md | 28563 | 3d3d657f0c80bea9393def9b96bf5706c3b01a9e885f1c03a168d316233aa75d | b886a6a86282a2e53abbd6c73a47ad72254c9730 |
+| source-report.md | 7956 | de72c949deccca98093774a83bdffa89cd496809912123a906f181a86f1fb94b | 55f001849ff19b4eaef2a3c72db5b9dc46fe2dd5 |
+| check-report.md | 7956 | de72c949deccca98093774a83bdffa89cd496809912123a906f181a86f1fb94b | 55f001849ff19b4eaef2a3c72db5b9dc46fe2dd5 |
+| curated-report.md | 1804 | 5dc4e6851e0ef1a308adf2b036f13e7a8dffd40e217791d3e6bdf12957fddafc | 36c6ffe17c32d9969aa51eaf7234688e5ae1969b |
+| sources_status.csv | 4138 | 1b7e50a2e5bbe09dca0292625dfe3dd6cb293f80f0904af4dee005ed0114b7cf | aee59ff8f60107e3da4fa5e0e5c114a429cec4e8 |
 
 ## Warnings
 
