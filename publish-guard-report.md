@@ -1,27 +1,27 @@
 # Publish guard report
 
 Status: ok
-Baseline lines: 318
-Current lines: 330
-Total drop ratio: -3.8%
+Baseline lines: 330
+Current lines: 291
+Total drop ratio: 11.8%
 Relative baseline comparable: True
 Relative guard migration: none
 Coverage metric: canonical_channels
-Independent channel coverage: {'total': 299, 'groups': {'央视频道': 16, '卫视频道': 11, '地方频道': 137, '影视剧场': 64, '少儿动漫': 2, '体育纪实': 16, '音乐综艺': 1, '综合娱乐': 51, '港澳台频道': 1}}
+Independent channel coverage: {'total': 263, 'groups': {'央视频道': 16, '卫视频道': 10, '地方频道': 131, '影视剧场': 47, '少儿动漫': 2, '体育纪实': 16, '音乐综艺': 1, '综合娱乐': 39, '港澳台频道': 1}}
 
 ## Group deltas
 
 | Group | Baseline | Current | Delta | Drop | Minimum |
 |---|---:|---:|---:|---:|---:|
-| 央视频道 | 8 | 20 | 12 | -150.0% | 1 |
-| 卫视频道 | 15 | 16 | 1 | -6.7% | 1 |
-| 地方频道 | 157 | 157 | 0 | 0.0% | 1 |
-| 影视剧场 | 64 | 64 | 0 | 0.0% | 0 |
+| 央视频道 | 20 | 17 | -3 | 15.0% | 1 |
+| 卫视频道 | 16 | 14 | -2 | 12.5% | 1 |
+| 地方频道 | 157 | 152 | -5 | 3.2% | 1 |
+| 影视剧场 | 64 | 47 | -17 | 26.6% | 0 |
 | 少儿动漫 | 2 | 2 | 0 | 0.0% | 0 |
-| 体育纪实 | 19 | 18 | -1 | 5.3% | 0 |
+| 体育纪实 | 18 | 18 | 0 | 0.0% | 0 |
 | 音乐综艺 | 1 | 1 | 0 | 0.0% | 0 |
 | 生活休闲 | 0 | 0 | 0 | n/a | 0 |
-| 综合娱乐 | 51 | 51 | 0 | 0.0% | 0 |
+| 综合娱乐 | 51 | 39 | -12 | 23.5% | 0 |
 | 港澳台频道 | 1 | 1 | 0 | 0.0% | 0 |
 | 海外华语频道 | 0 | 0 | 0 | n/a | 0 |
 
@@ -32,10 +32,10 @@ Independent channel coverage: {'total': 299, 'groups': {'央视频道': 16, '卫
 - Enabled sources unavailable for guard purposes: none
 - Recovery source failures (non-blocking): none
 - Recovery sources fetched but zero parsed (non-blocking): none
-- Candidate source failures (non-blocking): mursor_yy, mursor_bililive, freetv_douyu
+- Candidate source failures (non-blocking): mursor_yy, mursor_bililive, freetv_huya, freetv_douyu
 - Candidate sources parsed empty (non-blocking): none
 
 ## Warnings
 
 - group 央视频道 unique channels 16 < minimum 18
-- candidate-only sources unavailable (non-blocking): ['mursor_yy', 'mursor_bililive', 'freetv_douyu']
+- candidate-only sources unavailable (non-blocking): ['mursor_yy', 'mursor_bililive', 'freetv_huya', 'freetv_douyu']
