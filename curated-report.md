@@ -2,8 +2,8 @@
 
 This report is generated immediately after curation and before the final published URL recheck. See `final-publish-report.md` for the TV-facing result after recheck.
 
-Pre-recheck candidate lines: 470
-Published channel names: 403
+Pre-recheck candidate lines: 406
+Published channel names: 340
 Stability history URLs loaded: 0
 Home priority URLs loaded: ok=0, failed=0, enabled=False
 
@@ -24,20 +24,20 @@ Home priority URLs loaded: ok=0, failed=0, enabled=False
 
 ## Groups
 - 央视频道: 22
-- 卫视频道: 22
-- 地方频道: 256
-- 影视剧场: 66
-- 少儿动漫: 2
+- 卫视频道: 21
+- 地方频道: 261
+- 影视剧场: 4
+- 少儿动漫: 1
 - 体育纪实: 31
-- 音乐综艺: 19
-- 综合娱乐: 51
+- 音乐综艺: 18
+- 综合娱乐: 47
 - 港澳台频道: 1
 
 ## Final published lines by source
 
 | Source | Lines |
 |---|---:|
-| zbds_iptv4_txt | 453 |
+| zbds_iptv4_txt | 389 |
 | iptv_org_cn | 11 |
 | free_tv_world | 6 |
 
@@ -49,25 +49,25 @@ Home priority URLs loaded: ok=0, failed=0, enabled=False
 - zbds_iptv4_txt: 5
 
 ### 卫视频道
-- zbds_iptv4_txt: 22
+- zbds_iptv4_txt: 21
 
 ### 地方频道
-- zbds_iptv4_txt: 256
+- zbds_iptv4_txt: 261
 
 ### 影视剧场
-- zbds_iptv4_txt: 66
+- zbds_iptv4_txt: 4
 
 ### 少儿动漫
-- zbds_iptv4_txt: 2
+- zbds_iptv4_txt: 1
 
 ### 体育纪实
 - zbds_iptv4_txt: 31
 
 ### 音乐综艺
-- zbds_iptv4_txt: 19
+- zbds_iptv4_txt: 18
 
 ### 综合娱乐
-- zbds_iptv4_txt: 51
+- zbds_iptv4_txt: 47
 
 ### 港澳台频道
 - zbds_iptv4_txt: 1
