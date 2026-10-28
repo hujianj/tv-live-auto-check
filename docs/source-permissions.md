@@ -39,3 +39,7 @@ vbskycn 首页同时写有技术研究、非商业说明，以及不保证第三
 四个参考项目仍作为独立静态目录记录：`youhunwl/TVAPP`、`qist/tvbox`、`Huameng11/yingshiTV`、`tushen6/Tomorrow`。不执行 APK、JAR、spider，也不追踪需要登录或破解的接口。
 
 新增来源修改 `config/sources.json`。先填写 `rights_status: pending`，记录可核验的 `terms_url`、ISO 日期 `reviewed_at` 和具体 `permission_scope`。有明确依据后才改为 `approved`；这只允许进入检测，不直接赋予“可播放”状态。
+
+## 2026-10-28 新增候选
+
+`oktv_comprehensive_php` 为用户提供的 OK影视“综合直播”PHP 节点，返回标准 M3U，项目默认 UA 可以正常获取。当前缺少明确的长期公开聚合使用依据，因此保持 `pending`：定时抓取和解析入口，记录来源状态，不进入正式频道检测和订阅发布。30 个无访问参数主频道地址已在本机单独检查，9 个通过，21 个未通过；这不等于全部列表可用。参数线路、设备标识、录像及使用资格未确认的频道没有被标记为可用。完整记录见 [本次检查](source-review-2026-10-28-oktv.md)。

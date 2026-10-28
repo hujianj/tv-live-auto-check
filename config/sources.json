@@ -609,5 +609,21 @@
     "reviewed_at": "2026-09-06",
     "permission_scope": "documentation and candidate links only",
     "note": "README limits resources to testing/research. Static links may be recorded; scripts/JARs and private APIs are never executed."
+  },
+  {
+    "name": "oktv_comprehensive_php",
+    "url": "http://193.123.86.190:14888/TV/iptv.php",
+    "enabled": true,
+    "auto_recover": false,
+    "format": "m3u",
+    "timeout_seconds": 20,
+    "update_method": "scheduled_fetch",
+    "rights_status": "pending",
+    "license": "unknown",
+    "homepage": "http://193.123.86.190:14888/TV/iptv.php",
+    "terms_url": "",
+    "reviewed_at": "2026-10-28",
+    "permission_scope": "Candidate inventory only. No confirmed permission for long-term playlist aggregation; do not publish media links until independently reviewed.",
+    "note": "用户提供的 OK影视综合直播节点。2026-10-28 当前网络 HTTP 200，默认 Player UA 可取得标准 M3U：188 行、186 个唯一地址、112 个名称。无访问参数的主频道 30 个唯一地址中 9 个通过清单推进、媒体分片及三帧解码，21 个未通过；其余带 key/设备标识、专业频道、录像和轮播不纳入该媒体检查。允许定时抓取、解析和记录状态，但 pending 禁止进入正式媒体检测或发布。见 docs/source-review-2026-10-28-oktv.md。"
   }
 ]

@@ -111,6 +111,34 @@ class SourcePipelineTests(unittest.TestCase):
         self.assertEqual([c.name for c in kept], ["CCTV-1"])
         self.assertEqual(sum(excluded.values()), 1)
 
+    def test_oktv_php_candidate_remains_inventory_only(self):
+        from source_config import load_source_specs
+        from source_policy import publication_issue
+        spec = next(s for s in load_source_specs() if s.name == "oktv_comprehensive_php")
+        self.assertEqual(spec.format, "m3u")
+        self.assertTrue(spec.should_probe)
+        self.assertEqual(spec.rights_status, "pending")
+        self.assertFalse(spec.publish_allowed)
+        text = '#EXTM3U\n#EXTINF:-1 group-title="央视频道",CCTV1\nhttps://tv.test/live.m3u8\n'
+        with patch.object(verify, "fetch_url", return_value=(200, "text/plain", text.encode(), spec.url, False)):
+            status, candidates = verify.fetch_source(spec)
+        self.assertTrue(status.ok)
+        self.assertEqual(status.parsed, 1)
+        self.assertEqual(status.eligible, 0)
+        self.assertEqual(candidates, [])
+        self.assertEqual(publication_issue(spec, "https://tv.test/live.m3u8"),
+                         "source permission pending or restricted")
+
+    def test_m3u_orphan_extinf_does_not_steal_next_channel_url(self):
+        text = ('#EXTM3U\n'
+                '#EXTINF:-1 group-title="历年春晚",没有地址的节目\n\n'
+                '#EXTINF:-1 group-title="央视频道",CCTV1\n'
+                'https://tv.test/live.m3u8\n'
+                '#EXTINF:-1 group-title="历年春晚",末尾没有地址\n')
+        channels = parse(text, "m3u")
+        self.assertEqual([(c.name, c.url) for c in channels],
+                         [("CCTV1", "https://tv.test/live.m3u8")])
+
     def test_failed_source_and_catalog_are_not_playable(self):
         spec = SourceSpec("s", "https://catalog.test/list", True, timeout_seconds=9)
         with patch.object(verify, "fetch_url", side_effect=TimeoutError("timed out")):
