@@ -15,6 +15,7 @@ import json
 import sys
 import time
 from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
 from pathlib import Path
 from urllib.request import Request
 
@@ -164,14 +165,18 @@ def check_endpoint(
 
 def health_flags(results: list[EndpointResult]) -> dict[str, bool]:
     required_primary = [item for item in results if item.required_primary]
+    television = [item for item in results if item.television_compatible]
     return {
         "raw_current": any(item.ok and item.hard_raw for item in results),
         "required_primary_endpoint_current": bool(required_primary) and all(item.ok for item in required_primary),
         "television_endpoint_current": any(item.ok and item.television_compatible for item in results),
+        "all_checked_television_endpoints_current": bool(television) and all(item.ok for item in television),
     }
 
 
-def publication_gate_failures(results: list[EndpointResult]) -> list[str]:
+def publication_gate_failures(
+    results: list[EndpointResult], *, require_all_television: bool = False
+) -> list[str]:
     flags = health_flags(results)
     failures: list[str] = []
     if not flags["raw_current"]:
@@ -182,7 +187,21 @@ def publication_gate_failures(results: list[EndpointResult]) -> list[str]:
         failures.append(f"Required primary television endpoint is not current: {failed}")
     if not flags["television_endpoint_current"]:
         failures.append("No television-compatible publication endpoint is current")
+    if require_all_television:
+        failed_backups = [item.name for item in results
+                          if item.television_compatible and not item.required_primary and not item.ok]
+        if failed_backups:
+            failures.append("Television backup endpoints are not current: " + ", ".join(failed_backups))
     return failures
+
+
+def publication_health_status(results: list[EndpointResult]) -> str:
+    """Separate authoritative/primary failure from degraded optional mirrors."""
+    if publication_gate_failures(results):
+        return "required_endpoints_pending"
+    if not health_flags(results)["all_checked_television_endpoints_current"]:
+        return "television_backups_pending"
+    return "ok"
 
 
 def render_report(results: list[EndpointResult], expected_size: int, expected_hash: str) -> str:
@@ -195,6 +214,9 @@ def render_report(results: list[EndpointResult], expected_size: int, expected_ha
         f"Authoritative GitHub Raw current: {flags['raw_current']}",
         f"Required primary television endpoint current: {flags['required_primary_endpoint_current']}",
         f"At least one television-compatible endpoint current: {flags['television_endpoint_current']}",
+        f"All checked television endpoints current: {flags['all_checked_television_endpoints_current']}",
+        f"Distribution status: {publication_health_status(results)}",
+        "Scope: this execution network/edge only; not proof of every CDN edge or television network.",
         "",
         "| Endpoint | Path | Current | Required primary | TV compatible | Attempts | Size | SHA256 | Status | Cache-Control | Age | Elapsed | URL | Error |",
         "|---|---|---:|---:|---:|---:|---:|---|---:|---|---|---:|---|---|",
@@ -226,7 +248,16 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="check only authoritative Raw and the required primary television endpoint",
     )
+    parser.add_argument(
+        "--require-all-television", action="store_true",
+        help="also fail reconciliation when a configured television backup is stale/unreachable",
+    )
     args = parser.parse_args(argv)
+    if args.required_only and args.require_all_television:
+        parser.error("--required-only cannot be combined with --require-all-television")
+    if args.timeout < 0 or args.retry_wait < 0 or args.global_deadline < 1:
+        parser.error("timeout/retry-wait must be nonnegative and global-deadline must be positive")
+    checked_utc = datetime.now(timezone.utc).isoformat()
 
     try:
         expected = Path(args.expected).read_bytes()
@@ -241,7 +272,8 @@ def main(argv: list[str] | None = None) -> int:
                   f"Reason: {reason}\n")
         Path(args.report).write_text(report, encoding="utf-8", newline="\n")
         Path(args.json_path).write_text(json.dumps({
-            "schema_version": 2, "status": "invalid_publication", "failure_scope": "publication",
+            "schema_version": 2, "checked_utc": checked_utc,
+            "status": "invalid_publication", "failure_scope": "publication",
             "expected_file": Path(args.expected).name, "error": reason,
             "endpoints_checked": 0, "endpoints": [], "raw_current": None, "primary_current": None,
         }, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
@@ -250,7 +282,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.validate_only:
         Path(args.report).write_text("# Publication preflight passed\n\nInput valid; no CDN requests performed.\n", encoding="utf-8", newline="\n")
         Path(args.json_path).write_text(json.dumps({
-            "schema_version": 2, "status": "input_valid", "expected_file": Path(args.expected).name,
+            "schema_version": 2, "checked_utc": checked_utc,
+            "status": "input_valid", "expected_file": Path(args.expected).name,
             "endpoints_checked": 0, "endpoints": [], "raw_current": None, "primary_current": None,
         }, indent=2) + "\n", encoding="utf-8", newline="\n")
         print("Publication input valid; no endpoint requests performed.")
@@ -310,6 +343,11 @@ def main(argv: list[str] | None = None) -> int:
         json.dumps(
             {
                 "schema_version": 2,
+                "checked_utc": checked_utc,
+                "status": publication_health_status(results),
+                "scope": "execution_network_only",
+                "require_all_television": args.require_all_television,
+                "required_only": args.required_only,
                 "expected_file": str(Path(args.expected).name),
                 "expected_size": len(expected),
                 "expected_sha256": expected_hash,
@@ -326,7 +364,7 @@ def main(argv: list[str] | None = None) -> int:
         newline="\n",
     )
     print(report)
-    failures = publication_gate_failures(results)
+    failures = publication_gate_failures(results, require_all_television=args.require_all_television)
     for failure in failures:
         print(failure, file=sys.stderr)
     return 1 if failures else 0

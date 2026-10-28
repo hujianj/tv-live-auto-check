@@ -208,7 +208,10 @@ jobs:
         continue-on-error: true
         run: |
           set +e
+          mkdir -p cdn-rounds
+          round=0
           run_endpoint_check() {
+            round=$((round + 1))
             # Thread cancellation cannot forcibly stop a resolver that is
             # stuck below Python's socket timeout. Keep the job bounded at
             # the process level as a final watchdog around the checker.
@@ -217,7 +220,13 @@ jobs:
               --repo "${{ github.repository }}" \
               --branch "${{ github.ref_name }}" \
               --global-deadline 240 \
-              --retry-wait 3
+              --retry-wait 3 \
+              --require-all-television
+            check_status=$?
+            for report in cdn-health-report.md cdn-health-report.json; do
+              if [ -f "$report" ]; then cp "$report" "cdn-rounds/round-${round}-${report}"; fi
+            done
+            return "$check_status"
           }
           run_endpoint_check
           status=$?
@@ -243,6 +252,7 @@ jobs:
           path: |
             cdn-health-report.md
             cdn-health-report.json
+            cdn-rounds/
       - name: Notify hard maintenance failure
         if: ${{ always() && github.ref_name == github.event.repository.default_branch && (steps.bootstrap.outcome == 'failure' || steps.maintenance.outcome == 'failure' || steps.stability_state.outcome == 'failure' || steps.commit.outcome == 'failure') }}
         continue-on-error: true

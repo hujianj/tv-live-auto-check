@@ -38,7 +38,7 @@ jobs:
       - name: Validate publication before touching CDN caches
         id: publication
         run: python scripts/check_publication_endpoints.py --repo "${{ github.repository }}" --branch main --validate-only
-      - name: Reconcile authoritative Raw and primary television CDN
+      - name: Reconcile authoritative Raw, primary CDN and television backups
         id: reconcile
         continue-on-error: true
         env:
@@ -46,27 +46,40 @@ jobs:
         run: |
           set +e
           status=1
+          mkdir -p cdn-rounds
+          round=0
           for delay in 0 60 120 180; do
+            round=$((round + 1))
             if [ "$delay" -gt 0 ]; then
               echo "Waiting ${delay}s before the next CDN purge/check round."
               sleep "$delay"
             fi
-            python scripts/purge_jsdelivr.py \
-              --repo "${GITHUB_REPOSITORY}" \
-              --branch main \
-              --pre-wait 0
             timeout --signal=TERM --kill-after=10s 150s \
               python scripts/check_publication_endpoints.py \
               --repo "${GITHUB_REPOSITORY}" \
               --branch main \
-              --required-only \
+              --require-all-television \
               --global-deadline 120 \
               --retry-wait 5
             status=$?
+            for report in cdn-health-report.md cdn-health-report.json; do
+              if [ -f "$report" ]; then cp "$report" "cdn-rounds/round-${round}-${report}"; fi
+            done
             if [ "$status" -eq 0 ]; then
+              cat cdn-health-report.md >> "$GITHUB_STEP_SUMMARY"
               exit 0
             fi
+            # A healthy hourly check does not need a purge. Keep purge bounded
+            # and retain every observation instead of overwriting earlier evidence.
+            if [ "$round" -lt 4 ]; then
+              python scripts/purge_jsdelivr.py \
+                --repo "${GITHUB_REPOSITORY}" \
+                --branch main \
+                --pre-wait 0 > "cdn-rounds/round-${round}-purge.log" 2>&1
+              cat "cdn-rounds/round-${round}-purge.log"
+            fi
           done
+          if [ -f cdn-health-report.md ]; then cat cdn-health-report.md >> "$GITHUB_STEP_SUMMARY"; fi
           exit "$status"
       - name: Upload CDN reconciliation evidence
         if: always()
@@ -79,12 +92,13 @@ jobs:
           path: |
             cdn-health-report.md
             cdn-health-report.json
+            cdn-rounds/
       - name: Notify CDN pending state
         if: steps.reconcile.outcome == 'failure'
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/notify_maintenance.py cdn_pending --scope cdn --message "独立 CDN 收敛任务在多轮 purge/check 后仍未追上 GitHub Raw；旧版列表仍可用，下一轮将继续复验。"
+        run: python scripts/notify_maintenance.py cdn_pending --scope cdn --message "主订阅或电视备用端点在本运行网络中仍滞后或不可访问。详情与逐轮哈希见 CDN artifact；不能将 HTTP 200、purge finished 或主节点成功当成全部节点一致，也不保证旧版频道仍可播。下一轮继续复验。"
       - name: Report invalid publication without a false CDN alert
         if: ${{ failure() && steps.publication.outcome == 'failure' }}
         continue-on-error: true

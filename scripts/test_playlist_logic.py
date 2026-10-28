@@ -121,7 +121,11 @@ def test_workflow_is_pinned_and_refuses_stale_publication() -> None:
     assert "github.event.workflow_run.head_branch == 'main'" in cdn_workflow
     assert cdn_workflow.index("--validate-only") < cdn_workflow.index("python scripts/purge_jsdelivr.py")
     assert "steps.publication.outcome == 'failure'" in cdn_workflow
-    assert "--required-only" in cdn_workflow
+    assert "--required-only" not in cdn_workflow
+    assert "--require-all-television" in cdn_workflow
+    assert "--require-all-television" in workflow
+    assert "cdn-rounds/" in cdn_workflow and "cdn-rounds/" in workflow
+    assert cdn_workflow.index('status=$?') < cdn_workflow.index("python scripts/purge_jsdelivr.py")
     assert "timeout --signal=TERM --kill-after=10s 150s" in cdn_workflow
     assert "timeout-minutes: 25" in cdn_workflow
     assert "notify_maintenance.py cdn_pending --scope cdn" in cdn_workflow
@@ -2161,7 +2165,8 @@ def test_publish_size_hashes_current_worktree_not_stale_index() -> None:
 
 
 def test_publication_checker_uses_exact_canonical_url_and_requires_primary() -> None:
-    from check_publication_endpoints import EndpointResult, build_request, endpoint_matrix, publication_gate_failures
+    from check_publication_endpoints import (EndpointResult, build_request, endpoint_matrix,
+                                           publication_gate_failures, publication_health_status)
 
     url = "https://cdn.jsdelivr.net/gh/example/repo@main/ku9-live.txt"
     request = build_request(url)
@@ -2186,6 +2191,17 @@ def test_publication_checker_uses_exact_canonical_url_and_requires_primary() -> 
     assert any("Required primary television endpoint" in item for item in failures)
     results[-1].ok = True
     assert publication_gate_failures(results) == []
+    assert publication_health_status(results) == "ok"
+    assert next(item for item in endpoints if item.name == "ghproxy_raw").path == "ku9-live.txt"
+    results.append(EndpointResult("jsdelivr_gcore", "https://gcore.test/list", False,
+                                  True, False, ok=False, error="stale hash"))
+    assert publication_gate_failures(results) == []  # no false authoritative/primary failure
+    assert publication_health_status(results) == "television_backups_pending"
+    assert any("jsdelivr_gcore" in item for item in
+               publication_gate_failures(results, require_all_television=True))
+    results[-1].ok = True
+    assert publication_gate_failures(results, require_all_television=True) == []
+    assert publication_health_status(results) == "ok"
 
 
 def test_publication_manifest_covers_final_summary_without_self_hash() -> None:

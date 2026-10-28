@@ -69,7 +69,7 @@
     {
       "name": "ghproxy_raw",
       "template": "https://gh-proxy.com/raw.githubusercontent.com/{repo}/{branch}/{path}",
-      "path": "live-curated.txt",
+      "path": "ku9-live.txt",
       "retries": 3,
       "timeout_seconds": 20,
       "endpoint_deadline_seconds": 90,
