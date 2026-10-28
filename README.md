@@ -110,6 +110,8 @@ CDN 巡检会先检查仓库中的预期订阅内容。若本地预期列表本�
 
 大体积诊断文件不会再进入 Git 历史，只作为 GitHub Actions artifact 保存 30 天：
 
+完整维护 artifact 同时保存发布清单覆盖的全部文件及本轮 `config/` 快照，包括 `check-report.md`，便于离线逐项核对哈希、来源审核配置和严格复检证据。artifact 是本轮证据，不自动替代仓库中的正式长期订阅；失败运行的文件仍按失败状态解释。
+
 ```text
 stream_check_results.csv
 live-all-playable.txt

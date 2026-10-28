@@ -155,6 +155,12 @@ def test_workflow_is_pinned_and_refuses_stale_publication() -> None:
     assert "steps.bootstrap.outcome == 'failure'" in workflow
     artifact_step = workflow.split("- name: Upload full diagnostic artifacts", 1)[1].split("- name:", 1)[0]
     assert "steps.maintenance.outcome == 'success' || steps.maintenance.outcome == 'failure'" in artifact_step
+    # A downloaded successful bundle must include every immutable public file
+    # and the exact reviewed source configuration used by the strict validator.
+    artifact_paths = {line.strip() for line in artifact_step.split("path: |", 1)[1].splitlines()}
+    publication_files = set(load_publication_config(ROOT)["publication_files"])
+    assert publication_files <= artifact_paths, publication_files - artifact_paths
+    assert "config/" in artifact_paths
 
 
 def test_publication_config_rejects_ambiguous_roles_and_unsafe_paths() -> None:
