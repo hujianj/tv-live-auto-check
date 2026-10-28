@@ -54,6 +54,24 @@ jobs:
               echo "Waiting ${delay}s before the next CDN purge/check round."
               sleep "$delay"
             fi
+            # Main can publish while this hourly/manual job is waiting. Do not
+            # label a newer Raw response stale against an obsolete checkout.
+            if ! git fetch origin main; then
+              echo "Could not refresh expected publication; refusing obsolete CDN comparison."
+              exit 2
+            fi
+            if [ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]; then
+              if ! git merge --ff-only origin/main; then
+                echo "Publication revision cannot be fast-forwarded safely."
+                exit 2
+              fi
+            fi
+            git rev-parse HEAD > "cdn-rounds/round-${round}-expected-revision.txt"
+            python scripts/check_publication_endpoints.py \
+              --repo "${GITHUB_REPOSITORY}" --branch main --validate-only \
+              --report "cdn-rounds/round-${round}-publication-preflight.md" \
+              --json "cdn-rounds/round-${round}-publication-preflight.json"
+            if [ "$?" -ne 0 ]; then exit 2; fi
             timeout --signal=TERM --kill-after=10s 150s \
               python scripts/check_publication_endpoints.py \
               --repo "${GITHUB_REPOSITORY}" \

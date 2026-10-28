@@ -125,6 +125,9 @@ def test_workflow_is_pinned_and_refuses_stale_publication() -> None:
     assert "--require-all-television" in cdn_workflow
     assert "--require-all-television" in workflow
     assert "cdn-rounds/" in cdn_workflow and "cdn-rounds/" in workflow
+    assert 'git merge --ff-only origin/main' in cdn_workflow
+    assert 'round-${round}-expected-revision.txt' in cdn_workflow
+    assert cdn_workflow.index('git fetch origin main') < cdn_workflow.index('timeout --signal=TERM')
     assert cdn_workflow.index('status=$?') < cdn_workflow.index("python scripts/purge_jsdelivr.py")
     assert "timeout --signal=TERM --kill-after=10s 150s" in cdn_workflow
     assert "timeout-minutes: 25" in cdn_workflow
@@ -810,6 +813,89 @@ def test_stability_artifact_zip_is_strict_and_bounded() -> None:
             pass
         else:
             raise AssertionError("invalid stability artifact archive was accepted")
+
+
+def test_stability_download_separates_credentials_and_refreshes_expired_location() -> None:
+    import restore_stability_state as restore
+    from urllib.error import HTTPError
+    from email.message import Message
+    from unittest.mock import Mock, patch
+
+    api = "https://api.github.com/repos/owner/repo/actions/artifacts/123/zip"
+    location = "https://fixture.blob.core.windows.net/artifacts/state.zip?sig=fixture"
+
+    def redirect():
+        headers = Message()
+        headers["Location"] = location
+        return HTTPError(api, 302, "Found", headers, io.BytesIO())
+
+    opener = Mock()
+    opener.open.side_effect = [redirect(), redirect()]
+    response = Mock()
+    response.__enter__ = Mock(return_value=response)
+    response.__exit__ = Mock(return_value=False)
+    response.read.return_value = b"zip fixture"
+    expired = HTTPError(location, 401, "Expired", Message(), io.BytesIO())
+    with patch.object(restore, "build_opener", return_value=opener), \
+            patch.object(restore, "public_urlopen", side_effect=[expired, response]) as storage:
+        assert restore.download(api, "fake-unit-token") == b"zip fixture"
+    requests = [call.args[0] for call in opener.open.call_args_list]
+    assert len(requests) == 2 and requests[0].full_url != requests[1].full_url
+    assert all(request.get_header("Authorization") == "Bearer fake-unit-token" for request in requests)
+    for call in storage.call_args_list:
+        request = call.args[0]
+        assert request.full_url == location
+        assert not request.has_header("Authorization")
+        assert not request.has_header("Cookie")
+    assert response.read.call_args.args[0] == 5_000_001
+    opener.open.side_effect = [redirect()]
+    with patch.object(restore, "build_opener", return_value=opener), \
+            patch.object(restore, "public_urlopen", side_effect=OSError(location)):
+        try:
+            restore.download(api, "fake-unit-token")
+        except RuntimeError as exc:
+            assert "OSError" in str(exc)
+            assert "sig=" not in str(exc) and location not in str(exc)
+        else:
+            raise AssertionError("signed storage transport failure was not reported")
+
+
+def test_stability_download_rejects_untrusted_destinations_and_oversize() -> None:
+    import restore_stability_state as restore
+    from unittest.mock import Mock, patch
+
+    for url in ("http://api.github.com/repos/a/b/actions/artifacts/1/zip",
+                "https://evil.test/repos/a/b/actions/artifacts/1/zip",
+                "https://api.github.com/repos/a/b/contents/file"):
+        try:
+            restore.fresh_artifact_api_url(url)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("untrusted artifact API accepted")
+    for url in ("https://fixture.blob.core.windows.net.evil.test/a",
+                "http://fixture.blob.core.windows.net/a",
+                "https://user:password@fixture.blob.core.windows.net/a",
+                "https://fixture.blob.core.windows.net:8443/a"):
+        try:
+            restore.validate_artifact_storage_url(url)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("untrusted artifact storage accepted")
+    response = Mock()
+    response.__enter__ = Mock(return_value=response)
+    response.__exit__ = Mock(return_value=False)
+    response.read.return_value = b"12345"
+    opener = Mock()
+    opener.open.return_value = response
+    with patch.object(restore, "build_opener", return_value=opener):
+        try:
+            restore.download("https://api.github.com/repos/a/b/actions/artifacts/1/zip", "fake", 4)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("oversized archive accepted")
 
 
 def test_stability_restore_skips_damaged_newer_artifact() -> None:
@@ -3083,6 +3169,8 @@ def main() -> int:
         test_stability_update_counts_unique_urls,
         test_stability_observation_is_idempotent_and_validated,
         test_stability_artifact_zip_is_strict_and_bounded,
+        test_stability_download_separates_credentials_and_refreshes_expired_location,
+        test_stability_download_rejects_untrusted_destinations_and_oversize,
         test_stability_restore_skips_damaged_newer_artifact,
         test_split_unquoted_last_comma,
         test_split_stream_urls,

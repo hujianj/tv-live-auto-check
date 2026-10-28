@@ -7,10 +7,14 @@ import io
 import json
 import os
 from pathlib import Path
-from urllib.parse import urlencode
-from urllib.request import Request, urlopen
+import re
+from urllib.error import HTTPError
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
+from urllib.request import HTTPRedirectHandler, Request, build_opener, urlopen
+import uuid
 import zipfile
 
+from network_safety import public_urlopen
 from playlist_config import ROOT
 from stability import history_path, load_history, validate_history, write_history
 
@@ -33,20 +37,78 @@ def api_json(path: str, token: str) -> dict:
         return json.load(response)
 
 
+class NoArtifactRedirect(HTTPRedirectHandler):
+    """Keep the API credential on GitHub, never on signed artifact storage."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def fresh_artifact_api_url(url: str) -> str:
+    parsed = urlsplit(url)
+    if (parsed.scheme != "https" or parsed.netloc != "api.github.com" or parsed.fragment
+            or not re.fullmatch(r"/repos/[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+/actions/artifacts/[0-9]+/zip", parsed.path)):
+        raise ValueError("artifact download must use the GitHub artifact API")
+    # Only the redirect API is cache-busted. Fixed TV subscription URLs remain
+    # canonical. A cached short-lived storage Location caused repeated 401s.
+    query = [(k, v) for k, v in parse_qsl(parsed.query) if k != "restore_nonce"]
+    query.append(("restore_nonce", uuid.uuid4().hex))
+    return urlunsplit(parsed._replace(query=urlencode(query)))
+
+
+def validate_artifact_storage_url(url: str) -> str:
+    parsed = urlsplit(url)
+    host = (parsed.hostname or "").lower()
+    if (parsed.scheme != "https" or parsed.username is not None or parsed.password is not None
+            or parsed.port not in (None, 443) or parsed.fragment
+            or not any(host.endswith(suffix) for suffix in (
+                ".blob.core.windows.net", ".actions.githubusercontent.com", ".githubusercontent.com"))):
+        raise ValueError("unexpected GitHub artifact storage destination")
+    return url
+
+
 def download(url: str, token: str, max_bytes: int = 5_000_000) -> bytes:
-    request = Request(
-        url,
-        headers={
+    opener = build_opener(NoArtifactRedirect())
+    for attempt in range(2):
+        request = Request(fresh_artifact_api_url(url), headers={
             "Accept": "application/vnd.github+json",
             "Authorization": f"Bearer {token}",
             "User-Agent": "tv-live-auto-check-stability-restore",
-        },
-    )
-    with urlopen(request, timeout=60) as response:
-        payload = response.read(max_bytes + 1)
-    if len(payload) > max_bytes:
-        raise ValueError("stability artifact archive exceeds size limit")
-    return payload
+            "X-GitHub-Api-Version": "2022-11-28",
+            "Cache-Control": "no-cache",
+        })
+        try:
+            with opener.open(request, timeout=30) as response:
+                payload = response.read(max_bytes + 1)
+        except HTTPError as redirect:
+            if redirect.code not in (301, 302, 303, 307, 308):
+                raise
+            try:
+                location = validate_artifact_storage_url(redirect.headers.get("Location", ""))
+            finally:
+                redirect.close()
+            # The signed storage URL authenticates itself. Sending the GitHub
+            # Bearer token here both leaks it and can produce storage HTTP 401.
+            storage_request = Request(location, headers={
+                "User-Agent": "tv-live-auto-check-stability-restore",
+            })
+            try:
+                with public_urlopen(storage_request, timeout=60) as response:
+                    payload = response.read(max_bytes + 1)
+            except HTTPError as exc:
+                status = exc.code
+                exc.close()
+                if status in (401, 403) and attempt == 0:
+                    continue  # Obtain a new signed Location, not retry the old one.
+                raise RuntimeError(f"artifact storage returned HTTP {status}") from None
+            except Exception as exc:
+                # A transport/policy error can include the signed request URL.
+                # Keep credentials out of the fallback report and Actions log.
+                raise RuntimeError(f"artifact storage request failed ({type(exc).__name__})") from None
+        if len(payload) > max_bytes:
+            raise ValueError("stability artifact archive exceeds size limit")
+        return payload
+    raise RuntimeError("artifact download failed after fresh redirect retry")
 
 
 def successful_run_ids(repo: str, branch: str, token: str) -> list[int]:

@@ -124,6 +124,8 @@ alias-conflict-report.md
 
 旧版 `stability-history.tsv` / `stability-history.json` 仅作为本地迁移输入，不再随仓库提交；正常运行从最近一次成功维护的 `stability-state` artifact 恢复，artifact 不可用时安全从空历史启动。
 
+2026-10-28 修复历史 artifact 下载的短期重定向失效：下载 API 每次获取新的签名地址，GitHub 凭据不传给存储节点，401/403 时最多重新获取一次；恢复状态与实际 URL 数见运行日志。CDN 巡检每轮同步 main 并保存预期提交号，避免巡检期间新版发布造成误报。详见 [续轮检查记录](docs/review-2026-10-28-publication.md)。
+
 严格复检使用不可变的整理阶段 checkpoint。每次重试前都会核对 SHA256 并恢复同一份输入；复检输出先在 `.maintenance-staging` 中完整生成和校验，再通过带事务日志与回滚备份的文件组提升替换工作区结果。稳定性 observation 只在覆盖、质量、防缩水、完整 bundle 和发布 manifest 全部通过后应用一次，单次运行重试不会重复累计证据。
 
 `publish-manifest.json` 是最终公开产物清单。它记录除自身以外的所有发布文件最终大小和 SHA256；清单自身不记录自己的哈希，从设计上避免 `full-check-summary.json` 过去那种“写回审计数据后自身大小和哈希立即失效”的循环依赖。另有只读、无仓库写凭据的轻量 CI，会在代码或公开产物被直接修改时运行单元测试和清单校验，不触发三万 URL 的昂贵全量检测。
