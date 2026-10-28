@@ -321,6 +321,18 @@ def _validate_summary(
         _check_equal(summary["curated_channel_names"], full_names, "summary.curated_channel_names", errors)
     if "curated_groups" in summary:
         _check_equal(summary["curated_groups"], full_groups, "summary.curated_groups", errors)
+    if "per_group_unique_names" in summary and (
+        require_extended_schema
+        or summary.get("per_group_unique_names_semantics") == "final_published_playlist"
+    ):
+        # Legacy committed bundles used a pre-recheck view here. New strict
+        # publications and bundles declaring final semantics must match TXT.
+        expected_group_names = {
+            group: len({row.name for row in full_rows if row.group == group})
+            for group in dict.fromkeys([*get_group_order(), *full_groups])
+        }
+        _check_equal(summary["per_group_unique_names"], expected_group_names,
+                     "summary.per_group_unique_names", errors)
     if "curated_sources" in summary:
         _check_equal(summary["curated_sources"], full_sources, "summary.curated_sources", errors)
 

@@ -1981,6 +1981,25 @@ def test_publish_bundle_validator_enforces_cross_file_invariants() -> None:
         _write_test_publish_bundle(root)
         summary_path = root / "full-check-summary.json"
         summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        summary["per_group_unique_names"] = {group: 1 for group in get_group_order()}
+        summary["per_group_unique_names_semantics"] = "final_published_playlist"
+        summary_path.write_text(json.dumps(summary), encoding="utf-8", newline="\n")
+        assert validate_publish_bundle(root)["status"] == "ok"
+        summary["per_group_unique_names"][get_group_order()[0]] = 99
+        summary_path.write_text(json.dumps(summary), encoding="utf-8", newline="\n")
+        _assert_bundle_failure(root, "summary.per_group_unique_names")
+        try:
+            validate_publish_bundle(root, require_artifacts=False)
+        except BundleValidationError as exc:
+            assert "summary.per_group_unique_names" in str(exc)
+        else:
+            raise AssertionError("final category counts disagreed with the committed playlist")
+
+    with tempfile.TemporaryDirectory() as td:
+        root = Path(td)
+        _write_test_publish_bundle(root)
+        summary_path = root / "full-check-summary.json"
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
         summary["quality_audit"]["latin_noise_review_count"] = 1
         summary["quality_audit"]["latin_noise_review_sample"] = [
             {"group": "综合娱乐", "name": "Edinburgh南空", "url": "http://unit.test/room.m3u8"}
@@ -3135,6 +3154,9 @@ def test_recheck_summary_separates_removed_refilled_and_net_rows() -> None:
             assert recheck_summary["removed_rows"] == 1
             assert recheck_summary["refill"]["refilled_rows"] == 1
             assert recheck_summary["net_row_delta"] == 0
+            assert summary["per_group_unique_names"][group] == 1
+            assert sum(summary["per_group_unique_names"].values()) == 1
+            assert summary["per_group_unique_names_semantics"] == "final_published_playlist"
     finally:
         recheck.ROOT = original_root
 

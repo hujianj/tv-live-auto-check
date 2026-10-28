@@ -768,6 +768,10 @@ def update_summary(
     cnt = Counter(row.group for row in after_rows)
     source_cnt = Counter(source_for(row, source_map) for row in after_rows)
     group_source_cnt = Counter(f"{row.group}|{source_for(row, source_map)}" for row in after_rows)
+    final_group_names = {
+        group: len({row.name for row in after_rows if row.group == group})
+        for group in dict.fromkeys([*get_group_order(), *cnt])
+    }
     removed_rows = sum(1 for row in before_rows if row.url in initial_failed_urls)
     summary.update({
         "publication_policy": publication_policy(),
@@ -776,6 +780,8 @@ def update_summary(
         "curated_groups": dict(cnt),
         "curated_sources": dict(source_cnt),
         "curated_group_sources": dict(group_source_cnt),
+        "per_group_unique_names": final_group_names,
+        "per_group_unique_names_semantics": "final_published_playlist",
         "final_primary_published_lines": len(after_rows),
         "primary_published_lines": len(after_rows),
         "final_publish_report_file": FINAL_REPORT_FILE,
