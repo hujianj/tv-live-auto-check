@@ -2,7 +2,7 @@
 
 This report is generated immediately after curation and before the final published URL recheck. See `final-publish-report.md` for the TV-facing result after recheck.
 
-Pre-recheck candidate lines: 405
+Pre-recheck candidate lines: 403
 Published channel names: 339
 Stability history URLs loaded: 0
 Home priority URLs loaded: ok=0, failed=0, enabled=False
@@ -23,9 +23,9 @@ Home priority URLs loaded: ok=0, failed=0, enabled=False
 - none
 
 ## Groups
-- 央视频道: 22
-- 卫视频道: 21
-- 地方频道: 258
+- 央视频道: 21
+- 卫视频道: 18
+- 地方频道: 260
 - 影视剧场: 5
 - 少儿动漫: 1
 - 体育纪实: 31
@@ -37,22 +37,22 @@ Home priority URLs loaded: ok=0, failed=0, enabled=False
 
 | Source | Lines |
 |---|---:|
-| zbds_iptv4_txt | 388 |
+| zbds_iptv4_txt | 387 |
 | iptv_org_cn | 11 |
-| free_tv_world | 6 |
+| free_tv_world | 5 |
 
 ## Top sources per group
 
 ### 央视频道
 - iptv_org_cn: 11
-- free_tv_world: 6
+- free_tv_world: 5
 - zbds_iptv4_txt: 5
 
 ### 卫视频道
-- zbds_iptv4_txt: 21
+- zbds_iptv4_txt: 18
 
 ### 地方频道
-- zbds_iptv4_txt: 258
+- zbds_iptv4_txt: 260
 
 ### 影视剧场
 - zbds_iptv4_txt: 5
