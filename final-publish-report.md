@@ -2,33 +2,33 @@
 
 This report describes the final playlist after curation and after the second full published-URL recheck.
 
-Rows: 276
+Rows: 275
 Unique channel names: 233
-Unique URLs: 276
-Failed unique URLs after slow retry: 151
-Slow retry attempted unique URLs: 156
-Slow retry recovered unique URLs: 5
+Unique URLs: 275
+Failed unique URLs after slow retry: 141
+Slow retry attempted unique URLs: 151
+Slow retry recovered unique URLs: 10
 Refilled rows from checked candidate pool: 2
-Unresolved refill rows: 152
+Unresolved refill rows: 142
 Core live-progress check required: True
 Broadcast live-progress check required: True
 Live-progress groups: 卫视频道, 地方频道, 央视频道
-Final recheck elapsed: 298.2s
+Final recheck elapsed: 303.5s
 Source map available: True
-Stability tracked URLs after pending observation: 431
-Pending stability OK/fail updates: 276/152
+Stability tracked URLs after pending observation: 432
+Pending stability OK/fail updates: 275/142
 Strict quality filter dropped rows before recheck: 0
 Channel limit trimmed rows before recheck: 0
 Group limit trimmed rows before recheck: 0
-Family compact playlist: 270 rows / 233 names / 270 URLs
+Family compact playlist: 269 rows / 233 names / 269 URLs
 
 ## Groups
 
 | Group | Rows |
 |---|---:|
-| 央视频道 | 30 |
-| 卫视频道 | 26 |
-| 地方频道 | 150 |
+| 央视频道 | 29 |
+| 卫视频道 | 25 |
+| 地方频道 | 151 |
 | 影视剧场 | 3 |
 | 少儿动漫 | 1 |
 | 体育纪实 | 18 |
@@ -40,15 +40,15 @@ Family compact playlist: 270 rows / 233 names / 270 URLs
 
 - TXT files: ku9-family.txt, live-family.txt
 - M3U file: family.m3u
-- Rows: 270
+- Rows: 269
 - Unique names: 233
-- Unique URLs: 270
+- Unique URLs: 269
 
 | Group | Rows |
 |---|---:|
-| 央视频道 | 30 |
-| 卫视频道 | 26 |
-| 地方频道 | 146 |
+| 央视频道 | 29 |
+| 卫视频道 | 25 |
+| 地方频道 | 147 |
 | 影视剧场 | 3 |
 | 少儿动漫 | 1 |
 | 体育纪实 | 16 |
@@ -60,7 +60,7 @@ Family compact playlist: 270 rows / 233 names / 270 URLs
 
 | Source | Rows |
 |---|---:|
-| zbds_iptv4_txt | 240 |
+| zbds_iptv4_txt | 239 |
 | oktv_comprehensive_php | 19 |
 | iptv_org_cn | 11 |
 | free_tv_world | 6 |
@@ -71,14 +71,14 @@ Family compact playlist: 270 rows / 233 names / 270 URLs
 - iptv_org_cn: 11
 - oktv_comprehensive_php: 9
 - free_tv_world: 6
-- zbds_iptv4_txt: 4
+- zbds_iptv4_txt: 3
 
 ### 卫视频道
-- zbds_iptv4_txt: 16
+- zbds_iptv4_txt: 15
 - oktv_comprehensive_php: 10
 
 ### 地方频道
-- zbds_iptv4_txt: 150
+- zbds_iptv4_txt: 151
 
 ### 影视剧场
 - zbds_iptv4_txt: 3
@@ -108,7 +108,6 @@ Family compact playlist: 270 rows / 233 names / 270 URLs
 - 央视频道 / CCTV-3 / oktv_comprehensive_php / http://173.208.212.130:8181/720p/cctv3.m3u8
 - 央视频道 / CCTV-4中文国际（亚） / free_tv_world / http://74.91.26.218:82/live/cctv4hd.m3u8
 - 央视频道 / CCTV-4中文国际（欧） / free_tv_world / https://dash2.antik.sk/live/test_cctv_tizen/playlist.m3u8
-- 央视频道 / CCTV-5 / zbds_iptv4_txt / http://gmxw.7766.org:808/hls/93/index.m3u8
 - 央视频道 / CCTV-6 / free_tv_world / http://69.30.245.50/live/cctv6.m3u8
 - 央视频道 / CCTV-6 / oktv_comprehensive_php / http://173.208.212.130:8181/720p/cctv6.m3u8
 - 央视频道 / CCTV-7 / iptv_org_cn / http://74.91.26.218:82/live/cctv7hd.m3u8
@@ -148,7 +147,6 @@ Family compact playlist: 270 rows / 233 names / 270 URLs
 - 卫视频道 / 内蒙古卫视 / zbds_iptv4_txt / http://play1-qk.nmtv.cn/live/1769652018126032.m3u8
 - 卫视频道 / 天津卫视 / oktv_comprehensive_php / http://173.208.212.130:8181/720p/tjws.m3u8
 - 卫视频道 / 安多卫视 / zbds_iptv4_txt / https://liveout.xntv.tv/a65jur/96iln2.m3u8
-- 卫视频道 / 安徽卫视 / zbds_iptv4_txt / http://gmxw.7766.org:808/hls/40/index.m3u8
 - 卫视频道 / 安徽卫视 / oktv_comprehensive_php / http://173.208.212.130:8181/720p/ahws.m3u8
 - 卫视频道 / 山东卫视 / oktv_comprehensive_php / http://173.208.212.130:8181/720p/sdws.m3u8
 - 卫视频道 / 山西卫视 / zbds_iptv4_txt / http://119.39.9.8:9901/tsfile/live/0118_1.m3u8
@@ -180,3 +178,5 @@ Family compact playlist: 270 rows / 233 names / 270 URLs
 - 地方频道 / 亳州农村 / zbds_iptv4_txt / http://zbbf2.ahbztv.com/live/418.m3u8?zanhd
 - 地方频道 / 亳州农村 / zbds_iptv4_txt / http://zbbf2.ahbztv.com/live/418.m3u8
 - 地方频道 / 南京教科 / zbds_iptv4_txt / http://nklive.nbs.cn/hls/75b3c462-b831-4de7-a34b-5d3221db2069/index.m3u8
+- 地方频道 / 南京新闻综合 / zbds_iptv4_txt / http://nklive.nbs.cn/hls/d511bc9d-a694-4453-b3a2-4fc842cc97a1/index.m3u8
+- 地方频道 / 南京玄武湖公园 / zbds_iptv4_txt / https://gcalic.v.myalicdn.com/gc/xwh01_1/index.m3u8
