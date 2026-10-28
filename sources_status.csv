@@ -23,11 +23,11 @@ epg_mo,https://epg.pw/test_channels_macau.m3u,enabled,True,True,6134,19,False,
 epg_tw,https://epg.pw/test_channels_taiwan.m3u,enabled,True,True,6189,13,False,
 iptv_org_tw,https://iptv-org.github.io/iptv/countries/tw.m3u,enabled,True,True,5925,31,False,
 epg_sg,https://epg.pw/test_channels_singapore.m3u,enabled,True,True,367,1,False,
-epg_my,https://epg.pw/test_channels_malaysia.m3u,enabled,True,True,683,2,False,
+epg_my,https://epg.pw/test_channels_malaysia.m3u,enabled,True,True,1329,4,False,
 free_tv_world,https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u8,enabled,True,True,542646,2038,False,
 mursor_yy,https://gongdian.top/tv/Mursor/yylunbo.m3u,enabled,False,False,0,0,False,PublicURLPolicyError('DNS resolution failed for gongdian.top: [Errno -5] No address associated with hostname')
 mursor_bililive,https://gongdian.top/tv/Mursor/bililive.m3u,enabled,False,False,0,0,False,PublicURLPolicyError('DNS resolution failed for gongdian.top: [Errno -5] No address associated with hostname')
-freetv_huya,https://live.freetv.top/huyayqk.m3u,recovery,True,True,216587,1121,False,
+freetv_huya,https://live.freetv.top/huyayqk.m3u,recovery,False,False,0,0,False,<HTTPError 504: 'Gateway Timeout'>
 freetv_douyu,https://live.freetv.top/douyuyqk.m3u,recovery,False,False,0,0,False,TimeoutError('URL total budget exceeded during connection retry')
 iptv_org_cn,https://iptv-org.github.io/iptv/countries/cn.m3u,enabled,True,True,30080,127,False,
 tvapp_catalog,https://raw.githubusercontent.com/youhunwl/TVAPP/main/README.md,enabled,False,True,35784,0,False,catalog only; child links not fetched or executed
