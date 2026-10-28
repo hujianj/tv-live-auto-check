@@ -1,6 +1,6 @@
 # Core channel coverage report
 
-Coverage status: incomplete (24/52 target channels)
+Coverage status: incomplete (23/52 target channels)
 A successful maintenance job does not mean all requested channels are available.
 
 Minimum independent URLs per important channel: 1
@@ -44,7 +44,7 @@ Fail on missing important satellite: False
 | 江苏卫视 | 0 | 0 | MISSING |
 | 湖南卫视 | 1 | 1 | OK |
 | 广东卫视 | 0 | 0 | MISSING |
-| 深圳卫视 | 1 | 1 | OK |
+| 深圳卫视 | 0 | 0 | MISSING |
 | 天津卫视 | 0 | 0 | MISSING |
 | 山西卫视 | 0 | 0 | MISSING |
 | 内蒙古卫视 | 1 | 1 | OK |

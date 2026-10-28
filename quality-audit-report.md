@@ -1,17 +1,17 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 229
-Unique channel names: 208
-Unique canonical channel identities: 208
-Unique URLs: 229
+Rows: 252
+Unique channel names: 223
+Unique canonical channel identities: 223
+Unique URLs: 252
 Strict filter residue count: 0
 Latin/noise-like review count: 0
 Channel unique URL limit violations: 0
 URL identity conflicts: 0
-Unique stream hosts: 73
-Top stream host share: 33.2%
-Top five stream host share: 50.7%
+Unique stream hosts: 70
+Top stream host share: 30.6%
+Top five stream host share: 54.8%
 
 ## Core CCTV quality
 
@@ -54,7 +54,7 @@ Minimum important satellite independent URLs: 1
 | 江苏卫视 | 0 | 0 | 0 | LOW |
 | 湖南卫视 | 1 | 1 | 1 | OK |
 | 广东卫视 | 0 | 0 | 0 | LOW |
-| 深圳卫视 | 1 | 1 | 1 | OK |
+| 深圳卫视 | 0 | 0 | 0 | LOW |
 | 天津卫视 | 0 | 0 | 0 | LOW |
 | 山西卫视 | 0 | 0 | 0 | LOW |
 | 内蒙古卫视 | 1 | 1 | 1 | OK |
@@ -84,29 +84,29 @@ Minimum important satellite independent URLs: 1
 
 | Host | Rows | Share |
 |---|---:|---:|
-| gcalic.v.myalicdn.com | 76 | 33.2% |
-| 74.91.26.218 | 14 | 6.1% |
-| stream5.jlntv.cn | 10 | 4.4% |
-| stream.hrbtv.net | 8 | 3.5% |
-| stream8.jlntv.cn | 8 | 3.5% |
-| play.kankanlive.com | 7 | 3.1% |
-| gmxw.7766.org | 6 | 2.6% |
-| live-auth.51kandianshi.com | 4 | 1.7% |
-| bp-resource-dfl.bestv.cn | 3 | 1.3% |
-| live.zohi.tv | 3 | 1.3% |
+| gcalic.v.myalicdn.com | 77 | 30.6% |
+| l.cztvcloud.com | 29 | 11.5% |
+| 74.91.26.218 | 14 | 5.6% |
+| stream5.jlntv.cn | 10 | 4.0% |
+| stream.hrbtv.net | 8 | 3.2% |
+| stream8.jlntv.cn | 8 | 3.2% |
+| play.kankanlive.com | 7 | 2.8% |
+| gmxw.7766.org | 5 | 2.0% |
+| live-auth.51kandianshi.com | 4 | 1.6% |
+| bp-resource-dfl.bestv.cn | 3 | 1.2% |
 
 ## Family playlist audit
 
 Status: ok
-Rows: 225
-Unique URLs: 225
+Rows: 246
+Unique URLs: 246
 
 ## Warnings
 
 - core CCTV channels below independent URL minimum: CCTV-4=0, CCTV-5+=0
-- important satellite channels below independent URL minimum: 辽宁卫视=0, 河北卫视=0, 河南卫视=0, 北京卫视=0, 浙江卫视=0, 江苏卫视=0, 广东卫视=0, 天津卫视=0, 山西卫视=0, 吉林卫视=0, 黑龙江卫视=0, 山东卫视=0, 湖北卫视=0, 广西卫视=0, 海南卫视=0, 重庆卫视=0, 四川卫视=0, 贵州卫视=0, 云南卫视=0, 西藏卫视=0, 陕西卫视=0, 甘肃卫视=0, 青海卫视=0, 宁夏卫视=0, 兵团卫视=0, 厦门卫视=0
-- core channels below independent host minimum: CCTV-4=0, CCTV-5+=0, 辽宁卫视=0, 河北卫视=0, 河南卫视=0, 北京卫视=0, 浙江卫视=0, 江苏卫视=0, 广东卫视=0, 天津卫视=0, 山西卫视=0, 吉林卫视=0, 黑龙江卫视=0, 山东卫视=0, 湖北卫视=0, 广西卫视=0, 海南卫视=0, 重庆卫视=0, 四川卫视=0, 贵州卫视=0, 云南卫视=0, 西藏卫视=0, 陕西卫视=0, 甘肃卫视=0, 青海卫视=0, 宁夏卫视=0, 兵团卫视=0, 厦门卫视=0
+- important satellite channels below independent URL minimum: 辽宁卫视=0, 河北卫视=0, 河南卫视=0, 北京卫视=0, 浙江卫视=0, 江苏卫视=0, 广东卫视=0, 深圳卫视=0, 天津卫视=0, 山西卫视=0, 吉林卫视=0, 黑龙江卫视=0, 山东卫视=0, 湖北卫视=0, 广西卫视=0, 海南卫视=0, 重庆卫视=0, 四川卫视=0, 贵州卫视=0, 云南卫视=0, 西藏卫视=0, 陕西卫视=0, 甘肃卫视=0, 青海卫视=0, 宁夏卫视=0, 兵团卫视=0, 厦门卫视=0
+- core channels below independent host minimum: CCTV-4=0, CCTV-5+=0, 辽宁卫视=0, 河北卫视=0, 河南卫视=0, 北京卫视=0, 浙江卫视=0, 江苏卫视=0, 广东卫视=0, 深圳卫视=0, 天津卫视=0, 山西卫视=0, 吉林卫视=0, 黑龙江卫视=0, 山东卫视=0, 湖北卫视=0, 广西卫视=0, 海南卫视=0, 重庆卫视=0, 四川卫视=0, 贵州卫视=0, 云南卫视=0, 西藏卫视=0, 陕西卫视=0, 甘肃卫视=0, 青海卫视=0, 宁夏卫视=0, 兵团卫视=0, 厦门卫视=0
 - core CCTV channels below independent URL warning target: CCTV-1=1, CCTV-2=1, CCTV-3=1, CCTV-5=1, CCTV-6=1, CCTV-7=1, CCTV-8=2, CCTV-9=2, CCTV-10=1, CCTV-11=1, CCTV-12=1, CCTV-13=1, CCTV-14=1, CCTV-15=2, CCTV-16=1, CCTV-17=1
-- important satellite channels below independent URL warning target: 东方卫视=3, 湖南卫视=1, 深圳卫视=1, 内蒙古卫视=1, 安徽卫视=1, 东南卫视=1, 江西卫视=1, 新疆卫视=1
-- core channels below independent host warning target: CCTV-1=1, CCTV-2=1, CCTV-3=1, CCTV-5=1, CCTV-6=1, CCTV-7=1, CCTV-8=2, CCTV-9=2, CCTV-10=1, CCTV-11=1, CCTV-12=1, CCTV-13=1, CCTV-14=1, CCTV-15=2, CCTV-16=1, CCTV-17=1, 东方卫视=1, 湖南卫视=1, 深圳卫视=1, 内蒙古卫视=1, 安徽卫视=1, 东南卫视=1, 江西卫视=1, 新疆卫视=1
-- top stream host share is high: 33.2% > 30.0%
+- important satellite channels below independent URL warning target: 东方卫视=3, 湖南卫视=1, 内蒙古卫视=1, 安徽卫视=1, 东南卫视=1, 江西卫视=1, 新疆卫视=1
+- core channels below independent host warning target: CCTV-1=1, CCTV-2=1, CCTV-3=1, CCTV-5=1, CCTV-6=1, CCTV-7=1, CCTV-8=2, CCTV-9=2, CCTV-10=1, CCTV-11=1, CCTV-12=1, CCTV-13=1, CCTV-14=1, CCTV-15=2, CCTV-16=1, CCTV-17=1, 东方卫视=1, 湖南卫视=1, 内蒙古卫视=1, 安徽卫视=1, 东南卫视=1, 江西卫视=1, 新疆卫视=1
+- top stream host share is high: 30.6% > 30.0%
