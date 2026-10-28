@@ -111,23 +111,59 @@ class SourcePipelineTests(unittest.TestCase):
         self.assertEqual([c.name for c in kept], ["CCTV-1"])
         self.assertEqual(sum(excluded.values()), 1)
 
-    def test_oktv_php_candidate_remains_inventory_only(self):
+    def test_oktv_php_formal_selection_is_exact_and_does_not_approve_license(self):
         from source_config import load_source_specs
         from source_policy import publication_issue
         spec = next(s for s in load_source_specs() if s.name == "oktv_comprehensive_php")
         self.assertEqual(spec.format, "m3u")
         self.assertTrue(spec.should_probe)
-        self.assertEqual(spec.rights_status, "pending")
-        self.assertFalse(spec.publish_allowed)
-        text = '#EXTM3U\n#EXTINF:-1 group-title="央视频道",CCTV1\nhttps://tv.test/live.m3u8\n'
+        self.assertEqual(spec.rights_status, "user_requested")
+        self.assertTrue(spec.publish_allowed)
+        self.assertEqual(len(spec.publication_urls), 30)
+        self.assertEqual(spec.terms_url, "")
+        self.assertIn("unknown", spec.license)
+        allowed = spec.publication_urls[0]
+        text = ('#EXTM3U\n#EXTINF:-1 group-title="央视频道",CCTV1\n' + allowed + '\n'
+                '#EXTINF:-1 group-title="央视频道",CCTV2\nhttps://tv.test/live.m3u8\n')
         with patch.object(verify, "fetch_url", return_value=(200, "text/plain", text.encode(), spec.url, False)):
             status, candidates = verify.fetch_source(spec)
         self.assertTrue(status.ok)
-        self.assertEqual(status.parsed, 1)
-        self.assertEqual(status.eligible, 0)
-        self.assertEqual(candidates, [])
-        self.assertEqual(publication_issue(spec, "https://tv.test/live.m3u8"),
-                         "source permission pending or restricted")
+        self.assertEqual(status.parsed, 2)
+        self.assertEqual(status.eligible, 1)
+        self.assertEqual([candidate.url for candidate in candidates], [allowed])
+        self.assertEqual(publication_issue(spec, allowed), "")
+        for url in (allowed + '?key=public', allowed + '?deviceid=1',
+                    allowed.replace('/cctv1.', '/dyjc.'),
+                    'https://tv.test/live.m3u8', allowed + '?channel=1'):
+            self.assertTrue(publication_issue(spec, url))
+        pending = SourceSpec(spec.name, spec.url, True, publication_urls=spec.publication_urls)
+        self.assertTrue(publication_issue(pending, allowed))
+        self.assertFalse(SourceSpec('s', spec.url, True, rights_status='user_requested').publish_allowed)
+
+    def test_user_requested_config_requires_bounded_exact_urls_and_local_review(self):
+        from source_config import load_source_specs
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / 'config').mkdir()
+            (root / 'docs').mkdir()
+            (root / 'docs/review.md').write_text('Explicit owner request; upstream license unknown.', encoding='utf-8')
+            path = root / 'config/sources.json'
+            valid = {'name': 'fixture', 'url': 'https://catalog.test/list', 'enabled': True,
+                     'rights_status': 'user_requested', 'format': 'm3u', 'license': 'unknown',
+                     'reviewed_at': '2026-10-28', 'permission_scope': 'exact public links only',
+                     'review_record': 'docs/review.md', 'publication_urls': ['https://tv.test/live.m3u8']}
+            path.write_text(json.dumps([valid]), encoding='utf-8')
+            self.assertTrue(load_source_specs(path)[0].publish_allowed)
+            for change in ({'publication_urls': []}, {'publication_urls': ['https://tv.test/live.m3u8?key=route']},
+                           {'publication_urls': ['https://tv.test/a', 'https://tv.test/a']},
+                           {'publication_urls': 'https://tv.test/live'}, {'publication_urls': [1]},
+                           {'publication_urls': ['https://tv.test/a'] * 201},
+                           {'review_record': '../outside.md'}, {'review_record': ''},
+                           {'review_record': 'docs/not-found.md'}, {'reviewed_at': 'yesterday'},
+                           {'permission_scope': ''}, {'format': 'catalog'}):
+                path.write_text(json.dumps([dict(valid, **change)]), encoding='utf-8')
+                with self.subTest(change=change), self.assertRaises(ValueError):
+                    load_source_specs(path)
 
     def test_m3u_orphan_extinf_does_not_steal_next_channel_url(self):
         text = ('#EXTM3U\n'

@@ -10,6 +10,8 @@ from pathlib import Path
 import re
 from urllib.parse import urlparse
 
+from url_utils import publishable_url_issue
+
 ROOT = Path(__file__).resolve().parents[1]
 SOURCE_CONFIG = ROOT / "config" / "sources.json"
 SOURCE_NAME = re.compile(r"^[A-Za-z0-9][A-Za-z0-9_.-]{0,79}$")
@@ -31,10 +33,17 @@ class SourceSpec:
     homepage: str = ""
     reviewed_at: str = ""
     permission_scope: str = "unconfirmed"
+    publication_urls: tuple[str, ...] = ()
+    review_record: str = ""
 
     @property
     def publish_allowed(self) -> bool:
-        return self.should_probe and self.rights_status == "approved" and self.format != "catalog"
+        # User-requested selections do not claim an upstream/content license.
+        # They require exact reviewed URLs, enforced again by source_policy.
+        allowed = self.rights_status == "approved" or (
+            self.rights_status == "user_requested" and bool(self.publication_urls)
+        )
+        return self.should_probe and allowed and self.format != "catalog"
 
     @property
     def mode(self) -> str:
@@ -89,7 +98,7 @@ def load_source_specs(path: Path = SOURCE_CONFIG) -> list[SourceSpec]:
         if type(timeout) is not int or not 1 <= timeout <= 60:
             raise ValueError(f"source {name!r} timeout_seconds must be 1..60")
         rights = item.get("rights_status", "pending")
-        if rights not in {"pending", "approved", "restricted"}:
+        if rights not in {"pending", "approved", "restricted", "user_requested"}:
             raise ValueError(f"source {name!r} rights_status is invalid")
         if rights == "approved":
             terms = item.get("terms_url")
@@ -104,11 +113,41 @@ def load_source_specs(path: Path = SOURCE_CONFIG) -> list[SourceSpec]:
                 date.fromisoformat(reviewed)
             except ValueError as exc:
                 raise ValueError(f"source {name!r} reviewed_at must be an ISO calendar date") from exc
+        publication_urls = item.get("publication_urls", [])
+        if (not isinstance(publication_urls, list) or len(publication_urls) > 200
+                or any(not isinstance(value, str) for value in publication_urls)
+                or len(set(publication_urls)) != len(publication_urls)):
+            raise ValueError(f"source {name!r} publication_urls must be at most 200 unique URL strings")
+        for value in publication_urls:
+            if publishable_url_issue(value) or urlparse(value).query:
+                raise ValueError(f"source {name!r} publication_urls must be credential-free exact URLs without query parameters")
+        review_record = item.get("review_record", "")
+        if not isinstance(review_record, str):
+            raise ValueError(f"source {name!r} review_record must be a string")
+        if rights == "user_requested":
+            # This is an explicit repository-owner decision, not fabricated
+            # third-party permission. No wildcard, URL rewriting or parameter
+            # removal is permitted; new URLs need a separate review.
+            if not publication_urls or format not in {"auto", "m3u", "txt"}:
+                raise ValueError(f"source {name!r} user_requested requires exact URLs and a data-only playlist adapter")
+            if not isinstance(item.get("permission_scope"), str) or not item["permission_scope"].strip():
+                raise ValueError(f"source {name!r} user_requested requires a documented scope")
+            try:
+                date.fromisoformat(item.get("reviewed_at", ""))
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"source {name!r} user_requested requires an ISO review date") from exc
+            record_path = (path.resolve().parent.parent / review_record).resolve()
+            docs_root = (path.resolve().parent.parent / "docs").resolve()
+            if (not review_record or Path(review_record).is_absolute()
+                    or not record_path.is_relative_to(docs_root)
+                    or record_path.suffix != ".md" or not record_path.is_file()):
+                raise ValueError(f"source {name!r} user_requested requires an existing repository docs review record")
         specs.append(SourceSpec(name, url, enabled, auto_recover, str(item.get("note") or "").strip(),
                                 format, timeout, str(item.get("update_method", "scheduled_fetch")), rights,
                                 str(item.get("license", "unknown")), str(item.get("terms_url", "")),
                                 str(item.get("homepage", url)), str(item.get("reviewed_at", "")),
-                                str(item.get("permission_scope", "unconfirmed"))))
+                                str(item.get("permission_scope", "unconfirmed")),
+                                tuple(publication_urls), review_record))
 
     if not any(spec.enabled for spec in specs):
         raise ValueError("source config must contain at least one enabled source")

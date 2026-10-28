@@ -141,6 +141,7 @@ jobs:
             sources_status.csv
             source-inventory.json
             config/
+            docs/
             output/
             check-report.md
             source-report.md

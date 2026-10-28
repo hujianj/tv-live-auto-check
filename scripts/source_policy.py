@@ -10,7 +10,7 @@ from source_config import SourceSpec
 from url_utils import publishable_url_issue
 
 
-POLICY_VERSION = 1
+POLICY_VERSION = 2
 
 
 def publication_issue(spec: SourceSpec | None, url: str) -> str:
@@ -19,6 +19,10 @@ def publication_issue(spec: SourceSpec | None, url: str) -> str:
         return issue
     if spec is None or not spec.publish_allowed:
         return "source permission pending or restricted"
+    if spec.rights_status == "user_requested" and url not in spec.publication_urls:
+        return "outside user-requested exact public URL selection"
+    if spec.publication_urls and url not in spec.publication_urls:
+        return "outside reviewed source URL selection"
     return ""
 
 
@@ -37,6 +41,8 @@ def discovery_links(text: str) -> list[str]:
 def source_record(spec: SourceSpec, status: dict | None = None) -> dict:
     record = asdict(spec)
     record.update({"publication_allowed": spec.publish_allowed,
+                   "permission_basis": "repository owner request; upstream license unconfirmed"
+                   if spec.rights_status == "user_requested" else spec.rights_status,
                    "network_scope": "current checking environment only",
                    "last_check": status or {"status": "not_checked"}})
     return record
