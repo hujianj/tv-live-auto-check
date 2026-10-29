@@ -19,7 +19,7 @@ SCOPES = {
         "marker": "<!-- tv-live-auto-check-maintenance-failure -->",
     },
     "cdn": {
-        "title": "自动维护告警 IPTV 主订阅 CDN 同步中",
+        "title": "自动维护告警 IPTV 订阅分发或备用镜像未同步",
         "marker": "<!-- tv-live-auto-check-cdn-pending -->",
     },
 }
@@ -176,7 +176,7 @@ def status_comment(context: dict[str, str], status: str, message: str) -> str:
 
 
 def success_comment(context: dict[str, str], scope: str) -> str:
-    recovered = "媒体检测与发布" if scope == "maintenance" else "主电视订阅 CDN"
+    recovered = "媒体检测与发布" if scope == "maintenance" else "主订阅与全部受检备用镜像"
     return (
         f"{recovered}已恢复: {context['time']} UTC\n"
         f"[Workflow run {context['run_number'] or context['run_id']}]({context['run_url']})\n"
@@ -266,13 +266,63 @@ def maintenance_failure_detail(path: str) -> str:
     return detail
 
 
+def distribution_notification(report: dict) -> tuple[str, str]:
+    """Only close distribution alerts after every checked TV mirror is current.
+
+    Optional-mirror failure is a warning, not a failed media publication. Missing
+    or contradictory evidence must not silently close an existing Issue.
+    """
+    if not isinstance(report, dict):
+        raise ValueError("distribution report must be an object")
+    fields = ("raw_current", "required_primary_endpoint_current",
+              "all_checked_television_endpoints_current")
+    if any(type(report.get(key)) is not bool for key in fields):
+        raise ValueError("missing or invalid distribution health evidence")
+    endpoints = report.get("endpoints")
+    if not isinstance(endpoints, list) or not endpoints:
+        raise ValueError("distribution report has no endpoint evidence")
+    if report.get("required_only") is True:
+        raise ValueError("required-only evidence cannot close an all-mirror alert")
+    from check_publication_endpoints import EndpointResult, health_flags, publication_health_status
+    results = [EndpointResult(**item) for item in endpoints]
+    if any(type(getattr(item, key)) is not bool for item in results
+           for key in ("ok", "hard_raw", "required_primary", "television_compatible")):
+        raise ValueError("invalid endpoint health flag types")
+    flags = health_flags(results)
+    if any(report[key] != flags[key] for key in fields):
+        raise ValueError("distribution flags contradict endpoint evidence")
+    state = publication_health_status(results)
+    if state == "ok":
+        return "success", ""
+    failed = ", ".join(f"{item.name}: {item.error[:180]}" for item in results if not item.ok)
+    prefix = ("Raw 与必需主订阅均已与最新版逐文件哈希一致；仅备用镜像未同步，不是媒体维护失败。"
+              if state == "television_backups_pending"
+              else "Raw 或必需主订阅尚未通过最新版校验；主分发仍需处理。")
+    return "cdn_pending", prefix + " 受检异常端点：" + failed + "。完整哈希见本轮 artifact，仅代表本运行网络。"
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("status", choices=["failure", "cdn_pending", "success"])
+    parser.add_argument("status", choices=["failure", "cdn_pending", "success", "distribution"])
     parser.add_argument("--message", default="")
     parser.add_argument("--report", default="maintenance-run.json")
     parser.add_argument("--scope", choices=["all", "maintenance", "cdn"], default="all")
+    parser.add_argument("--check-outcome", choices=["success", "failure"], default=None,
+                        help="actual endpoint-check step outcome; failure cannot close a CDN alert")
     args = parser.parse_args(argv)
+    if args.status == "distribution":
+        try:
+            args.status, args.message = distribution_notification(
+                json.loads(Path(args.report).read_text(encoding="utf-8-sig")))
+            if args.check_outcome == "failure" and args.status == "success":
+                raise ValueError("endpoint step failed despite a healthy report; evidence may be obsolete")
+        except (OSError, ValueError, TypeError, KeyError) as exc:
+            args.status = "cdn_pending"
+            args.message = ("本轮分发检查未取得完整可信证据，不能确认主订阅或全部备用镜像已恢复；"
+                            "保留分发告警，不关闭 Issue，也不归因为媒体检测失败。原因："
+                            + str(exc)[:500])
+            print("::warning::" + args.message)
+        args.scope = "cdn"
     token = os.getenv("GITHUB_TOKEN", "")
     context = run_context()
     repo = context["repo"]

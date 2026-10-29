@@ -70,23 +70,7 @@ def _iter_ts_packets(data: bytes):
 def _section_assembler():
     buffers: dict[int, bytearray] = {}
 
-    def feed(pid: int, payload: bytes, pusi: bool) -> list[bytes]:
-        if not payload:
-            return []
-        buf = buffers.setdefault(pid, bytearray())
-        if pusi:
-            pointer = payload[0]
-            payload = payload[1:]
-            if pointer > len(payload):
-                buffers[pid] = bytearray()
-                buf = buffers[pid]
-                return []
-            # Bytes before the pointer finish a section started in the previous
-            # packet; bytes after it start one or more new sections.
-            if pointer and buf:
-                buf.extend(payload[:pointer])
-            payload = payload[pointer:]
-        buf.extend(payload)
+    def drain(buf: bytearray) -> list[bytes]:
         sections: list[bytes] = []
         while len(buf) >= 3:
             if buf[0] == 0xFF:
@@ -101,6 +85,35 @@ def _section_assembler():
                 break
             sections.append(bytes(buf[:total]))
             del buf[:total]
+        return sections
+
+    def feed(pid: int, payload: bytes, pusi: bool) -> list[bytes]:
+        if not payload:
+            return []
+        buf = buffers.setdefault(pid, bytearray())
+        sections: list[bytes] = []
+        if pusi:
+            pointer = payload[0]
+            payload = payload[1:]
+            if pointer > len(payload):
+                buffers[pid] = bytearray()
+                buf = buffers[pid]
+                return []
+            # Bytes before the pointer finish a section started in the previous
+            # packet; bytes after it start one or more new sections.
+            if pointer and buf:
+                buf.extend(payload[:pointer])
+                sections.extend(drain(buf))
+            # PUSI identifies a fresh section boundary, even after packet loss
+            # or a bounded sample starting halfway through the previous table.
+            # Never prepend an orphan/incomplete section to this new table.
+            buf.clear()
+            payload = payload[pointer:]
+        elif not buf:
+            # No section start has been observed for this PID yet.
+            return []
+        buf.extend(payload)
+        sections.extend(drain(buf))
         return sections
 
     return feed
@@ -157,11 +170,16 @@ def probe_mpeg_ts(data: bytes) -> MediaProbe | None:
     pmt_pids: set[int] = set()
     video_pids: set[int] = set()
     audio_pids: set[int] = set()
+    # A bounded sample can start between periodic PSI tables. Discover all
+    # PATs first so a PMT appearing before its PAT is not silently ignored.
     for pusi, pid, payload in packets:
-        for section in feed(pid, payload, pusi):
-            if pid == 0:
+        if pid == 0:
+            for section in feed(pid, payload, pusi):
                 pmt_pids.update(_parse_pat(section))
-            elif pid in pmt_pids:
+    feed = _section_assembler()
+    for pusi, pid, payload in packets:
+        if pid in pmt_pids:
+            for section in feed(pid, payload, pusi):
                 video, audio = _parse_pmt(section)
                 video_pids.update(video)
                 audio_pids.update(audio)

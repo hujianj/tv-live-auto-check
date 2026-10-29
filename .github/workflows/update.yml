@@ -219,6 +219,9 @@ jobs:
           round=0
           run_endpoint_check() {
             round=$((round + 1))
+            # Earlier rounds are already archived; current evidence must not
+            # survive a killed/failed checker and accidentally close an alert.
+            rm -f -- cdn-health-report.md cdn-health-report.json
             # Thread cancellation cannot forcibly stop a resolver that is
             # stuck below Python's socket timeout. Keep the job bounded at
             # the process level as a final watchdog around the checker.
@@ -227,8 +230,7 @@ jobs:
               --repo "${{ github.repository }}" \
               --branch "${{ github.ref_name }}" \
               --global-deadline 240 \
-              --retry-wait 3 \
-              --require-all-television
+              --retry-wait 3
             check_status=$?
             for report in cdn-health-report.md cdn-health-report.json; do
               if [ -f "$report" ]; then cp "$report" "cdn-rounds/round-${round}-${report}"; fi
@@ -277,21 +279,15 @@ jobs:
             message="The verified playlist passed validation, but the stale-source/commit/push gate failed."
           fi
           python scripts/notify_maintenance.py failure --report maintenance-run.json --message "$message"
-      - name: Notify CDN pending state
-        if: ${{ always() && steps.maintenance.outcome == 'success' && steps.commit.outcome == 'success' && steps.cdn_health.outcome == 'failure' }}
+      - name: Report primary and optional mirror health separately
+        if: ${{ always() && steps.maintenance.outcome == 'success' && steps.commit.outcome == 'success' }}
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/notify_maintenance.py cdn_pending --scope cdn --message "Git publication succeeded, but one or more configured public endpoints are still stale or unreachable; Raw remains authoritative."
+        run: python scripts/notify_maintenance.py distribution --scope cdn --report cdn-health-report.json --check-outcome "${{ steps.cdn_health.outcome }}"
       - name: Close recovered media or publication issue
         if: ${{ always() && steps.maintenance.outcome == 'success' && steps.stability_state.outcome == 'success' && steps.commit.outcome == 'success' }}
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: python scripts/notify_maintenance.py success --scope maintenance
-      - name: Close recovered CDN issue
-        if: ${{ always() && steps.maintenance.outcome == 'success' && steps.commit.outcome == 'success' && steps.cdn_health.outcome == 'success' }}
-        continue-on-error: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/notify_maintenance.py success --scope cdn

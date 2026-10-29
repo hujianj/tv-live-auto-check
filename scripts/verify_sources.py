@@ -682,14 +682,27 @@ def check_media_segments(segments: list[str], limit: int = HLS_SEGMENT_CHECKS, t
     # may be expired or cached and does not prove the current live edge works.
     # Strict final publication probes download a larger sample so PAT/PMT or
     # container track metadata is available, not just a TS sync byte.
-    sample_bytes = 32768 if require_video else 4096
+    expansions = 0
     for seg in segments[-max(1, limit):]:
+        sample_bytes = 32768 if require_video else 4096
         code, ctype, data, _final = http_get_small(seg, max_bytes=sample_bytes, timeout=timeout)
         checked += 1
+        # TS program tables need not appear within the first 4 KiB. Retry only
+        # inconclusive full TS samples, never HTML/errors or proven audio-only
+        # streams. All reads still share the candidate's absolute deadline.
+        for larger_sample in (32768, 131072):
+            probe = probe_media(init_data + data, ctype)
+            if (larger_sample <= sample_bytes or code >= 400 or not data
+                    or looks_bad(data) or probe.kind != "unknown"
+                    or probe.container != "mpeg-ts" or len(data) < sample_bytes):
+                continue
+            code, ctype, data, _final = http_get_small(seg, max_bytes=larger_sample, timeout=timeout)
+            sample_bytes = larger_sample
+            expansions += 1
         if code >= 400 or not data or looks_bad(data) or not looks_media(init_data + data, ctype, require_video=require_video):
-            return False, f"segment bad {code} {ctype} bytes={len(data)} checked={checked} {media_detail(data, ctype)}"
+            return False, f"segment bad {code} {ctype} bytes={len(data)} checked={checked} expansions={expansions} {media_detail(init_data + data, ctype)}"
     mode = "video" if require_video else "media"
-    return True, f"segments ok checked={checked} required={mode}"
+    return True, f"segments ok checked={checked} required={mode} expansions={expansions}"
 
 
 def decode_manifest_sample(manifest: HLSManifest, timeout: int, prefix: bytes = b"") -> DecodeResult:

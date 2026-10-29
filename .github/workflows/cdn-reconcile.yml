@@ -72,11 +72,13 @@ jobs:
               --report "cdn-rounds/round-${round}-publication-preflight.md" \
               --json "cdn-rounds/round-${round}-publication-preflight.json"
             if [ "$?" -ne 0 ]; then exit 2; fi
+            # Never reuse a previous round's successful report if this process
+            # is killed by its watchdog before writing current evidence.
+            rm -f -- cdn-health-report.md cdn-health-report.json
             timeout --signal=TERM --kill-after=10s 150s \
               python scripts/check_publication_endpoints.py \
               --repo "${GITHUB_REPOSITORY}" \
               --branch main \
-              --require-all-television \
               --global-deadline 120 \
               --retry-wait 5
             status=$?
@@ -84,8 +86,17 @@ jobs:
               if [ -f "$report" ]; then cp "$report" "cdn-rounds/round-${round}-${report}"; fi
             done
             if [ "$status" -eq 0 ]; then
-              cat cdn-health-report.md >> "$GITHUB_STEP_SUMMARY"
-              exit 0
+              if python -c 'import json; import sys; sys.exit(0 if json.load(open("cdn-health-report.json"))["all_checked_television_endpoints_current"] else 1)'; then
+                cat cdn-health-report.md >> "$GITHUB_STEP_SUMMARY"
+                exit 0
+              fi
+              echo "::warning::Raw and required primary are current; optional television mirrors remain stale/unreachable."
+              # One purge/recheck for degraded optional mirrors, not four
+              # futile rounds. The warning Issue remains open until ALL recover.
+              if [ "$round" -ge 2 ]; then
+                cat cdn-health-report.md >> "$GITHUB_STEP_SUMMARY"
+                exit 0
+              fi
             fi
             # A healthy hourly check does not need a purge. Keep purge bounded
             # and retain every observation instead of overwriting earlier evidence.
@@ -111,12 +122,12 @@ jobs:
             cdn-health-report.md
             cdn-health-report.json
             cdn-rounds/
-      - name: Notify CDN pending state
-        if: steps.reconcile.outcome == 'failure'
+      - name: Report primary and optional mirror health separately
+        if: ${{ always() && steps.publication.outcome == 'success' && steps.reconcile.outcome != 'skipped' }}
         continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/notify_maintenance.py cdn_pending --scope cdn --message "主订阅或电视备用端点在本运行网络中仍滞后或不可访问。详情与逐轮哈希见 CDN artifact；不能将 HTTP 200、purge finished 或主节点成功当成全部节点一致，也不保证旧版频道仍可播。下一轮继续复验。"
+        run: python scripts/notify_maintenance.py distribution --scope cdn --report cdn-health-report.json --check-outcome "${{ steps.reconcile.outcome }}"
       - name: Report invalid publication without a false CDN alert
         if: ${{ failure() && steps.publication.outcome == 'failure' }}
         continue-on-error: true
@@ -125,12 +136,6 @@ jobs:
         run: |
           cat cdn-health-report.md >> "$GITHUB_STEP_SUMMARY"
           python scripts/notify_maintenance.py failure --scope maintenance --message "仓库中现有订阅未通过格式或地址安全校验。本轮没有检测或清除 CDN 缓存，不能归因为 CDN 滞后；需先生成通过完整发布门禁的新订阅。"
-      - name: Close recovered CDN issue
-        if: steps.reconcile.outcome == 'success'
-        continue-on-error: true
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: python scripts/notify_maintenance.py success --scope cdn
       - name: Mark unreconciled CDN as failed
         if: steps.reconcile.outcome == 'failure'
         run: exit 1

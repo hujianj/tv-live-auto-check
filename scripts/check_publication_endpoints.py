@@ -270,17 +270,18 @@ def main(argv: list[str] | None = None) -> int:
         validated = validate_text(expected.decode("utf-8", "strict"), require_categories=True)
         if validated["rows"] < 1:
             raise ValueError("expected playlist has no channel rows")
-        if not args.validate_only:
-            # Different publications legitimately have different contents. All
-            # inputs must pass preflight before the first network request.
-            for endpoint in endpoints:
-                local_path = (expected_path if endpoint.path == config["authoritative_raw_file"]
-                              else expected_path.parent / endpoint.path)
-                data = local_path.read_bytes()
-                validated = validate_text(data.decode("utf-8", "strict"), require_categories=True)
-                if validated["rows"] < 1:
-                    raise ValueError(f"empty expected playlist: {endpoint.path}")
-                expected_by_path[endpoint.path] = hashlib.sha256(data).hexdigest()
+        # Validate every distinct local endpoint input even in validate-only
+        # mode; otherwise a malformed home playlist can reach cache purging.
+        for endpoint in endpoints:
+            if endpoint.path in expected_by_path:
+                continue
+            local_path = (expected_path if endpoint.path == config["authoritative_raw_file"]
+                          else expected_path.parent / endpoint.path)
+            data = local_path.read_bytes()
+            validated = validate_text(data.decode("utf-8", "strict"), require_categories=True)
+            if validated["rows"] < 1:
+                raise ValueError(f"empty expected playlist: {endpoint.path}")
+            expected_by_path[endpoint.path] = hashlib.sha256(data).hexdigest()
     except (OSError, UnicodeError, ValueError) as exc:
         reason = redact_text(str(exc))[:1500]
         report = ("# Publication preflight failed\n\n"
@@ -301,6 +302,7 @@ def main(argv: list[str] | None = None) -> int:
         Path(args.json_path).write_text(json.dumps({
             "schema_version": 2, "checked_utc": checked_utc,
             "status": "input_valid", "expected_file": Path(args.expected).name,
+            "expected_sha256_by_path": expected_by_path,
             "endpoints_checked": 0, "endpoints": [], "raw_current": None, "primary_current": None,
         }, indent=2) + "\n", encoding="utf-8", newline="\n")
         print("Publication input valid; no endpoint requests performed.")
@@ -384,6 +386,8 @@ def main(argv: list[str] | None = None) -> int:
     )
     print(report)
     failures = publication_gate_failures(results, require_all_television=args.require_all_television)
+    if publication_health_status(results) == "television_backups_pending":
+        print("::warning::Required Raw/primary are current, but optional TV mirrors are stale/unreachable; see per-endpoint hashes.")
     for failure in failures:
         print(failure, file=sys.stderr)
     return 1 if failures else 0

@@ -80,7 +80,7 @@
       "endpoint_deadline_seconds": 90,
       "hard_raw": false,
       "television_compatible": true,
-      "required_primary": false
+      "required_primary": true
     },
     {
       "name": "jsdelivr_primary",
@@ -91,7 +91,7 @@
       "endpoint_deadline_seconds": 150,
       "hard_raw": false,
       "television_compatible": true,
-      "required_primary": true
+      "required_primary": false
     },
     {
       "name": "jsdelivr_gcore",

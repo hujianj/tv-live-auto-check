@@ -39,19 +39,29 @@
 - 上游短暂遗漏时，近期成功历史仅作为重新检测候选。严格复检并发 24、补线 12、慢重试 8，同服务器最多 3，保持完整媒体检测而不是抽查。
 - CDN 每个端点按它所指文件的 SHA256 校验。严格 TXT 与家用完整 TXT 允许不同，不再跨文件比较哈希而误报缓存滞后。
 
-GitHub/CDN 负责分发频道列表，画面数据来自每条频道地址。固定订阅不需要换地址，但电视必须刷新订阅才会载入新内容；CDN 尚未同步时可使用下面的 Raw 代理备用。
+GitHub/CDN 负责分发频道列表，画面数据来自每条频道地址。固定订阅不需要换地址，但电视必须刷新订阅才会载入新内容；可选 CDN 尚未同步时仍可使用下面的固定 Raw 代理主订阅。
 
-结合这台电视此前的实际测试，酷9长期订阅优先使用电视端可正常访问的 jsDelivr 固定地址：
+2026-10-29 已将 `config/publication.json` 的必需主订阅改为固定 Raw 代理地址，与此前实际推荐保持一致。酷9需要全部频道与备用线路时，优先使用：
+
+```text
+https://gh-proxy.com/raw.githubusercontent.com/hujianj/tv-live-auto-check/main/ku9-live.txt
+```
+
+家用完整 M3U（同样包含明确待电视复核的重点频道候选）：
+
+```text
+https://gh-proxy.com/raw.githubusercontent.com/hujianj/tv-live-auto-check/main/tv-coverage.m3u
+```
+
+本次本机固定 TXT 地址实测 HTTP 200 且 SHA256 与仓库一致；不附加时间戳、查询参数或绕缓存请求头。第三方代理仍可能故障，检测只代表当时受检网络，不保证所有设备访问相同。
+
+jsDelivr 保留为备用镜像，不再把它尚未同步误报为主订阅失败：
 
 ```text
 https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check@main/ku9-live.txt
 ```
 
-jsDelivr 边缘节点可能在自动更新后持续返回上一版，`purge finished` 不保证你所在节点已经更新。2026-10-28 本机检查时，gcore/testingcf 仍是旧版，而下面的固定 Raw 代理地址与仓库最新版一致。如果主地址获取为空或迟迟不更新，可以在酷9中改用此备用订阅（不用附加时间戳或查询参数）：
-
-```text
-https://gh-proxy.com/raw.githubusercontent.com/hujianj/tv-live-auto-check/main/ku9-live.txt
-```
+`purge finished` 不能证明固定地址已是最新版。所有备用节点仍逐文件核对哈希；任何备用镜像滞后或不可访问都生成 `television_backups_pending`、Actions warning 和保留的分发告警 Issue，只有全部受检电视端点恢复才关闭该 Issue。Raw 或必需主地址失败仍使分发检查返回非零。诊断命令追加 `--require-all-television` 可要求所有镜像必须一致；常规维护不将可选镜像告警等同于主地址不可用。
 
 GitHub Pages 可作为电脑端或网络可访问设备的备用入口；此前这台电视访问 GitHub 域名曾出现“数据为空”，因此不再把它列为电视端第一选择：
 
@@ -59,7 +69,7 @@ GitHub Pages 可作为电脑端或网络可访问设备的备用入口；此前�
 https://hujianj.github.io/tv-live-auto-check/ku9-live.txt
 ```
 
-M3U 格式：
+严格成功 M3U（不含待复核候选）：
 
 ```text
 https://hujianj.github.io/tv-live-auto-check/live.m3u
@@ -83,7 +93,7 @@ Actions 的运行摘要会列出每阶段耗时、是否超时、复检中止原
 2. 抓取 TXT / M3U / M3U8 / JSON / XML 聚合列表；目录型来源只记录静态链接。HLS 媒体清单不能当作频道目录解析，HTML 错误页和 XML DTD/实体拒绝解析。
 3. 解析频道名、分类和播放 URL。
 4. 先执行来源许可、国内中文频道和地址安全筛选，再按频道名和实际 URL 去重。排除鉴权、临时签名、过期参数、播放请求头依赖和 DRM，不固化检测重定向产生的临时地址。
-5. 对筛选范围内的所有唯一 URL 做真实媒体流检测；HLS 会继续检查子播放列表和媒体分片。每条线路请求和重试共享 60 秒预算；连接地址重试、读流和单主机排队检查剩余预算，整个阶段另有进程级时限。系统 DNS 调用仍受操作系统行为影响，不能把单请求超时当作绝对进程时限。
+5. 对筛选范围内的所有唯一 URL 做真实媒体流检测；HLS 会继续检查子播放列表和媒体分片。TS 分片初检通常读取 4 KiB；如果样本是无法确认轨道的 TS 且尚未读完，仅在共享期限内有限扩样至 32 KiB/128 KiB。HTML、HTTP 错误、已确认音频不会借此放行；PAT/PMT 读取顺序不再假设 PAT 一定先于 PMT。每条线路请求和重试共享 60 秒预算；连接地址重试、读流和单主机排队检查剩余预算，整个阶段另有进程级时限。系统 DNS 调用仍受操作系统行为影响，不能把单请求超时当作绝对进程时限。
 6. 只保留检测可播放的 URL。
 7. 按 `config/rules.json` 分类、过滤和统一频道身份；完整目录在复检前不限制频道或备用数量。
 8. 生成 `live-curated.txt` / `live.txt` / `live-verified.txt` / `ku9-live.txt` / `live.m3u`。
@@ -92,7 +102,7 @@ Actions 的运行摘要会列出每阶段耗时、是否超时、复检中止原
 11. 最终写入体积审计结果，再生成不包含自哈希的 `publish-manifest.json`，对所有其余发布文件的最终大小和 SHA256 做不可变校验。
 12. 完整跨文件校验和公开产物校验全部通过后，幂等应用本轮稳定性 observation；`stability-state.json` 只保存为 90 天 Actions artifact，不再每天提交大状态文件。下一轮仅从最近一次成功的主维护运行恢复并严格校验状态，缺失或损坏时从空状态安全启动。近期更稳定的线路会在下一轮排序更靠前；证据计数有上限并互相衰减，`last_seen` 只按北京时间周起始日更新。
 13. 成功保存稳定性 artifact 且远端代码没有变化时，才提交新版直播源。
-14. 发布后检查 GitHub Raw、电视主 jsDelivr URL 和配置中的电视备用 URL；主地址或备用地址滞后/不可访问时记录为“发布成功、分发端点待同步”并自动告警，不回滚已经通过媒体检测的 Git 提交。报告区分权威/主地址失败与备用端点降级，并保存每轮检查证据。
+14. 发布后检查 GitHub Raw、电视主 gh-proxy Raw URL 和配置中的电视备用 URL；主地址或备用地址滞后/不可访问时记录为“发布成功、分发端点待同步”并自动告警，不回滚已经通过媒体检测的 Git 提交。报告区分权威/主地址失败与备用端点降级，并保存每轮检查证据。
 
 最终复测摘要分别记录失败删除行数、补回行数、`backup_trimmed_rows`（可播但超出备用数量的行）和净变化。全部本轮候选 URL 的复检 CSV 必须与候选池逐项对齐，不允许用抽查或只改统计冒充全量检测。
 
@@ -118,9 +128,9 @@ Actions 的运行摘要会列出每阶段耗时、是否超时、复检中止原
 
 其中 `contributed` / `sources_contributing` 是兼容字段，仅表示“抓取成功并解析出行”，不表示已获许可、已通过检测或最终发布。报告另列 `sources_media_eligible` 和最终来源分布，避免把待审核来源的解析数量算成可用贡献。
 
-维护 workflow 完成后，独立的 `.github/workflows/cdn-reconcile.yml` 每小时还会检查 GitHub Raw、电视主 jsDelivr、Raw 代理及 gcore/testingcf 备用地址；它不重复媒体 URL 检测。先检查，有异常才在最多四轮检查之间进行最多三次 purge；已一致的小时巡检不做无意义清缓存。CDN/备用分发问题与媒体检测失败使用不同告警 Issue，分发恢复时不会误关闭媒体检测告警。`cdn-rounds/` 连同最终报告仅作为 artifact 保存 30 天，不进入 Git 历史。
+维护 workflow 完成后，独立的 `.github/workflows/cdn-reconcile.yml` 每小时检查 GitHub Raw、必需主 Raw 代理、jsDelivr 及 gcore/testingcf 备用地址，不重复媒体 URL 检测。全部一致时不清缓存；只有备用镜像异常时最多一次 purge 后复验并记录降级，Raw/主地址异常时仍最多四轮检查及三次 purge 后返回失败。逐轮 hash 保存在 `cdn-rounds/` artifact 30 天，不提交到 Git。分发告警与媒体检测告警隔离，备用未恢复时不会因主地址成功而误关闭分发告警。
 
-CDN 巡检会先检查仓库中的预期订阅内容。若本地预期列表本身无效，会直接记录 `invalid_publication` 并停止，不清缓存、不将其误报为 CDN 滞后；`raw_current` 和 `primary_current` 为 `null`，表示未检测。手动修复分支的验证任务不会触发正式 CDN 刷新。
+CDN 巡检会先检查所有受检端点对应的仓库预期订阅内容，包含严格 TXT 与家用完整 TXT，即使使用 `--validate-only` 也不会漏检。若本地预期列表本身无效，会直接记录 `invalid_publication` 并停止，不清缓存、不将其误报为 CDN 滞后；`raw_current` 和 `primary_current` 为 `null`，表示未检测。手动修复分支的验证任务不会触发正式 CDN 刷新。
 
 大体积诊断文件不会再进入 Git 历史，只作为 GitHub Actions artifact 保存 30 天：
 
@@ -329,10 +339,10 @@ local-network-results.csv
 ## CDN 说明
 
 - GitHub Raw 是发布校验的权威基准，gh-proxy 适合立即查看最新版。
-- 这台电视已实测 jsDelivr 固定地址可用，因此长期订阅仍优先使用 jsDelivr。
-- 长期地址显式包含 `@main`，避免省略分支时额外的默认分支映射缓存；它仍是固定地址，不会随提交变化。
-- jsDelivr 有时会滞后，项目会等待 Git 发布传播后主动 purge，并在失败时再次 purge/复验电视实际请求的固定 URL；主 `cdn.jsdelivr.net` 固定地址仍是主地址门禁，不能由 gh-proxy 或其他镜像替代通过。维护和独立收敛工作流增加 `--require-all-television`，备用电视端点异常也会保持分发告警，不误报全部一致；媒体发布不因此回滚。
-- 第三方 CDN 仍不保证全球每个边缘节点同时刷新，因此项目验证的是 GitHub Runner 实际命中的固定 URL 节点，并保留 Raw 代理作为即时备用。
+- 长期订阅优先使用固定 gh-proxy Raw 地址，包含家用完整频道和全部成功备用线路；jsDelivr 保留为可选备用。
+- jsDelivr 备用地址显式包含 `@main`，避免省略分支时额外的默认分支映射缓存；主代理使用 `/main/`，两者均是固定地址。
+- jsDelivr 有时会滞后，项目会等待 Git 发布传播后主动 purge，并在失败时再次 purge/复验电视实际请求的固定 URL；必需主地址是固定 gh-proxy Raw 订阅，jsDelivr 是可选备用镜像，仍检查其哈希但不会替代主地址通过门禁。备用电视端点异常保留分发告警，不误报全部一致；`--require-all-television` 仅用于要求所有备用镜像一致的严格诊断，媒体发布不因此回滚。
+- 第三方 CDN 仍不保证全球每个边缘节点同时刷新，因此项目验证的是 GitHub Runner 实际命中的固定 URL 节点，固定 Raw 代理是主订阅，第三方代理本身也仍可能暂时故障。
 - 这台电视访问 GitHub Pages 曾出现“数据为空”，因此 Pages 只作为电脑端备用，不再建议作为电视主地址。
 - 报告的 `checked_utc`、`scope=execution_network_only`、`status` 和每端点哈希说明具体检查时间、网络与结果。`ok` 仅表示本次检查的配置端点一致，不表示全球 CDN 节点一致，更不表示每个频道永久可播。仅主地址检查时，`required_only=true` 明确表示没有检查全部备用地址。
 - 检查电视备用地址必须使用 README 实际推荐的 `ku9-live.txt`，不能用严格成功清单 `live-curated.txt` 的哈希代替。家用完整清单与严格清单允许内容不同；同一文件在各端点仍需匹配它自己的发布哈希。

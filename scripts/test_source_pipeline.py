@@ -746,6 +746,13 @@ class SourcePipelineTests(unittest.TestCase):
                 self.assertEqual(endpoints.main(args + ['--validate-only']), 2)
             pool.assert_not_called()
             expected.write_text('央视频道,#genre#\nCCTV-1,https://tv.test/live.m3u8\n卫视频道,#genre#\n地方频道,#genre#\n', encoding='utf-8')
+            home = root / 'ku9-live.txt'
+            home.write_text('<html>error</html>', encoding='utf-8')
+            with patch.object(endpoints.cf, 'ThreadPoolExecutor') as pool:
+                self.assertEqual(endpoints.main(args + ['--validate-only']), 2)
+            pool.assert_not_called()
+            self.assertEqual(json.loads(machine.read_text(encoding='utf-8'))['status'], 'invalid_publication')
+            home.write_bytes(expected.read_bytes())
             with patch.object(endpoints.cf, 'ThreadPoolExecutor') as pool:
                 self.assertEqual(endpoints.main(args + ['--validate-only']), 0)
             pool.assert_not_called()

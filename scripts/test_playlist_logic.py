@@ -102,7 +102,7 @@ def test_workflow_is_pinned_and_refuses_stale_publication() -> None:
     assert 'IPTV_STABILITY_OBSERVATION_ID: "${{ github.run_id }}:${{ github.sha }}"' in workflow
     assert '${{ github.run_id }}:${{ env.SOURCE_SHA }}' not in workflow
     assert workflow.index("Run complete maintenance pipeline") < workflow.index("Commit verified playlist")
-    assert "cdn_pending" in workflow
+    assert "notify_maintenance.py distribution --scope cdn" in workflow
     assert "--publication-files" in workflow
     assert workflow.count("purge_jsdelivr.py") >= 2
     assert "--pre-wait 30" in workflow
@@ -110,7 +110,7 @@ def test_workflow_is_pinned_and_refuses_stale_publication() -> None:
     assert workflow.index("Purge subscription files after Git propagation") < workflow.index("Verify Raw and all configured publication endpoints")
     assert "always() && steps.commit.outcome == 'success'" in workflow
     assert "notify_maintenance.py success --scope maintenance" in workflow
-    assert "notify_maintenance.py success --scope cdn" in workflow
+    assert "notify_maintenance.py distribution --scope cdn" in workflow
 
     cdn_workflow = (ROOT / ".github" / "workflows" / "cdn-reconcile.yml").read_text(encoding="utf-8")
     cdn_refs = [line.strip() for line in cdn_workflow.splitlines() if line.strip().startswith("uses:")]
@@ -122,8 +122,9 @@ def test_workflow_is_pinned_and_refuses_stale_publication() -> None:
     assert cdn_workflow.index("--validate-only") < cdn_workflow.index("python scripts/purge_jsdelivr.py")
     assert "steps.publication.outcome == 'failure'" in cdn_workflow
     assert "--required-only" not in cdn_workflow
-    assert "--require-all-television" in cdn_workflow
-    assert "--require-all-television" in workflow
+    assert "--require-all-television" not in cdn_workflow
+    assert "all_checked_television_endpoints_current" in cdn_workflow
+    assert "--require-all-television" not in workflow
     assert "cdn-rounds/" in cdn_workflow and "cdn-rounds/" in workflow
     assert 'git merge --ff-only origin/main' in cdn_workflow
     assert 'round-${round}-expected-revision.txt' in cdn_workflow
@@ -131,8 +132,10 @@ def test_workflow_is_pinned_and_refuses_stale_publication() -> None:
     assert cdn_workflow.index('status=$?') < cdn_workflow.index("python scripts/purge_jsdelivr.py")
     assert "timeout --signal=TERM --kill-after=10s 150s" in cdn_workflow
     assert "timeout-minutes: 25" in cdn_workflow
-    assert "notify_maintenance.py cdn_pending --scope cdn" in cdn_workflow
-    assert "notify_maintenance.py success --scope cdn" in cdn_workflow
+    assert "notify_maintenance.py distribution --scope cdn" in cdn_workflow
+    for current_workflow in (workflow, cdn_workflow):
+        assert 'rm -f -- cdn-health-report.md cdn-health-report.json' in current_workflow
+        assert '--check-outcome "${{ steps.' in current_workflow
 
     fast_workflow = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
     fast_refs = [line.strip() for line in fast_workflow.splitlines() if line.strip().startswith("uses:")]
@@ -186,7 +189,7 @@ def test_publication_config_rejects_ambiguous_roles_and_unsafe_paths() -> None:
         expect_rejected(lambda value: value["endpoints"][0].update({"path": "../live-curated.txt"}))
         expect_rejected(lambda value: value["endpoints"][0].update({"template": "http://example.test/{path}"}))
         expect_rejected(lambda value: value["endpoints"][0].update({"path": value["primary_text_file"]}))
-        expect_rejected(lambda value: value["endpoints"][3].update({"television_compatible": False}))
+        expect_rejected(lambda value: next(item for item in value["endpoints"] if item["required_primary"]).update({"television_compatible": False}))
 
 
 def test_source_statuses_follow_config_order() -> None:
@@ -663,7 +666,7 @@ def test_quality_audit_warns_without_blocking_on_global_host_concentration() -> 
 
 
 def test_local_network_parser_and_core_filter() -> None:
-    assert "@main/ku9-live.txt" in local_check_module.DEFAULT_URL
+    assert "/main/ku9-live.txt" in local_check_module.DEFAULT_URL
     assert local_check_module.DEFAULT_URL == local_check_module.default_subscription_url()
     text = """央视频道,#genre#
 CCTV-1,http://a/cctv1.m3u8
@@ -1149,6 +1152,60 @@ def test_strict_media_probe_requires_a_video_track() -> None:
     init_audio = b"\x00\x00\x00\x18ftypisom" + b"moovtrakmdiahdlrsounmp4a"
     assert probe_media(init_video, "video/mp4").kind == "video"
     assert probe_media(init_audio, "audio/mp4").kind == "audio"
+    # Bounded samples need not start with PAT followed by PMT.
+    reordered = video[188:376] + video[:188] + video[376:]
+    assert probe_media(reordered, "video/mp2t").kind == "video"
+
+
+def test_media_segment_adaptive_sample_is_bounded_and_not_a_success_shortcut() -> None:
+    original = verify_module.http_get_small
+    prefix = _ts_pes_packet(101, 0xE0) * 80
+    delayed_tables = prefix + _sample_ts(0x1B)
+    assert probe_media(delayed_tables[:4096], "video/mp2t").kind == "unknown"
+    calls = []
+    try:
+        def fake(url, max_bytes=4096, timeout=1):
+            calls.append(max_bytes)
+            return 200, "video/mp2t", delayed_tables[:max_bytes], url
+        verify_module.http_get_small = fake
+        ok, detail = verify_module.check_media_segments(["s1"], timeout=1, require_video=True)
+        assert ok  # 32 KiB strict sample contains real track + PES evidence
+        assert calls == [32768]
+        calls.clear()
+        ok, detail = verify_module.check_media_segments(["s1"], timeout=1, require_video=False)
+        assert ok and "expansions=1" in detail
+        assert calls == [4096, 32768]
+        # No PSI even in the largest sample: sync/PES alone is not success.
+        delayed_tables = prefix * 20
+        calls.clear()
+        ok, _ = verify_module.check_media_segments(["s1"], timeout=1, require_video=False)
+        assert not ok and calls == [4096, 32768, 131072]
+        for payload in (_sample_ts(0x0F), b"<html>error</html>" * 400):
+            delayed_tables = payload
+            calls.clear()
+            ok, _ = verify_module.check_media_segments(["s1"], timeout=1, require_video=True)
+            assert not ok and calls == [32768]
+    finally:
+        verify_module.http_get_small = original
+
+
+def test_ts_section_assembler_recovers_at_fresh_pointer_boundary() -> None:
+    from media_probe import _section_assembler
+    section = _psi_section(0x00, b"\x00\x01\xC1\x00\x00\x00\x01\xE0\x64")
+    feed = _section_assembler()
+    # A sample starting halfway through a section must wait for the next PUSI.
+    assert feed(0, section[5:], False) == []
+    assert feed(0, b"\x00" + section, True) == [section]
+    # Packet loss left an unfinished section. A new PUSI with pointer=0
+    # discards the stale fragment rather than corrupting the next complete PAT.
+    assert feed(0, b"\x00" + section[:7], True) == []
+    assert feed(0, b"\x00" + section, True) == [section]
+    # A nonzero pointer can finish a prior section and start a second one.
+    assert feed(0, b"\x00" + section[:7], True) == []
+    tail = section[7:]
+    assert feed(0, bytes([len(tail)]) + tail + section, True) == [section, section]
+    assert feed(0, b"\xffbad", True) == []
+    assert feed(0, b"\x00" + section, True) == [section]
 
 
 def test_broadcast_progress_rejects_direct_mp4_vod() -> None:
@@ -2289,10 +2346,10 @@ def test_publication_checker_uses_exact_canonical_url_and_requires_primary() -> 
 
     endpoints = endpoint_matrix("example/repo", "main")
     required = endpoint_matrix("example/repo", "main", required_only=True)
-    assert [item.name for item in required] == ["github_raw", "jsdelivr_primary"]
+    assert [item.name for item in required] == ["github_raw", "ghproxy_raw"]
     primary = [item for item in endpoints if item.required_primary]
-    assert [item.name for item in primary] == ["jsdelivr_primary"]
-    assert [item.url for item in primary] == [url]
+    assert [item.name for item in primary] == ["ghproxy_raw"]
+    assert [item.url for item in primary] == ["https://gh-proxy.com/raw.githubusercontent.com/example/repo/main/ku9-live.txt"]
     results = [
         EndpointResult("github_raw", "https://raw.test/list", True, False, False, ok=True),
         EndpointResult("ghproxy_raw", "https://proxy.test/list", False, True, False, ok=True),
@@ -2303,6 +2360,7 @@ def test_publication_checker_uses_exact_canonical_url_and_requires_primary() -> 
     results[-1].ok = True
     assert publication_gate_failures(results) == []
     assert publication_health_status(results) == "ok"
+
     assert next(item for item in endpoints if item.name == "ghproxy_raw").path == "ku9-live.txt"
     results.append(EndpointResult("jsdelivr_gcore", "https://gcore.test/list", False,
                                   True, False, ok=False, error="stale hash"))
@@ -2313,6 +2371,70 @@ def test_publication_checker_uses_exact_canonical_url_and_requires_primary() -> 
     results[-1].ok = True
     assert publication_gate_failures(results, require_all_television=True) == []
     assert publication_health_status(results) == "ok"
+
+
+def test_distribution_alert_does_not_close_for_degraded_or_missing_evidence() -> None:
+    from dataclasses import asdict
+    from check_publication_endpoints import EndpointResult, health_flags
+    from notify_maintenance import distribution_notification
+    results = [
+        EndpointResult("raw", "https://raw.test/list", True, False, False, ok=True),
+        EndpointResult("primary", "https://proxy.test/list", False, True, True, ok=True),
+        EndpointResult("mirror", "https://cdn.test/list", False, True, False, ok=False, error="stale hash"),
+    ]
+    def report():
+        return dict(health_flags(results), endpoints=[asdict(item) for item in results])
+    status, message = distribution_notification(report())
+    assert status == "cdn_pending" and "仅备用" in message and "mirror" in message
+    results[-1].ok = True
+    assert distribution_notification(report())[0] == "success"
+    results[1].ok = False
+    assert distribution_notification(report())[0] == "cdn_pending"
+    for invalid in ({}, dict(report(), raw_current=False), dict(report(), endpoints=[]),
+                    dict(report(), required_only=True)):
+        try:
+            distribution_notification(invalid)
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("invalid evidence must not close distribution alert")
+
+
+def test_distribution_notification_missing_or_failed_check_keeps_issue_open() -> None:
+    from dataclasses import asdict
+    from check_publication_endpoints import EndpointResult, health_flags
+    originals = (notify_module.api_request, notify_module.run_context)
+    calls = []
+    results = [
+        EndpointResult("raw", "https://raw.test/list", True, False, False, ok=True),
+        EndpointResult("primary", "https://proxy.test/list", False, True, True, ok=True),
+    ]
+    def fake_api(method, path, token, payload=None):
+        calls.append((method, path, payload))
+        if method == "GET" and "state=open" in path:
+            return [{"number": 19, "body": notify_module.SCOPES['cdn']['marker']}]
+        if method == "GET":
+            return []
+        return {"number": 19}
+    try:
+        notify_module.api_request = fake_api
+        notify_module.run_context = lambda: dict(repo="example/repo", time="2026-10-29T00:00:00Z",
+            run_number="1", run_id="1", run_url="https://github.com/example/repo/actions/runs/1",
+            event="workflow_dispatch", ref="main", sha="a" * 40)
+        with tempfile.TemporaryDirectory() as td, mock.patch.dict(os.environ, {"GITHUB_TOKEN": "test-only"}):
+            path = Path(td) / "report.json"
+            # A killed checker with no report must notify unknown, not close.
+            for body in (None, dict(health_flags(results), endpoints=[asdict(item) for item in results])):
+                calls.clear()
+                if body is not None:
+                    path.write_text(json.dumps(body), encoding="utf-8")
+                assert notify_module.main(["distribution", "--report", str(path),
+                    "--check-outcome", "failure"]) == 0
+                changes = [payload for method, _, payload in calls if method == "PATCH"]
+                assert changes and all(payload.get("state") != "closed" for payload in changes)
+                assert "不能确认" in changes[0]['body']
+    finally:
+        notify_module.api_request, notify_module.run_context = originals
 
 
 def test_publication_manifest_covers_final_summary_without_self_hash() -> None:
@@ -3211,6 +3333,8 @@ def main() -> int:
         test_probe_scheduler_bounds_inflight_tasks_per_host,
         test_canonical_identity_collapses_resolution_and_official_aliases,
         test_strict_media_probe_requires_a_video_track,
+        test_media_segment_adaptive_sample_is_bounded_and_not_a_success_shortcut,
+        test_ts_section_assembler_recovers_at_fresh_pointer_boundary,
         test_broadcast_progress_rejects_direct_mp4_vod,
         test_public_network_policy_blocks_private_and_redirect_targets,
         test_public_connection_is_pinned_and_preserves_tls_hostname,
@@ -3238,6 +3362,8 @@ def main() -> int:
         test_committed_bundle_allows_newer_source_config_but_strict_rejects,
         test_publish_size_hashes_current_worktree_not_stale_index,
         test_publication_checker_uses_exact_canonical_url_and_requires_primary,
+        test_distribution_alert_does_not_close_for_degraded_or_missing_evidence,
+        test_distribution_notification_missing_or_failed_check_keeps_issue_open,
         test_publication_manifest_covers_final_summary_without_self_hash,
         test_final_recheck_slow_retry_recovers_non_core_failure,
         test_generated_csv_writers_force_lf_line_endings,
