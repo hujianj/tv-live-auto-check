@@ -1,12 +1,12 @@
 name,url,mode,contributed,fetch_ok,bytes,parsed,truncated,error
 iyouhun_zb,https://www.iyouhun.com/tv/zb,enabled,True,True,506352,6810,False,
-zbds_iptv4_txt,https://live.zbds.top/tv/iptv4.txt,enabled,True,True,45825,538,False,
+zbds_iptv4_txt,https://live.zbds.top/tv/iptv4.txt,enabled,True,True,45075,532,False,
 guovin_all,https://raw.githubusercontent.com/Guovin/iptv-api/gd/output/result.m3u,enabled,True,True,396412,1456,False,
 guovin_ipv4,https://raw.githubusercontent.com/Guovin/iptv-api/gd/output/ipv4/result.m3u,enabled,True,True,106329,398,False,
 guovin_ipv6,https://raw.githubusercontent.com/Guovin/iptv-api/gd/output/ipv6/result.m3u,enabled,True,True,330476,1215,False,
 suxuang_ipv4,https://raw.githubusercontent.com/suxuang/myIPTV/refs/heads/main/ipv4.m3u,enabled,True,True,268591,1188,False,
 suxuang_ipv6,https://raw.githubusercontent.com/suxuang/myIPTV/refs/heads/main/ipv6.m3u,enabled,True,True,200521,815,False,
-zbds_iptv4_m3u,https://live.zbds.top/tv/iptv4.m3u,enabled,True,True,99306,426,False,
+zbds_iptv4_m3u,https://live.zbds.top/tv/iptv4.m3u,enabled,True,True,98786,426,False,
 burningc4_ipv4,https://raw.githubusercontent.com/BurningC4/Chinese-IPTV/master/TV-IPV4.m3u,enabled,True,True,8021,58,False,
 vamoschuck_m3u,https://raw.githubusercontent.com/vamoschuck/TV/main/M3U,enabled,True,True,147124,786,False,
 zbds_iptv6_txt,https://live.zbds.top/tv/iptv6.txt,enabled,True,True,268,2,False,
@@ -28,7 +28,7 @@ free_tv_world,https://raw.githubusercontent.com/Free-TV/IPTV/master/playlist.m3u
 mursor_yy,https://gongdian.top/tv/Mursor/yylunbo.m3u,enabled,False,False,0,0,False,PublicURLPolicyError('DNS resolution failed for gongdian.top: [Errno -5] No address associated with hostname')
 mursor_bililive,https://gongdian.top/tv/Mursor/bililive.m3u,enabled,False,False,0,0,False,PublicURLPolicyError('DNS resolution failed for gongdian.top: [Errno -5] No address associated with hostname')
 freetv_huya,https://live.freetv.top/huyayqk.m3u,recovery,False,False,0,0,False,TimeoutError('URL total budget exceeded during connection retry')
-freetv_douyu,https://live.freetv.top/douyuyqk.m3u,recovery,True,True,178568,940,False,
+freetv_douyu,https://live.freetv.top/douyuyqk.m3u,recovery,False,False,0,0,False,TimeoutError('URL total budget exceeded during connection retry')
 iptv_org_cn,https://iptv-org.github.io/iptv/countries/cn.m3u,enabled,True,True,30080,127,False,
 tvapp_catalog,https://raw.githubusercontent.com/youhunwl/TVAPP/main/README.md,enabled,False,True,35784,0,False,catalog only; child links not fetched or executed
 qist_catalog,https://raw.githubusercontent.com/qist/tvbox/master/README.md,enabled,False,True,6958,0,False,catalog only; child links not fetched or executed
