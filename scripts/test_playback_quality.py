@@ -92,10 +92,21 @@ def test_success_timestamp_survives_failure():
     assert history['urls'][url]['last_status'] == 'fail'
 
 
+def test_retry_does_not_restore_aggressive_media_concurrency():
+    # The retry profile used to silently undo the reduced media-probe caps.
+    # A network failure must not cause a larger burst against the same server.
+    from run_maintenance import ENV_DEFAULTS, load_config
+    retry = load_config()['conservative_retry_env']
+    for key in ('IPTV_PUBLISHED_RECHECK_WORKERS', 'IPTV_PUBLISHED_WORKERS_PER_HOST',
+                'IPTV_PUBLISHED_REFILL_WORKERS', 'IPTV_PUBLISHED_FINAL_RETRY_WORKERS'):
+        assert 0 < int(retry[key]) <= int(ENV_DEFAULTS[key]), key
+
+
 def run_tests():
     for test in (test_segment_measurement, test_quality_before_source_and_total_duration,
                  test_independent_hosts_and_limit, test_history_recovery_policy_and_age,
-                 test_success_timestamp_survives_failure):
+                 test_success_timestamp_survives_failure,
+                 test_retry_does_not_restore_aggressive_media_concurrency):
         test()
         print(f'OK {test.__name__}')
 
