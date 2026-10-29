@@ -27,7 +27,9 @@
       "卫视频道",
       "地方频道"
     ],
-    "max_candidates": 5000
+    "max_candidates": 5000,
+    "history_max_age_days": 28,
+    "history_max_consecutive_failures": 3
   },
   "core_sources": [
     "zbds_iptv4_txt",

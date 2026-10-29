@@ -162,7 +162,8 @@ def validate_history(history: dict) -> dict:
         adjustment = entry.get("adjustment", 0)
         if type(adjustment) is not int or not min_adjustment <= adjustment <= max_adjustment:
             raise ValueError(f"invalid stability adjustment for {url}")
-        for field, limit in (("last_seen", 20), ("last_name", 80), ("last_source", 80), ("last_error", 160)):
+        for field, limit in (("last_seen", 20), ("last_name", 80), ("last_source", 80), ("last_error", 160),
+                             ("last_success_at", 40), ("last_checked_at", 40)):
             value = entry.get(field, "")
             if not isinstance(value, str) or len(value) > limit or any(ch in value for ch in "\r\n\t"):
                 raise ValueError(f"invalid stability field {field} for {url}")
@@ -378,6 +379,9 @@ def _apply_observation(history: dict, observation: dict) -> tuple[dict, dict]:
             else:
                 ok_updates += 1
             entry["last_seen"] = seen_period
+            entry["last_checked_at"] = timestamp
+            if not is_fail:
+                entry["last_success_at"] = timestamp
             entry["last_name"] = observed.get("name", "")
             source = observed.get("source", "")
             if source and source != "unknown":

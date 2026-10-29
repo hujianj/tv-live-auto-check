@@ -144,6 +144,11 @@ class CheckResult:
     elapsed_seconds: float = 0.0
     checked_at: str = ""
     decoded_frames: int = 0
+    # Worst sampled HLS segment margin; not total probe/decode/wait duration.
+    media_realtime_ratio: float | None = None
+    media_sample_bytes: int = 0
+    media_transfer_seconds: float = 0.0
+    media_measurement: str = "unmeasured"
 
 
 def order_source_statuses(statuses: Iterable[SourceStatus], sources: list[tuple[str, str]] | None = None) -> list[SourceStatus]:
@@ -184,11 +189,13 @@ def host_slot(url: str):
     with _HOST_SEMAPHORES_LOCK:
         sem = _HOST_SEMAPHORES.setdefault(host, threading.BoundedSemaphore(HOST_WORKERS))
     deadline = getattr(_PROBE_CONTEXT, "deadline", None)
+    admission_start = time.monotonic()
     if deadline:
         if not sem.acquire(timeout=max(0, deadline - time.monotonic())):
             raise TimeoutError("per-host admission deadline exceeded")
     else:
         sem.acquire()
+    _PROBE_CONTEXT.admission_seconds = getattr(_PROBE_CONTEXT, "admission_seconds", 0.0) + time.monotonic() - admission_start
     try:
         yield
     finally:
@@ -460,11 +467,28 @@ def is_ipv6_url(url: str) -> bool:
 
 def http_get_small(url: str, max_bytes: int = 65536, timeout: int = TIMEOUT) -> tuple[int, str, bytes, str]:
     req = Request(url, headers={"User-Agent": UA, "Accept": "*/*", "Connection": "close"})
+    started = time.monotonic()
+    admission_before = getattr(_PROBE_CONTEXT, "admission_seconds", 0.0)
+    _PROBE_CONTEXT.last_transfer = None
     with limited_urlopen(req, timeout=timeout) as r:
+        opened = time.monotonic()
         code = getattr(r, "status", 200)
         ctype = (r.headers.get("Content-Type") or "").lower()
         data = read_bounded(r, max_bytes)
+        finished = time.monotonic()
         final = r.geturl()
+        try:
+            content_length = int(r.headers.get("Content-Length") or 0)
+        except (ValueError, TypeError):
+            content_length = 0
+        admission = getattr(_PROBE_CONTEXT, "admission_seconds", 0.0) - admission_before
+        _PROBE_CONTEXT.last_transfer = {
+            "bytes": len(data), "limit": max_bytes, "content_length": content_length,
+            "connect_seconds": max(0.0, opened - started - admission),
+            "body_seconds": max(0.001, finished - opened),
+            "encoded": (r.headers.get("Content-Encoding") or "identity").lower() != "identity",
+            "status": code,
+        }
     return code, ctype, data, final
 
 
@@ -537,6 +561,7 @@ class HLSManifest:
     target_duration: float | None
     endlist: bool
     encrypted: bool = False
+    segment_durations: dict[str, float] | None = None
 
 
 def _quoted_uri(line: str) -> str:
@@ -555,6 +580,7 @@ def parse_hls_manifest(text: str, base: str) -> HLSManifest:
     endlist = any(line.upper() == "#EXT-X-ENDLIST" for line in lines)
     encrypted = any(line.upper().startswith(("#EXT-X-KEY:", "#EXT-X-SESSION-KEY:"))
                     and "METHOD=NONE" not in line.upper() for line in lines)
+    durations: dict[str, float] = {}
     for i, line in enumerate(lines):
         upper = line.upper()
         if upper.startswith("#EXT-X-MEDIA-SEQUENCE:"):
@@ -583,7 +609,14 @@ def parse_hls_manifest(text: str, base: str) -> HLSManifest:
         elif upper.startswith("#EXTINF"):
             for nxt in lines[i + 1:]:
                 if not nxt.startswith("#"):
-                    segments.append(urljoin(base, nxt))
+                    segment_url = urljoin(base, nxt)
+                    segments.append(segment_url)
+                    try:
+                        duration = float(line.split(":", 1)[1].split(",", 1)[0])
+                        if 0 < duration <= 120:
+                            durations[segment_url] = duration
+                    except (ValueError, IndexError):
+                        pass
                     break
     if not segments:
         for line in lines:
@@ -599,6 +632,7 @@ def parse_hls_manifest(text: str, base: str) -> HLSManifest:
         target_duration,
         endlist,
         encrypted,
+        durations,
     )
 
 
@@ -663,7 +697,46 @@ def decode_manifest_sample(manifest: HLSManifest, timeout: int, prefix: bytes = 
         return DecodeResult(False, 0, "missing or encrypted media for decode")
     if manifest.maps and not prefix:
         return DecodeResult(False, 0, "missing HLS initialization for decode")
-    return decode_public_sample(manifest.segments[-1], timeout, prefix)
+    result = decode_public_sample(manifest.segments[-1], timeout, prefix)
+    if result.ok:
+        sample = segment_transfer_quality(
+            getattr(_PROBE_CONTEXT, "last_transfer", None),
+            (manifest.segment_durations or {}).get(manifest.segments[-1]),
+        )
+        if sample:
+            samples = getattr(_PROBE_CONTEXT, "media_quality_samples", None)
+            if samples is not None:
+                samples.append(sample)
+    return result
+
+
+def segment_transfer_quality(transfer: dict | None, duration: float | None) -> dict | None:
+    """Estimate a segment download margin, honestly distinguishing partial samples.
+
+    Connection cost is included, local worker queue and FFmpeg time are not.
+    A partial response needs Content-Length; never treat a 512KiB slice as a
+    complete segment or invent bitrate when EXTINF/length is unknown.
+    """
+    if not transfer or not duration or duration <= 0 or transfer.get("encoded") or transfer.get("status") != 200:
+        return None
+    size = transfer["bytes"]
+    if size < 32768:
+        return None
+    length = transfer["content_length"]
+    if length > 0 and length < size:
+        return None
+    complete = size < transfer["limit"] or length == size
+    if not complete and length <= size:
+        return None
+    full_size = size if complete else length
+    estimate = transfer["connect_seconds"] + transfer["body_seconds"] * full_size / size
+    if estimate <= 0:
+        return None
+    return {
+        "ratio": round(duration / estimate, 3), "bytes": size,
+        "seconds": round(transfer["connect_seconds"] + transfer["body_seconds"], 3),
+        "measurement": "complete_segment" if complete else "partial_segment_estimate",
+    }
 
 
 def decode_public_sample(url: str, timeout: int, prefix: bytes = b"") -> DecodeResult:
@@ -735,6 +808,8 @@ def parse_next_from_m3u8(text: str, base: str) -> tuple[str | None, str | None]:
 
 
 def _check_media_manifest(cand: Candidate, playlist_url: str, text: str, final: str, timeout: int, segment_limit: int, require_progress: bool, require_video: bool, require_decode: bool = False) -> CheckResult:
+    # Do not let a failed master-playlist variant contaminate a later variant.
+    _PROBE_CONTEXT.media_quality_samples = []
     manifest = parse_hls_manifest(text, final)
     aux_ok, aux_detail, prefix = load_hls_initialization(manifest, timeout, require_video=require_video and not require_decode)
     if not aux_ok:
@@ -760,11 +835,20 @@ def _check_media_manifest(cand: Candidate, playlist_url: str, text: str, final: 
 def check_candidate(cand: Candidate, timeout: int = TIMEOUT, core_override: bool | None = None, require_progress: bool = False, require_video: bool | None = None, require_decode: bool = False) -> CheckResult:
     start = time.monotonic()
     previous = getattr(_PROBE_CONTEXT, "deadline", None)
+    previous_samples = getattr(_PROBE_CONTEXT, "media_quality_samples", None)
+    _PROBE_CONTEXT.media_quality_samples = []
     _PROBE_CONTEXT.deadline = previous or start + URL_BUDGET
     try:
         result = _check_candidate(cand, timeout, core_override, require_progress, require_video, require_decode)
+        samples = getattr(_PROBE_CONTEXT, "media_quality_samples", [])
+        if result.ok and samples:
+            worst = min(samples, key=lambda sample: sample["ratio"])
+            result = replace(result, media_realtime_ratio=worst["ratio"],
+                             media_sample_bytes=worst["bytes"], media_transfer_seconds=worst["seconds"],
+                             media_measurement=worst["measurement"])
     finally:
         _PROBE_CONTEXT.deadline = previous
+        _PROBE_CONTEXT.media_quality_samples = previous_samples
     result.elapsed_seconds = round(time.monotonic() - start, 3)
     result.checked_at = datetime.now(timezone.utc).isoformat()
     return result

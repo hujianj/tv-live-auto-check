@@ -3271,4 +3271,6 @@ def main() -> int:
 
 
 if __name__ == "__main__":
+    from test_playback_quality import run_tests
+    run_tests()
     raise SystemExit(main())

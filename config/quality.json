@@ -1,5 +1,10 @@
 {
   "full_catalog": true,
+  "playback_selection": {
+    "preferred_realtime_margin": 2.0,
+    "minimum_realtime_margin": 1.0,
+    "description": "Rank verified segment download margin and stability before source preference; prefer independent backup hosts."
+  },
   "description": "TV-facing quality rules: keep family-use mainland channels clean, preserve core channels, and cap low-value categories.",
   "strict_drop_name_tokens": [
     "Geo-blocked",

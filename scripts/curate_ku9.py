@@ -4,6 +4,7 @@ from __future__ import annotations
 import csv, json, os, re, shutil, subprocess
 from pathlib import Path
 from collections import defaultdict, Counter
+from datetime import datetime, timezone, timedelta
 from validate_playlist import validate_text
 from playlist_config import get_group_order, load_guard, load_home_priority, load_quality, load_rules, score_adjustments, source_priority as configured_source_priority
 from stability import load_history, stability_adjustment, stability_enabled
@@ -456,7 +457,24 @@ def historical_fallback_rows() -> list[tuple[str, str, str, str]]:
     prepared: list[tuple[str, str, str, str]] = []
     seen: set[tuple[str, str]] = set()
     specs = {spec.name: spec for spec in load_source_specs()}
-    for old_group, old_name, old_url in parse_tv_txt_rows(git_show_text('HEAD:live-curated.txt')):
+    candidates = parse_tv_txt_rows(git_show_text('HEAD:live-curated.txt'))
+    max_age = max(1, int(HISTORICAL_FALLBACK.get('history_max_age_days', 28)))
+    max_failures = max(1, int(HISTORICAL_FALLBACK.get('history_max_consecutive_failures', 3)))
+    now = datetime.now(timezone.utc)
+    for url, entry in history_urls.items():
+        if int(entry.get('ok') or 0) <= 0 or int(entry.get('streak_fail') or 0) >= max_failures:
+            continue
+        # Legacy evidence has only an observation week. It may generate a
+        # recovery candidate (never a claim of recent success or trusted output).
+        stamp = entry.get('last_success_at') or entry.get('last_seen')
+        try:
+            observed = datetime.fromisoformat(str(stamp)).replace(tzinfo=timezone.utc) if len(str(stamp)) == 10 else datetime.fromisoformat(str(stamp)).astimezone(timezone.utc)
+        except (ValueError, TypeError):
+            continue
+        if not timedelta(0) <= now - observed <= timedelta(days=max_age):
+            continue
+        candidates.append((str(entry.get('last_group') or ''), str(entry.get('last_name') or ''), url))
+    for old_group, old_name, old_url in candidates:
         entry = history_urls.get(clean_url(old_url)) or {}
         source = str(entry.get('last_source') or 'previous_publication')
         if publication_issue(specs.get(source), clean_url(old_url)):

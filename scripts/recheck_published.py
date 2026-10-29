@@ -9,6 +9,7 @@ import os
 import shutil
 import sys
 import time
+import verify_sources as media_verifier
 from collections import Counter, defaultdict
 from dataclasses import dataclass, replace
 from pathlib import Path
@@ -24,7 +25,8 @@ from verify_sources import (
 )
 from stability import build_observation, preview_observation, write_observation
 from playlist_config import coverage_is_required, full_catalog_enabled, get_group_order, load_guard, load_quality, load_rules, publication_policy
-from curate_ku9 import per_channel_limit, url_score
+from curate_ku9 import per_channel_limit, url_score, STABILITY_HISTORY
+from playback_quality import playback_rank, prefer_independent_hosts, redundancy_summary
 from channel_utils import format_extinf
 from channel_identity import canonical_channel_key
 from playlist_order import canonicalize_channel_rows
@@ -50,9 +52,9 @@ CANDIDATE_POOL_FILE = "curated-candidate-pool.csv"
 PENDING_STABILITY_FILE = "stability-observation.json"
 TRANSACTION_DIR = ".maintenance-staging/recheck"
 
-MAX_WORKERS = int(os.getenv("IPTV_PUBLISHED_RECHECK_WORKERS", os.getenv("IPTV_CHECK_WORKERS", "64")))
-REFILL_WORKERS = max(1, int(os.getenv("IPTV_PUBLISHED_REFILL_WORKERS", "24")))
-FINAL_RETRY_WORKERS = max(1, int(os.getenv("IPTV_PUBLISHED_FINAL_RETRY_WORKERS", "16")))
+MAX_WORKERS = int(os.getenv("IPTV_PUBLISHED_RECHECK_WORKERS", "24"))
+REFILL_WORKERS = max(1, int(os.getenv("IPTV_PUBLISHED_REFILL_WORKERS", "12")))
+FINAL_RETRY_WORKERS = max(1, int(os.getenv("IPTV_PUBLISHED_FINAL_RETRY_WORKERS", "8")))
 FINAL_RETRY_TIMEOUT = max(1, int(os.getenv("IPTV_PUBLISHED_FINAL_RETRY_TIMEOUT", "14")))
 FINAL_RETRY_ATTEMPTS = max(0, int(os.getenv("IPTV_PUBLISHED_FINAL_RETRY_ATTEMPTS", "1")))
 REQUIRE_CORE_PROGRESS = os.getenv("IPTV_PUBLISHED_REQUIRE_CORE_PROGRESS", "1").strip().lower() not in {"0", "false", "no"}
@@ -503,11 +505,12 @@ def write_results_csv(
     source_map = source_map if source_map is not None else load_source_map()
     with (ROOT / CSV_FILE).open("w", encoding="utf-8", newline="") as f:
         writer = csv.writer(f, lineterminator="\n")
-        writer.writerow(["phase", "ok", "group", "name", "url", "source", "origin", "detail", "video_required", "progress_required", "checked_at", "elapsed_seconds", "decode_required", "decoded_frames"])
+        writer.writerow(["phase", "ok", "group", "name", "url", "source", "origin", "detail", "video_required", "progress_required", "checked_at", "elapsed_seconds", "decode_required", "decoded_frames", "media_realtime_ratio", "media_sample_bytes", "media_transfer_seconds", "media_measurement"])
         for row in rows:
             result = results[row.url]
             writer.writerow(["published", result.ok, row.group, row.name, row.url, source_for(row, source_map), "current_publication", result.detail,
-                             REQUIRE_VIDEO_TRACK, REQUIRE_BROADCAST_PROGRESS and requires_live_progress(row), result.checked_at, result.elapsed_seconds, True, result.decoded_frames])
+                             REQUIRE_VIDEO_TRACK, REQUIRE_BROADCAST_PROGRESS and requires_live_progress(row), result.checked_at, result.elapsed_seconds, True, result.decoded_frames,
+                             result.media_realtime_ratio, result.media_sample_bytes, result.media_transfer_seconds, result.media_measurement])
         for candidate in attempted_refills:
             result = refill_results[candidate.row.url]
             writer.writerow([
@@ -525,6 +528,10 @@ def write_results_csv(
                 result.elapsed_seconds,
                 True,
                 result.decoded_frames,
+                result.media_realtime_ratio,
+                result.media_sample_bytes,
+                result.media_transfer_seconds,
+                result.media_measurement,
             ])
 
 
@@ -988,15 +995,19 @@ def limit_verified_backups(rows: list[Row], results: dict[str, CheckResult], sou
     for candidates in by_key.values():
         def rank(row: Row) -> tuple:
             score = url_score(row.url, source_for(row, source_map))
-            return score[0], results[row.url].elapsed_seconds, score[1:], row.url
+            return playback_rank(results[row.url], row.url, score, STABILITY_HISTORY)
         candidates.sort(key=rank)
         limit = max(1, per_channel_limit(candidates[0].group, candidates[0].name))
-        selected.extend(candidates[:limit])
+        selected.extend(prefer_independent_hosts(candidates, limit))
     return canonicalize_rows(get_group_order(), selected)
 
 
 def main() -> int:
     global ROOT
+    # A burst of full media samples against one server biases throughput and
+    # causes self-inflicted failures. First-pass header probes retain their cap.
+    media_verifier.HOST_WORKERS = min(media_verifier.HOST_WORKERS, max(1, int(
+        os.getenv("IPTV_PUBLISHED_WORKERS_PER_HOST", "3"))))
     print(f"Frame decoder preflight: {decoder_preflight()}", flush=True)
     repository_root = ROOT
     recover_interrupted_promotion(repository_root)
@@ -1154,6 +1165,10 @@ def main() -> int:
             strict_progress_checked_unique,
             backup_trimmed_rows,
         )
+        summary_path = ROOT / SUMMARY_FILE
+        summary = json.loads(summary_path.read_text(encoding="utf-8"))
+        summary["playback_redundancy"] = redundancy_summary(final_rows, {**results, **refill_results})
+        summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
         write_report(rows, final_rows, failed_urls, elapsed, refill_summary)
         write_final_report(
             groups,
@@ -1165,6 +1180,15 @@ def main() -> int:
             family_summary,
             refill_summary,
         )
+        with (ROOT / FINAL_REPORT_FILE).open("a", encoding="utf-8", newline="\n") as report:
+            evidence = summary["playback_redundancy"]
+            report.write("\n## Playback and backup evidence\n\n")
+            report.write(f"- Single-line channels: {evidence['single_line_channels']}\n")
+            report.write(f"- Channels with distinct-host backups: {evidence['channels_with_independent_host_backups']}\n")
+            report.write(f"- Line-count distribution: {evidence['channels_by_line_count']}\n")
+            report.write(f"- Media measurement types: {evidence['media_measurements']}\n")
+            report.write("- Priority: media margin tier, history tier, configured source preference; independent hosts before duplicate-host backups.\n")
+            report.write("- Partial-segment estimates are not full-segment or prolonged TV playback tests. Failed lines are never retained as backups.\n")
         write_results_csv(rows, results, attempted_refills, refill_results, source_map=source_map)
         write_observation(ROOT / PENDING_STABILITY_FILE, observation)
         for filename in [*TXT_FILES, M3U_FILE, *family_txt_files(), family_m3u_file()]:
