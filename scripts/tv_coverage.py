@@ -118,7 +118,7 @@ def collect_candidates(records: list[dict], probes: list[dict], specs: dict,
 
 
 def assemble(strict_rows: list[TVRow], candidates: list[dict], generated: str,
-             excluded: dict | None = None) -> tuple[list[TVRow], dict]:
+             excluded: dict | None = None, *, rank_review: bool = True) -> tuple[list[TVRow], dict]:
     coverage = load_rules().get('coverage', {})
     required = list(dict.fromkeys([*coverage.get('required_cctv', []),
                                    *coverage.get('important_satellite', [])]))
@@ -135,7 +135,8 @@ def assemble(strict_rows: list[TVRow], candidates: list[dict], generated: str,
         review_by_key[key].append(item)
     review = []
     for key, items in review_by_key.items():
-        items.sort(key=lambda item: (*url_score(item['url'], item['source']), item['url']))
+        if rank_review:
+            items.sort(key=lambda item: (*url_score(item['url'], item['source']), item['url']))
         name = required_names.get(key, items[0]['name'])
         group = '央视频道' if name.startswith('CCTV-') else items[0]['group']
         seen = set()
@@ -165,7 +166,7 @@ def assemble(strict_rows: list[TVRow], candidates: list[dict], generated: str,
     return rows, report
 
 
-def prepare(root: Path) -> tuple[list[TVRow], dict]:
+def prepare(root: Path, *, rank_review: bool = True) -> tuple[list[TVRow], dict]:
     # Import lazily so the bundle validator can call this module without a cycle.
     from validate_publish_bundle import parse_txt_document
     _, parsed = parse_txt_document((root / 'live-curated.txt').read_text(encoding='utf-8'))
@@ -177,7 +178,8 @@ def prepare(root: Path) -> tuple[list[TVRow], dict]:
     probes = read_csv(root / 'published_recheck_results.csv')
     candidates, excluded = collect_candidates(records, probes, specs, strict)
     summary = json.loads((root / 'full-check-summary.json').read_text(encoding='utf-8'))
-    return assemble(strict, candidates, summary.get('generated_utc', ''), excluded)
+    return assemble(strict, candidates, summary.get('generated_utc', ''), excluded,
+                    rank_review=rank_review)
 
 
 def render(rows: list[TVRow], report: dict) -> tuple[str, str]:
@@ -258,16 +260,28 @@ def validate_tv_coverage(root: Path, require_artifacts: bool = False) -> dict:
             raise ValueError('manual review is limited to CCTV and satellite channels')
         review.append(TVRow(item['group'], item['name'], item['url']))
     strict_tv = [TVRow(row.group, row.name, row.url) for row in strict]
-    # Rebuild canonical output, including the complete strict catalog.
-    rebuilt, expected = assemble(strict_tv, report['review_rows'], report['generated_utc'], report['excluded_candidate_rows'])
+    # Check the committed order, not a fresh ranking against mutable/absent
+    # local history. Generation ranks backups once; canonicalization still
+    # enforces group/channel order while retaining each channel's line order.
+    rebuilt, expected = assemble(strict_tv, report['review_rows'], report['generated_utc'],
+                                 report['excluded_candidate_rows'], rank_review=False)
     if expected != report or [TVRow(row.group, row.name, row.url) for row in rows] != rebuilt:
         raise ValueError('TV catalog/report counts, coverage or ordering do not reconcile')
     txt, m3u = render(rebuilt, report)
     if (root / 'ku9-live.txt').read_bytes() != txt.encode() or (root / 'tv-coverage.m3u').read_bytes() != m3u.encode():
         raise ValueError('TV canonical rendering/status attributes differ')
     if require_artifacts:
-        actual_rows, actual_report = prepare(root)
-        if actual_rows != rebuilt or actual_report != report:
+        # Candidate evidence must reconcile exactly, independently of where
+        # this validation runs or whether a later observation changed ranking.
+        # Output/report order has already been checked above. Never relax
+        # completeness, metadata, policy, counts or duplicate detection here.
+        actual_rows, actual_report = prepare(root, rank_review=False)
+        row_key = lambda row: (row.group, row.name, row.url)
+        review_key = lambda item: (item['group'], item['name'], item['url'])
+        expected_evidence = {**report, 'review_rows': sorted(report['review_rows'], key=review_key)}
+        actual_evidence = {**actual_report, 'review_rows': sorted(actual_report['review_rows'], key=review_key)}
+        if (sorted(actual_rows, key=row_key) != sorted(rebuilt, key=row_key)
+                or actual_evidence != expected_evidence):
             raise ValueError('TV manual-review URLs do not exactly match current candidate evidence')
     return {'status': 'ok', **summary['tv_coverage']}
 

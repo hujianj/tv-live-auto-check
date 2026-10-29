@@ -1,4 +1,5 @@
 """Availability mode and separate TV manual-review coverage regression tests."""
+import csv
 import hashlib
 import json
 from pathlib import Path
@@ -95,6 +96,100 @@ def test_manual_candidates_keep_source_and_protection_boundaries():
     assert candidates[0]['check_ok'] is False
 
 
+def test_tv_publication_validation_is_independent_of_mutable_ranking_state():
+    """A clean checkout must verify exactly what a history-enabled run wrote."""
+    strict = [tv.TVRow('央视频道', 'CCTV-1', 'https://unit.test/strict.m3u8')]
+    records = [dict(name=name, group=group, url=url, source='unit', ok='False',
+                    detail='timeout', checked_at='2026-10-29T01:00:00Z')
+               for name, group, url in [
+                   ('吉林卫视', '卫视频道', 'https://unit.test/jilin-a.m3u8'),
+                   ('吉林卫视', '卫视频道', 'https://unit.test/jilin-z.m3u8'),
+                   ('CCTV-2', '央视频道', 'https://unit.test/cctv2-a.m3u8'),
+                   ('CCTV-2', '央视频道', 'https://unit.test/cctv2-z.m3u8'),
+               ]]
+    generated = '2026-10-29T01:00:00Z'
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        (root / 'config').mkdir()
+        (root / 'config/sources.json').write_text(json.dumps([dict(
+            name='unit', url='https://unit.test/list', enabled=True,
+            rights_status='approved', terms_url='https://unit.test/terms',
+            reviewed_at='2026-10-29', permission_scope='test_fixture')]), encoding='utf-8')
+        strict_txt, _ = tv.render(strict, {'review_rows': []})
+        (root / 'live-curated.txt').write_text(strict_txt, encoding='utf-8', newline='\n')
+        (root / 'full-check-summary.json').write_text(json.dumps({'generated_utc': generated}), encoding='utf-8')
+        for filename in ('stream_check_results.csv', 'published_recheck_results.csv'):
+            with (root / filename).open('w', encoding='utf-8', newline='') as handle:
+                writer = csv.DictWriter(handle, fieldnames=list(records[0]))
+                writer.writeheader()
+                writer.writerows(records if filename.startswith('stream_') else [])
+        # Simulate restored evidence favoring the lexically later backup. The
+        # candidate CSV order intentionally differs from generated line order.
+        with mock.patch.object(tv, 'url_score', side_effect=lambda url, source:
+                               (-100 if '-z.' in url else 100, 0, source)) as rank:
+            counts = tv.generate(root)
+            assert rank.call_count == 4
+        report = json.loads((root / 'tv-review-report.json').read_text(encoding='utf-8'))
+        assert report['review_rows'][0]['url'].endswith('cctv2-z.m3u8')
+        assert counts['review_lines'] == 4
+        original = {name: (root / name).read_bytes() for name in
+                    ('ku9-live.txt', 'tv-coverage.m3u', 'tv-review-report.json', 'full-check-summary.json')}
+
+        def restore():
+            for name, content in original.items():
+                (root / name).write_bytes(content)
+
+        def must_fail(*, artifacts=False):
+            try:
+                tv.validate_tv_coverage(root, require_artifacts=artifacts)
+            except ValueError:
+                return
+            raise AssertionError('publication/evidence corruption must remain a hard failure')
+
+        with mock.patch.object(tv, 'url_score', side_effect=AssertionError('validator must not rerank')):
+            assert tv.validate_tv_coverage(root)['status'] == 'ok'
+            assert tv.validate_tv_coverage(root, require_artifacts=True)['status'] == 'ok'
+            # Report-only line reordering still disagrees with the public list.
+            changed = {**report, 'review_rows': list(reversed(report['review_rows']))}
+            (root / 'tv-review-report.json').write_text(json.dumps(changed), encoding='utf-8')
+            must_fail()
+            restore()
+            # Duplicate and changed diagnostic metadata cannot be hidden by
+            # order-independent candidate-evidence reconciliation.
+            changed = {**report, 'review_rows': [*report['review_rows'], report['review_rows'][0]]}
+            (root / 'tv-review-report.json').write_text(json.dumps(changed), encoding='utf-8')
+            must_fail()
+            restore()
+            changed = {**report, 'review_rows': [{**item, 'check_detail': 'changed'} for item in report['review_rows']]}
+            (root / 'tv-review-report.json').write_text(json.dumps(changed), encoding='utf-8')
+            assert tv.validate_tv_coverage(root)['status'] == 'ok'
+            must_fail(artifacts=True)
+            restore()
+            # Omit a real candidate consistently from all public files: basic
+            # rendering is coherent, but full artifact evidence must reject it.
+            rows, missing_report = tv.assemble(strict, report['review_rows'][1:], generated,
+                                               report['excluded_candidate_rows'], rank_review=False)
+            txt, m3u = tv.render(rows, missing_report)
+            (root / 'ku9-live.txt').write_text(txt, encoding='utf-8', newline='\n')
+            (root / 'tv-coverage.m3u').write_text(m3u, encoding='utf-8', newline='\n')
+            (root / 'tv-review-report.json').write_text(json.dumps(missing_report), encoding='utf-8')
+            (root / 'full-check-summary.json').write_text(json.dumps({'generated_utc': generated, 'tv_coverage': {
+                key: value for key, value in missing_report.items()
+                if key not in {'review_rows', 'excluded_candidate_rows'}}}), encoding='utf-8')
+            assert tv.validate_tv_coverage(root)['status'] == 'ok'
+            must_fail(artifacts=True)
+            restore()
+            # Both playlist formats with the same noncanonical channel order
+            # must still fail, even though their URL sets are unchanged.
+            from validate_publish_bundle import parse_txt_document
+            _, parsed = parse_txt_document(original['ku9-live.txt'].decode('utf-8'))
+            reversed_rows = [tv.TVRow(row.group, row.name, row.url) for row in reversed(parsed)]
+            txt, m3u = tv.render(reversed_rows, report)
+            (root / 'ku9-live.txt').write_text(txt, encoding='utf-8', newline='\n')
+            (root / 'tv-coverage.m3u').write_text(m3u, encoding='utf-8', newline='\n')
+            must_fail()
+
+
 def test_publication_endpoint_checks_its_own_file_and_preflights_all():
     import check_publication_endpoints as endpoints
     config = {'authoritative_raw_file':'live-curated.txt'}
@@ -127,6 +222,7 @@ def run_tests():
     for test in (test_availability_keeps_every_decoded_backup_and_ignores_speed,
                  test_core_failure_adds_all_real_candidates_but_never_to_success,
                  test_manual_candidates_keep_source_and_protection_boundaries,
+                 test_tv_publication_validation_is_independent_of_mutable_ranking_state,
                  test_publication_endpoint_checks_its_own_file_and_preflights_all):
         test()
         print(f'OK {test.__name__}')
