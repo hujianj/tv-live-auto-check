@@ -414,7 +414,7 @@ def test_priority_and_guard_config_are_externalized() -> None:
     assert "KroneHit" in quality["strict_drop_name_tokens"]
     assert set(quality["live_progress_groups"]) == {"央视频道", "卫视频道", "地方频道"}
     home_priority = load_home_priority()
-    assert home_priority.get("enabled") is False
+    assert isinstance(home_priority.get("enabled"), bool)
     assert "home_ok_urls" in home_priority
     assert "home_failed_urls" in home_priority
     family = quality.get("family_profile") or {}

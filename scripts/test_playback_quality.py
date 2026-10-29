@@ -6,6 +6,7 @@ import curate_ku9 as curate
 import recheck_published as recheck
 import stability
 import verify_sources as verify
+from playlist_config import apply_home_priority_freshness
 from playback_quality import playback_rank, prefer_independent_hosts, redundancy_summary
 from source_config import SourceSpec
 from probe_scheduler import iter_probe_results
@@ -55,6 +56,79 @@ def test_independent_hosts_and_limit():
         pass
     else:
         raise AssertionError('unverified backup must be refused')
+
+
+def test_fresh_local_quality_orders_but_never_accepts_bad_media():
+    now = datetime.now(timezone.utc)
+    fast_url, slow_url = 'https://fast.test/a', 'https://slow.test/a'
+    snapshot = {'enabled': True, 'max_age_hours': 48,
+                'generated_at_utc': now.isoformat(),
+                'home_quality': {
+                    fast_url: {'ok': True, 'decoded_frames': 3,
+                               'media_realtime_ratio': 5.0, 'media_measurement': 'complete_segment'},
+                    slow_url: {'ok': True, 'decoded_frames': 3,
+                               'media_realtime_ratio': 0.1, 'media_measurement': 'partial_segment_estimate'}}}
+    fresh = apply_home_priority_freshness(snapshot, now)
+    cand = verify.Candidate('unit', '卫视频道', '湖南卫视', fast_url)
+    cloud = verify.CheckResult(cand, True, 'decoded', decoded_frames=3, media_realtime_ratio=6)
+    assert playback_rank(cloud, fast_url, (0, 0, 'unit'), {}, fresh) < playback_rank(
+        cloud, slow_url, (-200, 0, 'zbds'), {}, fresh)
+    stale = apply_home_priority_freshness(snapshot, now + timedelta(hours=49))
+    assert not stale['_active'] and stale['home_quality'] == {}
+    assert playback_rank(cloud, fast_url, (0, 0, 'unit'), {}, stale) > playback_rank(
+        cloud, slow_url, (-200, 0, 'zbds'), {}, stale)
+    rows = [recheck.Row('卫视频道', '湖南卫视', fast_url)]
+    cloud.ok = False
+    with mock.patch.object(recheck, 'HOME_PRIORITY', fresh):
+        try:
+            recheck.limit_verified_backups(rows, {fast_url: cloud}, {})
+        except ValueError:
+            pass
+        else:
+            raise AssertionError('local success must not waive current cloud decode gate')
+
+
+def test_local_capture_validates_and_preserves_previous_on_failure():
+    import json
+    from pathlib import Path
+    import tempfile
+    import capture_local_quality as capture
+    import media_decode
+    import probe_scheduler
+    with tempfile.TemporaryDirectory() as directory:
+        playlist = Path(directory) / 'input.txt'
+        output = Path(directory) / 'snapshot.json'
+        playlist.write_text('央视频道,#genre#\nCCTV-1,https://unit.test/a\n', encoding='utf-8')
+        candidate = verify.Candidate('unit', '央视频道', 'CCTV-1', 'https://unit.test/a')
+        result = verify.CheckResult(candidate, True, 'decoded', decoded_frames=3,
+                                    media_realtime_ratio=4, media_measurement='complete_segment')
+        argv = ['--playlist', str(playlist), '--output', str(output), '--core-only']
+        with mock.patch.object(media_decode, 'decoder_preflight', return_value='test decoder'), \
+             mock.patch.object(probe_scheduler, 'iter_probe_results', return_value=iter([(candidate, result)])):
+            assert capture.main(argv) == 0
+        snapshot = json.loads(output.read_text(encoding='utf-8'))
+        assert snapshot['home_quality'][candidate.url]['media_realtime_ratio'] == 4
+        assert snapshot['max_age_hours'] == 48 and b'\r\n' not in output.read_bytes()
+        before = output.read_bytes()
+        with mock.patch.object(media_decode, 'decoder_preflight', return_value='test decoder'), \
+             mock.patch.object(probe_scheduler, 'iter_probe_results', side_effect=RuntimeError('test failure')):
+            try:
+                capture.main(argv)
+            except RuntimeError:
+                pass
+            else:
+                raise AssertionError('incomplete capture must not replace previous evidence')
+        assert output.read_bytes() == before
+        playlist.write_text('polluted-name,not-a-url\n', encoding='utf-8')
+        with mock.patch.object(media_decode, 'decoder_preflight') as decoder:
+            try:
+                capture.main(argv)
+            except ValueError:
+                pass
+            else:
+                raise AssertionError('invalid playlist must fail before probing')
+            decoder.assert_not_called()
+        assert output.read_bytes() == before
 
 
 def test_history_recovery_policy_and_age():
@@ -176,7 +250,9 @@ def test_host_scheduler_isolates_probe_exception():
 
 def run_tests():
     for test in (test_segment_measurement, test_quality_before_source_and_total_duration,
-                 test_independent_hosts_and_limit, test_history_recovery_policy_and_age,
+                 test_independent_hosts_and_limit, test_fresh_local_quality_orders_but_never_accepts_bad_media,
+                 test_local_capture_validates_and_preserves_previous_on_failure,
+                 test_history_recovery_policy_and_age,
                  test_success_timestamp_survives_failure,
                  test_retry_does_not_restore_aggressive_media_concurrency,
                  test_retry_preserves_all_media_evidence,

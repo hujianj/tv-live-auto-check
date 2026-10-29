@@ -24,7 +24,7 @@ from verify_sources import (
 )
 from stability import build_observation, preview_observation, write_observation
 from playlist_config import coverage_is_required, full_catalog_enabled, get_group_order, load_guard, load_quality, load_rules, publication_policy
-from curate_ku9 import per_channel_limit, url_score, STABILITY_HISTORY
+from curate_ku9 import per_channel_limit, url_score, STABILITY_HISTORY, HOME_PRIORITY
 from playback_quality import playback_rank, prefer_independent_hosts, redundancy_summary
 from channel_utils import format_extinf
 from channel_identity import canonical_channel_key
@@ -964,7 +964,7 @@ def limit_verified_backups(rows: list[Row], results: dict[str, CheckResult], sou
     for candidates in by_key.values():
         def rank(row: Row) -> tuple:
             score = url_score(row.url, source_for(row, source_map))
-            return playback_rank(results[row.url], row.url, score, STABILITY_HISTORY)
+            return playback_rank(results[row.url], row.url, score, STABILITY_HISTORY, HOME_PRIORITY)
         candidates.sort(key=rank)
         limit = max(1, per_channel_limit(candidates[0].group, candidates[0].name))
         selected.extend(prefer_independent_hosts(candidates, limit))
@@ -1129,6 +1129,19 @@ def main() -> int:
         summary_path = ROOT / SUMMARY_FILE
         summary = json.loads(summary_path.read_text(encoding="utf-8"))
         summary["playback_redundancy"] = redundancy_summary(final_rows, {**results, **refill_results})
+        local_evidence = HOME_PRIORITY.get('home_quality') or {}
+        local_active = bool(HOME_PRIORITY.get('enabled') and HOME_PRIORITY.get('_active')
+                            and HOME_PRIORITY.get('_fresh') and isinstance(local_evidence, dict))
+        summary['playback_redundancy']['local_priority'] = {
+            'active': local_active,
+            'observed_urls': len(local_evidence) if isinstance(local_evidence, dict) else 0,
+            'published_urls_covered': sum(r.url in local_evidence for r in final_rows)
+                if local_active else 0,
+            'generated_at_utc': HOME_PRIORITY.get('generated_at_utc', ''),
+            'expires_at_utc': HOME_PRIORITY.get('expires_at_utc', ''),
+            'scope': HOME_PRIORITY.get('network_scope', 'current local computer; not television'),
+            'stale_reason': HOME_PRIORITY.get('_stale_reason', ''),
+        }
         summary_path.write_text(json.dumps(summary, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n")
         write_report(rows, final_rows, failed_urls, elapsed, refill_summary)
         write_final_report(
@@ -1148,7 +1161,8 @@ def main() -> int:
             report.write(f"- Channels with distinct-host backups: {evidence['channels_with_independent_host_backups']}\n")
             report.write(f"- Line-count distribution: {evidence['channels_by_line_count']}\n")
             report.write(f"- Media measurement types: {evidence['media_measurements']}\n")
-            report.write("- Priority: media margin tier, history tier, configured source preference; independent hosts before duplicate-host backups.\n")
+            report.write("- Priority: fresh local evidence where configured, runner media margin tier, history tier, configured source preference; independent hosts before duplicate-host backups.\n")
+            report.write(f"- Temporary local priority: {evidence['local_priority']}\n")
             report.write("- Partial-segment estimates are not full-segment or prolonged TV playback tests. Failed lines are never retained as backups.\n")
         write_results_csv(rows, results, attempted_refills, refill_results, source_map=source_map)
         write_observation(ROOT / PENDING_STABILITY_FILE, observation)

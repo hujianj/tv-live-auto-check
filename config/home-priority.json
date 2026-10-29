@@ -1,14 +1,367 @@
 {
   "description": "Optional local/home network priority hints. Generate with scripts/local_network_check.py --write-home-priority after testing from the actual home network. Empty or expired lists have no effect in GitHub Actions.",
-  "enabled": false,
-  "bonus": -120,
-  "penalty": 180,
+  "enabled": true,
+  "bonus": 0,
+  "penalty": 0,
   "max_urls": 500,
-  "max_age_hours": 336,
+  "max_age_hours": 48,
   "home_ok_urls": [],
   "home_failed_urls": [],
-  "generated_from": "",
-  "generated_at": "",
-  "generated_at_utc": "",
-  "expires_at_utc": ""
+  "generated_from": "strict local core probe; 50 candidates, 45 decoded, 5 failed; current computer network only",
+  "generated_at": "2026-10-29T08:16:23.521454+00:00",
+  "generated_at_utc": "2026-10-29T08:16:23.521454+00:00",
+  "expires_at_utc": "2026-10-31T08:16:23.521454+00:00",
+  "network_scope": "current local computer; not television",
+  "home_quality": {
+    "http://bp-resource-dfl.bestv.cn/155/3/video.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:16:29.860014+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 5.645,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "https://xykt-fix.github.io/Y77.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:16:30.032204+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 4.948,
+      "media_measurement": "complete_segment"
+    },
+    "http://ali-xwl.cztv.com/live/channel011080Plxw.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:16:34.829171+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 10.769,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://hlsal-ldvt.qing.mgtv.com/nn_live/nn_x64/Y2RuZXhfaWQ9YWxfaGxzX2xkdnQmZT02OTE0NjA0JnY9MSZpZD1ITldTWkdTVCZzPTcwN2RiYTc2YzJjNmJmMTQ4MmUyZGYzOWU2NWM3YWFi/HNWSZGST.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:16:38.537973+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 16.153,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://live.zohi.tv/video/s10001-fztv-3/index.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:16:40.925867+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 20.155,
+      "media_measurement": "complete_segment"
+    },
+    "http://play1-qk.nmtv.cn/live/1769652018126032.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:16:46.896265+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 7.998,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://61.216.67.119:1935/bltvhd/bltv1/chunklist_w1266569526.m3u": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:16:48.712908+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 1.197,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "https://liveout.xntv.tv/a65jur/96iln2.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:16:52.485570+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 3.267,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://173.208.212.130:8181/720p/cctv2.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:16:55.029014+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.331,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://74.91.26.218:82/live/cctv1hd.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:16:55.471766+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.697,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "https://5ddce30eb4b55.streamlock.net/bltvhd/bltv1/chunklist_w511254805.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:16:55.775151+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 1.382,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://119.39.9.8:9901/tsfile/live/0118_1.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:16:59.807133+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.91,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://69.30.245.50/live/cctv6.m3u8": {
+      "ok": false,
+      "checked_at": "2026-10-29T08:17:00.629548+00:00",
+      "decoded_frames": 0,
+      "media_realtime_ratio": null,
+      "media_measurement": "unmeasured"
+    },
+    "https://srs.iyb983.cn:443/video/CYS/index.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:17:05.649970+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 26.678,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://218.84.12.186:8001/hls/main/playlist.m3u8zxinjd": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:17:08.294852+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 2.772,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://112.27.5.218:9901/tsfile/live/faacts/0138_1.m3u8?key=txiptv&playlive=1&authid=0": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:17:09.226782+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 5.35,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://bp-resource-dfl.bestv.cn/148/3/video.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:17:14.941536+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 7.204,
+      "media_measurement": "complete_segment"
+    },
+    "https://dash2.antik.sk/live/test_cctv_tizen/playlist.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:17:15.402328+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.134,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://gmxw.7766.org:808/hls/93/index.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:17:20.718221+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.053,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "https://srs.iyb983.cn/video/CYS/index.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:17:22.759125+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 26.6,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "https://bp-resource-dfl.bestv.cn/148/3/video.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:17:29.302316+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 6.379,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://173.208.212.130:8181/720p/cctv3.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:17:36.375044+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.157,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://74.91.26.218:82/live/cctv2hd.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:17:41.287116+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.325,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://gmxw.7766.org:808/hls/96/index.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:17:43.612120+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.033,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://173.208.212.130:8181/720p/cctv16.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:17:53.648016+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.108,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://gmxw.7766.org:808/hls/102/index.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:17:55.404650+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.043,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://gmxw.7766.org:808/hls/169/index.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:18:15.049419+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.03,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://74.91.26.218:82/live/cctv3hd.m3u8": {
+      "ok": false,
+      "checked_at": "2026-10-29T08:18:15.742226+00:00",
+      "decoded_frames": 0,
+      "media_realtime_ratio": null,
+      "media_measurement": "unmeasured"
+    },
+    "http://173.208.212.130:8181/720p/cctv17.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:18:26.418811+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.07,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://173.208.212.130:8181/720p/bjws.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:18:26.605108+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.174,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://74.91.26.218:82/live/cctv4hd.m3u8": {
+      "ok": false,
+      "checked_at": "2026-10-29T08:18:41.343839+00:00",
+      "decoded_frames": 0,
+      "media_realtime_ratio": null,
+      "media_measurement": "unmeasured"
+    },
+    "http://74.91.26.218:82/live/cctv7hd.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:18:48.425759+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 1.734,
+      "media_measurement": "complete_segment"
+    },
+    "http://173.208.212.130:8181/720p/zjws.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:19:03.133758+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.109,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://173.208.212.130:8181/720p/dfws.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:19:05.179654+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.086,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://74.91.26.218:82/live/cctv8hd.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:19:08.675062+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.237,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://173.208.212.130:8181/720p/jsws.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:19:36.399846+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.239,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://74.91.26.218:82/live/cctv9hd.m3u8": {
+      "ok": false,
+      "checked_at": "2026-10-29T08:19:48.186064+00:00",
+      "decoded_frames": 0,
+      "media_realtime_ratio": null,
+      "media_measurement": "unmeasured"
+    },
+    "http://173.208.212.130:8181/720p/hnws.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:19:49.889997+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.076,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://173.208.212.130:8181/720p/gdws.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:20:05.547364+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.395,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://74.91.26.218:82/live/cctv10hd.m3u8": {
+      "ok": false,
+      "checked_at": "2026-10-29T08:20:08.915226+00:00",
+      "decoded_frames": 0,
+      "media_realtime_ratio": null,
+      "media_measurement": "unmeasured"
+    },
+    "http://74.91.26.218:82/live/cctv11hd.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:20:10.385105+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 1.593,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://173.208.212.130:8181/720p/szws.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:20:17.209209+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.181,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://173.208.212.130:8181/720p/tjws.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:20:29.867047+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.335,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://74.91.26.218:82/live/cctv12hd.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:20:33.940339+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 1.768,
+      "media_measurement": "complete_segment"
+    },
+    "http://74.91.26.218:82/live/cctv13hd.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:20:34.040858+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.425,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://173.208.212.130:8181/720p/ahws.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:20:42.847021+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.654,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://74.91.26.218:82/live/cctv15hd.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:20:57.642507+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.448,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://74.91.26.218:82/live/cctv14hd.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:20:58.438061+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.467,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://173.208.212.130:8181/720p/sdws.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:21:01.371112+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.286,
+      "media_measurement": "partial_segment_estimate"
+    },
+    "http://74.91.26.218:82/live/cctv17hd.m3u8": {
+      "ok": true,
+      "checked_at": "2026-10-29T08:21:22.547958+00:00",
+      "decoded_frames": 3,
+      "media_realtime_ratio": 0.306,
+      "media_measurement": "partial_segment_estimate"
+    }
+  }
 }

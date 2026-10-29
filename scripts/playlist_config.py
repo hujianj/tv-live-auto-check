@@ -81,7 +81,8 @@ def apply_home_priority_freshness(data: dict, now: datetime | None = None) -> di
     result = dict(data)
     ok_urls = list(result.get("home_ok_urls") or [])
     failed_urls = list(result.get("home_failed_urls") or [])
-    active = bool(ok_urls or failed_urls)
+    quality = result.get('home_quality') or {}
+    active = bool(ok_urls or failed_urls or quality)
     now_utc = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     max_age_hours = min(
         MAX_HOME_PRIORITY_AGE_HOURS,
@@ -109,6 +110,7 @@ def apply_home_priority_freshness(data: dict, now: datetime | None = None) -> di
     if stale_reason:
         result["home_ok_urls"] = []
         result["home_failed_urls"] = []
+        result['home_quality'] = {}
     result["max_age_hours"] = max_age_hours
     result["_configured"] = active
     result["_configured_ok_urls"] = len(ok_urls)

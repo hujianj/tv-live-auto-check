@@ -15,7 +15,32 @@ def host_identity(url: str) -> str:
     return (urlsplit(url).hostname or "unknown").lower().rstrip(".")
 
 
-def playback_rank(result, url: str, source_score: tuple, history: dict) -> tuple:
+def local_quality_rank(data: dict | None, url: str, cfg: dict) -> tuple:
+    """Fresh local measurements guide ordering only; never waive cloud checks."""
+    if not data or not data.get('enabled') or not data.get('_active') or not data.get('_fresh'):
+        return 2, 0.0
+    quality = data.get('home_quality') or {}
+    if not isinstance(quality, dict):
+        return 2, 0.0
+    evidence = quality.get(url)
+    if not isinstance(evidence, dict):
+        return 2, 0.0
+    if evidence.get('ok') is False:
+        return 4, 0.0
+    ratio = evidence.get('media_realtime_ratio')
+    frames = evidence.get('decoded_frames', 0)
+    if (evidence.get('ok') is not True or not isinstance(frames, int) or frames < 3
+            or evidence.get('media_measurement') not in {'complete_segment', 'partial_segment_estimate'}
+            or not isinstance(ratio, (int, float)) or isinstance(ratio, bool)
+            or not math.isfinite(ratio) or ratio <= 0):
+        return 2, 0.0
+    tier = 0 if ratio >= float(cfg.get('preferred_realtime_margin', 2.0)) else (
+        1 if ratio >= float(cfg.get('minimum_realtime_margin', 1.0)) else 3)
+    return tier, -ratio
+
+
+def playback_rank(result, url: str, source_score: tuple, history: dict,
+                  local_quality: dict | None = None) -> tuple:
     cfg = load_quality().get("playback_selection", {})
     ratio = result.media_realtime_ratio
     measured = ratio is not None and math.isfinite(ratio) and ratio > 0
@@ -28,7 +53,8 @@ def playback_rank(result, url: str, source_score: tuple, history: dict) -> tuple
     history_tier = 0 if adjust <= -30 else (2 if adjust >= 45 else 1)
     # Keep the user's source preference within comparable quality/history tiers.
     # Total probe duration includes intentional waits and must not rank playback.
-    return tier, history_tier, source_score[0], -(ratio or 0), source_score[1:], url
+    local_tier, local_speed = local_quality_rank(local_quality, url, cfg)
+    return local_tier, tier, history_tier, source_score[0], local_speed, -(ratio or 0), source_score[1:], url
 
 
 def prefer_independent_hosts(sorted_rows: list, limit: int) -> list:
