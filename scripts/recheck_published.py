@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 from __future__ import annotations
 
-import concurrent.futures as cf
 import csv
 import json
 import os
@@ -32,6 +31,7 @@ from channel_identity import canonical_channel_key
 from playlist_order import canonicalize_channel_rows
 from url_utils import is_publishable_http_url
 from media_decode import MIN_DECODED_FRAMES, decoder_preflight
+from probe_scheduler import iter_probe_results
 
 try:
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
@@ -57,6 +57,7 @@ REFILL_WORKERS = max(1, int(os.getenv("IPTV_PUBLISHED_REFILL_WORKERS", "12")))
 FINAL_RETRY_WORKERS = max(1, int(os.getenv("IPTV_PUBLISHED_FINAL_RETRY_WORKERS", "8")))
 FINAL_RETRY_TIMEOUT = max(1, int(os.getenv("IPTV_PUBLISHED_FINAL_RETRY_TIMEOUT", "14")))
 FINAL_RETRY_ATTEMPTS = max(0, int(os.getenv("IPTV_PUBLISHED_FINAL_RETRY_ATTEMPTS", "1")))
+PUBLISHED_HOST_WORKERS = max(1, int(os.getenv("IPTV_PUBLISHED_WORKERS_PER_HOST", "3")))
 REQUIRE_CORE_PROGRESS = os.getenv("IPTV_PUBLISHED_REQUIRE_CORE_PROGRESS", "1").strip().lower() not in {"0", "false", "no"}
 REQUIRE_BROADCAST_PROGRESS = os.getenv(
     "IPTV_PUBLISHED_REQUIRE_BROADCAST_PROGRESS",
@@ -151,46 +152,23 @@ def retry_failed_final_urls(
             flush=True,
         )
         round_results: dict[str, CheckResult] = {}
-        with cf.ThreadPoolExecutor(max_workers=min(workers, len(batch))) as ex:
-            futs = {}
-            for url in batch:
-                row = by_url[url]
-                core = url in core_urls
-                future = ex.submit(
-                    checker,
-                    Candidate("published_final_slow_retry", row.group, row.name, row.url),
-                    timeout=timeout,
-                    core_override=core,
-                    require_progress=REQUIRE_BROADCAST_PROGRESS and url in progress_urls,
-                    require_video=REQUIRE_VIDEO_TRACK,
-                    require_decode=True,
-                )
-                futs[future] = url
-            for future in cf.as_completed(futs):
-                url = futs[future]
-                attempted.add(url)
-                round_results[url] = require_decoded_result(future.result())
+        jobs = [(Candidate("published_final_slow_retry", by_url[url].group, by_url[url].name, url),
+                 dict(timeout=timeout, core_override=url in core_urls,
+                      require_progress=REQUIRE_BROADCAST_PROGRESS and url in progress_urls,
+                      require_video=REQUIRE_VIDEO_TRACK, require_decode=True)) for url in batch]
+        for cand, result in iter_probe_results(jobs, checker, workers=workers,
+                                              per_host=PUBLISHED_HOST_WORKERS):
+            attempted.add(cand.url)
+            round_results[cand.url] = require_decoded_result(result)
         for url in batch:
             retry = round_results[url]
             if retry.ok:
                 recovered.add(url)
-                results[url] = CheckResult(
-                    results[url].cand,
-                    True,
-                    f"final slow retry ok attempt={attempt} first={first_details[url]}; {retry.detail}",
-                    retry.elapsed_seconds,
-                    retry.checked_at,
-                    retry.decoded_frames,
-                )
+                results[url] = replace(retry, cand=results[url].cand,
+                    detail=f"final slow retry ok attempt={attempt} first={first_details[url]}; {retry.detail}")
             else:
-                results[url] = CheckResult(
-                    results[url].cand,
-                    False,
-                    f"final slow retry failed attempt={attempt} first={first_details[url]}; last={retry.detail}",
-                    retry.elapsed_seconds,
-                    retry.checked_at,
-                    retry.decoded_frames,
-                )
+                results[url] = replace(retry, cand=results[url].cand,
+                    detail=f"final slow retry failed attempt={attempt} first={first_details[url]}; last={retry.detail}")
                 pending.append(url)
     return {
         "configured_attempts": attempts,
@@ -704,22 +682,13 @@ def refill_missing_rows(
             break
 
         round_results: dict[str, CheckResult] = {}
-        with cf.ThreadPoolExecutor(max_workers=min(REFILL_WORKERS, len(batch))) as ex:
-            futs = {}
-            for key, candidate in batch:
-                core = is_core_row(candidate.row)
-                fut = ex.submit(
-                    checker,
-                    Candidate(candidate.source, candidate.row.group, candidate.row.name, candidate.row.url),
-                    core_override=core,
-                    require_progress=REQUIRE_BROADCAST_PROGRESS and requires_live_progress(candidate.row),
-                    require_video=REQUIRE_VIDEO_TRACK,
-                    require_decode=True,
-                )
-                futs[fut] = (key, candidate)
-            for fut in cf.as_completed(futs):
-                _key, candidate = futs[fut]
-                round_results[candidate.row.url] = require_decoded_result(fut.result())
+        jobs = [(Candidate(candidate.source, candidate.row.group, candidate.row.name, candidate.row.url),
+                 dict(core_override=is_core_row(candidate.row),
+                      require_progress=REQUIRE_BROADCAST_PROGRESS and requires_live_progress(candidate.row),
+                      require_video=REQUIRE_VIDEO_TRACK, require_decode=True)) for _key, candidate in batch]
+        for cand, result in iter_probe_results(jobs, checker, workers=REFILL_WORKERS,
+                                              per_host=PUBLISHED_HOST_WORKERS):
+            round_results[cand.url] = require_decoded_result(result)
 
         # Apply in candidate-pool order, not thread completion order.
         for key, candidate in batch:
@@ -1006,8 +975,7 @@ def main() -> int:
     global ROOT
     # A burst of full media samples against one server biases throughput and
     # causes self-inflicted failures. First-pass header probes retain their cap.
-    media_verifier.HOST_WORKERS = min(media_verifier.HOST_WORKERS, max(1, int(
-        os.getenv("IPTV_PUBLISHED_WORKERS_PER_HOST", "3"))))
+    media_verifier.HOST_WORKERS = min(media_verifier.HOST_WORKERS, PUBLISHED_HOST_WORKERS)
     print(f"Frame decoder preflight: {decoder_preflight()}", flush=True)
     repository_root = ROOT
     recover_interrupted_promotion(repository_root)
@@ -1040,24 +1008,17 @@ def main() -> int:
     )
 
     results: dict[str, CheckResult] = {}
-    with cf.ThreadPoolExecutor(max_workers=MAX_WORKERS) as ex:
-        futs = {}
-        for url, row in by_url.items():
-            core = url in core_urls
-            fut = ex.submit(
-                check_candidate_resilient,
-                Candidate("published_recheck", row.group, row.name, row.url),
-                core,
-                REQUIRE_BROADCAST_PROGRESS and url in progress_urls,
-                require_decode=True,
-            )
-            futs[fut] = url
-        for i, fut in enumerate(cf.as_completed(futs), 1):
-            url = futs[fut]
-            results[url] = require_decoded_result(fut.result())
-            if i % 100 == 0 or i == len(futs):
-                ok_count = sum(1 for result in results.values() if result.ok)
-                print(f"published_recheck {i}/{len(futs)} ok_urls={ok_count}", flush=True)
+    jobs = [(Candidate("published_recheck", row.group, row.name, url),
+             dict(core_override=url in core_urls,
+                  require_progress=REQUIRE_BROADCAST_PROGRESS and url in progress_urls,
+                  require_decode=True)) for url, row in by_url.items()]
+    for i, (cand, result) in enumerate(iter_probe_results(
+            jobs, check_candidate_resilient, workers=MAX_WORKERS,
+            per_host=PUBLISHED_HOST_WORKERS), 1):
+        results[cand.url] = require_decoded_result(result)
+        if i % 100 == 0 or i == len(by_url):
+            ok_count = sum(1 for result in results.values() if result.ok)
+            print(f"published_recheck {i}/{len(by_url)} ok_urls={ok_count}", flush=True)
 
     retry_summary = retry_failed_final_urls(by_url, results, core_urls, progress_urls)
     write_results_csv(rows, results, [], {}, source_map=source_map)

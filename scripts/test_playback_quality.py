@@ -8,6 +8,7 @@ import stability
 import verify_sources as verify
 from playback_quality import playback_rank, prefer_independent_hosts, redundancy_summary
 from source_config import SourceSpec
+from probe_scheduler import iter_probe_results
 
 
 def test_segment_measurement():
@@ -102,11 +103,85 @@ def test_retry_does_not_restore_aggressive_media_concurrency():
         assert 0 < int(retry[key]) <= int(ENV_DEFAULTS[key]), key
 
 
+def test_retry_preserves_all_media_evidence():
+    row = recheck.Row('央视频道', 'CCTV-9', 'https://unit.test/a.m3u8')
+    original = verify.Candidate('unit', row.group, row.name, row.url)
+    for success in (True, False):
+        result = verify.CheckResult(original, False, 'first timeout')
+        retried = verify.CheckResult(original, success, 'retry media', 5, '2026-10-29T00:00:00Z',
+                                     9, 4.5, 524288, 0.4, 'complete_segment')
+        results = {row.url: result}
+        recheck.retry_failed_final_urls({row.url: row}, results, {row.url},
+            attempts=1, checker=lambda *_args, **_kwargs: retried)
+        actual = results[row.url]
+        assert actual.cand is original and actual.ok is success
+        for field in ('elapsed_seconds', 'checked_at', 'decoded_frames', 'media_realtime_ratio',
+                      'media_sample_bytes', 'media_transfer_seconds', 'media_measurement'):
+            assert getattr(actual, field) == getattr(retried, field), field
+    # A retry may have measured media but fail the decode gate; never accept it.
+    retried.ok, retried.decoded_frames = True, 0
+    results = {row.url: verify.CheckResult(original, False, 'first timeout')}
+    recheck.retry_failed_final_urls({row.url: row}, results, {row.url},
+        attempts=1, checker=lambda *_args, **_kwargs: retried)
+    assert not results[row.url].ok
+
+
+def test_host_scheduler_limits_fairness_and_complete_coverage():
+    from collections import Counter
+    import threading
+    import time
+    from urllib.parse import urlsplit
+    active, peaks, started = Counter(), Counter(), []
+    lock = threading.Lock()
+    # Alternate schemes/ports of one host still consume a single host quota.
+    candidates = [verify.Candidate('unit', '地方频道', f'台{i}',
+                  f'{"https" if i % 2 else "http"}://same.test:{8000+i}/a.m3u8') for i in range(8)]
+    candidates += [verify.Candidate('unit', '地方频道', f'其他{i}', f'https://other{i}.test/a.m3u8') for i in range(4)]
+
+    def checker(cand, **kwargs):
+        assert kwargs == {'require_decode': True}
+        host = urlsplit(cand.url).hostname
+        with lock:
+            active[host] += 1
+            active['total'] += 1
+            peaks[host] = max(peaks[host], active[host])
+            peaks['total'] = max(peaks['total'], active['total'])
+            started.append(cand.url)
+        time.sleep(0.01)
+        with lock:
+            active[host] -= 1
+            active['total'] -= 1
+        return verify.CheckResult(cand, True, 'decoded', decoded_frames=3)
+
+    results = list(iter_probe_results([(c, {'require_decode': True}) for c in candidates],
+                   checker, workers=4, per_host=2))
+    assert peaks['same.test'] <= 2 and peaks['total'] <= 4
+    assert any('other' in url for url in started[:4]), 'slow host must not monopolize admission'
+    assert Counter(c.url for c, _ in results) == Counter(c.url for c in candidates)
+    assert len(results) == len(candidates) and all(r.ok for _, r in results)
+    assert list(iter_probe_results([], checker, workers=0, per_host=0)) == []
+
+
+def test_host_scheduler_isolates_probe_exception():
+    candidates = [verify.Candidate('unit', '地方频道', str(i), f'https://unit.test/{i}') for i in range(3)]
+    def checker(cand):
+        if cand.name == '1':
+            raise RuntimeError('probe broke')
+        return verify.CheckResult(cand, True, 'decoded', decoded_frames=3)
+    results = dict((cand.name, result) for cand, result in iter_probe_results(
+                   [(cand, {}) for cand in candidates], checker, workers=2, per_host=1))
+    assert len(results) == 3 and results['0'].ok and results['2'].ok
+    assert not results['1'].ok and 'probe exception' in results['1'].detail
+
+
 def run_tests():
     for test in (test_segment_measurement, test_quality_before_source_and_total_duration,
                  test_independent_hosts_and_limit, test_history_recovery_policy_and_age,
                  test_success_timestamp_survives_failure,
-                 test_retry_does_not_restore_aggressive_media_concurrency):
+                 test_retry_does_not_restore_aggressive_media_concurrency,
+                 test_retry_preserves_all_media_evidence,
+                 test_host_scheduler_limits_fairness_and_complete_coverage,
+                 test_host_scheduler_isolates_probe_exception):
         test()
         print(f'OK {test.__name__}')
 
