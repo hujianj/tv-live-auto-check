@@ -300,8 +300,8 @@ def inspect_publication(
             actual = hashlib.sha256(fetched["primary"]).hexdigest()
             if expected_primary.get("sha256") != actual or expected_primary.get("bytes") != len(fetched["primary"]):
                 warnings.append("primary television endpoint is serving a valid but stale publication (CDN scope)")
-            elif "raw" in fetched and fetched["raw"] != fetched["primary"]:
-                warnings.append("primary television endpoint differs from authoritative Raw bytes (CDN scope)")
+            # Raw is the verified-only catalog; the TV subscription may additionally
+            # contain manual-review channels. Each is checked against its own hash.
         result["manifest"] = {
             "url": manifest_url,
             "bytes": len(manifest_data),

@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env python3
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Validate committed public playlists and their final byte manifest."""
 from __future__ import annotations
@@ -19,7 +19,12 @@ PLAYLIST_FILES = [*TXT_ALIAS_FILES, "live.m3u", *FAMILY_FILES]
 
 
 def validate_publication(root: Path = ROOT) -> dict[str, object]:
-    playlists = {name: validate_file(root / name) for name in PLAYLIST_FILES}
+    from tv_coverage import has_tv_coverage, validate_tv_coverage
+    files = [*PLAYLIST_FILES, "ku9-live.txt"]
+    if has_tv_coverage(root):
+        files.append("tv-coverage.m3u")
+    playlists = {name: validate_file(root / name) for name in files}
+    validate_tv_coverage(root)
     manifest = validate_manifest(root)
     return {"status": "ok", "playlists": playlists, "manifest": manifest}
 

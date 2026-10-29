@@ -753,30 +753,38 @@ def validate_publish_bundle(
     large diagnostic files are deliberately absent from Git.
     """
     root = Path(root)
+    from tv_coverage import TV_FILES, has_tv_coverage, validate_tv_coverage
+    tv_schema = has_tv_coverage(root)
+    full_txt_files = FULL_TXT_FILES[:-1] if tv_schema else FULL_TXT_FILES
     errors: list[str] = []
     required = [
-        *FULL_TXT_FILES,
+        *full_txt_files,
         *FAMILY_TXT_FILES,
         FULL_M3U_FILE,
         FAMILY_M3U_FILE,
         SUMMARY_FILE,
         SOURCES_STATUS_FILE,
     ]
+    if tv_schema:
+        required.extend(("ku9-live.txt", *TV_FILES))
     if require_artifacts:
         required.extend((SOURCE_MAP_FILE, CANDIDATE_POOL_FILE, ALIAS_CONFLICT_REPORT))
     missing = [name for name in required if not (root / name).is_file()]
     if missing:
         raise BundleValidationError(f"missing publish bundle files: {missing!r}")
 
-    for name in [*FULL_TXT_FILES, *FAMILY_TXT_FILES, FULL_M3U_FILE, FAMILY_M3U_FILE]:
+    playlist_files = [*full_txt_files, *FAMILY_TXT_FILES, FULL_M3U_FILE, FAMILY_M3U_FILE]
+    if tv_schema:
+        playlist_files.extend(("ku9-live.txt", "tv-coverage.m3u"))
+    for name in playlist_files:
         try:
             validate_file(root / name, require_categories=True)
         except Exception as exc:
             errors.append(f"{name}: standalone validation failed: {exc}")
 
-    full_payloads = [(root / name).read_bytes() for name in FULL_TXT_FILES]
+    full_payloads = [(root / name).read_bytes() for name in full_txt_files]
     if len(set(full_payloads)) != 1:
-        errors.append(f"full TXT aliases are not byte-identical: {list(FULL_TXT_FILES)!r}")
+        errors.append(f"full TXT aliases are not byte-identical: {list(full_txt_files)!r}")
     family_payloads = [(root / name).read_bytes() for name in FAMILY_TXT_FILES]
     if len(set(family_payloads)) != 1:
         errors.append(f"family TXT aliases are not byte-identical: {list(FAMILY_TXT_FILES)!r}")
@@ -1019,6 +1027,11 @@ def validate_publish_bundle(
         errors,
         require_extended_schema=require_artifacts,
     )
+    if tv_schema:
+        try:
+            validate_tv_coverage(root, require_artifacts=require_artifacts)
+        except Exception as exc:
+            errors.append(f"TV coverage validation failed: {exc}")
     _fail(errors)
     return {
         "status": "ok",

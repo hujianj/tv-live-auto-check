@@ -27,7 +27,9 @@ def test_segment_measurement():
     assert manifest.segment_durations == {'https://unit.test/a.ts': 4.5}
 
 
-def test_quality_before_source_and_total_duration():
+@mock.patch("playback_quality.load_quality", return_value={"playback_selection": {"mode": "media_margin"}})
+@mock.patch("recheck_published.load_quality", return_value={"playback_selection": {"mode": "media_margin"}})
+def test_quality_before_source_and_total_duration(_recheck_cfg, _rank_cfg):
     cand = verify.Candidate('unit', '央视频道', 'CCTV-1', 'https://unit.test/a.m3u8')
     good = verify.CheckResult(cand, True, 'decoded', elapsed_seconds=40, decoded_frames=3, media_realtime_ratio=4)
     slow = verify.CheckResult(cand, True, 'decoded', elapsed_seconds=1, decoded_frames=3, media_realtime_ratio=0.5)
@@ -37,7 +39,9 @@ def test_quality_before_source_and_total_duration():
     assert playback_rank(good, cand.url, (-200, 20, 'zbds'), {}) < playback_rank(good, cand.url, (0, 20, 'other'), {})
 
 
-def test_independent_hosts_and_limit():
+@mock.patch("playback_quality.load_quality", return_value={"playback_selection": {"mode": "media_margin"}})
+@mock.patch("recheck_published.load_quality", return_value={"playback_selection": {"mode": "media_margin"}})
+def test_independent_hosts_and_limit(_recheck_cfg, _rank_cfg):
     rows = [recheck.Row('央视频道', 'CCTV-1', u) for u in (
         'https://same.test/a.m3u8', 'http://same.test:888/a.m3u8', 'https://other.test/a.m3u8')]
     assert prefer_independent_hosts(rows, 2) == [rows[0], rows[2]]
@@ -58,7 +62,9 @@ def test_independent_hosts_and_limit():
         raise AssertionError('unverified backup must be refused')
 
 
-def test_fresh_local_quality_orders_but_never_accepts_bad_media():
+@mock.patch("playback_quality.load_quality", return_value={"playback_selection": {"mode": "media_margin"}})
+@mock.patch("recheck_published.load_quality", return_value={"playback_selection": {"mode": "media_margin"}})
+def test_fresh_local_quality_orders_but_never_accepts_bad_media(_recheck_cfg, _rank_cfg):
     now = datetime.now(timezone.utc)
     fast_url, slow_url = 'https://fast.test/a', 'https://slow.test/a'
     snapshot = {'enabled': True, 'max_age_hours': 48,

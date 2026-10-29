@@ -59,6 +59,7 @@ class EndpointResult:
     elapsed_seconds: float = 0.0
     deadline_seconds: int = 0
     path: str = ""
+    expected_sha256: str = ""
 
 
 def endpoint_matrix(repo: str, branch: str, required_only: bool = False) -> list[Endpoint]:
@@ -127,6 +128,7 @@ def check_endpoint(
         endpoint.required_primary,
         deadline_seconds=endpoint.endpoint_deadline_seconds,
         path=endpoint.path,
+        expected_sha256=expected_hash,
     )
     started = time.monotonic()
     request_timeout = int(timeout or endpoint.timeout_seconds)
@@ -210,7 +212,8 @@ def render_report(results: list[EndpointResult], expected_size: int, expected_ha
         "# CDN and publication endpoint health report",
         "",
         f"Expected size: {expected_size}",
-        f"Expected SHA256: {expected_hash}",
+        f"Authoritative file SHA256: {expected_hash}",
+        "Each endpoint is compared with its own path hash, not another playlist alias.",
         f"Authoritative GitHub Raw current: {flags['raw_current']}",
         f"Required primary television endpoint current: {flags['required_primary_endpoint_current']}",
         f"At least one television-compatible endpoint current: {flags['television_endpoint_current']}",
@@ -218,14 +221,14 @@ def render_report(results: list[EndpointResult], expected_size: int, expected_ha
         f"Distribution status: {publication_health_status(results)}",
         "Scope: this execution network/edge only; not proof of every CDN edge or television network.",
         "",
-        "| Endpoint | Path | Current | Required primary | TV compatible | Attempts | Size | SHA256 | Status | Cache-Control | Age | Elapsed | URL | Error |",
-        "|---|---|---:|---:|---:|---:|---:|---|---:|---|---|---:|---|---|",
+        "| Endpoint | Path | Current | Required primary | TV compatible | Attempts | Size | SHA256 | Expected SHA256 | Status | Cache-Control | Age | Elapsed | URL | Error |",
+        "|---|---|---:|---:|---:|---:|---:|---|---|---:|---|---|---:|---|---|",
     ]
     for item in results:
         error = item.error.replace("|", "/")
         lines.append(
             f"| {item.name} | {item.path} | {item.ok} | {item.required_primary} | {item.television_compatible} | "
-            f"{item.attempts} | {item.size} | {item.sha256} | {item.status_code or ''} | "
+            f"{item.attempts} | {item.size} | {item.sha256} | {item.expected_sha256} | {item.status_code or ''} | "
             f"{item.cache_control.replace('|', '/')} | {item.age} | {item.elapsed_seconds:.3f} | {item.url} | {error} |"
         )
     return "\n".join(lines) + "\n"
@@ -259,11 +262,25 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("timeout/retry-wait must be nonnegative and global-deadline must be positive")
     checked_utc = datetime.now(timezone.utc).isoformat()
 
+    endpoints = endpoint_matrix(args.repo, args.branch, required_only=args.required_only)
+    expected_by_path = {}
     try:
-        expected = Path(args.expected).read_bytes()
+        expected_path = Path(args.expected)
+        expected = expected_path.read_bytes()
         validated = validate_text(expected.decode("utf-8", "strict"), require_categories=True)
         if validated["rows"] < 1:
             raise ValueError("expected playlist has no channel rows")
+        if not args.validate_only:
+            # Different publications legitimately have different contents. All
+            # inputs must pass preflight before the first network request.
+            for endpoint in endpoints:
+                local_path = (expected_path if endpoint.path == config["authoritative_raw_file"]
+                              else expected_path.parent / endpoint.path)
+                data = local_path.read_bytes()
+                validated = validate_text(data.decode("utf-8", "strict"), require_categories=True)
+                if validated["rows"] < 1:
+                    raise ValueError(f"empty expected playlist: {endpoint.path}")
+                expected_by_path[endpoint.path] = hashlib.sha256(data).hexdigest()
     except (OSError, UnicodeError, ValueError) as exc:
         reason = redact_text(str(exc))[:1500]
         report = ("# Publication preflight failed\n\n"
@@ -290,12 +307,11 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     expected_hash = hashlib.sha256(expected).hexdigest()
     max_bytes = max(2_000_000, len(expected) * 3)
-    endpoints = endpoint_matrix(args.repo, args.branch, required_only=args.required_only)
     results_by_index: dict[int, EndpointResult] = {}
     started = time.monotonic()
     executor = cf.ThreadPoolExecutor(max_workers=len(endpoints))
     futures = {
-        executor.submit(check_endpoint, endpoint, expected_hash, args.timeout or None, max_bytes, args.retry_wait): index
+        executor.submit(check_endpoint, endpoint, expected_by_path[endpoint.path], args.timeout or None, max_bytes, args.retry_wait): index
         for index, endpoint in enumerate(endpoints)
     }
     try:
@@ -315,6 +331,7 @@ def main(argv: list[str] | None = None) -> int:
                     error=f"worker failure: {exc!r}",
                     deadline_seconds=endpoint.endpoint_deadline_seconds,
                     path=endpoint.path,
+                    expected_sha256=expected_by_path[endpoint.path],
                 )
     except TimeoutError:
         for future, index in futures.items():
@@ -330,6 +347,7 @@ def main(argv: list[str] | None = None) -> int:
                     error=f"global deadline exceeded ({args.global_deadline}s)",
                     deadline_seconds=endpoint.endpoint_deadline_seconds,
                     path=endpoint.path,
+                    expected_sha256=expected_by_path[endpoint.path],
                 )
     finally:
         # Do not re-enter the executor context manager: its implicit
@@ -351,6 +369,7 @@ def main(argv: list[str] | None = None) -> int:
                 "expected_file": str(Path(args.expected).name),
                 "expected_size": len(expected),
                 "expected_sha256": expected_hash,
+                "expected_sha256_by_path": expected_by_path,
                 "elapsed_seconds": round(time.monotonic() - started, 3),
                 "global_deadline_seconds": args.global_deadline,
                 **flags,

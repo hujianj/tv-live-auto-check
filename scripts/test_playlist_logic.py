@@ -3273,4 +3273,6 @@ def main() -> int:
 if __name__ == "__main__":
     from test_playback_quality import run_tests
     run_tests()
+    from test_tv_coverage import run_tests as run_tv_tests
+    run_tv_tests()
     raise SystemExit(main())

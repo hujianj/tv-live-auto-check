@@ -1,4 +1,4 @@
-﻿{
+{
   "schema_version": 1,
   "primary_text_file": "ku9-live.txt",
   "authoritative_raw_file": "live-curated.txt",
@@ -10,7 +10,8 @@
     "live.m3u",
     "ku9-family.txt",
     "live-family.txt",
-    "family.m3u"
+    "family.m3u",
+    "tv-coverage.m3u"
   ],
   "publication_files": [
     "live-curated.txt",
@@ -31,7 +32,10 @@
     "curated-report.md",
     "sources_status.csv",
     "full-check-summary.json",
-    "publish-size-report.md"
+    "publish-size-report.md",
+    "tv-coverage.m3u",
+    "tv-review-report.json",
+    "tv-review-report.md"
   ],
   "purge_files": [
     "live-curated.txt",
@@ -41,7 +45,8 @@
     "live.m3u",
     "ku9-family.txt",
     "live-family.txt",
-    "family.m3u"
+    "family.m3u",
+    "tv-coverage.m3u"
   ],
   "endpoints": [
     {

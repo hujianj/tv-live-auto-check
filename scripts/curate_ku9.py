@@ -722,7 +722,7 @@ def main():
         summary = {}
     summary.update({
         'full_catalog': full_catalog_enabled(),
-        'limits_applied_after_strict_recheck': full_catalog_enabled(),
+        'limits_applied_after_strict_recheck': full_catalog_enabled() and QUALITY.get('playback_selection', {}).get('mode') != 'availability',
         'pre_recheck_curated_lines': len(pub),
         'pre_recheck_curated_channel_names': published_unique_names,
         'pre_recheck_curated_groups': dict(cnt),

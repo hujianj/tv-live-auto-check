@@ -128,6 +128,9 @@ jobs:
             live.txt
             live-verified.txt
             ku9-live.txt
+            tv-coverage.m3u
+            tv-review-report.json
+            tv-review-report.md
             live.m3u
             ku9-family.txt
             live-family.txt

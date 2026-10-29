@@ -3,9 +3,10 @@
   "playback_selection": {
     "preferred_realtime_margin": 2.0,
     "minimum_realtime_margin": 1.0,
-    "description": "Rank verified segment download margin and stability before source preference; prefer independent backup hosts."
+    "description": "Keep every verified URL; ignore local/runner speed, prefer source and historical stability.",
+    "mode": "availability"
   },
-  "description": "TV-facing quality rules: keep family-use mainland channels clean, preserve core channels, and cap low-value categories.",
+  "description": "Keep all verified domestic Chinese URLs in the full catalog; limits apply only to the separate compact profile or legacy selection modes.",
   "strict_drop_name_tokens": [
     "Geo-blocked",
     "[Geo-blocked]",
@@ -92,7 +93,8 @@
     "江苏卫视",
     "湖南卫视",
     "广东卫视",
-    "深圳卫视"
+    "深圳卫视",
+    "吉林卫视"
   ],
   "live_progress_groups": [
     "央视频道",

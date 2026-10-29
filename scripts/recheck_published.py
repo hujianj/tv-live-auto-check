@@ -622,8 +622,9 @@ def refill_missing_rows(
     historical_target_rows = 0
     for key, urls in historical_by_key.items():
         representative = historical_representatives[key]
-        limit = per_channel_limit(representative.group, representative.name)
         previous_target = targets.get(key, 0)
+        availability = load_quality().get("playback_selection", {}).get("mode") == "availability"
+        limit = previous_target + len(urls) if availability else per_channel_limit(representative.group, representative.name)
         # Historical candidates are only the previous URLs absent from the
         # entire current candidate pool. Add that missing redundancy to the
         # current target instead of comparing the two counts independently.
@@ -953,7 +954,7 @@ def write_final_report(groups: list[str], rows: list[Row], failed_urls: dict[str
 
 
 def limit_verified_backups(rows: list[Row], results: dict[str, CheckResult], source_map: dict[tuple[str, str], str]) -> list[Row]:
-    """Limit only redundant URLs after decoding, never distinct channels."""
+    """Keep every decoded URL in availability mode; other modes cap backups."""
     by_key: dict[tuple[str, str], list[Row]] = defaultdict(list)
     for row in rows:
         result = results.get(row.url)
@@ -966,7 +967,8 @@ def limit_verified_backups(rows: list[Row], results: dict[str, CheckResult], sou
             score = url_score(row.url, source_for(row, source_map))
             return playback_rank(results[row.url], row.url, score, STABILITY_HISTORY, HOME_PRIORITY)
         candidates.sort(key=rank)
-        limit = max(1, per_channel_limit(candidates[0].group, candidates[0].name))
+        availability = load_quality().get("playback_selection", {}).get("mode") == "availability"
+        limit = len(candidates) if availability else max(1, per_channel_limit(candidates[0].group, candidates[0].name))
         selected.extend(prefer_independent_hosts(candidates, limit))
     return canonicalize_rows(get_group_order(), selected)
 
@@ -1129,6 +1131,9 @@ def main() -> int:
         summary_path = ROOT / SUMMARY_FILE
         summary = json.loads(summary_path.read_text(encoding="utf-8"))
         summary["playback_redundancy"] = redundancy_summary(final_rows, {**results, **refill_results})
+        summary["playback_redundancy"]["selection_mode"] = load_quality().get("playback_selection", {}).get("mode", "media_margin")
+        summary["playback_redundancy"]["speed_filter_enabled"] = False
+        summary["playback_redundancy"]["speed_ranking_enabled"] = summary["playback_redundancy"]["selection_mode"] != "availability"
         local_evidence = HOME_PRIORITY.get('home_quality') or {}
         local_active = bool(HOME_PRIORITY.get('enabled') and HOME_PRIORITY.get('_active')
                             and HOME_PRIORITY.get('_fresh') and isinstance(local_evidence, dict))
@@ -1161,7 +1166,8 @@ def main() -> int:
             report.write(f"- Channels with distinct-host backups: {evidence['channels_with_independent_host_backups']}\n")
             report.write(f"- Line-count distribution: {evidence['channels_by_line_count']}\n")
             report.write(f"- Media measurement types: {evidence['media_measurements']}\n")
-            report.write("- Priority: fresh local evidence where configured, runner media margin tier, history tier, configured source preference; independent hosts before duplicate-host backups.\n")
+            mode = evidence["selection_mode"]
+            report.write(f"- Selection mode: {mode}. Availability mode keeps all verified URLs and ignores runner/local speed; configured source/history preference and independent hosts determine order.\n")
             report.write(f"- Temporary local priority: {evidence['local_priority']}\n")
             report.write("- Partial-segment estimates are not full-segment or prolonged TV playback tests. Failed lines are never retained as backups.\n")
         write_results_csv(rows, results, attempted_refills, refill_results, source_map=source_map)

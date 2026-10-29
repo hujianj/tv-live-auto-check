@@ -102,6 +102,7 @@ def main() -> int:
     thresholds = {
         "max_primary_txt_bytes": ("ku9-live.txt", int(guard.get("max_primary_txt_bytes", 600_000))),
         "max_m3u_bytes": ("live.m3u", int(guard.get("max_m3u_bytes", 1_000_000))),
+        "max_tv_m3u_bytes": ("tv-coverage.m3u", int(guard.get("max_m3u_bytes", 1_000_000))),
     }
     for label, (filename, limit) in thresholds.items():
         size = sizes.get(filename, 0)
@@ -111,7 +112,7 @@ def main() -> int:
     if unique_payload_blob_bytes > max_unique:
         failures.append(f"unique payload blob bytes {unique_payload_blob_bytes} exceeds max_unique_public_blob_bytes={max_unique}")
 
-    duplicate_txt_worktree_bytes = sum(sizes.get(p, 0) for p in TXT_ALIAS_FILES) - (sizes.get("ku9-live.txt", 0) if txt_alias_same_hash else 0)
+    duplicate_txt_worktree_bytes = sum(sizes.get(p, 0) for p in TXT_ALIAS_FILES) - (sizes.get(TXT_ALIAS_FILES[0], 0) if txt_alias_same_hash else 0)
     if txt_alias_same_hash and duplicate_txt_worktree_bytes > 0:
         warnings.append(
             "TXT aliases occupy duplicate working-tree bytes for compatibility, but Git stores their identical content as one blob."

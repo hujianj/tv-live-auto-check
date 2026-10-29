@@ -22,7 +22,7 @@ SIZE_REPORT_FILE = "publish-size-report.md"
 
 TXT_ALIAS_FILES = [
     name for name in _PUBLICATION_CONFIG["playlist_files"]
-    if name.endswith(".txt") and name not in {"ku9-family.txt", "live-family.txt"}
+    if name.endswith(".txt") and name not in {"ku9-family.txt", "live-family.txt", "ku9-live.txt"}
 ]
 FAMILY_TXT_ALIAS_FILES = [name for name in _PUBLICATION_CONFIG["playlist_files"] if name in {"ku9-family.txt", "live-family.txt"}]
 FAMILY_FILES = [*FAMILY_TXT_ALIAS_FILES, "family.m3u"]
@@ -34,6 +34,16 @@ SIZE_AUDIT_FILES = [
     if name not in {SUMMARY_FILE, SIZE_REPORT_FILE}
 ]
 FINAL_PUBLICATION_FILES = [*SIZE_AUDIT_FILES, SUMMARY_FILE, SIZE_REPORT_FILE]
+
+
+TV_PUBLICATION_FILES = {"tv-coverage.m3u", "tv-review-report.json", "tv-review-report.md"}
+
+
+def final_publication_files(root: Path) -> list[str]:
+    # Old immutable releases remain auditable during the schema migration.
+    summary = json.loads((root / SUMMARY_FILE).read_text(encoding="utf-8"))
+    return [name for name in FINAL_PUBLICATION_FILES
+            if "tv_coverage" in summary or name not in TV_PUBLICATION_FILES]
 
 
 class ManifestValidationError(ValueError):
@@ -58,7 +68,8 @@ def _summary_metadata(root: Path) -> dict[str, object]:
 
 
 def build_manifest(root: Path) -> dict[str, object]:
-    missing = [name for name in FINAL_PUBLICATION_FILES if not (root / name).is_file()]
+    inventory = final_publication_files(root)
+    missing = [name for name in inventory if not (root / name).is_file()]
     if missing:
         raise ManifestValidationError("missing final publication files: " + ", ".join(missing))
     files = {
@@ -66,7 +77,7 @@ def build_manifest(root: Path) -> dict[str, object]:
             "bytes": (root / name).stat().st_size,
             "sha256": sha256_file(root / name),
         }
-        for name in FINAL_PUBLICATION_FILES
+        for name in inventory
     }
     return {
         "schema_version": MANIFEST_SCHEMA_VERSION,
@@ -108,7 +119,8 @@ def validate_manifest(root: Path) -> dict[str, object]:
     if not isinstance(files, dict):
         failures.append("files must be an object")
         files = {}
-    expected_names = set(FINAL_PUBLICATION_FILES)
+    inventory = final_publication_files(root)
+    expected_names = set(inventory)
     actual_names = set(files)
     missing = sorted(expected_names - actual_names)
     extra = sorted(actual_names - expected_names)
@@ -121,7 +133,7 @@ def validate_manifest(root: Path) -> dict[str, object]:
             f"file_count={manifest.get('file_count')!r} expected={len(expected_names)}"
         )
 
-    for name in FINAL_PUBLICATION_FILES:
+    for name in inventory:
         item = files.get(name)
         if not isinstance(item, dict):
             continue

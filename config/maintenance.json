@@ -17,7 +17,8 @@
     "audit_publish_size.py": 120,
     "validate_publish_bundle.py": 180,
     "validate_publication.py": 120,
-    "finalize_stability.py": 120
+    "finalize_stability.py": 120,
+    "tv_coverage.py": 120
   },
   "conservative_retry_env": {
     "IPTV_CHECK_WORKERS": "192",
@@ -47,7 +48,8 @@
     "audit_publish_size.py",
     "validate_publish_bundle.py",
     "validate_publication.py",
-    "finalize_stability.py"
+    "finalize_stability.py",
+    "tv_coverage.py"
   ],
   "max_candidates_per_source": 50000,
   "max_total_candidates": 250000,

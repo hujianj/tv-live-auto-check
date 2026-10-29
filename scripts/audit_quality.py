@@ -153,7 +153,8 @@ def build_audit(rows: list[tuple[str, str, str]]) -> tuple[dict, list[str], list
         names = {name for _group, name, _url in items}
         unique_urls = {url for _group, _name, url in items}
         group, name, _url = items[0]
-        limit = per_channel_limit(group, name)
+        availability = quality.get("playback_selection", {}).get("mode") == "availability"
+        limit = len(items) if availability and full_catalog_enabled() else per_channel_limit(group, name)
         if len(unique_urls) > limit:
             channel_limit_violations.append({"group": group, "name": name, "identity": identity, "published_rows": len(items), "unique_urls": len(unique_urls), "limit": limit})
         if len(groups) > 1:

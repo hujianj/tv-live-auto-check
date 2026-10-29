@@ -42,6 +42,9 @@ def local_quality_rank(data: dict | None, url: str, cfg: dict) -> tuple:
 def playback_rank(result, url: str, source_score: tuple, history: dict,
                   local_quality: dict | None = None) -> tuple:
     cfg = load_quality().get("playback_selection", {})
+    if cfg.get("mode") == "availability":
+        # Source score already includes historical stability. No speed weighting.
+        return (*source_score, url)
     ratio = result.media_realtime_ratio
     measured = ratio is not None and math.isfinite(ratio) and ratio > 0
     if measured:

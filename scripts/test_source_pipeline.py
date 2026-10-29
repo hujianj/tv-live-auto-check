@@ -419,7 +419,7 @@ class SourcePipelineTests(unittest.TestCase):
                    True, 'synthetic frames', 0.1, '2026-09-09T00:00:00Z', 3) for row in rows}
         chosen = recheck.limit_verified_backups(rows, results, {})
         self.assertEqual(len({row.name for row in chosen}), 221)
-        self.assertEqual(sum(row.name == 'CCTV-1' for row in chosen), recheck.per_channel_limit('央视频道', 'CCTV-1'))
+        self.assertEqual(sum(row.name == 'CCTV-1' for row in chosen), 12 if recheck.load_quality().get('playback_selection', {}).get('mode') == 'availability' else recheck.per_channel_limit('央视频道', 'CCTV-1'))
         results[rows[0].url] = replace(results[rows[0].url], decoded_frames=0)
         with self.assertRaises(ValueError):
             recheck.limit_verified_backups(rows, results, {})
