@@ -4,8 +4,10 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
+import re
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -27,6 +29,45 @@ API = "https://api.github.com"
 RETRYABLE_HTTP = {408, 425, 429, 500, 502, 503, 504}
 MAX_FAILURE_DETAIL_CHARS = 12_000
 MAX_ISSUE_PAGES = 10
+ALERT_STATE_PREFIX = "<!-- tv-live-auto-check-alert-state:v1:"
+
+
+def _stable_error(message: str) -> str:
+    """Ignore changing content hashes, but retain HTTP/DNS/timeout distinctions."""
+    return re.sub(r"\b(?:[a-fA-F0-9]{64}|[a-fA-F0-9]{40})\b", "<content-hash>", message)
+
+
+def distribution_fingerprint(report: dict, check_outcome: str | None) -> str:
+    """Hash validated health, not run IDs, latency, cache age or playlist hashes.
+
+    Revalidate here so missing/contradictory evidence never reuses a healthy
+    observation. Endpoint roles, addresses and error transitions remain visible.
+    """
+    status, _ = distribution_notification(report)
+    endpoints = [{
+        "name": item["name"], "url": item["url"], "path": item.get("path", ""),
+        "hard_raw": item["hard_raw"], "required_primary": item["required_primary"],
+        "television_compatible": item["television_compatible"], "ok": item["ok"],
+        "error": _stable_error(str(item.get("error", ""))) if not item["ok"] else "",
+        "status_code": item.get("status_code") if not item["ok"] else None,
+    } for item in report["endpoints"]]
+    endpoints.sort(key=lambda item: (item["name"], item["url"], item["path"]))
+    state = {"kind": "validated_distribution", "status": status,
+             "check_outcome": check_outcome, "endpoints": endpoints}
+    return hashlib.sha256(json.dumps(state, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
+
+
+def message_fingerprint(status: str, message: str) -> str:
+    # Unknown evidence and legacy callers have a separate namespace; they can
+    # never masquerade as a validated observation, even with the same prose.
+    state = {"kind": "unverified_message", "status": status, "message": _stable_error(message)}
+    return hashlib.sha256(json.dumps(state, sort_keys=True, ensure_ascii=False).encode("utf-8")).hexdigest()
+
+
+def alert_state_marker(fingerprint: str) -> str:
+    if not re.fullmatch(r"[a-f0-9]{64}", fingerprint):
+        raise ValueError("invalid notification fingerprint")
+    return ALERT_STATE_PREFIX + fingerprint + " -->"
 
 
 def api_request(method: str, path: str, token: str, payload: dict | None = None, retries: int = 3):
@@ -133,7 +174,7 @@ def run_context() -> dict[str, str]:
 def status_label(status: str) -> str:
     return {
         "failure": "\u7ef4\u62a4\u6d41\u7a0b\u5931\u8d25",
-        "cdn_pending": "\u5df2\u53d1\u5e03\uff0cCDN \u540c\u6b65\u4e2d",
+        "cdn_pending": "订阅分发待处理",
     }[status]
 
 
@@ -310,12 +351,15 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--check-outcome", choices=["success", "failure"], default=None,
                         help="actual endpoint-check step outcome; failure cannot close a CDN alert")
     args = parser.parse_args(argv)
+    fingerprint = None
     if args.status == "distribution":
         try:
+            report = json.loads(Path(args.report).read_text(encoding="utf-8-sig"))
             args.status, args.message = distribution_notification(
-                json.loads(Path(args.report).read_text(encoding="utf-8-sig")))
+                report)
             if args.check_outcome == "failure" and args.status == "success":
                 raise ValueError("endpoint step failed despite a healthy report; evidence may be obsolete")
+            fingerprint = distribution_fingerprint(report, args.check_outcome)
         except (OSError, ValueError, TypeError, KeyError) as exc:
             args.status = "cdn_pending"
             args.message = ("本轮分发检查未取得完整可信证据，不能确认主订阅或全部备用镜像已恢复；"
@@ -323,6 +367,8 @@ def main(argv: list[str] | None = None) -> int:
                             + str(exc)[:500])
             print("::warning::" + args.message)
         args.scope = "cdn"
+    if args.status == "cdn_pending" and fingerprint is None:
+        fingerprint = message_fingerprint(args.status, args.message)
     token = os.getenv("GITHUB_TOKEN", "")
     context = run_context()
     repo = context["repo"]
@@ -339,7 +385,17 @@ def main(argv: list[str] | None = None) -> int:
         if issue is None:
             issue = find_closed_issue(repo, token, scope)
             reopened = issue is not None
+        if (scope == "cdn" and not reopened and issue is not None and fingerprint
+                and alert_state_marker(fingerprint) in str(issue.get("body") or "")):
+            # Do not PATCH an unchanged body: even edits can generate activity.
+            # Current run evidence remains in Actions logs/artifacts; the Issue
+            # records the last meaningful state transition rather than a heartbeat.
+            print(f"unchanged cdn issue #{issue['number']}; no repeated notification; "
+                  "latest evidence is in this workflow artifact")
+            return 0
         body = issue_body(context, args.status, args.message)
+        if scope == "cdn" and fingerprint:
+            body = alert_state_marker(fingerprint) + "\n" + body
         if issue is None:
             created = api_request(
                 "POST",

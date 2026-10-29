@@ -63,6 +63,8 @@ https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check@main/ku9-live.txt
 
 `purge finished` 不能证明固定地址已是最新版。所有备用节点仍逐文件核对哈希；任何备用镜像滞后或不可访问都生成 `television_backups_pending`、Actions warning 和保留的分发告警 Issue，只有全部受检电视端点恢复才关闭该 Issue。Raw 或必需主地址失败仍使分发检查返回非零。诊断命令追加 `--require-all-television` 可要求所有镜像必须一致；常规维护不将可选镜像告警等同于主地址不可用。
 
+分发告警按经过验证的端点状态去重：相同故障不再每小时更新 Issue 或追加评论。运行编号、提交 SHA、文件哈希、缓存年龄、检测耗时及端点返回顺序不算故障状态变化；端点身份/角色、可用性、HTTP 状态、错误原因和检查步骤结果变化仍会通知。缺失或矛盾证据单独标为未知，不能关闭 Issue 或沿用可信状态；全部受检端点恢复时关闭，之后再次发生会重新打开。Issue 记录最近一次有意义的状态变化，最新巡检时间和原始证据请看对应 Actions 日志/artifact。媒体维护失败通知不使用这项 CDN 去重规则。
+
 GitHub Pages 可作为电脑端或网络可访问设备的备用入口；此前这台电视访问 GitHub 域名曾出现“数据为空”，因此不再把它列为电视端第一选择：
 
 ```text
@@ -352,9 +354,9 @@ local-network-results.csv
 自动维护流程现在会同时生成完整列表和家用精简列表：
 
 ```text
-完整主列表：https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check@main/ku9-live.txt
-家用精简版：https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check@main/ku9-family.txt
-家用精简版 M3U：https://cdn.jsdelivr.net/gh/hujianj/tv-live-auto-check@main/family.m3u
+完整主列表：https://gh-proxy.com/raw.githubusercontent.com/hujianj/tv-live-auto-check/main/ku9-live.txt
+家用精简版：https://gh-proxy.com/raw.githubusercontent.com/hujianj/tv-live-auto-check/main/ku9-family.txt
+家用精简版 M3U：https://gh-proxy.com/raw.githubusercontent.com/hujianj/tv-live-auto-check/main/family.m3u
 ```
 
 精简版从最终复测通过的列表里再筛选生成，不跳过真实播放检测；它会保留 CCTV、卫视、地方台优先顺序，并减少综合娱乐、海外等低频分类的数量，方便家人在电视上找台。

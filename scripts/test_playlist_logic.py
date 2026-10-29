@@ -2437,6 +2437,110 @@ def test_distribution_notification_missing_or_failed_check_keeps_issue_open() ->
         notify_module.api_request, notify_module.run_context = originals
 
 
+def test_distribution_fingerprint_ignores_observation_noise_not_failures() -> None:
+    from dataclasses import asdict
+    from check_publication_endpoints import EndpointResult, health_flags
+    results = [
+        EndpointResult("raw", "https://raw.test/list", True, False, False, ok=True),
+        EndpointResult("primary", "https://proxy.test/list", False, True, True, ok=True),
+        EndpointResult("mirror", "https://cdn.test/list", False, True, False,
+                       ok=False, error="stale hash", status_code=200),
+    ]
+    def report():
+        return dict(health_flags(results), endpoints=[asdict(item) for item in results])
+    first = report()
+    expected = notify_module.distribution_fingerprint(first, "success")
+    noisy = json.loads(json.dumps(first))
+    noisy['checked_utc'] = "2026-11-01T00:00:00Z"
+    for item in noisy['endpoints']:
+        item.update(sha256="b" * 64, expected_sha256="c" * 64, age="300",
+                    etag="different", attempts=4, elapsed_seconds=29.1, size=123456)
+    noisy['endpoints'].reverse()
+    assert notify_module.distribution_fingerprint(noisy, "success") == expected
+    # Do not hide a genuine check-process failure or primary outage.
+    assert notify_module.distribution_fingerprint(first, "failure") != expected
+    results[1].ok = False
+    results[1].error = "TimeoutError('timed out')"
+    assert notify_module.distribution_fingerprint(report(), "success") != expected
+    results[1].ok = True
+    results[2].error = "HTTPError 403 Forbidden"
+    assert notify_module.distribution_fingerprint(report(), "success") != expected
+    for invalid in ({}, dict(first, raw_current=False), dict(first, required_only=True)):
+        try:
+            notify_module.distribution_fingerprint(invalid, "success")
+        except ValueError:
+            pass
+        else:
+            raise AssertionError("invalid evidence must not receive a validated fingerprint")
+
+
+def test_distribution_notifications_are_quiet_until_state_changes_or_recurs() -> None:
+    from dataclasses import asdict
+    from check_publication_endpoints import EndpointResult, health_flags
+    originals = (notify_module.api_request, notify_module.run_context)
+    calls = []
+    issue = {'number': 19, 'state': 'open', 'body': notify_module.SCOPES['cdn']['marker']}
+    results = [
+        EndpointResult("raw", "https://raw.test/list", True, False, False, ok=True),
+        EndpointResult("primary", "https://proxy.test/list", False, True, True, ok=True),
+        EndpointResult("mirror", "https://cdn.test/list", False, True, False,
+                       ok=False, error="stale hash", status_code=200),
+    ]
+    def fake_api(method, path, token, payload=None):
+        calls.append((method, path, payload))
+        if method == 'GET':
+            requested = 'closed' if 'state=closed' in path else 'open'
+            return [dict(issue)] if issue['state'] == requested else []
+        if method == 'PATCH':
+            issue.update(payload)
+        return dict(issue)
+    run_id = 0
+    def context():
+        nonlocal run_id
+        run_id += 1
+        return dict(repo="example/repo", time=f"2026-10-29T{run_id:02d}:00:00Z",
+                    run_number=str(run_id), run_id=str(run_id), run_url=f"https://test/runs/{run_id}",
+                    event="workflow_dispatch", ref="main", sha=f"{run_id:040x}")
+    try:
+        notify_module.api_request, notify_module.run_context = fake_api, context
+        with tempfile.TemporaryDirectory() as td, mock.patch.dict(os.environ, {"GITHUB_TOKEN": "test-only"}):
+            path = Path(td) / 'report.json'
+            def execute(missing=False, outcome='success'):
+                calls.clear()
+                if missing:
+                    if path.exists():
+                        path.unlink()
+                else:
+                    path.write_text(json.dumps(dict(health_flags(results),
+                        endpoints=[asdict(item) for item in reversed(results)])), encoding='utf-8')
+                assert notify_module.main(['distribution', '--report', str(path),
+                                          '--check-outcome', outcome]) == 0
+                return [(method, payload) for method, _, payload in calls if method != 'GET']
+            assert len(execute()) == 2  # migrate legacy Issue with one state notice
+            assert notify_module.ALERT_STATE_PREFIX in issue['body']
+            assert execute() == []  # different run/time/commit, same health
+            assert issue['state'] == 'open'
+            assert len(execute(missing=True, outcome='failure')) == 2
+            assert '不能确认' in issue['body'] and issue['state'] == 'open'
+            assert execute(missing=True, outcome='failure') == []
+            assert len(execute()) == 2  # evidence returned, unknown -> degraded
+            results[1].ok = False
+            results[1].error = 'stale hash'
+            assert len(execute(outcome='failure')) == 2  # primary now failed
+            assert execute(outcome='failure') == []
+            results[1].ok = True
+            assert len(execute()) == 2  # primary recovered, mirror still failed
+            results[2].ok = True
+            assert len(execute()) == 2 and issue['state'] == 'closed'
+            assert execute() == []
+            results[2].ok = False
+            changes = execute()
+            assert len(changes) == 2 and changes[0][1]['state'] == 'open'
+            assert execute() == []  # reoccurrence notified exactly once
+    finally:
+        notify_module.api_request, notify_module.run_context = originals
+
+
 def test_publication_manifest_covers_final_summary_without_self_hash() -> None:
     assert MANIFEST_SUMMARY_FILE not in SIZE_AUDIT_FILES
     assert MANIFEST_FILE not in FINAL_PUBLICATION_FILES
@@ -3364,6 +3468,8 @@ def main() -> int:
         test_publication_checker_uses_exact_canonical_url_and_requires_primary,
         test_distribution_alert_does_not_close_for_degraded_or_missing_evidence,
         test_distribution_notification_missing_or_failed_check_keeps_issue_open,
+        test_distribution_fingerprint_ignores_observation_noise_not_failures,
+        test_distribution_notifications_are_quiet_until_state_changes_or_recurs,
         test_publication_manifest_covers_final_summary_without_self_hash,
         test_final_recheck_slow_retry_recovers_non_core_failure,
         test_generated_csv_writers_force_lf_line_endings,
