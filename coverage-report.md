@@ -12,21 +12,21 @@ Fail on missing important satellite: False
 
 | Channel | Published rows | Unique URLs | Status |
 |---|---:|---:|---|
-| CCTV-1 | 1 | 1 | OK |
+| CCTV-1 | 2 | 2 | OK |
 | CCTV-2 | 2 | 2 | OK |
 | CCTV-3 | 2 | 2 | OK |
 | CCTV-4 | 0 | 0 | MISSING |
 | CCTV-5 | 1 | 1 | OK |
-| CCTV-6 | 1 | 1 | OK |
+| CCTV-6 | 2 | 2 | OK |
 | CCTV-7 | 1 | 1 | OK |
-| CCTV-8 | 2 | 2 | OK |
+| CCTV-8 | 3 | 3 | OK |
 | CCTV-9 | 2 | 2 | OK |
 | CCTV-10 | 1 | 1 | OK |
 | CCTV-11 | 1 | 1 | OK |
 | CCTV-12 | 1 | 1 | OK |
 | CCTV-13 | 1 | 1 | OK |
-| CCTV-14 | 1 | 1 | OK |
-| CCTV-15 | 1 | 1 | OK |
+| CCTV-14 | 2 | 2 | OK |
+| CCTV-15 | 3 | 3 | OK |
 | CCTV-16 | 2 | 2 | OK |
 | CCTV-17 | 2 | 2 | OK |
 | CCTV-5+ | 0 | 0 | MISSING |
