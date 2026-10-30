@@ -1,14 +1,14 @@
 {
   "schema_version": 1,
-  "generated_utc": "2026-10-29T15:15:29Z",
+  "generated_utc": "2026-10-29T23:58:30Z",
   "subscription": "ku9-live.txt",
   "verified_subscription": "live-curated.txt",
-  "channel_count": 271,
-  "line_count": 331,
-  "verified_lines": 299,
+  "channel_count": 270,
+  "line_count": 326,
+  "verified_lines": 296,
   "verified_channels": 249,
-  "review_lines": 32,
-  "review_channels": 22,
+  "review_lines": 30,
+  "review_channels": 21,
   "missing_required_channels": [],
   "classification": "verified and pending_tv_review are counted separately",
   "selection": "all verified URLs; all eligible real URLs only for core channels without verified URLs",
@@ -19,7 +19,7 @@
       "name": "CCTV-4",
       "url": "http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226428/index.m3u8",
       "source": "burningc4_ipv4",
-      "checked_at": "2026-10-29T15:14:45.750343+00:00",
+      "checked_at": "2026-10-29T23:58:00.473249+00:00",
       "check_ok": false,
       "check_detail": "URLError(OSError(101, 'Network is unreachable'))",
       "status": "pending_tv_review"
@@ -29,7 +29,7 @@
       "name": "CCTV-5+",
       "url": "http://223.78.65.165:9901/tsfile/live/0006_1.m3u8?key=txiptv&playlive=1&authid=0",
       "source": "zbds_iptv4_txt",
-      "checked_at": "2026-10-29T15:14:53.126598+00:00",
+      "checked_at": "2026-10-29T23:58:02.770783+00:00",
       "check_ok": false,
       "check_detail": "TimeoutError('timed out') (core retry after first=TimeoutError('timed out'))",
       "status": "pending_tv_review"
@@ -39,7 +39,7 @@
       "name": "CCTV-5+",
       "url": "http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221225603/index.m3u8",
       "source": "burningc4_ipv4",
-      "checked_at": "2026-10-29T15:14:45.758024+00:00",
+      "checked_at": "2026-10-29T23:58:00.473517+00:00",
       "check_ok": false,
       "check_detail": "URLError(OSError(101, 'Network is unreachable'))",
       "status": "pending_tv_review"
@@ -49,7 +49,7 @@
       "name": "CCTV-5+",
       "url": "https://php.jdshipin.com/TVOD/iptv.php?id=cctv5p",
       "source": "iptv_org_cn",
-      "checked_at": "2026-10-29T15:14:33.399686+00:00",
+      "checked_at": "2026-10-29T23:57:51.210711+00:00",
       "check_ok": false,
       "check_detail": "<HTTPError 403: 'Forbidden'>",
       "status": "pending_tv_review"
@@ -59,7 +59,7 @@
       "name": "CCTV-5+",
       "url": "http://173.208.212.130:8181/720p/cctv5p.m3u8",
       "source": "oktv_comprehensive_php",
-      "checked_at": "2026-10-29T15:14:33.237303+00:00",
+      "checked_at": "2026-10-29T23:57:46.535240+00:00",
       "check_ok": false,
       "check_detail": "URLError(ConnectionRefusedError(111, 'Connection refused'))",
       "status": "pending_tv_review"
@@ -69,7 +69,7 @@
       "name": "辽宁卫视",
       "url": "http://61.136.172.236:9901/tsfile/live/0121_1.m3u8?key=txiptv&playlive=1&authid=0",
       "source": "zbds_iptv4_txt",
-      "checked_at": "2026-10-29T15:14:36.656047+00:00",
+      "checked_at": "2026-10-29T23:57:46.686726+00:00",
       "check_ok": false,
       "check_detail": "segment bad 200 application/octet-stream;charset=utf-8 bytes=131072 checked=1 expansions=2 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed",
       "status": "pending_tv_review"
@@ -79,7 +79,7 @@
       "name": "辽宁卫视",
       "url": "http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226546/index.m3u8",
       "source": "burningc4_ipv4",
-      "checked_at": "2026-10-29T15:15:15.790988+00:00",
+      "checked_at": "2026-10-29T23:58:30.509283+00:00",
       "check_ok": false,
       "check_detail": "URLError(OSError(101, 'Network is unreachable'))",
       "status": "pending_tv_review"
@@ -89,7 +89,7 @@
       "name": "河北卫视",
       "url": "http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226406/index.m3u8",
       "source": "burningc4_ipv4",
-      "checked_at": "2026-10-29T15:15:09.783654+00:00",
+      "checked_at": "2026-10-29T23:58:24.498862+00:00",
       "check_ok": false,
       "check_detail": "URLError(OSError(101, 'Network is unreachable'))",
       "status": "pending_tv_review"
@@ -99,27 +99,7 @@
       "name": "河北卫视",
       "url": "http://173.208.212.130:8181/720p/hews.m3u8",
       "source": "oktv_comprehensive_php",
-      "checked_at": "2026-10-29T15:14:32.168694+00:00",
-      "check_ok": false,
-      "check_detail": "URLError(ConnectionRefusedError(111, 'Connection refused'))",
-      "status": "pending_tv_review"
-    },
-    {
-      "group": "卫视频道",
-      "name": "河南卫视",
-      "url": "http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226480/index.m3u8",
-      "source": "burningc4_ipv4",
-      "checked_at": "2026-10-29T15:15:09.782344+00:00",
-      "check_ok": false,
-      "check_detail": "URLError(OSError(101, 'Network is unreachable'))",
-      "status": "pending_tv_review"
-    },
-    {
-      "group": "卫视频道",
-      "name": "河南卫视",
-      "url": "http://173.208.212.130:8181/720p/haws.m3u8",
-      "source": "oktv_comprehensive_php",
-      "checked_at": "2026-10-29T15:14:32.251264+00:00",
+      "checked_at": "2026-10-29T23:57:46.129714+00:00",
       "check_ok": false,
       "check_detail": "URLError(ConnectionRefusedError(111, 'Connection refused'))",
       "status": "pending_tv_review"
@@ -129,7 +109,7 @@
       "name": "云南卫视",
       "url": "http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226444/index.m3u8",
       "source": "burningc4_ipv4",
-      "checked_at": "2026-10-29T15:14:51.765667+00:00",
+      "checked_at": "2026-10-29T23:58:06.481132+00:00",
       "check_ok": false,
       "check_detail": "URLError(OSError(101, 'Network is unreachable'))",
       "status": "pending_tv_review"
@@ -139,7 +119,7 @@
       "name": "兵团卫视",
       "url": "http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226439/index.m3u8",
       "source": "burningc4_ipv4",
-      "checked_at": "2026-10-29T15:14:57.759801+00:00",
+      "checked_at": "2026-10-29T23:58:12.482985+00:00",
       "check_ok": false,
       "check_detail": "URLError(OSError(101, 'Network is unreachable'))",
       "status": "pending_tv_review"
@@ -149,7 +129,7 @@
       "name": "厦门卫视",
       "url": "http://ott.mobaibox.com/PLTV/3/224/3221226996/index.m3u8",
       "source": "burningc4_ipv4",
-      "checked_at": "2026-10-29T15:14:44.689769+00:00",
+      "checked_at": "2026-10-29T23:58:00.083898+00:00",
       "check_ok": false,
       "check_detail": "URLError(OSError(101, 'Network is unreachable'))",
       "status": "pending_tv_review"
@@ -159,7 +139,7 @@
       "name": "吉林卫视",
       "url": "http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226397/index.m3u8",
       "source": "burningc4_ipv4",
-      "checked_at": "2026-10-29T15:14:57.771194+00:00",
+      "checked_at": "2026-10-29T23:58:12.484701+00:00",
       "check_ok": false,
       "check_detail": "URLError(OSError(101, 'Network is unreachable'))",
       "status": "pending_tv_review"
@@ -169,7 +149,7 @@
       "name": "四川卫视",
       "url": "http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226338/index.m3u8",
       "source": "burningc4_ipv4",
-      "checked_at": "2026-10-29T15:14:57.772443+00:00",
+      "checked_at": "2026-10-29T23:58:12.483502+00:00",
       "check_ok": false,
       "check_detail": "URLError(OSError(101, 'Network is unreachable'))",
       "status": "pending_tv_review"
@@ -179,7 +159,7 @@
       "name": "大湾区卫视",
       "url": "http://222.128.55.152:9080/live/dwq.m3u8",
       "source": "zbds_iptv4_txt",
-      "checked_at": "2026-10-29T15:24:21.708293+00:00",
+      "checked_at": "2026-10-30T00:05:57.588545+00:00",
       "check_ok": false,
       "check_detail": "final slow retry failed attempt=1 first=variant fail variants_checked=1 segments ok checked=3 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 14.0s; last=variant fail variants_checked=1 segments ok checked=3 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 14.0s",
       "status": "pending_tv_review"
@@ -189,7 +169,7 @@
       "name": "宁夏卫视",
       "url": "http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221225632/index.m3u8",
       "source": "burningc4_ipv4",
-      "checked_at": "2026-10-29T15:14:57.772694+00:00",
+      "checked_at": "2026-10-29T23:58:12.487979+00:00",
       "check_ok": false,
       "check_detail": "URLError(OSError(101, 'Network is unreachable'))",
       "status": "pending_tv_review"
@@ -199,7 +179,7 @@
       "name": "广西卫视",
       "url": "http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226549/index.m3u8",
       "source": "burningc4_ipv4",
-      "checked_at": "2026-10-29T15:15:03.774381+00:00",
+      "checked_at": "2026-10-29T23:58:18.490579+00:00",
       "check_ok": false,
       "check_detail": "URLError(OSError(101, 'Network is unreachable'))",
       "status": "pending_tv_review"
@@ -209,7 +189,7 @@
       "name": "海南卫视",
       "url": "http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226465/index.m3u8",
       "source": "burningc4_ipv4",
-      "checked_at": "2026-10-29T15:15:09.783527+00:00",
+      "checked_at": "2026-10-29T23:58:24.499751+00:00",
       "check_ok": false,
       "check_detail": "URLError(OSError(101, 'Network is unreachable'))",
       "status": "pending_tv_review"
@@ -219,7 +199,7 @@
       "name": "湖北卫视",
       "url": "http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226477/index.m3u8",
       "source": "burningc4_ipv4",
-      "checked_at": "2026-10-29T15:15:09.785532+00:00",
+      "checked_at": "2026-10-29T23:58:24.501146+00:00",
       "check_ok": false,
       "check_detail": "URLError(OSError(101, 'Network is unreachable'))",
       "status": "pending_tv_review"
@@ -229,7 +209,7 @@
       "name": "甘肃卫视",
       "url": "http://218.13.170.98:9901/tsfile/live/0141_1.m3u8",
       "source": "zbds_iptv4_txt",
-      "checked_at": "2026-10-29T15:14:35.179750+00:00",
+      "checked_at": "2026-10-29T23:57:45.860742+00:00",
       "check_ok": false,
       "check_detail": "segment bad 200 application/octet-stream; charset=utf-8 bytes=131072 checked=1 expansions=2 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed",
       "status": "pending_tv_review"
@@ -239,7 +219,7 @@
       "name": "甘肃卫视",
       "url": "http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221225633/index.m3u8",
       "source": "burningc4_ipv4",
-      "checked_at": "2026-10-29T15:15:15.781423+00:00",
+      "checked_at": "2026-10-29T23:58:30.507505+00:00",
       "check_ok": false,
       "check_detail": "URLError(OSError(101, 'Network is unreachable'))",
       "status": "pending_tv_review"
@@ -249,9 +229,9 @@
       "name": "西藏卫视",
       "url": "http://112.27.5.218:9901/tsfile/live/0111_1.m3u8?key=txiptv&playlive=1&authid=0",
       "source": "zbds_iptv4_txt",
-      "checked_at": "2026-10-29T15:14:29.408669+00:00",
+      "checked_at": "2026-10-29T23:57:43.148415+00:00",
       "check_ok": false,
-      "check_detail": "segment bad 200 application/octet-stream; charset=utf-8 bytes=131072 checked=1 expansions=2 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed",
+      "check_detail": "<HTTPError 404: 'Not Found'>",
       "status": "pending_tv_review"
     },
     {
@@ -259,7 +239,7 @@
       "name": "西藏卫视",
       "url": "http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221225638/index.m3u8",
       "source": "burningc4_ipv4",
-      "checked_at": "2026-10-29T15:15:15.790867+00:00",
+      "checked_at": "2026-10-29T23:58:30.507951+00:00",
       "check_ok": false,
       "check_detail": "URLError(OSError(101, 'Network is unreachable'))",
       "status": "pending_tv_review"
@@ -269,7 +249,7 @@
       "name": "贵州卫视",
       "url": "http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226474/index.m3u8",
       "source": "burningc4_ipv4",
-      "checked_at": "2026-10-29T15:15:15.790698+00:00",
+      "checked_at": "2026-10-29T23:58:30.508643+00:00",
       "check_ok": false,
       "check_detail": "URLError(OSError(101, 'Network is unreachable'))",
       "status": "pending_tv_review"
@@ -279,7 +259,7 @@
       "name": "重庆卫视",
       "url": "http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226409/index.m3u8",
       "source": "burningc4_ipv4",
-      "checked_at": "2026-10-29T15:15:15.789913+00:00",
+      "checked_at": "2026-10-29T23:58:30.508720+00:00",
       "check_ok": false,
       "check_detail": "URLError(OSError(101, 'Network is unreachable'))",
       "status": "pending_tv_review"
@@ -289,7 +269,7 @@
       "name": "陕西卫视",
       "url": "http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221225625/index.m3u8",
       "source": "burningc4_ipv4",
-      "checked_at": "2026-10-29T15:15:15.791751+00:00",
+      "checked_at": "2026-10-29T23:58:30.509485+00:00",
       "check_ok": false,
       "check_detail": "URLError(OSError(101, 'Network is unreachable'))",
       "status": "pending_tv_review"
@@ -299,7 +279,7 @@
       "name": "青海卫视",
       "url": "http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221225628/index.m3u8",
       "source": "burningc4_ipv4",
-      "checked_at": "2026-10-29T15:15:15.791480+00:00",
+      "checked_at": "2026-10-29T23:58:30.509125+00:00",
       "check_ok": false,
       "check_detail": "URLError(OSError(101, 'Network is unreachable'))",
       "status": "pending_tv_review"
@@ -309,9 +289,9 @@
       "name": "黑龙江卫视",
       "url": "http://61.136.172.236:9901/tsfile/live/0143_1.m3u8?key=txiptv&playlive=1&authid=0",
       "source": "zbds_iptv4_txt",
-      "checked_at": "2026-10-29T15:14:29.482475+00:00",
+      "checked_at": "2026-10-29T23:57:49.845485+00:00",
       "check_ok": false,
-      "check_detail": "segment bad 200 application/octet-stream;charset=utf-8 bytes=4096 checked=1 expansions=0 unknown/: no proven media container/track",
+      "check_detail": "segment bad 200 application/octet-stream;charset=utf-8 bytes=131072 checked=1 expansions=2 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed",
       "status": "pending_tv_review"
     },
     {
@@ -319,7 +299,7 @@
       "name": "黑龙江卫视",
       "url": "https://idclive.hljtv.com:4430/live/hljws_own.m3u8",
       "source": "zbds_iptv4_txt",
-      "checked_at": "2026-10-29T15:14:35.341395+00:00",
+      "checked_at": "2026-10-29T23:57:50.355381+00:00",
       "check_ok": false,
       "check_detail": "URLError(OSError(101, 'Network is unreachable'))",
       "status": "pending_tv_review"
@@ -329,7 +309,7 @@
       "name": "黑龙江卫视",
       "url": "http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226327/index.m3u8",
       "source": "burningc4_ipv4",
-      "checked_at": "2026-10-29T15:15:15.791555+00:00",
+      "checked_at": "2026-10-29T23:58:30.507390+00:00",
       "check_ok": false,
       "check_detail": "URLError(OSError(101, 'Network is unreachable'))",
       "status": "pending_tv_review"

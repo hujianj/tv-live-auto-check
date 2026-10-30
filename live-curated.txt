@@ -11,17 +11,14 @@ CCTV-5,http://gmxw.7766.org:808/hls/93/index.m3u8
 CCTV-6,http://69.30.245.50/live/cctv6.m3u8
 CCTV-6,http://173.208.212.130:8181/720p/cctv6.m3u8
 CCTV-7,http://74.91.26.218:82/live/cctv7hd.m3u8
-CCTV-7,http://173.208.212.130:8181/720p/cctv7.m3u8
 CCTV-8,http://gmxw.7766.org:808/hls/96/index.m3u8
+CCTV-8,http://124.165.251.82:85/tsfile/live/0008_1.m3u8?key=txiptv&playlive=1&authid=0
 CCTV-8,http://74.91.26.218:82/live/cctv8hd.m3u8
 CCTV-8,http://173.208.212.130:8181/720p/cctv8.m3u8
 CCTV-9,http://74.91.26.218:82/live/cctv9hd.m3u8
 CCTV-9,https://xykt-fix.github.io/Y77.m3u8
 CCTV-10,http://74.91.26.218:82/live/cctv10hd.m3u8
-CCTV-10,http://173.208.212.130:8181/720p/cctv10.m3u8
 CCTV-11,http://74.91.26.218:82/live/cctv11hd.m3u8
-CCTV-11,http://173.208.212.130:8181/720p/cctv11.m3u8
-CCTV-12,http://124.165.251.82:85/tsfile/live/0012_1.m3u8?key=txiptv&playlive=1&authid=0
 CCTV-12,http://74.91.26.218:82/live/cctv12hd.m3u8
 CCTV-13,http://74.91.26.218:82/live/cctv13hd.m3u8
 CCTV-14,http://74.91.26.218:82/live/cctv14hd.m3u8
@@ -35,10 +32,12 @@ CCTV-17,http://74.91.26.218:82/live/cctv17hd.m3u8
 CCTV-17,http://173.208.212.130:8181/720p/cctv17.m3u8
 
 卫视频道,#genre#
+河南卫视,http://111.59.139.82:11888/tsfile/live/0139_1.m3u8?key=txiptv&playlive=1&authid=0
 北京卫视,http://173.208.212.130:8181/720p/bjws.m3u8
 东方卫视,http://bp-resource-dfl.bestv.cn/148/3/video.m3u8
 东方卫视,http://173.208.212.130:8181/720p/dfws.m3u8
 东方卫视,http://bp-resource-dfl.bestv.cn/155/3/video.m3u8
+东方卫视,https://bp-resource-dfl.bestv.cn/148/3/video.m3u8
 浙江卫视,http://ali-xwl.cztv.com/live/channel011080Plxw.m3u8
 浙江卫视,http://173.208.212.130:8181/720p/zjws.m3u8
 江苏卫视,http://173.208.212.130:8181/720p/jsws.m3u8
@@ -94,6 +93,8 @@ CCTV-17,http://173.208.212.130:8181/720p/cctv17.m3u8
 伊犁维吾尔,http://110.153.180.106:55555/out_2/index.m3u8
 伊犁维吾尔,http://110.153.180.106:55555/out_2/index.m3u8?zxinjd
 兴隆综合,https://jwcdnqx.hebyun.com.cn/live/xlzh/1500k/tzwj_video.m3u8
+兵团五师双河影,https://liveout.btzx.com.cn/62ds9e/6o77s4.m3u8?zxinjd
+兵团五师双河新闻综合,http://liveout.btzx.com.cn/62ds9e/4nxdih.m3u8?fbl=
 南京教科,http://nklive.nbs.cn/hls/75b3c462-b831-4de7-a34b-5d3221db2069/index.m3u8
 南京新闻综合,http://nklive.nbs.cn/hls/d511bc9d-a694-4453-b3a2-4fc842cc97a1/index.m3u8
 南京玄武湖公园,https://gcalic.v.myalicdn.com/gc/xwh01_1/index.m3u8
@@ -125,10 +126,8 @@ CCTV-17,http://173.208.212.130:8181/720p/cctv17.m3u8
 安徽池州九华山风景区九华山,https://gcalic.v.myalicdn.com/gc/jhs05_1/index.m3u8
 安徽黟县芦村远眺,https://gcalic.v.myalicdn.com/gc/yxlcyt_1/index.m3u8
 安徽黟县西递牌坊,https://gcalic.v.myalicdn.com/gc/yxxdpf_1/index.m3u8
-定襄综合,http://lbyzztfe.live.sxmty.com/live/hls/645ff4c60e0a49f0a203abbd73dd8be9/0720e665f10f48e98c9639f4f492fb4a-1.m3u8?zshanxd
 山东教育,https://test1.live.sdetv.com.cn/live/dianshizhibo/playlist.m3u8
 嵊州新闻综合,http://l.cztvcloud.com/channels/lantian/SXshengzhou1/720p.m3u8
-平泉综合,https://jwcdnqx.hebyun.com.cn/live/pqzh/1500k/tzwj_video.m3u8
 平湖新闻综合,http://l.cztvcloud.com/channels/lantian/SXpinghu1/720p.m3u8?zzhed
 平遥新闻综合,https://tntgjhjb.live.sxmty.com/live/hls/3a4585ac11ec4e1bb07b419101b370c3/baf63e2b313440c2a25d7859f9b73b05-1.m3u8?zshanxd
 广东民生,http://183.11.239.36:808/hls/18/index.m3u8
@@ -144,6 +143,7 @@ CCTV-17,http://173.208.212.130:8181/720p/cctv17.m3u8
 延边2,http://stream5.jlntv.cn/wq/playlist.m3u8
 张掖新闻综合,https://play.kankanlive.com/live/1720583434627241.m3u8
 德惠综合,http://stream11.jlntv.cn/dehuitv/sd/live.m3u8
+怀仁综合,https://1yp7hc5p.live.sxmty.com/live/hls/bff8529922344209985b6e49baa9555a/efa2543628fc4a7ea93d3d6c975f77dc-1.m3u8
 敦化一套,http://stream8.jlntv.cn/dhtv/playlist.m3u8
 敦化一套,http://stream8.jlntv.cn/dhtv/playlist.m3u8?zjild
 新沂新闻,http://live.xysrmt.cn/xwzh/sd/live.m3u8?zjiangsd
@@ -156,8 +156,6 @@ CCTV-17,http://173.208.212.130:8181/720p/cctv17.m3u8
 松潘新闻综合,http://live.spccmc.com:90/live/spxwzh.m3u8?zsicd
 松阳综合,http://l.cztvcloud.com/channels/lantian/SXsongyang1/720p.m3u8
 松阳综合,http://l.cztvcloud.com/channels/lantian/SXsongyang1/720p.m3u8?zzhed?
-武进新闻,https://live.wjyanghu.com/live/CH1.m3u8
-武进生活,http://live.wjyanghu.com/live/CH2.m3u8
 永昌综合,https://play.kankanlive.com/live/1652755738635915.m3u8
 江夏新闻综合,http://59.175.226.142:280/gb28181/xwzh.m3u8?zhubd
 江苏南京牛首山,https://gcalic.v.myalicdn.com/gc/nss01_1/index.m3u8
@@ -173,6 +171,7 @@ CCTV-17,http://173.208.212.130:8181/720p/cctv17.m3u8
 浙江钱江都市,http://ali-xwl.cztv.com/live/channel02720Plxw.m3u8
 浙江钱江都市,http://ali-xwl.cztv.com/live/channel021080Plxw.m3u8
 海宁新闻综合,https://p2hs.vzan.com/slowlive/317913155078575177/live.m3u8
+清河经济综艺,https://jwcdnqx.hebyun.com.cn/live/qinghe1/1500k/tzwj_video.m3u8
 渭源新闻,http://play.kankanlive.com/live/1720408280309109.m3u8
 湖南张家界天门山西线玻璃栈道,https://gcalic.v.myalicdn.com/gc/tms05_1/index.m3u8
 湖南张家界宝峰湖,https://gcalic.v.myalicdn.com/gc/zjjbfh_1/index.m3u8
@@ -186,7 +185,6 @@ CCTV-17,http://173.208.212.130:8181/720p/cctv17.m3u8
 福州生活,http://live.zohi.tv:80/video/s10001-fztv-3/index.m3u8
 福建武夷山玉女峰,https://gcalic.v.myalicdn.com/gc/wysynf_1/index.m3u8
 缙云新闻综合,http://l.cztvcloud.com/channels/lantian/SXjinyun1/720p.m3u8
-缙云综合,http://l.cztvcloud.com/channels/lantian/SXjinyun1/720p.m3u8?zzhed
 缙云综合,http://l.cztvcloud.com/channels/lantian/SXjinyun1/720p.m3u8?zzhed?
 苏州文化生活,https://live-auth.51kandianshi.com/szgd/csztv3.m3u8
 苏州新闻综合,https://live-auth.51kandianshi.com/szgd/csztv1.m3u8
@@ -212,13 +210,12 @@ CCTV-17,http://173.208.212.130:8181/720p/cctv17.m3u8
 邢台综合,http://jwplay.hebyun.com.cn/live/xtsrmtzs/1500k/tzwj_video.m3u8
 邢台综合,https://jwplay.hebyun.com.cn:443/live/xtsrmtzs/1500k/tzwj_video.m3u8
 邯郸公共频道,https://jwcdnqx.hebyun.com.cn/live/hdgg/1500k/tzwj_video.m3u8
-邯郸新闻,https://jwcdnqx.hebyun.com.cn/live/hdxwzh/1500k/tzwj_video.m3u8
-邯郸科技教育,https://jwcdnqx.hebyun.com.cn/live/hdkj/1500k/tzwj_video.m3u8
 金川乡村,http://live.jinchuanrmt.com:90/live/jcxc.m3u8?zsicd
 金川新闻综合,http://139.203.180.9:90/live/zhxw.m3u8
 金川新闻综合,http://live.jinchuanrmt.com:90/live/zhxw.m3u8?zsicd
 铜梁综合,http://183.64.174.171:40123/ch1.m3u8?zzhongqd
 镇江二套社会民生,http://zjtv-wshls.homecdn.com/live/2aa16.m3u8
+镇江新闻综合,http://cm-wshls.homecdn.com/live/2aa50.m3u8
 长子综合,https://www.wxhcgbds.com:8081/channelTv/WXTV_1.m3u8?zshanxd
 长白山电视台,http://stream8.jlntv.cn/cbstv/sd/live.m3u8?zjild
 长白朝语,http://hplayer1.juyun.tv:80/camera/11344136.m3u8
