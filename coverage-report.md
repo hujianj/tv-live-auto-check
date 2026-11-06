@@ -19,14 +19,14 @@ Fail on missing important satellite: False
 | CCTV-5 | 1 | 1 | OK |
 | CCTV-6 | 2 | 2 | OK |
 | CCTV-7 | 1 | 1 | OK |
-| CCTV-8 | 4 | 4 | OK |
+| CCTV-8 | 3 | 3 | OK |
 | CCTV-9 | 2 | 2 | OK |
 | CCTV-10 | 1 | 1 | OK |
 | CCTV-11 | 1 | 1 | OK |
 | CCTV-12 | 1 | 1 | OK |
 | CCTV-13 | 1 | 1 | OK |
 | CCTV-14 | 2 | 2 | OK |
-| CCTV-15 | 3 | 3 | OK |
+| CCTV-15 | 2 | 2 | OK |
 | CCTV-16 | 2 | 2 | OK |
 | CCTV-17 | 2 | 2 | OK |
 | CCTV-5+ | 0 | 0 | MISSING |
@@ -39,12 +39,12 @@ Fail on missing important satellite: False
 | 河北卫视 | 0 | 0 | MISSING |
 | 河南卫视 | 0 | 0 | MISSING |
 | 北京卫视 | 1 | 1 | OK |
-| 东方卫视 | 3 | 3 | OK |
+| 东方卫视 | 4 | 4 | OK |
 | 浙江卫视 | 2 | 2 | OK |
-| 江苏卫视 | 2 | 2 | OK |
+| 江苏卫视 | 1 | 1 | OK |
 | 湖南卫视 | 2 | 2 | OK |
 | 广东卫视 | 1 | 1 | OK |
-| 深圳卫视 | 2 | 2 | OK |
+| 深圳卫视 | 1 | 1 | OK |
 | 天津卫视 | 1 | 1 | OK |
 | 山西卫视 | 1 | 1 | OK |
 | 内蒙古卫视 | 1 | 1 | OK |
@@ -66,7 +66,7 @@ Fail on missing important satellite: False
 | 甘肃卫视 | 0 | 0 | MISSING |
 | 青海卫视 | 0 | 0 | MISSING |
 | 宁夏卫视 | 0 | 0 | MISSING |
-| 新疆卫视 | 1 | 1 | OK |
+| 新疆卫视 | 2 | 2 | OK |
 | 兵团卫视 | 0 | 0 | MISSING |
 | 厦门卫视 | 0 | 0 | MISSING |
 
