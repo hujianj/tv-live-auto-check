@@ -18,7 +18,7 @@ Fail on missing important satellite: False
 | CCTV-4 | 0 | 0 | MISSING |
 | CCTV-5 | 1 | 1 | OK |
 | CCTV-6 | 2 | 2 | OK |
-| CCTV-7 | 1 | 1 | OK |
+| CCTV-7 | 2 | 2 | OK |
 | CCTV-8 | 3 | 3 | OK |
 | CCTV-9 | 2 | 2 | OK |
 | CCTV-10 | 1 | 1 | OK |
@@ -26,7 +26,7 @@ Fail on missing important satellite: False
 | CCTV-12 | 1 | 1 | OK |
 | CCTV-13 | 1 | 1 | OK |
 | CCTV-14 | 2 | 2 | OK |
-| CCTV-15 | 2 | 2 | OK |
+| CCTV-15 | 3 | 3 | OK |
 | CCTV-16 | 2 | 2 | OK |
 | CCTV-17 | 2 | 2 | OK |
 | CCTV-5+ | 0 | 0 | MISSING |
