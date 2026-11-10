@@ -1,0 +1,87 @@
+name: Collect unverified Chinese TV subscription
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 05:40 and 17:40 Beijing time; independent of media-check success.
+    - cron: "40 9,21 * * *"
+  push:
+    branches: [main]
+    paths:
+      - "scripts/unverified/**"
+      - "config/*.json"
+      - ".github/workflows/unverified.yml"
+  pull_request:
+    paths:
+      - "scripts/unverified/**"
+      - "config/*.json"
+      - ".github/workflows/unverified.yml"
+
+permissions:
+  contents: read
+
+# Serialize writers with the existing checked-subscription workflow. The
+# checkout below reads current main after acquiring this shared slot.
+concurrency:
+  group: iptv-autocheck-update-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.sha || 'main' }}
+          persist-credentials: ${{ github.event_name != 'pull_request' }}
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
+        with:
+          python-version: "3.12"
+      - name: Offline candidate-export regressions (no decoder required)
+        run: python -m unittest discover -s scripts/unverified -p 'test_*.py' -v
+      - name: Fetch playlist documents and export every eligible Chinese address
+        if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+        run: |
+          echo "SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
+          python scripts/unverified/build.py
+      - name: Commit only changed unverified subscription files
+        id: publish
+        if: ${{ github.event_name != 'pull_request' && github.ref == 'refs/heads/main' }}
+        run: |
+          set -euo pipefail
+          git add -- chinese-unverified.txt chinese-unverified.m3u chinese-unverified-report.json
+          if git diff --cached --quiet; then
+            echo "No snapshot changes."
+            exit 0
+          fi
+          git fetch origin main
+          if [ "$(git rev-parse origin/main)" != "$SOURCE_SHA" ]; then
+            echo "main advanced; preserving remote changes and refusing a stale publication."
+            exit 1
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: refresh unverified Chinese TV candidates"
+          git push origin HEAD:main
+      - name: Verify fixed non-GitHub subscription downloads and exact bytes
+        if: ${{ steps.publish.outcome == 'success' }}
+        run: python scripts/unverified/build.py --check-endpoint --repo "${{ github.repository }}"
+      - name: Save candidate and distribution evidence
+        if: ${{ always() && github.event_name != 'pull_request' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: unverified-chinese-${{ github.run_id }}
+          retention-days: 14
+          if-no-files-found: warn
+          path: |
+            output/unverified/
+            chinese-unverified-report.json
+      - name: Show snapshot summary
+        if: ${{ always() && github.event_name != 'pull_request' }}
+        run: |
+          if [ -f output/unverified/run-report.json ]; then
+            python -c "import json; d=json.load(open('output/unverified/run-report.json')); print('Unverified Chinese TV: %s channels / %s addresses. Media requests: 0. Actual playback is for manual TV testing.' % (d['channels'], d['addresses']))" >> "$GITHUB_STEP_SUMMARY"
+          fi

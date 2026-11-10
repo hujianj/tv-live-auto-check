@@ -1,0 +1,343 @@
+{
+  "schema_version": 1,
+  "playback_verified": false,
+  "media_requests": 0,
+  "snapshot_generated_utc": "2026-11-10T08:09:59.269482+00:00",
+  "scope": "configured publication-allowed domestic Chinese TV candidates; includes retained upstream snapshots",
+  "channels": 463,
+  "addresses": 670,
+  "unique_urls": 653,
+  "groups": {
+    "央视频道": {
+      "channels": 22,
+      "addresses": 69
+    },
+    "卫视频道": {
+      "channels": 37,
+      "addresses": 99
+    },
+    "地方频道": {
+      "channels": 246,
+      "addresses": 331
+    },
+    "影视剧场": {
+      "channels": 81,
+      "addresses": 83
+    },
+    "少儿动漫": {
+      "channels": 5,
+      "addresses": 6
+    },
+    "体育纪实": {
+      "channels": 27,
+      "addresses": 33
+    },
+    "音乐综艺": {
+      "channels": 26,
+      "addresses": 27
+    },
+    "生活休闲": {
+      "channels": 4,
+      "addresses": 4
+    },
+    "综合娱乐": {
+      "channels": 11,
+      "addresses": 14
+    },
+    "港澳台频道": {
+      "channels": 4,
+      "addresses": 4
+    }
+  },
+  "files": {
+    "chinese-unverified.txt": {
+      "bytes": 53376,
+      "sha256": "18dc2abe4fd13b48a88f8025ffd0e5d1480ce23008ec7e81a7bfab32f245df26"
+    },
+    "chinese-unverified.m3u": {
+      "bytes": 147317,
+      "sha256": "5d46189f8299a901a99e26d888860272724a11df0e02447744d270debe602214"
+    }
+  },
+  "sources": {
+    "bigbiggrandg_gather": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "7b0566bb3000810e5116c45180d2867f13e50dc748375888bc1ad656734d8aed"
+    },
+    "burningc4_ipv4": {
+      "state": "fetched",
+      "parsed": 58,
+      "transport": "github_public_contents_api",
+      "config_sha256": "973ff47af10fdc538def93dfb08bf787bef703c9cda85b85d9ca7a34bcb9ebfb",
+      "selected": 58,
+      "excluded": {}
+    },
+    "epg_cn": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "d9690531019e3adbe8c50f191c08d31c673e67b1bc01cbe09a9a80f5ee1bc9b8"
+    },
+    "epg_hk": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "a882004c2efb036931597ad89c1efe2d9c3ee3d1316f27e3f028c07bd02c29a8"
+    },
+    "epg_mo": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "87c9427efa38890f727680cbea732250025aa4d9584f3d7fb6519708580fdc80"
+    },
+    "epg_my": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "e176c16dd87491ab65c39f0dc0a7e3aa9b11af8052773245c2215187460bb04a"
+    },
+    "epg_sg": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "5f14304aa5832a68404914dfaf0dcdaa3e4baef1f9920845050160d1d358e35a"
+    },
+    "epg_tw": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "686c44c0f5068fd7d590ce458aecb12b3313693e6189666e828086cb47ebd3b1"
+    },
+    "fanmingming_ipv6_mirror": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "4e03ea325975a21b261f892d16b027ba8689b8a2bd9145aaff630d7b18a48aeb"
+    },
+    "fanmingming_ipv6_raw": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "030bc77f8e3c4b3e2963928a800e6ab87ec36a3686585fccabad35ba160525a1"
+    },
+    "free_tv_world": {
+      "state": "fetched",
+      "parsed": 2188,
+      "transport": "github_public_contents_api",
+      "config_sha256": "cd5478da17550de4babb2e6aa962be4661312a9f212c35dd426ae8768d34889b",
+      "selected": 22,
+      "excluded": {
+        "foreign_channel_origin": 1862,
+        "webpage_not_direct_stream": 129,
+        "foreign_cgtn_stream": 7,
+        "foreign_or_non_chinese_channel": 107,
+        "chinese_channel_identity_unconfirmed": 61
+      }
+    },
+    "freetv_douyu": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "bde276ca6fb792058385a2bbecf5edc5e40d3bbb5f7e4679d030de2184f5e952"
+    },
+    "freetv_huya": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "111e67d1c051e25ea4505f943aebb134d88df7f11b9fdb7d65f5f62ac3c2ff5b"
+    },
+    "gitee_dsy": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "4429f387e66b3fc5053338633e398a599c02930ba86ccb6d25717fc334ec2ed5"
+    },
+    "guovin_all": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "526a9d3769278ad0be91dfdea34482a0ecad0583f599422585e000d2fbb6ef54"
+    },
+    "guovin_ipv4": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "e38bf964eda3c571e00b589305839daf7eecd14803f231f9b96fb3555d50a97c"
+    },
+    "guovin_ipv6": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "46d6f7f42a31bd81041e373b2a99a90e5b4ac001c43c1a2483d668cf19f7c34c"
+    },
+    "iptv_org_all": {
+      "state": "fetched",
+      "parsed": 10644,
+      "transport": "direct",
+      "config_sha256": "b5e3bbd2b068c0f7936543731c875153085eb9b8ff0086e296ec367e7e2eb0cd",
+      "selected": 51,
+      "excluded": {
+        "foreign_channel_origin": 10446,
+        "chinese_channel_identity_unconfirmed": 134,
+        "foreign_or_non_chinese_channel": 6,
+        "foreign_cgtn_stream": 7
+      }
+    },
+    "iptv_org_cn": {
+      "state": "fetched",
+      "parsed": 132,
+      "transport": "direct",
+      "config_sha256": "459eb014a21f342a45dc5b521830b93390c0d30ab1ddb3d554ad8f1caa2b20b6",
+      "selected": 50,
+      "excluded": {
+        "foreign_channel_origin": 3,
+        "chinese_channel_identity_unconfirmed": 75,
+        "foreign_or_non_chinese_channel": 4
+      }
+    },
+    "iptv_org_tw": {
+      "state": "fetched",
+      "parsed": 33,
+      "transport": "direct",
+      "config_sha256": "951716e61f26231622fd95911fa1ecca9575558122211177781d640ed76552bc",
+      "selected": 1,
+      "excluded": {
+        "foreign_channel_origin": 5,
+        "chinese_channel_identity_unconfirmed": 27
+      }
+    },
+    "iyouhun_zb": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "8c08c2c686d260084fbeffbf188270aaff84372c654cc908aa824c2af27a85e9"
+    },
+    "jacktv_oversea": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "f2dd08875f6083a6d74d1ca17509eba1bf16056b413586fd43b3c2c81c9dbe1c"
+    },
+    "kimentanm_aptv": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "restricted",
+      "config_sha256": "66ac62ac2bffcc4b885657d632d3a75caa1a12c8c86da4a45253665e5ab8817a"
+    },
+    "migu_interface": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "796a02d5617f9e47009d6190294f8e8203d2fa62465bc0b4128b2c3142ff304d"
+    },
+    "mursor_bililive": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "347d4a92e201bae9431f0121232e8ea513f383f680174e648f519c2ffb76e97b"
+    },
+    "mursor_yy": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "9f2be362b1d7804cdf6b63f4adc922cba082f792d014b941edb41e00d1865574"
+    },
+    "oktv_comprehensive_php": {
+      "state": "fetched",
+      "parsed": 188,
+      "transport": "direct",
+      "config_sha256": "bca7a4d3ae3eff169d0c96ba11283e528a3113cb4305ab82eeb6be2a45bbdd56",
+      "selected": 31,
+      "excluded": {
+        "outside user-requested exact public URL selection": 157
+      }
+    },
+    "pizazz_ai_m3u": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "bc86b7d12831f9b18f00ee9ced3ae3bc1a39dc07ff4873fd88825464a4759f18"
+    },
+    "pizazz_ai_txt": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "8f3e607cf955fc95ba85f33af16485263c5ce11574cefa39d759f4c9209143cc"
+    },
+    "qist_catalog": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "restricted",
+      "config_sha256": "4c8b309f54c0a2d5b113ec3a332d9fcd26bcca1ceacfde9d8af331e6939a712f"
+    },
+    "suxuang_ipv4": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "restricted",
+      "config_sha256": "f0264293ed827de72d4734808883ab9bfa74309dfbf8c1bd55d7419807bae3e5"
+    },
+    "suxuang_ipv6": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "restricted",
+      "config_sha256": "1d20f53d05d3dea2d8a20a8cced2b16dee3a2a1453315502b133e61e7fdc8bb9"
+    },
+    "tomorrow_catalog": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "7a4431a7ca060543376965d254e4a3e1b857d6b6f80ca2afdf758224aa2a2c30"
+    },
+    "tvapp_catalog": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "e8eb24d3ecb9141b4de34a9b382985606322b5a0aa2e2904e8e9d86d3125af1b"
+    },
+    "utako_jp": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "acc4f421323b5909fc38755d099ee08e812cb6d009691ae81a4f35c7e1140ee5"
+    },
+    "vamoschuck_m3u": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "bcdc424a0f060ab932e66b8b1964b3de0dea4b023b7d1f60f67388c7babbb954"
+    },
+    "yang_gather": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "67846dc88e742b3a8b559dae68656fe1b317146b567fd6d666c25dd71d4151f0"
+    },
+    "yingshitv_catalog": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "c294cc5163a5466edc9b20690f1ea48e9509578faf633c0324531f0a6dc33a92"
+    },
+    "yuechan_live": {
+      "state": "not_enabled_for_publication",
+      "rights_status": "pending",
+      "config_sha256": "7c63e984ca1fd9f1c045a1b14faf39e757b5ec0d64db079f1d05ead07910561c"
+    },
+    "zbds_iptv4_m3u": {
+      "state": "fetched",
+      "parsed": 420,
+      "transport": "direct",
+      "config_sha256": "9f52df58b82765518e2ebefa257e9d61ac849a48e67ce11f34ab7dfd428e5ac2",
+      "selected": 411,
+      "excluded": {
+        "foreign_cgtn_stream": 5,
+        "foreign_or_non_chinese_channel": 3,
+        "chinese_channel_identity_unconfirmed": 1
+      }
+    },
+    "zbds_iptv4_txt": {
+      "state": "fetched",
+      "parsed": 545,
+      "transport": "direct",
+      "config_sha256": "a803d8363693fa6fdf7de9ef2db036c22c8b57d5b28da1cd087bcdf0097cc7d7",
+      "selected": 533,
+      "excluded": {
+        "foreign_cgtn_stream": 7,
+        "foreign_or_non_chinese_channel": 3,
+        "chinese_channel_identity_unconfirmed": 2
+      }
+    },
+    "zbds_iptv6_m3u": {
+      "state": "fetched",
+      "parsed": 1,
+      "transport": "direct",
+      "retained_previous_rows": 0,
+      "config_sha256": "e86e31dcf13fd463478ad1564b1fdd714e9a64f9bf5c004434ab025a4bc18f1f",
+      "selected": 0,
+      "excluded": {
+        "chinese_channel_identity_unconfirmed": 1
+      }
+    },
+    "zbds_iptv6_txt": {
+      "state": "fetched",
+      "parsed": 2,
+      "transport": "direct",
+      "retained_previous_rows": 0,
+      "config_sha256": "c41110ab9594037b3f9daad915b345510d5a8f9230d45cb76bb33d4fe0af9521",
+      "selected": 0,
+      "excluded": {
+        "chinese_channel_identity_unconfirmed": 2
+      }
+    }
+  }
+}

@@ -27,6 +27,30 @@
 
 ## 推荐订阅地址
 
+### 中文频道全量候选订阅（不验证播放，供电视自行试播）
+
+2026-11-10 新增独立订阅，酷9「列表订阅」可填写：
+
+```text
+https://gh-proxy.com/raw.githubusercontent.com/hujianj/tv-live-auto-check/main/chinese-unverified.txt
+```
+
+通用 M3U：
+
+```text
+https://gh-proxy.com/raw.githubusercontent.com/hujianj/tv-live-auto-check/main/chinese-unverified.m3u
+```
+
+实际访问域名是 `gh-proxy.com`；路径中的 `raw.githubusercontent.com` 是代理转发目标，电视不需要直连 GitHub。新列表与下面的已检测/家用完整订阅独立，所有线路均标为未验证。
+
+- 全量范围：`config/sources.json` 中已启用且允许发布的来源所提供的国内中文频道，包括明确中文的港澳台频道。不是全网穷尽目录；来源许可待确认、国外/外语、广播、私网、敏感参数与鉴权依赖仍依照现有规则排除。静态排除 YouTube 网页链接（非普通播放器直接流）及误标为央视中文的 CGTN 流，不做播放探测。
+- 只获取上游**列表文档**，不请求频道媒体地址，不做 DNS/TCP 媒体检测、分片检测、解码、测速或历史稳定性筛选。保留全部不同地址，不设每台线路配额；上游 `Not 24/7` 标记也不作为淘汰理由。标记 `unverified` 不代表检测通过。
+- 分类与现有规则一致：央视、卫视、地方、影视剧场、少儿动漫、体育纪实、音乐综艺、生活休闲、综合娱乐、港澳台。空分类不输出；央视按数字排序，来源仍优先 `zbds_iptv4_txt`，同台多行供播放器合并/切换。
+- 工作流 `Collect unverified Chinese TV subscription` 每天北京时间 **05:40、17:40** 计划运行，可手动触发；不依赖严格检测流程成功。与原维护工作流共用写入锁，只提交有变化的三个独立文件，发布后校验固定代理地址返回字节。GitHub 调度可能延迟。
+- 单个上游失败/空结果时，保留该来源之前已采集的候选；来源配置或许可变化后重新评估，不跨配置沿用。没有任何候选时停止并保留旧文件。可能含失效地址，这是本订阅供电视自行验证的用途。
+- `chinese-unverified-report.json` 记录来源状态、分类数量、线路数、快照时间与文件哈希；每次执行的检查时间和下载证据保存在 Actions artifact 14 天。不向严格可播放数量和稳定历史写入任何成功记录。
+- 本地生成：`python scripts/unverified/build.py`；回归测试：`python -m unittest discover -s scripts/unverified -p 'test_*.py' -v`；仅检查订阅下载：`python scripts/unverified/build.py --check-endpoint`。这些命令无需安装解码器，也不验证节目播放。
+
 ### 2026-10-29 按可播放保留全部线路与重点频道待复核
 
 - 当前 `config/quality.json` 使用 `playback_selection.mode: availability`。严格清单保留全部通过本轮视频解码和直播有效性检测的国内中文线路，完整目录不再按每台 4/5/6 条裁减。
