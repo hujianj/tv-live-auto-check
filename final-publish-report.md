@@ -2,34 +2,34 @@
 
 This report describes the final playlist after curation and after the second full published-URL recheck.
 
-Rows: 270
-Unique channel names: 227
-Unique URLs: 270
-Failed unique URLs after slow retry: 130
-Slow retry attempted unique URLs: 137
-Slow retry recovered unique URLs: 7
-Refilled rows from checked candidate pool: 26
-Unresolved refill rows: 147
+Rows: 277
+Unique channel names: 231
+Unique URLs: 277
+Failed unique URLs after slow retry: 149
+Slow retry attempted unique URLs: 157
+Slow retry recovered unique URLs: 8
+Refilled rows from checked candidate pool: 10
+Unresolved refill rows: 158
 Core live-progress check required: True
 Broadcast live-progress check required: True
 Live-progress groups: 卫视频道, 地方频道, 央视频道
-Final recheck elapsed: 548.7s
+Final recheck elapsed: 713.4s
 Source map available: True
-Stability tracked URLs after pending observation: 553
-Pending stability OK/fail updates: 270/147
+Stability tracked URLs after pending observation: 554
+Pending stability OK/fail updates: 277/158
 Strict quality filter dropped rows before recheck: 0
 Channel limit trimmed rows before recheck: 0
 Group limit trimmed rows before recheck: 0
-Family compact playlist: 265 rows / 227 names / 265 URLs
+Family compact playlist: 272 rows / 231 names / 272 URLs
 
 ## Groups
 
 | Group | Rows |
 |---|---:|
-| 央视频道 | 31 |
+| 央视频道 | 30 |
 | 卫视频道 | 28 |
-| 地方频道 | 124 |
-| 影视剧场 | 61 |
+| 地方频道 | 129 |
+| 影视剧场 | 64 |
 | 少儿动漫 | 2 |
 | 体育纪实 | 18 |
 | 音乐综艺 | 2 |
@@ -39,16 +39,16 @@ Family compact playlist: 265 rows / 227 names / 265 URLs
 
 - TXT files: ku9-family.txt, live-family.txt
 - M3U file: family.m3u
-- Rows: 265
-- Unique names: 227
-- Unique URLs: 265
+- Rows: 272
+- Unique names: 231
+- Unique URLs: 272
 
 | Group | Rows |
 |---|---:|
-| 央视频道 | 31 |
+| 央视频道 | 30 |
 | 卫视频道 | 28 |
-| 地方频道 | 121 |
-| 影视剧场 | 61 |
+| 地方频道 | 126 |
+| 影视剧场 | 64 |
 | 少儿动漫 | 2 |
 | 体育纪实 | 16 |
 | 音乐综艺 | 2 |
@@ -58,8 +58,8 @@ Family compact playlist: 265 rows / 227 names / 265 URLs
 
 | Source | Rows |
 |---|---:|
-| zbds_iptv4_txt | 232 |
-| oktv_comprehensive_php | 20 |
+| zbds_iptv4_txt | 240 |
+| oktv_comprehensive_php | 19 |
 | iptv_org_cn | 11 |
 | free_tv_world | 7 |
 
@@ -67,7 +67,7 @@ Family compact playlist: 265 rows / 227 names / 265 URLs
 
 ### 央视频道
 - iptv_org_cn: 11
-- oktv_comprehensive_php: 10
+- oktv_comprehensive_php: 9
 - free_tv_world: 6
 - zbds_iptv4_txt: 4
 
@@ -76,11 +76,11 @@ Family compact playlist: 265 rows / 227 names / 265 URLs
 - oktv_comprehensive_php: 10
 
 ### 地方频道
-- zbds_iptv4_txt: 123
+- zbds_iptv4_txt: 128
 - free_tv_world: 1
 
 ### 影视剧场
-- zbds_iptv4_txt: 61
+- zbds_iptv4_txt: 64
 
 ### 少儿动漫
 - zbds_iptv4_txt: 2
@@ -108,7 +108,6 @@ Family compact playlist: 265 rows / 227 names / 265 URLs
 - 央视频道 / CCTV-6 / free_tv_world / http://69.30.245.50/live/cctv6.m3u8
 - 央视频道 / CCTV-6 / oktv_comprehensive_php / http://173.208.212.130:8181/720p/cctv6.m3u8
 - 央视频道 / CCTV-7 / iptv_org_cn / http://74.91.26.218:82/live/cctv7hd.m3u8
-- 央视频道 / CCTV-7 / oktv_comprehensive_php / http://173.208.212.130:8181/720p/cctv7.m3u8
 - 央视频道 / CCTV-8 / zbds_iptv4_txt / http://gmxw.7766.org:808/hls/96/index.m3u8
 - 央视频道 / CCTV-8 / iptv_org_cn / http://74.91.26.218:82/live/cctv8hd.m3u8
 - 央视频道 / CCTV-8 / oktv_comprehensive_php / http://173.208.212.130:8181/720p/cctv8.m3u8
@@ -156,6 +155,7 @@ Family compact playlist: 265 rows / 227 names / 265 URLs
 - 卫视频道 / 新疆卫视 / zbds_iptv4_txt / http://218.84.12.186:8001/hls/main/playlist.m3u8?zxinjd
 - 卫视频道 / 江西卫视 / zbds_iptv4_txt / http://112.27.5.218:9901/tsfile/live/faacts/0138_1.m3u8?key=txiptv&playlive=1&authid=0
 - 地方频道 / FZTV-1News新闻综合频道 / free_tv_world / http://live.zohi.tv/video/s10001-fztv-1/index.m3u8
+- 地方频道 / 七台河新闻综合 / zbds_iptv4_txt / http://live.qthnews.org.cn:1935/live/live1/800k/tzwj_video.m3u8
 - 地方频道 / 万荣综合 / zbds_iptv4_txt / http://60.222.246.220:19433/hls1.m3u8
 - 地方频道 / 上虞文化影院 / zbds_iptv4_txt / http://l.cztvcloud.com/channels/lantian/SXshangyu2/720p.m3u8
 - 地方频道 / 上虞新商都 / zbds_iptv4_txt / http://l.cztvcloud.com/channels/lantian/SXshangyu3/720p.m3u8
@@ -164,6 +164,7 @@ Family compact playlist: 265 rows / 227 names / 265 URLs
 - 地方频道 / 乐至综合 / zbds_iptv4_txt / http://175.155.106.72:89/live1/live1.m3u8?zsicd
 - 地方频道 / 九台综合 / zbds_iptv4_txt / http://stream10.jlntv.cn/jiutaitv/sd/live.m3u8
 - 地方频道 / 云和新闻综合 / zbds_iptv4_txt / http://l.cztvcloud.com/channels/lantian/SXyunhe1/720p.m3u8
+- 地方频道 / 云和新闻综合 / zbds_iptv4_txt / http://l.cztvcloud.com/channels/lantian/SXyunhe1/720p.m3u8?zzhed
 - 地方频道 / 云霄综合 / zbds_iptv4_txt / http://live.zzyxxw.com:85/live/xwzh.m3u8
 - 地方频道 / 云霄综合 / zbds_iptv4_txt / http://live.zzyxxw.com:85/live/xwzh.m3u8?fujian
 - 地方频道 / 井研综合 / zbds_iptv4_txt / http://tvfile.jyrmt.cn/nmip-media/channellive/channel104452/playlist.m3u8
@@ -175,14 +176,13 @@ Family compact playlist: 265 rows / 227 names / 265 URLs
 - 地方频道 / 伊犁经济法制 / zbds_iptv4_txt / http://110.153.180.106:55555/out_4/index.m3u8
 - 地方频道 / 伊犁经济法制 / zbds_iptv4_txt / http://110.153.180.106:55555/out_4/index.m3u8?zxinjd
 - 地方频道 / 伊犁维吾尔 / zbds_iptv4_txt / http://110.153.180.106:55555/out_2/index.m3u8
-- 地方频道 / 伊犁维吾尔 / zbds_iptv4_txt / http://110.153.180.106:55555/out_2/index.m3u8?zxinjd
 
 ## Playback and backup evidence
 
-- Single-line channels: 192
-- Channels with distinct-host backups: 18
-- Line-count distribution: {'1': 192, '2': 29, '3': 4, '4': 2}
-- Media measurement types: {'partial_segment_estimate': 128, 'complete_segment': 70, 'unmeasured': 72}
+- Single-line channels: 193
+- Channels with distinct-host backups: 17
+- Line-count distribution: {'1': 193, '2': 32, '3': 4, '4': 2}
+- Media measurement types: {'partial_segment_estimate': 154, 'complete_segment': 42, 'unmeasured': 81}
 - Selection mode: availability. Availability mode keeps all verified URLs and ignores runner/local speed; configured source/history preference and independent hosts determine order.
 - Temporary local priority: {'active': False, 'observed_urls': 0, 'published_urls_covered': 0, 'generated_at_utc': '2026-10-29T08:16:23.521454+00:00', 'expires_at_utc': '2026-10-31T08:16:23.521454Z', 'scope': 'current local computer; not television', 'stale_reason': 'expires_at_utc reached'}
 - Partial-segment estimates are not full-segment or prolonged TV playback tests. Failed lines are never retained as backups.
