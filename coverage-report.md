@@ -44,7 +44,7 @@ Fail on missing important satellite: False
 | 江苏卫视 | 1 | 1 | OK |
 | 湖南卫视 | 2 | 2 | OK |
 | 广东卫视 | 1 | 1 | OK |
-| 深圳卫视 | 1 | 1 | OK |
+| 深圳卫视 | 2 | 2 | OK |
 | 天津卫视 | 1 | 1 | OK |
 | 山西卫视 | 1 | 1 | OK |
 | 内蒙古卫视 | 1 | 1 | OK |
