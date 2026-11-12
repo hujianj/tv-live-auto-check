@@ -2,25 +2,25 @@
 
 This report describes the final playlist after curation and after the second full published-URL recheck.
 
-Rows: 283
-Unique channel names: 237
-Unique URLs: 283
-Failed unique URLs after slow retry: 157
-Slow retry attempted unique URLs: 184
-Slow retry recovered unique URLs: 27
-Refilled rows from checked candidate pool: 6
-Unresolved refill rows: 161
+Rows: 279
+Unique channel names: 234
+Unique URLs: 279
+Failed unique URLs after slow retry: 159
+Slow retry attempted unique URLs: 181
+Slow retry recovered unique URLs: 22
+Refilled rows from checked candidate pool: 7
+Unresolved refill rows: 163
 Core live-progress check required: True
 Broadcast live-progress check required: True
 Live-progress groups: 卫视频道, 地方频道, 央视频道
-Final recheck elapsed: 716.2s
+Final recheck elapsed: 753.0s
 Source map available: True
-Stability tracked URLs after pending observation: 555
-Pending stability OK/fail updates: 283/161
+Stability tracked URLs after pending observation: 557
+Pending stability OK/fail updates: 279/163
 Strict quality filter dropped rows before recheck: 0
 Channel limit trimmed rows before recheck: 0
 Group limit trimmed rows before recheck: 0
-Family compact playlist: 277 rows / 237 names / 277 URLs
+Family compact playlist: 274 rows / 234 names / 274 URLs
 
 ## Groups
 
@@ -28,9 +28,9 @@ Family compact playlist: 277 rows / 237 names / 277 URLs
 |---|---:|
 | 央视频道 | 30 |
 | 卫视频道 | 27 |
-| 地方频道 | 134 |
+| 地方频道 | 131 |
 | 影视剧场 | 65 |
-| 少儿动漫 | 3 |
+| 少儿动漫 | 2 |
 | 体育纪实 | 18 |
 | 音乐综艺 | 2 |
 | 综合娱乐 | 4 |
@@ -39,17 +39,17 @@ Family compact playlist: 277 rows / 237 names / 277 URLs
 
 - TXT files: ku9-family.txt, live-family.txt
 - M3U file: family.m3u
-- Rows: 277
-- Unique names: 237
-- Unique URLs: 277
+- Rows: 274
+- Unique names: 234
+- Unique URLs: 274
 
 | Group | Rows |
 |---|---:|
 | 央视频道 | 30 |
 | 卫视频道 | 27 |
-| 地方频道 | 130 |
+| 地方频道 | 128 |
 | 影视剧场 | 65 |
-| 少儿动漫 | 3 |
+| 少儿动漫 | 2 |
 | 体育纪实 | 16 |
 | 音乐综艺 | 2 |
 | 综合娱乐 | 4 |
@@ -58,7 +58,7 @@ Family compact playlist: 277 rows / 237 names / 277 URLs
 
 | Source | Rows |
 |---|---:|
-| zbds_iptv4_txt | 246 |
+| zbds_iptv4_txt | 242 |
 | oktv_comprehensive_php | 19 |
 | iptv_org_cn | 11 |
 | free_tv_world | 7 |
@@ -76,14 +76,14 @@ Family compact playlist: 277 rows / 237 names / 277 URLs
 - oktv_comprehensive_php: 10
 
 ### 地方频道
-- zbds_iptv4_txt: 133
+- zbds_iptv4_txt: 130
 - free_tv_world: 1
 
 ### 影视剧场
 - zbds_iptv4_txt: 65
 
 ### 少儿动漫
-- zbds_iptv4_txt: 3
+- zbds_iptv4_txt: 2
 
 ### 体育纪实
 - zbds_iptv4_txt: 18
@@ -163,9 +163,9 @@ Family compact playlist: 277 rows / 237 names / 277 URLs
 - 地方频道 / 乐至综合 / zbds_iptv4_txt / http://175.155.106.72:89/live1/live1.m3u8?zsicd
 - 地方频道 / 九台综合 / zbds_iptv4_txt / http://stream10.jlntv.cn/jiutaitv/sd/live.m3u8
 - 地方频道 / 云和新闻综合 / zbds_iptv4_txt / http://l.cztvcloud.com/channels/lantian/SXyunhe1/720p.m3u8?zzhed
+- 地方频道 / 云和新闻综合 / zbds_iptv4_txt / http://l.cztvcloud.com/channels/lantian/SXyunhe1/720p.m3u8
 - 地方频道 / 云霄综合 / zbds_iptv4_txt / http://live.zzyxxw.com:85/live/xwzh.m3u8
 - 地方频道 / 云霄综合 / zbds_iptv4_txt / http://live.zzyxxw.com:85/live/xwzh.m3u8?fujian
-- 地方频道 / 云霄综合 / zbds_iptv4_txt / https://live.zzyxxw.com:2443/live/xwzh.m3u8
 - 地方频道 / 井研综合 / zbds_iptv4_txt / http://tvfile.jyrmt.cn/nmip-media/channellive/channel104452/playlist.m3u8
 - 地方频道 / 亳州农村 / zbds_iptv4_txt / http://zbbf2.ahbztv.com/live/418.m3u8
 - 地方频道 / 亳州农村 / zbds_iptv4_txt / http://zbbf2.ahbztv.com/live/418.m3u8?zanhd
@@ -179,10 +179,10 @@ Family compact playlist: 277 rows / 237 names / 277 URLs
 
 ## Playback and backup evidence
 
-- Single-line channels: 200
+- Single-line channels: 197
 - Channels with distinct-host backups: 16
-- Line-count distribution: {'1': 200, '2': 30, '3': 5, '4': 2}
-- Media measurement types: {'partial_segment_estimate': 152, 'complete_segment': 49, 'unmeasured': 82}
+- Line-count distribution: {'1': 197, '2': 31, '3': 4, '4': 2}
+- Media measurement types: {'partial_segment_estimate': 156, 'complete_segment': 44, 'unmeasured': 79}
 - Selection mode: availability. Availability mode keeps all verified URLs and ignores runner/local speed; configured source/history preference and independent hosts determine order.
 - Temporary local priority: {'active': False, 'observed_urls': 0, 'published_urls_covered': 0, 'generated_at_utc': '2026-10-29T08:16:23.521454+00:00', 'expires_at_utc': '2026-10-31T08:16:23.521454Z', 'scope': 'current local computer; not television', 'stale_reason': 'expires_at_utc reached'}
 - Partial-segment estimates are not full-segment or prolonged TV playback tests. Failed lines are never retained as backups.

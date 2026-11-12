@@ -1,17 +1,17 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 283
-Unique channel names: 237
-Unique canonical channel identities: 237
-Unique URLs: 283
+Rows: 279
+Unique channel names: 234
+Unique canonical channel identities: 234
+Unique URLs: 279
 Strict filter residue count: 0
 Latin/noise-like review count: 0
 Channel unique URL limit violations: 0
 URL identity conflicts: 0
-Unique stream hosts: 80
-Top stream host share: 23.3%
-Top five stream host share: 48.4%
+Unique stream hosts: 79
+Top stream host share: 23.7%
+Top five stream host share: 48.7%
 
 ## Core CCTV quality
 
@@ -84,22 +84,22 @@ Minimum important satellite independent URLs: 1
 
 | Host | Rows | Share |
 |---|---:|---:|
-| live.metshop.top | 66 | 23.3% |
-| l.cztvcloud.com | 28 | 9.9% |
-| 173.208.212.130 | 19 | 6.7% |
-| 74.91.26.218 | 14 | 4.9% |
-| stream5.jlntv.cn | 10 | 3.5% |
-| jwcdnqx.hebyun.com.cn | 8 | 2.8% |
-| stream.hrbtv.net | 8 | 2.8% |
-| stream8.jlntv.cn | 8 | 2.8% |
-| 110.153.180.106 | 6 | 2.1% |
-| play.kankanlive.com | 6 | 2.1% |
+| live.metshop.top | 66 | 23.7% |
+| l.cztvcloud.com | 27 | 9.7% |
+| 173.208.212.130 | 19 | 6.8% |
+| 74.91.26.218 | 14 | 5.0% |
+| stream5.jlntv.cn | 10 | 3.6% |
+| jwcdnqx.hebyun.com.cn | 8 | 2.9% |
+| stream8.jlntv.cn | 8 | 2.9% |
+| stream.hrbtv.net | 7 | 2.5% |
+| 110.153.180.106 | 6 | 2.2% |
+| play.kankanlive.com | 6 | 2.2% |
 
 ## Family playlist audit
 
 Status: ok
-Rows: 277
-Unique URLs: 277
+Rows: 274
+Unique URLs: 274
 
 ## Warnings
 
