@@ -1,17 +1,17 @@
 # Final playlist quality audit
 
 Status: ok
-Rows: 289
-Unique channel names: 242
-Unique canonical channel identities: 242
-Unique URLs: 289
+Rows: 268
+Unique channel names: 224
+Unique canonical channel identities: 224
+Unique URLs: 268
 Strict filter residue count: 0
 Latin/noise-like review count: 0
 Channel unique URL limit violations: 0
 URL identity conflicts: 0
-Unique stream hosts: 81
-Top stream host share: 22.8%
-Top five stream host share: 47.8%
+Unique stream hosts: 80
+Top stream host share: 24.6%
+Top five stream host share: 44.4%
 
 ## Core CCTV quality
 
@@ -84,22 +84,22 @@ Minimum important satellite independent URLs: 1
 
 | Host | Rows | Share |
 |---|---:|---:|
-| live.metshop.top | 66 | 22.8% |
-| l.cztvcloud.com | 29 | 10.0% |
-| 173.208.212.130 | 19 | 6.6% |
-| 74.91.26.218 | 14 | 4.8% |
-| jwcdnqx.hebyun.com.cn | 10 | 3.5% |
-| stream5.jlntv.cn | 10 | 3.5% |
-| stream.hrbtv.net | 8 | 2.8% |
-| stream8.jlntv.cn | 8 | 2.8% |
-| gmxw.7766.org | 6 | 2.1% |
-| 110.153.180.106 | 6 | 2.1% |
+| live.metshop.top | 66 | 24.6% |
+| 173.208.212.130 | 19 | 7.1% |
+| 74.91.26.218 | 14 | 5.2% |
+| stream5.jlntv.cn | 10 | 3.7% |
+| l.cztvcloud.com | 10 | 3.7% |
+| stream.hrbtv.net | 8 | 3.0% |
+| stream8.jlntv.cn | 8 | 3.0% |
+| jwcdnqx.hebyun.com.cn | 7 | 2.6% |
+| gmxw.7766.org | 6 | 2.2% |
+| 110.153.180.106 | 6 | 2.2% |
 
 ## Family playlist audit
 
 Status: ok
-Rows: 284
-Unique URLs: 284
+Rows: 262
+Unique URLs: 262
 
 ## Warnings
 
