@@ -2,23 +2,23 @@
   "schema_version": 1,
   "playback_verified": false,
   "media_requests": 0,
-  "snapshot_generated_utc": "2026-11-14T01:46:07.478465+00:00",
+  "snapshot_generated_utc": "2026-11-14T16:06:17.523830+00:00",
   "scope": "configured publication-allowed domestic Chinese TV candidates; includes retained upstream snapshots",
-  "channels": 458,
-  "addresses": 669,
-  "unique_urls": 652,
+  "channels": 461,
+  "addresses": 671,
+  "unique_urls": 654,
   "groups": {
     "央视频道": {
       "channels": 21,
-      "addresses": 69
+      "addresses": 70
     },
     "卫视频道": {
       "channels": 37,
       "addresses": 102
     },
     "地方频道": {
-      "channels": 242,
-      "addresses": 327
+      "channels": 245,
+      "addresses": 330
     },
     "影视剧场": {
       "channels": 81,
@@ -30,7 +30,7 @@
     },
     "体育纪实": {
       "channels": 27,
-      "addresses": 33
+      "addresses": 31
     },
     "音乐综艺": {
       "channels": 26,
@@ -51,12 +51,12 @@
   },
   "files": {
     "chinese-unverified.txt": {
-      "bytes": 53302,
-      "sha256": "4b05a5d7dd8a7ec06752900a3d730cfaef9ab353e3c350e8857fcb1aa2893b91"
+      "bytes": 53506,
+      "sha256": "f7c6cff7f2253d5dac6f0497e6664013b61a8a9c9c8fdbc16612a53d9f48d26a"
     },
     "chinese-unverified.m3u": {
-      "bytes": 147119,
-      "sha256": "ba2aa4d36f9fe1d7e8570d10bb6324680177bb4940305a1e997044341a64f028"
+      "bytes": 147648,
+      "sha256": "e3bbe7cd94af9f3f2a8fcb012eba39ed76ef3bdeae5cb89fb25cf132c9b4873b"
     }
   },
   "sources": {
@@ -295,10 +295,10 @@
     },
     "zbds_iptv4_m3u": {
       "state": "fetched",
-      "parsed": 420,
+      "parsed": 426,
       "transport": "direct",
       "config_sha256": "9f52df58b82765518e2ebefa257e9d61ac849a48e67ce11f34ab7dfd428e5ac2",
-      "selected": 411,
+      "selected": 417,
       "excluded": {
         "foreign_cgtn_stream": 5,
         "foreign_or_non_chinese_channel": 3,
@@ -307,10 +307,10 @@
     },
     "zbds_iptv4_txt": {
       "state": "fetched",
-      "parsed": 544,
+      "parsed": 546,
       "transport": "direct",
       "config_sha256": "a803d8363693fa6fdf7de9ef2db036c22c8b57d5b28da1cd087bcdf0097cc7d7",
-      "selected": 532,
+      "selected": 534,
       "excluded": {
         "foreign_cgtn_stream": 7,
         "foreign_or_non_chinese_channel": 3,
