@@ -1,21 +1,21 @@
 # Publish guard report
 
 Status: ok
-Baseline lines: 263
-Current lines: 268
-Total drop ratio: -1.9%
+Baseline lines: 268
+Current lines: 284
+Total drop ratio: -6.0%
 Relative baseline comparable: True
 Relative guard migration: none
 Coverage metric: canonical_channels
-Independent channel coverage: {'total': 231, 'groups': {'央视频道': 17, '卫视频道': 19, '地方频道': 106, '影视剧场': 65, '少儿动漫': 2, '体育纪实': 16, '音乐综艺': 2, '综合娱乐': 4}}
+Independent channel coverage: {'total': 239, 'groups': {'央视频道': 18, '卫视频道': 19, '地方频道': 113, '影视剧场': 65, '少儿动漫': 2, '体育纪实': 16, '音乐综艺': 2, '综合娱乐': 4}}
 
 ## Group deltas
 
 | Group | Baseline | Current | Delta | Drop | Minimum |
 |---|---:|---:|---:|---:|---:|
-| 央视频道 | 29 | 24 | -5 | 17.2% | 1 |
-| 卫视频道 | 23 | 24 | 1 | -4.3% | 1 |
-| 地方频道 | 120 | 129 | 9 | -7.5% | 1 |
+| 央视频道 | 24 | 30 | 6 | -25.0% | 1 |
+| 卫视频道 | 24 | 26 | 2 | -8.3% | 1 |
+| 地方频道 | 129 | 137 | 8 | -6.2% | 1 |
 | 影视剧场 | 65 | 65 | 0 | 0.0% | 0 |
 | 少儿动漫 | 2 | 2 | 0 | 0.0% | 0 |
 | 体育纪实 | 18 | 18 | 0 | 0.0% | 0 |
@@ -37,5 +37,4 @@ Independent channel coverage: {'total': 231, 'groups': {'央视频道': 17, '卫
 
 ## Warnings
 
-- group 央视频道 unique channels 17 < minimum 18
 - candidate-only sources unavailable (non-blocking): ['mursor_yy', 'mursor_bililive', 'freetv_huya', 'freetv_douyu']
