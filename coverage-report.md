@@ -19,7 +19,7 @@ Fail on missing important satellite: False
 | CCTV-5 | 1 | 1 | OK |
 | CCTV-6 | 2 | 2 | OK |
 | CCTV-7 | 1 | 1 | OK |
-| CCTV-8 | 3 | 3 | OK |
+| CCTV-8 | 4 | 4 | OK |
 | CCTV-9 | 2 | 2 | OK |
 | CCTV-10 | 1 | 1 | OK |
 | CCTV-11 | 1 | 1 | OK |
@@ -44,13 +44,13 @@ Fail on missing important satellite: False
 | 江苏卫视 | 1 | 1 | OK |
 | 湖南卫视 | 2 | 2 | OK |
 | 广东卫视 | 1 | 1 | OK |
-| 深圳卫视 | 1 | 1 | OK |
+| 深圳卫视 | 2 | 2 | OK |
 | 天津卫视 | 1 | 1 | OK |
 | 山西卫视 | 1 | 1 | OK |
 | 内蒙古卫视 | 1 | 1 | OK |
 | 吉林卫视 | 1 | 1 | OK |
 | 黑龙江卫视 | 0 | 0 | MISSING |
-| 安徽卫视 | 1 | 1 | OK |
+| 安徽卫视 | 2 | 2 | OK |
 | 东南卫视 | 1 | 1 | OK |
 | 江西卫视 | 1 | 1 | OK |
 | 山东卫视 | 1 | 1 | OK |
