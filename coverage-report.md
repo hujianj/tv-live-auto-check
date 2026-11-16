@@ -1,6 +1,6 @@
 # Core channel coverage report
 
-Coverage status: incomplete (32/52 target channels)
+Coverage status: incomplete (33/52 target channels)
 A successful maintenance job does not mean all requested channels are available.
 
 Minimum independent URLs per important channel: 1
@@ -19,7 +19,7 @@ Fail on missing important satellite: False
 | CCTV-5 | 1 | 1 | OK |
 | CCTV-6 | 2 | 2 | OK |
 | CCTV-7 | 1 | 1 | OK |
-| CCTV-8 | 2 | 2 | OK |
+| CCTV-8 | 3 | 3 | OK |
 | CCTV-9 | 2 | 2 | OK |
 | CCTV-10 | 1 | 1 | OK |
 | CCTV-11 | 1 | 1 | OK |
@@ -43,7 +43,7 @@ Fail on missing important satellite: False
 | 浙江卫视 | 2 | 2 | OK |
 | 江苏卫视 | 1 | 1 | OK |
 | 湖南卫视 | 2 | 2 | OK |
-| 广东卫视 | 2 | 2 | OK |
+| 广东卫视 | 1 | 1 | OK |
 | 深圳卫视 | 2 | 2 | OK |
 | 天津卫视 | 1 | 1 | OK |
 | 山西卫视 | 1 | 1 | OK |
@@ -64,7 +64,7 @@ Fail on missing important satellite: False
 | 西藏卫视 | 0 | 0 | MISSING |
 | 陕西卫视 | 0 | 0 | MISSING |
 | 甘肃卫视 | 0 | 0 | MISSING |
-| 青海卫视 | 0 | 0 | MISSING |
+| 青海卫视 | 1 | 1 | OK |
 | 宁夏卫视 | 0 | 0 | MISSING |
 | 新疆卫视 | 2 | 2 | OK |
 | 兵团卫视 | 0 | 0 | MISSING |

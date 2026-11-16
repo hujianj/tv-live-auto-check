@@ -2,9 +2,9 @@
 
 This report is generated immediately after curation and before the final published URL recheck. See `final-publish-report.md` for the TV-facing result after recheck.
 
-Pre-recheck candidate lines: 394
-Published channel names: 318
-Stability history URLs loaded: 454
+Pre-recheck candidate lines: 346
+Published channel names: 282
+Stability history URLs loaded: 457
 Home priority URLs loaded: ok=0, failed=0, enabled=False
 
 ## Quality filters and limits
@@ -16,19 +16,19 @@ Home priority URLs loaded: ok=0, failed=0, enabled=False
 
 ### Drop counts
 
-- ambiguous_url_identity: 24
+- ambiguous_url_identity: 21
 
 ### Group limit trims
 
 - none
 
 ## Groups
-- 央视频道: 26
-- 卫视频道: 33
-- 地方频道: 237
-- 影视剧场: 67
+- 央视频道: 28
+- 卫视频道: 31
+- 地方频道: 183
+- 影视剧场: 48
 - 少儿动漫: 2
-- 体育纪实: 3
+- 体育纪实: 28
 - 音乐综艺: 21
 - 综合娱乐: 5
 
@@ -36,34 +36,34 @@ Home priority URLs loaded: ok=0, failed=0, enabled=False
 
 | Source | Lines |
 |---|---:|
-| zbds_iptv4_txt | 364 |
-| oktv_comprehensive_php | 14 |
+| zbds_iptv4_txt | 310 |
+| oktv_comprehensive_php | 19 |
 | iptv_org_cn | 11 |
-| free_tv_world | 5 |
+| free_tv_world | 6 |
 
 ## Top sources per group
 
 ### 央视频道
 - iptv_org_cn: 11
-- zbds_iptv4_txt: 6
-- free_tv_world: 5
-- oktv_comprehensive_php: 4
+- oktv_comprehensive_php: 9
+- free_tv_world: 6
+- zbds_iptv4_txt: 2
 
 ### 卫视频道
-- zbds_iptv4_txt: 23
+- zbds_iptv4_txt: 21
 - oktv_comprehensive_php: 10
 
 ### 地方频道
-- zbds_iptv4_txt: 237
+- zbds_iptv4_txt: 183
 
 ### 影视剧场
-- zbds_iptv4_txt: 67
+- zbds_iptv4_txt: 48
 
 ### 少儿动漫
 - zbds_iptv4_txt: 2
 
 ### 体育纪实
-- zbds_iptv4_txt: 3
+- zbds_iptv4_txt: 28
 
 ### 音乐综艺
 - zbds_iptv4_txt: 21
