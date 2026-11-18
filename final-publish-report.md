@@ -2,36 +2,36 @@
 
 This report describes the final playlist after curation and after the second full published-URL recheck.
 
-Rows: 285
-Unique channel names: 239
-Unique URLs: 285
-Failed unique URLs after slow retry: 110
-Slow retry attempted unique URLs: 122
-Slow retry recovered unique URLs: 12
-Refilled rows from checked candidate pool: 5
-Unresolved refill rows: 116
+Rows: 298
+Unique channel names: 244
+Unique URLs: 298
+Failed unique URLs after slow retry: 152
+Slow retry attempted unique URLs: 163
+Slow retry recovered unique URLs: 11
+Refilled rows from checked candidate pool: 11
+Unresolved refill rows: 153
 Core live-progress check required: True
 Broadcast live-progress check required: True
 Live-progress groups: 卫视频道, 地方频道, 央视频道
-Final recheck elapsed: 732.7s
+Final recheck elapsed: 734.8s
 Source map available: True
-Stability tracked URLs after pending observation: 467
-Pending stability OK/fail updates: 285/116
+Stability tracked URLs after pending observation: 475
+Pending stability OK/fail updates: 298/153
 Strict quality filter dropped rows before recheck: 0
 Channel limit trimmed rows before recheck: 0
 Group limit trimmed rows before recheck: 0
-Family compact playlist: 281 rows / 239 names / 281 URLs
+Family compact playlist: 292 rows / 244 names / 292 URLs
 
 ## Groups
 
 | Group | Rows |
 |---|---:|
-| 央视频道 | 29 |
-| 卫视频道 | 28 |
-| 地方频道 | 140 |
+| 央视频道 | 37 |
+| 卫视频道 | 29 |
+| 地方频道 | 141 |
 | 影视剧场 | 65 |
 | 少儿动漫 | 2 |
-| 体育纪实 | 15 |
+| 体育纪实 | 18 |
 | 音乐综艺 | 2 |
 | 综合娱乐 | 4 |
 
@@ -39,18 +39,18 @@ Family compact playlist: 281 rows / 239 names / 281 URLs
 
 - TXT files: ku9-family.txt, live-family.txt
 - M3U file: family.m3u
-- Rows: 281
-- Unique names: 239
-- Unique URLs: 281
+- Rows: 292
+- Unique names: 244
+- Unique URLs: 292
 
 | Group | Rows |
 |---|---:|
-| 央视频道 | 29 |
-| 卫视频道 | 28 |
-| 地方频道 | 136 |
+| 央视频道 | 37 |
+| 卫视频道 | 29 |
+| 地方频道 | 137 |
 | 影视剧场 | 65 |
 | 少儿动漫 | 2 |
-| 体育纪实 | 15 |
+| 体育纪实 | 16 |
 | 音乐综艺 | 2 |
 | 综合娱乐 | 4 |
 
@@ -58,25 +58,25 @@ Family compact playlist: 281 rows / 239 names / 281 URLs
 
 | Source | Rows |
 |---|---:|
-| zbds_iptv4_txt | 249 |
-| oktv_comprehensive_php | 19 |
+| zbds_iptv4_txt | 256 |
+| oktv_comprehensive_php | 25 |
 | iptv_org_cn | 11 |
 | free_tv_world | 6 |
 
 ## Top sources per group
 
 ### 央视频道
+- oktv_comprehensive_php: 15
 - iptv_org_cn: 11
-- oktv_comprehensive_php: 9
 - free_tv_world: 6
-- zbds_iptv4_txt: 3
+- zbds_iptv4_txt: 5
 
 ### 卫视频道
-- zbds_iptv4_txt: 18
+- zbds_iptv4_txt: 19
 - oktv_comprehensive_php: 10
 
 ### 地方频道
-- zbds_iptv4_txt: 140
+- zbds_iptv4_txt: 141
 
 ### 影视剧场
 - zbds_iptv4_txt: 65
@@ -85,7 +85,7 @@ Family compact playlist: 281 rows / 239 names / 281 URLs
 - zbds_iptv4_txt: 2
 
 ### 体育纪实
-- zbds_iptv4_txt: 15
+- zbds_iptv4_txt: 18
 
 ### 音乐综艺
 - zbds_iptv4_txt: 2
@@ -104,6 +104,8 @@ Family compact playlist: 281 rows / 239 names / 281 URLs
 - 央视频道 / CCTV-3 / oktv_comprehensive_php / http://173.208.212.130:8181/720p/cctv3.m3u8
 - 央视频道 / CCTV-4中文国际（亚） / free_tv_world / http://74.91.26.218:82/live/cctv4hd.m3u8
 - 央视频道 / CCTV-4中文国际（欧） / free_tv_world / https://dash2.antik.sk/live/test_cctv_tizen/playlist.m3u8
+- 央视频道 / CCTV-5 / zbds_iptv4_txt / http://gmxw.7766.org:808/hls/93/index.m3u8
+- 央视频道 / CCTV-5+ / oktv_comprehensive_php / http://173.208.212.130:8181/720p/cctv5p.m3u8
 - 央视频道 / CCTV-6 / free_tv_world / http://69.30.245.50/live/cctv6.m3u8
 - 央视频道 / CCTV-6 / oktv_comprehensive_php / http://173.208.212.130:8181/720p/cctv6.m3u8
 - 央视频道 / CCTV-7 / iptv_org_cn / http://74.91.26.218:82/live/cctv7hd.m3u8
@@ -112,12 +114,18 @@ Family compact playlist: 281 rows / 239 names / 281 URLs
 - 央视频道 / CCTV-8 / oktv_comprehensive_php / http://173.208.212.130:8181/720p/cctv8.m3u8
 - 央视频道 / CCTV-9 / free_tv_world / http://74.91.26.218:82/live/cctv9hd.m3u8
 - 央视频道 / CCTV-9 / iptv_org_cn / https://xykt-fix.github.io/Y77.m3u8
+- 央视频道 / CCTV-9 / oktv_comprehensive_php / http://173.208.212.130:8181/720p/cctv9.m3u8
 - 央视频道 / CCTV-10 / iptv_org_cn / http://74.91.26.218:82/live/cctv10hd.m3u8
+- 央视频道 / CCTV-10 / oktv_comprehensive_php / http://173.208.212.130:8181/720p/cctv10.m3u8
 - 央视频道 / CCTV-11 / iptv_org_cn / http://74.91.26.218:82/live/cctv11hd.m3u8
+- 央视频道 / CCTV-11 / oktv_comprehensive_php / http://173.208.212.130:8181/720p/cctv11.m3u8
 - 央视频道 / CCTV-12 / iptv_org_cn / http://74.91.26.218:82/live/cctv12hd.m3u8
+- 央视频道 / CCTV-12 / oktv_comprehensive_php / http://173.208.212.130:8181/720p/cctv12.m3u8
 - 央视频道 / CCTV-13 / iptv_org_cn / http://74.91.26.218:82/live/cctv13hd.m3u8
+- 央视频道 / CCTV-13 / oktv_comprehensive_php / http://173.208.212.130:8181/720p/cctv13.m3u8
 - 央视频道 / CCTV-14 / free_tv_world / http://74.91.26.218:82/live/cctv14hd.m3u8
 - 央视频道 / CCTV-14 / oktv_comprehensive_php / http://173.208.212.130:8181/720p/cctv14.m3u8
+- 央视频道 / CCTV-15 / zbds_iptv4_txt / http://gmxw.7766.org:808/hls/102/index.m3u8
 - 央视频道 / CCTV-15 / iptv_org_cn / http://74.91.26.218:82/live/cctv15hd.m3u8
 - 央视频道 / CCTV-15 / oktv_comprehensive_php / http://173.208.212.130:8181/720p/cctv15.m3u8
 - 央视频道 / CCTV-16 / zbds_iptv4_txt / http://gmxw.7766.org:808/hls/169/index.m3u8
@@ -140,6 +148,7 @@ Family compact playlist: 281 rows / 239 names / 281 URLs
 - 卫视频道 / 人间卫视 / zbds_iptv4_txt / http://61.216.67.119:1935/bltvhd/bltv1/chunklist_w1266569526.m3u
 - 卫视频道 / 人间卫视 / zbds_iptv4_txt / https://5ddce30eb4b55.streamlock.net/bltvhd/bltv1/chunklist_w511254805.m3u8
 - 卫视频道 / 内蒙古卫视 / zbds_iptv4_txt / http://play1-qk.nmtv.cn/live/1769652018126032.m3u8
+- 卫视频道 / 吉林卫视 / zbds_iptv4_txt / http://221.7.175.154:8445/tsfile/live/1014_1.m3u8?key=txiptv&playlive=1&authid=0
 - 卫视频道 / 天津卫视 / oktv_comprehensive_php / http://173.208.212.130:8181/720p/tjws.m3u8
 - 卫视频道 / 安多卫视 / zbds_iptv4_txt / https://liveout.xntv.tv/a65jur/96iln2.m3u8
 - 卫视频道 / 安徽卫视 / zbds_iptv4_txt / http://gmxw.7766.org:808/hls/40/index.m3u8
@@ -166,22 +175,13 @@ Family compact playlist: 281 rows / 239 names / 281 URLs
 - 地方频道 / 云霄综合 / zbds_iptv4_txt / https://live.zzyxxw.com:2443/live/xwzh.m3u8
 - 地方频道 / 井研综合 / zbds_iptv4_txt / http://tvfile.jyrmt.cn/nmip-media/channellive/channel104452/playlist.m3u8
 - 地方频道 / 亳州农村 / zbds_iptv4_txt / http://zbbf2.ahbztv.com/live/418.m3u8
-- 地方频道 / 亳州农村 / zbds_iptv4_txt / http://zbbf2.ahbztv.com/live/418.m3u8?zanhd
-- 地方频道 / 任丘综合 / zbds_iptv4_txt / https://jwcdnqx.hebyun.com.cn/live/rqtv1/1500k/tzwj_video.m3u8
-- 地方频道 / 伊犁哈萨克 / zbds_iptv4_txt / http://110.153.180.106:55555/out_3/index.m3u8
-- 地方频道 / 伊犁哈萨克 / zbds_iptv4_txt / http://110.153.180.106:55555/out_3/index.m3u8?zxinjd
-- 地方频道 / 伊犁经济法制 / zbds_iptv4_txt / http://110.153.180.106:55555/out_4/index.m3u8
-- 地方频道 / 伊犁经济法制 / zbds_iptv4_txt / http://110.153.180.106:55555/out_4/index.m3u8?zxinjd
-- 地方频道 / 伊犁维吾尔 / zbds_iptv4_txt / http://110.153.180.106:55555/out_2/index.m3u8
-- 地方频道 / 伊犁维吾尔 / zbds_iptv4_txt / http://110.153.180.106:55555/out_2/index.m3u8?zxinjd
-- 地方频道 / 兴隆综合 / zbds_iptv4_txt / https://jwcdnqx.hebyun.com.cn/live/xlzh/1500k/tzwj_video.m3u8
 
 ## Playback and backup evidence
 
 - Single-line channels: 201
-- Channels with distinct-host backups: 16
-- Line-count distribution: {'1': 201, '2': 32, '3': 4, '4': 2}
-- Media measurement types: {'partial_segment_estimate': 137, 'complete_segment': 70, 'unmeasured': 78}
+- Channels with distinct-host backups: 20
+- Line-count distribution: {'1': 201, '2': 34, '3': 7, '4': 2}
+- Media measurement types: {'partial_segment_estimate': 171, 'complete_segment': 46, 'unmeasured': 81}
 - Selection mode: availability. Availability mode keeps all verified URLs and ignores runner/local speed; configured source/history preference and independent hosts determine order.
 - Temporary local priority: {'active': False, 'observed_urls': 0, 'published_urls_covered': 0, 'generated_at_utc': '2026-10-29T08:16:23.521454+00:00', 'expires_at_utc': '2026-10-31T08:16:23.521454Z', 'scope': 'current local computer; not television', 'stale_reason': 'expires_at_utc reached'}
 - Partial-segment estimates are not full-segment or prolonged TV playback tests. Failed lines are never retained as backups.
