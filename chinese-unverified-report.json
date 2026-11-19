@@ -2,23 +2,23 @@
   "schema_version": 1,
   "playback_verified": false,
   "media_requests": 0,
-  "snapshot_generated_utc": "2026-11-19T02:48:32.816800+00:00",
+  "snapshot_generated_utc": "2026-11-19T18:39:53.736370+00:00",
   "scope": "configured publication-allowed domestic Chinese TV candidates; includes retained upstream snapshots",
-  "channels": 386,
-  "addresses": 572,
-  "unique_urls": 555,
+  "channels": 391,
+  "addresses": 575,
+  "unique_urls": 558,
   "groups": {
     "央视频道": {
       "channels": 21,
-      "addresses": 62
+      "addresses": 63
     },
     "卫视频道": {
       "channels": 37,
-      "addresses": 92
+      "addresses": 90
     },
     "地方频道": {
-      "channels": 199,
-      "addresses": 280
+      "channels": 204,
+      "addresses": 284
     },
     "影视剧场": {
       "channels": 68,
@@ -51,12 +51,12 @@
   },
   "files": {
     "chinese-unverified.txt": {
-      "bytes": 45773,
-      "sha256": "9c4bfe835b59aa7c482cdc8457a9815b1d7421e572507e321a3ae3e96e4a9b37"
+      "bytes": 45901,
+      "sha256": "68139f62b2b76ba9894ae6280675e62d9e801fd9ab60cf78e1c502cc901cdb6e"
     },
     "chinese-unverified.m3u": {
-      "bytes": 126862,
-      "sha256": "dc14b9d4a7b8fab9ca385fd230915ede39556afeb3554c9b151d991f64cd92d5"
+      "bytes": 127464,
+      "sha256": "449131d0e7ca04cad56f97b0ba9322f52714b5f781f3bf97cc2b3ad808eaa0e2"
     }
   },
   "sources": {
@@ -295,10 +295,10 @@
     },
     "zbds_iptv4_m3u": {
       "state": "fetched",
-      "parsed": 333,
+      "parsed": 342,
       "transport": "direct",
       "config_sha256": "9f52df58b82765518e2ebefa257e9d61ac849a48e67ce11f34ab7dfd428e5ac2",
-      "selected": 326,
+      "selected": 335,
       "excluded": {
         "foreign_cgtn_stream": 5,
         "foreign_or_non_chinese_channel": 1,
@@ -307,10 +307,10 @@
     },
     "zbds_iptv4_txt": {
       "state": "fetched",
-      "parsed": 444,
+      "parsed": 448,
       "transport": "direct",
       "config_sha256": "a803d8363693fa6fdf7de9ef2db036c22c8b57d5b28da1cd087bcdf0097cc7d7",
-      "selected": 434,
+      "selected": 438,
       "excluded": {
         "foreign_cgtn_stream": 7,
         "foreign_or_non_chinese_channel": 1,
