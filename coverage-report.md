@@ -1,6 +1,6 @@
 # Core channel coverage report
 
-Coverage status: incomplete (34/52 target channels)
+Coverage status: incomplete (32/52 target channels)
 A successful maintenance job does not mean all requested channels are available.
 
 Minimum independent URLs per important channel: 1
@@ -14,22 +14,22 @@ Fail on missing important satellite: False
 |---|---:|---:|---|
 | CCTV-1 | 2 | 2 | OK |
 | CCTV-2 | 2 | 2 | OK |
-| CCTV-3 | 2 | 2 | OK |
+| CCTV-3 | 3 | 3 | OK |
 | CCTV-4 | 0 | 0 | MISSING |
 | CCTV-5 | 1 | 1 | OK |
 | CCTV-6 | 2 | 2 | OK |
-| CCTV-7 | 2 | 2 | OK |
-| CCTV-8 | 2 | 2 | OK |
-| CCTV-9 | 3 | 3 | OK |
-| CCTV-10 | 2 | 2 | OK |
+| CCTV-7 | 1 | 1 | OK |
+| CCTV-8 | 3 | 3 | OK |
+| CCTV-9 | 2 | 2 | OK |
+| CCTV-10 | 1 | 1 | OK |
 | CCTV-11 | 1 | 1 | OK |
-| CCTV-12 | 1 | 1 | OK |
+| CCTV-12 | 2 | 2 | OK |
 | CCTV-13 | 1 | 1 | OK |
 | CCTV-14 | 2 | 2 | OK |
 | CCTV-15 | 2 | 2 | OK |
 | CCTV-16 | 1 | 1 | OK |
 | CCTV-17 | 2 | 2 | OK |
-| CCTV-5+ | 1 | 1 | OK |
+| CCTV-5+ | 0 | 0 | MISSING |
 
 ## Important satellite coverage
 
@@ -37,7 +37,7 @@ Fail on missing important satellite: False
 |---|---:|---:|---|
 | 辽宁卫视 | 0 | 0 | MISSING |
 | 河北卫视 | 0 | 0 | MISSING |
-| 河南卫视 | 1 | 1 | OK |
+| 河南卫视 | 0 | 0 | MISSING |
 | 北京卫视 | 1 | 1 | OK |
 | 东方卫视 | 4 | 4 | OK |
 | 浙江卫视 | 2 | 2 | OK |
@@ -48,7 +48,7 @@ Fail on missing important satellite: False
 | 天津卫视 | 1 | 1 | OK |
 | 山西卫视 | 1 | 1 | OK |
 | 内蒙古卫视 | 1 | 1 | OK |
-| 吉林卫视 | 0 | 0 | MISSING |
+| 吉林卫视 | 1 | 1 | OK |
 | 黑龙江卫视 | 0 | 0 | MISSING |
 | 安徽卫视 | 2 | 2 | OK |
 | 东南卫视 | 1 | 1 | OK |
@@ -64,7 +64,7 @@ Fail on missing important satellite: False
 | 西藏卫视 | 0 | 0 | MISSING |
 | 陕西卫视 | 0 | 0 | MISSING |
 | 甘肃卫视 | 0 | 0 | MISSING |
-| 青海卫视 | 1 | 1 | OK |
+| 青海卫视 | 0 | 0 | MISSING |
 | 宁夏卫视 | 0 | 0 | MISSING |
 | 新疆卫视 | 2 | 2 | OK |
 | 兵团卫视 | 0 | 0 | MISSING |
