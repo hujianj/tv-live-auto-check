@@ -18,18 +18,18 @@ Fail on missing important satellite: False
 | CCTV-4 | 0 | 0 | MISSING |
 | CCTV-5 | 0 | 0 | MISSING |
 | CCTV-6 | 2 | 2 | OK |
-| CCTV-7 | 1 | 1 | OK |
-| CCTV-8 | 2 | 2 | OK |
-| CCTV-9 | 2 | 2 | OK |
+| CCTV-7 | 2 | 2 | OK |
+| CCTV-8 | 3 | 3 | OK |
+| CCTV-9 | 3 | 3 | OK |
 | CCTV-10 | 1 | 1 | OK |
 | CCTV-11 | 1 | 1 | OK |
-| CCTV-12 | 1 | 1 | OK |
-| CCTV-13 | 1 | 1 | OK |
+| CCTV-12 | 2 | 2 | OK |
+| CCTV-13 | 2 | 2 | OK |
 | CCTV-14 | 2 | 2 | OK |
 | CCTV-15 | 2 | 2 | OK |
 | CCTV-16 | 1 | 1 | OK |
 | CCTV-17 | 2 | 2 | OK |
-| CCTV-5+ | 0 | 0 | MISSING |
+| CCTV-5+ | 1 | 1 | OK |
 
 ## Important satellite coverage
 
@@ -37,7 +37,7 @@ Fail on missing important satellite: False
 |---|---:|---:|---|
 | 辽宁卫视 | 0 | 0 | MISSING |
 | 河北卫视 | 0 | 0 | MISSING |
-| 河南卫视 | 0 | 0 | MISSING |
+| 河南卫视 | 1 | 1 | OK |
 | 北京卫视 | 1 | 1 | OK |
 | 东方卫视 | 3 | 3 | OK |
 | 浙江卫视 | 2 | 2 | OK |
@@ -48,11 +48,11 @@ Fail on missing important satellite: False
 | 天津卫视 | 1 | 1 | OK |
 | 山西卫视 | 1 | 1 | OK |
 | 内蒙古卫视 | 1 | 1 | OK |
-| 吉林卫视 | 1 | 1 | OK |
+| 吉林卫视 | 0 | 0 | MISSING |
 | 黑龙江卫视 | 0 | 0 | MISSING |
-| 安徽卫视 | 2 | 2 | OK |
+| 安徽卫视 | 1 | 1 | OK |
 | 东南卫视 | 1 | 1 | OK |
-| 江西卫视 | 1 | 1 | OK |
+| 江西卫视 | 0 | 0 | MISSING |
 | 山东卫视 | 1 | 1 | OK |
 | 湖北卫视 | 0 | 0 | MISSING |
 | 广西卫视 | 0 | 0 | MISSING |
