@@ -1,9 +1,9 @@
 # 电视完整订阅与待复核报告
 
-生成时间：2026-11-24T04:48:38Z
-电视订阅：250 个频道 / 307 条地址。
-严格实测通过：228 个频道 / 268 条地址。
-待电视自行复核：22 个频道 / 39 条真实候选地址。
+生成时间：2026-11-24T19:31:30Z
+电视订阅：230 个频道 / 276 条地址。
+严格实测通过：208 个频道 / 246 条地址。
+待电视自行复核：22 个频道 / 30 条真实候选地址。
 
 待复核地址不是检测成功地址，不进入稳定历史或严格清单。频道名保持不变，便于播放器聚合线路。
 有任意严格成功线路的频道，不补入失败线路；没有成功线路的央视/卫视保留全部合规候选。
@@ -13,42 +13,33 @@
 无
 
 ## 待复核地址
-- CCTV-4 | burningc4_ipv4 | 2026-11-24T04:48:07.348822+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226428/index.m3u8
-- CCTV-5 | burningc4_ipv4 | 2026-11-24T04:48:07.688996+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226019/index.m3u8
-- CCTV-5 | oktv_comprehensive_php | 2026-11-24T04:47:56.801113+00:00 | URLError(ConnectionRefusedError(111, 'Connection refused')) | http://173.208.212.130:8181/720p/cctv5.m3u8
-- CCTV-5+ | burningc4_ipv4 | 2026-11-24T04:48:07.899641+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221225603/index.m3u8
-- CCTV-5+ | iptv_org_cn | 2026-11-24T04:47:57.947044+00:00 | <HTTPError 403: 'Forbidden'> | https://php.jdshipin.com/TVOD/iptv.php?id=cctv5p
-- CCTV-5+ | oktv_comprehensive_php | 2026-11-24T04:47:56.968259+00:00 | URLError(ConnectionRefusedError(111, 'Connection refused')) | http://173.208.212.130:8181/720p/cctv5p.m3u8
-- CCTV-6 | free_tv_world | 2026-11-24T04:59:02.153866+00:00 | URLError(ConnectionRefusedError(111, 'Connection refused')) | http://69.30.245.50/live/cctv6.m3u8
-- CCTV-6 | oktv_comprehensive_php | 2026-11-24T04:59:17.141699+00:00 | URLError(ConnectionRefusedError(111, 'Connection refused')) | http://173.208.212.130:8181/720p/cctv6.m3u8
-- CCTV-6 | burningc4_ipv4 | 2026-11-24T04:48:08.094875+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226010/index.m3u8
-- 辽宁卫视 | burningc4_ipv4 | 2026-11-24T04:48:37.376883+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226546/index.m3u8
-- 河北卫视 | burningc4_ipv4 | 2026-11-24T04:48:30.731652+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226406/index.m3u8
-- 河北卫视 | oktv_comprehensive_php | 2026-11-24T04:47:56.347682+00:00 | URLError(ConnectionRefusedError(111, 'Connection refused')) | http://173.208.212.130:8181/720p/hews.m3u8
-- 河南卫视 | burningc4_ipv4 | 2026-11-24T04:48:30.735629+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226480/index.m3u8
-- 河南卫视 | oktv_comprehensive_php | 2026-11-24T04:47:56.357180+00:00 | URLError(ConnectionRefusedError(111, 'Connection refused')) | http://173.208.212.130:8181/720p/haws.m3u8
-- 云南卫视 | burningc4_ipv4 | 2026-11-24T04:48:14.292934+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226444/index.m3u8
-- 兵团卫视 | burningc4_ipv4 | 2026-11-24T04:48:18.712633+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226439/index.m3u8
-- 厦门卫视 | burningc4_ipv4 | 2026-11-24T04:48:06.931903+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ott.mobaibox.com/PLTV/3/224/3221226996/index.m3u8
-- 四川卫视 | zbds_iptv4_txt | 2026-11-24T04:47:57.354892+00:00 | direct video/mp4 bytes=65536 unknown/mp4/fmp4: MP4 container found but no track type observed required=media progress=not-required; frame decode not requested | https://live.264788.xyz/channel/sichuanweishi4k?streamid=21be5901ee81559c827dc84e46f26452&livekey=01WgOR41rriMmMkzNsd0UoaxJRwetZdxIvtVk
-- 四川卫视 | zbds_iptv4_txt | 2026-11-24T04:47:57.363425+00:00 | direct video/mp4 bytes=65536 unknown/mp4/fmp4: MP4 container found but no track type observed required=media progress=not-required; frame decode not requested | https://live.264788.xyz/channel/sichuanweishi4k?streamid=401bf692a1a8b91298f26077d53316d6&livekey=01WgOR41rriMmMkzNsd0UoaxJRwetZdxIvtVk
-- 四川卫视 | burningc4_ipv4 | 2026-11-24T04:48:19.908916+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226338/index.m3u8
-- 宁夏卫视 | zbds_iptv4_txt | 2026-11-24T04:47:56.943030+00:00 | direct video/mp4 bytes=65536 unknown/mp4/fmp4: MP4 container found but no track type observed required=media progress=not-required; frame decode not requested | https://live.264788.xyz/channel/ningxiaweishi?streamid=1b2952717a920173e66d4a348f9dcb5c&livekey=01WgOR41rriMmMkzNsd0UoaxJRwetZdxIvtVk
-- 宁夏卫视 | zbds_iptv4_txt | 2026-11-24T04:47:56.968041+00:00 | direct video/mp4 bytes=65536 unknown/mp4/fmp4: MP4 container found but no track type observed required=media progress=not-required; frame decode not requested | https://live.264788.xyz/channel/ningxiaweishi?streamid=551474d02bee1c160e1692e22c45ddba&livekey=01WgOR41rriMmMkzNsd0UoaxJRwetZdxIvtVk
-- 宁夏卫视 | zbds_iptv4_txt | 2026-11-24T04:47:57.070713+00:00 | direct video/mp4 bytes=65536 unknown/mp4/fmp4: MP4 container found but no track type observed required=media progress=not-required; frame decode not requested | https://live.264788.xyz/channel/ningxiaweishi?streamid=e1236348f815c36a0429357e5b5c5f10&livekey=01WgOR41rriMmMkzNsd0UoaxJRwetZdxIvtVk
-- 宁夏卫视 | burningc4_ipv4 | 2026-11-24T04:48:20.298913+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221225632/index.m3u8
-- 广西卫视 | burningc4_ipv4 | 2026-11-24T04:48:25.707915+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226549/index.m3u8
-- 海南卫视 | burningc4_ipv4 | 2026-11-24T04:48:31.714870+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226465/index.m3u8
-- 湖北卫视 | burningc4_ipv4 | 2026-11-24T04:48:32.123068+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226477/index.m3u8
-- 甘肃卫视 | burningc4_ipv4 | 2026-11-24T04:48:36.728038+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221225633/index.m3u8
-- 西藏卫视 | zbds_iptv4_txt | 2026-11-24T04:48:00.106599+00:00 | segment bad 200 application/octet-stream; charset=utf-8 bytes=131072 checked=2 expansions=4 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed | http://112.27.5.218:9901/tsfile/live/0111_1.m3u8?key=txiptv&playlive=1&authid=0
-- 西藏卫视 | zbds_iptv4_txt | 2026-11-24T04:47:56.847601+00:00 | direct video/mp4 bytes=65536 unknown/mp4/fmp4: MP4 container found but no track type observed required=media progress=not-required; frame decode not requested | https://live.264788.xyz/channel/xizangweishi?streamid=4b4e8ea919f1cfd5e43deed1d1675251&livekey=01WgOR41rriMmMkzNsd0UoaxJRwetZdxIvtVk
-- 西藏卫视 | burningc4_ipv4 | 2026-11-24T04:48:36.738216+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221225638/index.m3u8
-- 贵州卫视 | zbds_iptv4_txt | 2026-11-24T04:47:57.109042+00:00 | direct video/mp4 bytes=65536 unknown/mp4/fmp4: MP4 container found but no track type observed required=media progress=not-required; frame decode not requested | https://live.264788.xyz/channel/guizhouweishi?streamid=091bd59ea031989839c23459bb8cc9d4&livekey=01WgOR41rriMmMkzNsd0UoaxJRwetZdxIvtVk
-- 贵州卫视 | burningc4_ipv4 | 2026-11-24T04:48:36.742040+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226474/index.m3u8
-- 重庆卫视 | burningc4_ipv4 | 2026-11-24T04:48:37.721802+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226409/index.m3u8
-- 陕西卫视 | zbds_iptv4_txt | 2026-11-24T04:47:57.096718+00:00 | direct video/mp4 bytes=65536 unknown/mp4/fmp4: MP4 container found but no track type observed required=media progress=not-required; frame decode not requested | https://live.264788.xyz/channel/shaanxiweishi?streamid=9dc887dba8ecb4e4143baf4f2373800c&livekey=01WgOR41rriMmMkzNsd0UoaxJRwetZdxIvtVk
-- 陕西卫视 | burningc4_ipv4 | 2026-11-24T04:48:37.928941+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221225625/index.m3u8
-- 青海卫视 | burningc4_ipv4 | 2026-11-24T04:48:38.127894+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221225628/index.m3u8
-- 黑龙江卫视 | zbds_iptv4_txt | 2026-11-24T04:48:00.380281+00:00 | URLError(OSError(101, 'Network is unreachable')) | https://idclive.hljtv.com:4430/live/hljws_own.m3u8
-- 黑龙江卫视 | burningc4_ipv4 | 2026-11-24T04:48:38.316877+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226327/index.m3u8
+- CCTV-4 | burningc4_ipv4 | 2026-11-24T19:30:42.813872+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226428/index.m3u8
+- CCTV-5 | burningc4_ipv4 | 2026-11-24T19:30:43.054871+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226019/index.m3u8
+- CCTV-5 | oktv_comprehensive_php | 2026-11-24T19:30:32.152471+00:00 | URLError(ConnectionRefusedError(111, 'Connection refused')) | http://173.208.212.130:8181/720p/cctv5.m3u8
+- CCTV-5+ | burningc4_ipv4 | 2026-11-24T19:30:43.632360+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221225603/index.m3u8
+- CCTV-5+ | iptv_org_cn | 2026-11-24T19:30:50.995670+00:00 | PublicURLPolicyError('DNS resolution failed for 168.sryze.cc: [Errno -3] Temporary failure in name resolution') (core retry after first=PublicURLPolicyError('DNS resolution failed for 168.sryze.cc: [Errno -3] Temporary failure in name resolution')) | https://php.jdshipin.com/TVOD/iptv.php?id=cctv5p
+- CCTV-5+ | oktv_comprehensive_php | 2026-11-24T19:30:32.340521+00:00 | URLError(ConnectionRefusedError(111, 'Connection refused')) | http://173.208.212.130:8181/720p/cctv5p.m3u8
+- 辽宁卫视 | burningc4_ipv4 | 2026-11-24T19:31:12.845901+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226546/index.m3u8
+- 河北卫视 | burningc4_ipv4 | 2026-11-24T19:31:06.842119+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226406/index.m3u8
+- 河北卫视 | oktv_comprehensive_php | 2026-11-24T19:30:31.930043+00:00 | URLError(ConnectionRefusedError(111, 'Connection refused')) | http://173.208.212.130:8181/720p/hews.m3u8
+- 河南卫视 | burningc4_ipv4 | 2026-11-24T19:31:06.842200+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226480/index.m3u8
+- 河南卫视 | oktv_comprehensive_php | 2026-11-24T19:30:31.978768+00:00 | URLError(ConnectionRefusedError(111, 'Connection refused')) | http://173.208.212.130:8181/720p/haws.m3u8
+- 云南卫视 | burningc4_ipv4 | 2026-11-24T19:30:49.863637+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226444/index.m3u8
+- 兵团卫视 | burningc4_ipv4 | 2026-11-24T19:30:54.827319+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226439/index.m3u8
+- 厦门卫视 | burningc4_ipv4 | 2026-11-24T19:30:42.726288+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ott.mobaibox.com/PLTV/3/224/3221226996/index.m3u8
+- 吉林卫视 | zbds_iptv4_txt | 2026-11-24T19:37:25.184464+00:00 | segment bad 200 application/octet-stream;charset=utf-8 bytes=131072 checked=1 expansions=2 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed | http://221.7.175.154:8445/tsfile/live/1014_1.m3u8?key=txiptv&playlive=1&authid=0
+- 吉林卫视 | burningc4_ipv4 | 2026-11-24T19:30:55.063689+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226397/index.m3u8
+- 四川卫视 | burningc4_ipv4 | 2026-11-24T19:30:55.646969+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226338/index.m3u8
+- 宁夏卫视 | burningc4_ipv4 | 2026-11-24T19:30:55.870811+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221225632/index.m3u8
+- 广西卫视 | burningc4_ipv4 | 2026-11-24T19:31:01.070761+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226549/index.m3u8
+- 海南卫视 | burningc4_ipv4 | 2026-11-24T19:31:07.077882+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226465/index.m3u8
+- 湖北卫视 | burningc4_ipv4 | 2026-11-24T19:31:07.773912+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226477/index.m3u8
+- 甘肃卫视 | burningc4_ipv4 | 2026-11-24T19:31:12.847178+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221225633/index.m3u8
+- 西藏卫视 | zbds_iptv4_txt | 2026-11-24T19:30:32.762977+00:00 | segment bad 200 application/octet-stream; charset=utf-8 bytes=131072 checked=1 expansions=2 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed | http://112.27.5.218:9901/tsfile/live/0111_1.m3u8?key=txiptv&playlive=1&authid=0
+- 西藏卫视 | burningc4_ipv4 | 2026-11-24T19:31:12.848840+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221225638/index.m3u8
+- 贵州卫视 | burningc4_ipv4 | 2026-11-24T19:31:12.843793+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226474/index.m3u8
+- 重庆卫视 | burningc4_ipv4 | 2026-11-24T19:31:13.084993+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226409/index.m3u8
+- 陕西卫视 | burningc4_ipv4 | 2026-11-24T19:31:13.667970+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221225625/index.m3u8
+- 青海卫视 | burningc4_ipv4 | 2026-11-24T19:31:13.781056+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221225628/index.m3u8
+- 黑龙江卫视 | zbds_iptv4_txt | 2026-11-24T19:30:36.115924+00:00 | URLError(OSError(101, 'Network is unreachable')) | https://idclive.hljtv.com:4430/live/hljws_own.m3u8
+- 黑龙江卫视 | burningc4_ipv4 | 2026-11-24T19:31:13.886972+00:00 | URLError(OSError(101, 'Network is unreachable')) | http://ottrrs.hl.chinamobile.com/PLTV/88888888/224/3221226327/index.m3u8
