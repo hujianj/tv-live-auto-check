@@ -2,31 +2,31 @@
   "schema_version": 1,
   "playback_verified": false,
   "media_requests": 0,
-  "snapshot_generated_utc": "2026-11-24T20:20:32.260990+00:00",
+  "snapshot_generated_utc": "2026-11-25T04:34:43.363531+00:00",
   "scope": "configured publication-allowed domestic Chinese TV candidates; includes retained upstream snapshots",
-  "channels": 389,
-  "addresses": 574,
-  "unique_urls": 557,
+  "channels": 388,
+  "addresses": 569,
+  "unique_urls": 552,
   "groups": {
     "央视频道": {
       "channels": 21,
-      "addresses": 62
+      "addresses": 63
     },
     "卫视频道": {
       "channels": 37,
-      "addresses": 91
+      "addresses": 89
     },
     "地方频道": {
       "channels": 195,
-      "addresses": 275
+      "addresses": 272
     },
     "影视剧场": {
       "channels": 70,
       "addresses": 73
     },
     "少儿动漫": {
-      "channels": 4,
-      "addresses": 5
+      "channels": 3,
+      "addresses": 4
     },
     "体育纪实": {
       "channels": 18,
@@ -51,12 +51,12 @@
   },
   "files": {
     "chinese-unverified.txt": {
-      "bytes": 45740,
-      "sha256": "76ff9ad067ab98bac616b3ca649acd1229d462edcb74ce88f673e3abfb24c687"
+      "bytes": 45438,
+      "sha256": "4f79a48403ed2227f53ccb5e0597bfaf36cccc39d29260fa1dd80eefe68cc3bd"
     },
     "chinese-unverified.m3u": {
-      "bytes": 127118,
-      "sha256": "f34f0d79e758207329c99842b5bb6cd7f94216239b040dee43da1e456a040f36"
+      "bytes": 126178,
+      "sha256": "f3bc673c6edcfee34e60db5ece6282b3afc44a9f52f3c2aacb49cb1015ce9964"
     }
   },
   "sources": {
@@ -159,12 +159,12 @@
     },
     "iptv_org_all": {
       "state": "fetched",
-      "parsed": 10661,
+      "parsed": 10695,
       "transport": "direct",
       "config_sha256": "b5e3bbd2b068c0f7936543731c875153085eb9b8ff0086e296ec367e7e2eb0cd",
       "selected": 51,
       "excluded": {
-        "foreign_channel_origin": 10463,
+        "foreign_channel_origin": 10497,
         "chinese_channel_identity_unconfirmed": 134,
         "foreign_or_non_chinese_channel": 7,
         "foreign_cgtn_stream": 6
@@ -295,10 +295,10 @@
     },
     "zbds_iptv4_m3u": {
       "state": "fetched",
-      "parsed": 338,
+      "parsed": 335,
       "transport": "direct",
       "config_sha256": "9f52df58b82765518e2ebefa257e9d61ac849a48e67ce11f34ab7dfd428e5ac2",
-      "selected": 331,
+      "selected": 328,
       "excluded": {
         "foreign_cgtn_stream": 5,
         "foreign_or_non_chinese_channel": 1,
@@ -307,10 +307,10 @@
     },
     "zbds_iptv4_txt": {
       "state": "fetched",
-      "parsed": 447,
+      "parsed": 442,
       "transport": "direct",
       "config_sha256": "a803d8363693fa6fdf7de9ef2db036c22c8b57d5b28da1cd087bcdf0097cc7d7",
-      "selected": 437,
+      "selected": 432,
       "excluded": {
         "foreign_cgtn_stream": 7,
         "foreign_or_non_chinese_channel": 1,
