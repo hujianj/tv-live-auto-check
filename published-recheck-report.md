@@ -1,67 +1,63 @@
 # Published playlist recheck report
 
 Outputs rewritten: True
-Elapsed: 721.6s
-Rows before: 364
-Rows after: 280
-Rows removed from outputs: 99
-Candidate rows failing strict recheck: 99
-Rows refilled after strict recheck: 15
-Net output row delta: -84
-Failed unique URLs after slow retry: 99
-Slow retry attempted unique URLs: 126
-Slow retry recovered unique URLs: 27
+Elapsed: 685.8s
+Rows before: 323
+Rows after: 277
+Rows removed from outputs: 92
+Candidate rows failing strict recheck: 92
+Rows refilled after strict recheck: 46
+Net output row delta: -46
+Failed unique URLs after slow retry: 92
+Slow retry attempted unique URLs: 115
+Slow retry recovered unique URLs: 23
 Core live-progress check required: True
 Broadcast live-progress check required: True
 Live-progress groups: 卫视频道, 地方频道, 央视频道
 Video track required: True
-Video-track verified final unique URLs: 280
-Refill attempted unique URLs: 20
-Refill playable unique URLs: 15
-Refilled rows: 15
-Historical fallback candidates attempted: 20
-Historical fallback rows accepted: 15
-Unresolved refill rows: 104
+Video-track verified final unique URLs: 277
+Refill attempted unique URLs: 56
+Refill playable unique URLs: 46
+Refilled rows: 46
+Historical fallback candidates attempted: 56
+Historical fallback rows accepted: 46
+Unresolved refill rows: 102
 
 ## Group deltas
 
 | Group | Before | After | Net delta |
 |---|---:|---:|---:|
-| 央视频道 | 27 | 27 | +0 |
-| 卫视频道 | 32 | 29 | -3 |
-| 地方频道 | 192 | 129 | -63 |
-| 影视剧场 | 66 | 66 | +0 |
+| 央视频道 | 26 | 28 | +2 |
+| 卫视频道 | 24 | 28 | +4 |
+| 地方频道 | 163 | 128 | -35 |
+| 影视剧场 | 65 | 65 | +0 |
 | 少儿动漫 | 1 | 1 | +0 |
 | 体育纪实 | 18 | 18 | +0 |
-| 音乐综艺 | 18 | 1 | -17 |
+| 音乐综艺 | 16 | 0 | -16 |
 | 综合娱乐 | 10 | 9 | -1 |
 
 ## First failed rows
 
 - 央视频道 / CCTV-13 / http://ali-m-l.cztv.com/channels/lantian/channel21/1080p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=3 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=3 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
-- 卫视频道 / 东方卫视 / http://bp-resource-dfl.bestv.cn/155/3/video.m3u8 / final slow retry failed attempt=1 first=segments ok checked=3 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 5.0s; last=segments ok checked=3 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 5.0s
 - 卫视频道 / 浙江卫视 / http://ali-vl.cztv.com/channels/lantian/channel001/360p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=3 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=3 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
-- 卫视频道 / 浙江卫视 / http://ali-m-l.cztv.com/channels/lantian/channel01/1080p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=3 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=3 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
+- 卫视频道 / 浙江卫视 / http://ali-m-l.cztv.com:80/channels/lantian/channel001/1080p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=3 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=3 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 卫视频道 / 浙江卫视 / https://ali-m-l.cztv.com/channels/lantian/channel001/1080p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=3 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=3 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 卫视频道 / 广东卫视 / https://txmov2.a.kwimgs.com/upic/2023/01/26/09/BMjAyMzAxMjYwOTE3NDVfNzM5MzQzNzIyXzk0NjI1OTUwNTA3XzBfMw==_b_B81ddda927d33445d544befd008e60109.mp4 / final slow retry failed attempt=1 first=direct MP4/fMP4 cannot prove live broadcast progress; rejecting likely VOD; last=direct MP4/fMP4 cannot prove live broadcast progress; rejecting likely VOD
-- 地方频道 / 上虞新商都 / http://l.cztvcloud.com/channels/lantian/SXshangyu3/720p.m3u8 / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 中国蓝新闻 / http://ali-m-l.cztv.com/channels/lantian/channel009/1080p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
-- 地方频道 / 余姚姚江文化 / http://l.cztvcloud.com/channels/lantian/SXyuyao3/720p.m3u8?zzhed / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 12.5s
-- 地方频道 / 余姚姚江文化 / https://l.cztvcloud.com/channels/lantian/SXyuyao3/720p.m3u8 / final slow retry failed attempt=1 first=URLError(TimeoutError('_ssl.c:994: The handshake operation timed out')); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 12.5s
-- 地方频道 / 余姚新闻综合 / http://l.cztvcloud.com/channels/lantian/SXyuyao1/720p.m3u8?cWlkPSZzPTg3OWMwYmMyZDMzYTFhZGY3NDQxMjgyYTg1MmUzNTY0JmVzPTE3MDY2Nzc4NzMmdXVpZD0yMjdiY2MzNGNiNGY0MThlYjRiY2IxYzcwNmZjODNkMS02NzQ3NDY2NyZ2PTImYXM9MCZjZG5leF9pZD10eF9waG9uZV9saXZl / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
-- 地方频道 / 余姚综合 / http://l.cztvcloud.com/channels/lantian/SXyuyao1/720p.m3u8?zzhed / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
-- 地方频道 / 余姚综合 / https://l.cztvcloud.com/channels/lantian/SXyuyao1/720p.m3u8 / final slow retry failed attempt=1 first=URLError(TimeoutError('_ssl.c:994: The handshake operation timed out')); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
-- 地方频道 / 余杭未来E / http://l.cztvcloud.com/channels/lantian/SXyuhang3/720p.m3u8 / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
-- 地方频道 / 余杭未来E / http://l.cztvcloud.com/channels/lantian/SXyuhang3/720p.m3u8?zzhed / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
+- 地方频道 / 余姚姚江文化 / http://l.cztvcloud.com/channels/lantian/SXyuyao3/720p.m3u8?zzhed / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 12.5s; last=TimeoutError('timed out')
+- 地方频道 / 余姚姚江文化 / https://l.cztvcloud.com/channels/lantian/SXyuyao3/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 12.5s; last=URLError(TimeoutError('_ssl.c:994: The handshake operation timed out'))
+- 地方频道 / 余姚新闻综合 / http://l.cztvcloud.com/channels/lantian/SXyuyao1/720p.m3u8?cWlkPSZzPTg3OWMwYmMyZDMzYTFhZGY3NDQxMjgyYTg1MmUzNTY0JmVzPTE3MDY2Nzc4NzMmdXVpZD0yMjdiY2MzNGNiNGY0MThlYjRiY2IxYzcwNmZjODNkMS02NzQ3NDY2NyZ2PTImYXM9MCZjZG5leF9pZD10eF9waG9uZV9saXZl / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
+- 地方频道 / 余姚综合 / http://l.cztvcloud.com/channels/lantian/SXyuyao1/720p.m3u8?zzhed / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=TimeoutError('timed out')
+- 地方频道 / 余姚综合 / https://l.cztvcloud.com/channels/lantian/SXyuyao1/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=URLError(TimeoutError('_ssl.c:994: The handshake operation timed out'))
+- 地方频道 / 余杭未来E / http://l.cztvcloud.com/channels/lantian/SXyuhang3/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=TimeoutError('timed out')
+- 地方频道 / 余杭未来E / http://l.cztvcloud.com/channels/lantian/SXyuhang3/720p.m3u8?zzhed / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 余杭综合 / http://l.cztvcloud.com/channels/lantian/SXyuhang1/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
-- 地方频道 / 余杭综合 / http://l.cztvcloud.com/channels/lantian/SXyuhang1/720p.m3u8?zzhed / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
+- 地方频道 / 余杭综合 / http://l.cztvcloud.com/channels/lantian/SXyuhang1/720p.m3u8?zzhed / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 兰溪新闻综合 / http://l.cztvcloud.com/channels/lantian/SXlanxi1/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
-- 地方频道 / 哈尔滨娱乐 / http://stream.hrbtv.net/ylpd/sd/live.m3u8?zheild / final slow retry failed attempt=1 first=URLError(TimeoutError('timed out')); last=URLError(TimeoutError('timed out'))
-- 地方频道 / 嵊泗综合 / http://l.cztvcloud.com/channels/lantian/SXshengsi1/720p.m3u8 / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
-- 地方频道 / 平泉综合 / https://jwcdnqx.hebyun.com.cn/live/pqzh/1500k/tzwj_video.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=4; frame decode ok frames=3 exit=0; manifest advanced after 12.5s; new edge failed: segment bad 200 video/mp2t bytes=131072 checked=1 expansions=2 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed; last=segment bad 200 video/mp2t bytes=131072 checked=2 expansions=4 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed
+- 地方频道 / 嵊泗综合 / http://l.cztvcloud.com/channels/lantian/SXshengsi1/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 平湖民生休闲 / http://l.cztvcloud.com/channels/lantian/SXpinghu2/720p.m3u8 / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 12.5s
 - 地方频道 / 平湖民生休闲 / http://l.cztvcloud.com/channels/lantian/SXpinghu2/720p.m3u8?zzhed / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 12.5s
-- 地方频道 / 庆元新闻综合 / http://l.cztvcloud.com/channels/lantian/SXqingyuan1/720p.m3u8?fbl= / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
+- 地方频道 / 庆元新闻综合 / http://l.cztvcloud.com/channels/lantian/SXqingyuan1/720p.m3u8?fbl= / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 庆元综合 / http://l.cztvcloud.com/channels/lantian/SXqingyuan1/720p.m3u8 / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 庆元综合 / http://l.cztvcloud.com/channels/lantian/SXqingyuan1/720p.m3u8?zzhed? / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 开化国家公园 / http://l.cztvcloud.com/channels/lantian/SXkaihua2/720p.m3u8 / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
@@ -72,16 +68,15 @@ Unresolved refill rows: 104
 - 地方频道 / 文成综合 / http://l.cztvcloud.com/channels/lantian/SXwencheng1/720p.m3u8?zzhed / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 文成综合 / http://l.cztvcloud.com/channels/lantian/SXwencheng1/720p.m3u8?zzhed? / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 新昌新闻综合 / https://l.cztvcloud.com/channels/lantian/SXxinchang1/720p.m3u8 / final slow retry failed attempt=1 first=URLError(TimeoutError('_ssl.c:994: The handshake operation timed out')); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
-- 地方频道 / 新闻综合 / https://m3u8channel.yunxya.com/nmip-media/channellive/channel100028/playlist.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 7.5s; last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 7.5s
 - 地方频道 / 晋江电视台 / http://stream.jinjiang.tv/1/sd/live.m3u8?zfud / final slow retry failed attempt=1 first=URLError(TimeoutError('timed out')); last=URLError(TimeoutError('timed out'))
 - 地方频道 / 普陀电视台 / http://l.cztvcloud.com/channels/lantian/SXputuo1/720p.m3u8 / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 普陀电视台 / https://l.cztvcloud.com/channels/lantian/SXputuo1/720p.m3u8 / final slow retry failed attempt=1 first=URLError(TimeoutError('_ssl.c:994: The handshake operation timed out')); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 武义新闻综合 / http://l.cztvcloud.com/channels/lantian/SXwuyi1/720p.m3u8 / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 武义新闻综合 / http://l.cztvcloud.com/channels/lantian/SXwuyi1/720p.m3u8?zzhed / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
+- 地方频道 / 武进生活 / http://live.wjyanghu.com/live/CH2.m3u8 / final slow retry failed attempt=1 first=TimeoutError('The read operation timed out'); last=<HTTPError 502: 'Bad Gateway'>
 - 地方频道 / 永嘉新闻综合 / http://l.cztvcloud.com/channels/lantian/SXyongjia1/720p.m3u8 / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 洞头综合 / http://l.cztvcloud.com/channels/lantian/SXdongtou1/720p.m3u8 / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 洞头综合 / http://l.cztvcloud.com/channels/lantian/SXdongtou1/720p.m3u8?zzhed? / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
-- 地方频道 / 津南一套 / http://play.jinnantv.top/live/JNTV1.m3u8?ztianjd / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=TimeoutError('timed out')
 - 地方频道 / 浙江休闲台 / http://ali-m-l.cztv.com/channels/lantian/channel006/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 浙江公共新闻 / http://ali-m-l.cztv.com/channels/lantian/channel07/1080p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 浙江公共新闻 / http://ali-m-l.cztv.com/channels/lantian/channel007/1080p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
@@ -99,8 +94,8 @@ Unresolved refill rows: 104
 - 地方频道 / 浙江教育 / http://ali-m-l.cztv.com/channels/lantian/channel04/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 浙江数码时代 / http://ali-m-l.cztv.com/channels/lantian/channel12/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 浙江数码时代 / http://ali-m-l.cztv.com/channels/lantian/channel12/720p.m3u8?zzhed / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
-- 地方频道 / 浙江新闻 / http://ali-vl.cztv.com/channels/lantian/channel007/360p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 浙江新闻 / http://ali-m-l.cztv.com/channels/lantian/channel07/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
+- 地方频道 / 浙江新闻 / http://ali-vl.cztv.com/channels/lantian/channel007/360p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 浙江新闻 / http://ali-m-l.cztv.com/channels/lantian/channel007/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 浙江民生 / http://ali-m-l.cztv.com/channels/lantian/channel06/720p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 浙江民生 / http://ali-m-l.cztv.com/channels/lantian/channel06/1080p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
@@ -114,7 +109,12 @@ Unresolved refill rows: 104
 - 地方频道 / 浙江遂昌 / http://l.cztvcloud.com/channels/lantian/SXsuichang1/720p.m3u8 / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 浙江钱江 / http://l.cztvcloud.com/channels/lantian/SXyuyao2/720p.m3u8 / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 浙江钱江 / http://ali-m-l.cztv.com/channels/lantian/channel02/1080p.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
-- 地方频道 / 清河经济综艺 / https://jwcdnqx.hebyun.com.cn/live/qinghe1/1500k/tzwj_video.m3u8 / final slow retry failed attempt=1 first=segment bad 200 video/mp2t bytes=131072 checked=1 expansions=2 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed; last=segment bad 200 video/mp2t bytes=131072 checked=1 expansions=2 unknown/mpeg-ts: TS packets found but PAT/PMT video track not observed
+- 地方频道 / 缙云综合 / http://l.cztvcloud.com/channels/lantian/SXjinyun1/720p.m3u8?zzhed / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 苍南新闻综合 / https://l.cztvcloud.com/channels/lantian/SXcangnan1/720p.m3u8 / final slow retry failed attempt=1 first=URLError(TimeoutError('_ssl.c:994: The handshake operation timed out')); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
 - 地方频道 / 营山电视台 / http://file.ysxtv.cn/cms/videos/nmip-media/channellive/channel4/playlist.m3u8 / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 7.5s; last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 7.5s
-- 地方频道 / 遂昌综合 / http://l.cztvcloud.com/channels/lantian/SXsuichang1/720p.m3u8?zzhed / final slow retry failed attempt=1 first=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s; last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
+- 地方频道 / 遂昌综合 / http://l.cztvcloud.com/channels/lantian/SXsuichang1/720p.m3u8?zzhed / final slow retry failed attempt=1 first=TimeoutError('timed out'); last=segments ok checked=2 required=media expansions=0; frame decode ok frames=3 exit=0; manifest did not advance after 10.0s
+- 音乐综艺 / 1994年春晚 / https://alimov2.a.kwimgs.com/upic/2023/01/13/22/BMjAyMzAxMTMyMjEwMDNfNDAzMDAxOTlfOTM1MTIzMzYxMjNfMF8z_b_B3dde97f36273f04403d4dc5eec611a35.mp4 / final slow retry failed attempt=1 first=direct MP4/fMP4 cannot prove live broadcast progress; rejecting likely VOD; last=direct MP4/fMP4 cannot prove live broadcast progress; rejecting likely VOD
+- 音乐综艺 / 1995年春晚 / https://alimov2.a.kwimgs.com/upic/2023/01/13/20/BMjAyMzAxMTMyMDA5MjJfNDAzMDAxOTlfOTM0OTkwNDQwNzVfMF8z_b_B811c0dec6b9a3d3074a18522c185010a.mp4 / final slow retry failed attempt=1 first=direct MP4/fMP4 cannot prove live broadcast progress; rejecting likely VOD; last=direct MP4/fMP4 cannot prove live broadcast progress; rejecting likely VOD
+- 音乐综艺 / 1996年春晚 / https://alimov2.a.kwimgs.com/upic/2023/01/13/22/BMjAyMzAxMTMyMjEwMDNfNDAzMDAxOTlfOTM1MTIzMzYxNTJfMF8z_b_Bd841eae10ab1c9955ef55fbedfae6c45.mp4 / final slow retry failed attempt=1 first=direct MP4/fMP4 cannot prove live broadcast progress; rejecting likely VOD; last=direct MP4/fMP4 cannot prove live broadcast progress; rejecting likely VOD
+- 音乐综艺 / 2000年春晚 / https://alimov2.a.kwimgs.com/upic/2023/01/13/21/BMjAyMzAxMTMyMTE4MzRfNDAzMDAxOTlfOTM1MDY4ODIxMTNfMF8z_b_Bdddf4e7ef0ff6cfd477857bb40e78419.mp4 / final slow retry failed attempt=1 first=direct MP4/fMP4 cannot prove live broadcast progress; rejecting likely VOD; last=direct MP4/fMP4 cannot prove live broadcast progress; rejecting likely VOD
+- 音乐综艺 / 2001年春晚 / https://alimov2.a.kwimgs.com/upic/2023/01/13/20/BMjAyMzAxMTMyMDA5MjJfNDAzMDAxOTlfOTM0OTkwNDQyMDFfMF8z_b_B70592cb7c4054e9cabb675e849bbf4bd.mp4 / final slow retry failed attempt=1 first=direct MP4/fMP4 cannot prove live broadcast progress; rejecting likely VOD; last=direct MP4/fMP4 cannot prove live broadcast progress; rejecting likely VOD
