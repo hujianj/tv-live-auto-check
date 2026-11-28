@@ -2,39 +2,39 @@
   "schema_version": 1,
   "playback_verified": false,
   "media_requests": 0,
-  "snapshot_generated_utc": "2026-11-27T19:10:56.222647+00:00",
+  "snapshot_generated_utc": "2026-11-28T03:30:16.336629+00:00",
   "scope": "configured publication-allowed domestic Chinese TV candidates; includes retained upstream snapshots",
-  "channels": 355,
-  "addresses": 518,
-  "unique_urls": 503,
+  "channels": 390,
+  "addresses": 572,
+  "unique_urls": 555,
   "groups": {
     "央视频道": {
       "channels": 21,
-      "addresses": 60
+      "addresses": 62
     },
     "卫视频道": {
-      "channels": 36,
-      "addresses": 86
+      "channels": 37,
+      "addresses": 90
     },
     "地方频道": {
-      "channels": 168,
-      "addresses": 232
+      "channels": 197,
+      "addresses": 275
     },
     "影视剧场": {
-      "channels": 68,
-      "addresses": 71
+      "channels": 69,
+      "addresses": 72
     },
     "少儿动漫": {
-      "channels": 3,
-      "addresses": 4
+      "channels": 4,
+      "addresses": 5
     },
     "体育纪实": {
       "channels": 18,
       "addresses": 20
     },
     "音乐综艺": {
-      "channels": 17,
-      "addresses": 18
+      "channels": 20,
+      "addresses": 21
     },
     "生活休闲": {
       "channels": 4,
@@ -51,12 +51,12 @@
   },
   "files": {
     "chinese-unverified.txt": {
-      "bytes": 41102,
-      "sha256": "78813052963b6cbb8684713d8025743df8ce54f5452cbaa91d25e31196b0fccf"
+      "bytes": 45556,
+      "sha256": "6e7267a1cb30efab8acd51ea75b04079af4185d7636b34bea22efcccd0e1c486"
     },
     "chinese-unverified.m3u": {
-      "bytes": 115267,
-      "sha256": "13af506cd0a89a0405b2faf2251e3be6758de5d8e952caa93aaf67e8de038665"
+      "bytes": 126622,
+      "sha256": "807ad16b0b9bfe730d4eb61cb2df1155c5ef7ae8c5cfe8e245d1b7b1b3adc09c"
     }
   },
   "sources": {
@@ -159,12 +159,12 @@
     },
     "iptv_org_all": {
       "state": "fetched",
-      "parsed": 10718,
+      "parsed": 10735,
       "transport": "direct",
       "config_sha256": "b5e3bbd2b068c0f7936543731c875153085eb9b8ff0086e296ec367e7e2eb0cd",
       "selected": 51,
       "excluded": {
-        "foreign_channel_origin": 10520,
+        "foreign_channel_origin": 10537,
         "chinese_channel_identity_unconfirmed": 134,
         "foreign_or_non_chinese_channel": 7,
         "foreign_cgtn_stream": 6
@@ -295,23 +295,25 @@
     },
     "zbds_iptv4_m3u": {
       "state": "fetched",
-      "parsed": 297,
+      "parsed": 333,
       "transport": "direct",
       "config_sha256": "9f52df58b82765518e2ebefa257e9d61ac849a48e67ce11f34ab7dfd428e5ac2",
-      "selected": 292,
+      "selected": 326,
       "excluded": {
-        "foreign_cgtn_stream": 4,
+        "foreign_cgtn_stream": 5,
+        "foreign_or_non_chinese_channel": 1,
         "chinese_channel_identity_unconfirmed": 1
       }
     },
     "zbds_iptv4_txt": {
       "state": "fetched",
-      "parsed": 383,
+      "parsed": 445,
       "transport": "direct",
       "config_sha256": "a803d8363693fa6fdf7de9ef2db036c22c8b57d5b28da1cd087bcdf0097cc7d7",
-      "selected": 377,
+      "selected": 435,
       "excluded": {
-        "foreign_cgtn_stream": 4,
+        "foreign_cgtn_stream": 7,
+        "foreign_or_non_chinese_channel": 1,
         "chinese_channel_identity_unconfirmed": 2
       }
     },
