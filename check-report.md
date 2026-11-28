@@ -1,9 +1,9 @@
 # IPTV source verification report
 
-Generated: 2026-11-27 18:12:30
-Generated UTC: 2026-11-27T18:12:30Z
-Generated Beijing: 2026-11-28 02:12:30 Asia/Shanghai
-Elapsed: 64.2s
+Generated: 2026-11-28 02:41:39
+Generated UTC: 2026-11-28T02:41:39Z
+Generated Beijing: 2026-11-28 10:41:39 Asia/Shanghai
+Elapsed: 48.0s
 Sources configured: 43 (enabled=34, recovery=2, disabled=7)
 Sources probed: 36
 Sources fetched OK: 32
@@ -11,18 +11,18 @@ Sources with parsed rows (before policy filters): 28
 Sources with media-eligible candidates: 7
 Network scope: current_execution_environment; no region or home-broadband qualification
 Channel scope: domestic_chinese
-Parsed candidates: 30562
-Policy-excluded candidates (not media-checked): 29748
-Eligible candidates before URL deduplication: 814
-Unique name+URL candidates: 486
-Unique stream URLs: 473
-Checked unique stream URLs: 473
+Parsed candidates: 30738
+Policy-excluded candidates (not media-checked): 29832
+Eligible candidates before URL deduplication: 906
+Unique name+URL candidates: 541
+Unique stream URLs: 526
+Checked unique stream URLs: 526
 Checked all unique URLs: True
-Playable channel names: 269
-Playable unique URLs: 334
-Playable name+URL lines: 346
-Playable URLs found (legacy line count): 346
-Pre-curated published playable lines: 346
+Playable channel names: 301
+Playable unique URLs: 368
+Playable name+URL lines: 383
+Playable URLs found (legacy line count): 383
+Pre-curated published playable lines: 383
 
 ## Source fetch status
 
@@ -31,13 +31,13 @@ The legacy contributed CSV flag means parsed rows, not permission approval or fi
 | Source | Mode | Fetch | Has parsed rows | Parsed | Media eligible | Bytes | Truncated | Error |
 |---|---|---:|---:|---:|---:|---:|---:|---|
 | iyouhun_zb | enabled | OK | YES | 7089 | 0 | 522492 | False |  |
-| zbds_iptv4_txt | enabled | OK | YES | 383 | 377 | 32818 | False |  |
+| zbds_iptv4_txt | enabled | OK | YES | 445 | 435 | 38742 | False |  |
 | guovin_all | enabled | OK | YES | 1456 | 0 | 396412 | False |  |
 | guovin_ipv4 | enabled | OK | YES | 398 | 0 | 106329 | False |  |
 | guovin_ipv6 | enabled | OK | YES | 1215 | 0 | 330476 | False |  |
 | suxuang_ipv4 | enabled | OK | YES | 1189 | 0 | 268845 | False |  |
 | suxuang_ipv6 | enabled | OK | YES | 815 | 0 | 200521 | False |  |
-| zbds_iptv4_m3u | enabled | OK | YES | 297 | 292 | 71093 | False |  |
+| zbds_iptv4_m3u | enabled | OK | YES | 333 | 326 | 80616 | False |  |
 | burningc4_ipv4 | enabled | OK | YES | 58 | 58 | 8021 | False |  |
 | vamoschuck_m3u | enabled | OK | YES | 786 | 0 | 147124 | False |  |
 | zbds_iptv6_txt | enabled | OK | YES | 2 | 0 | 267 | False |  |
@@ -47,14 +47,14 @@ The legacy contributed CSV flag means parsed rows, not permission approval or fi
 | kimentanm_aptv | enabled | OK | YES | 119 | 0 | 21971 | False |  |
 | bigbiggrandg_gather | enabled | OK | YES | 1900 | 0 | 329793 | False |  |
 | yang_gather | enabled | OK | YES | 123 | 0 | 26227 | False |  |
-| iptv_org_all | enabled | OK | YES | 10718 | 18 | 2670452 | False |  |
-| epg_cn | enabled | OK | YES | 1251 | 0 | 400310 | False |  |
-| epg_hk | enabled | OK | YES | 30 | 0 | 9632 | False |  |
+| iptv_org_all | enabled | OK | YES | 10735 | 18 | 2671556 | False |  |
+| epg_cn | enabled | OK | YES | 1309 | 0 | 418653 | False |  |
+| epg_hk | enabled | OK | YES | 29 | 0 | 9330 | False |  |
 | epg_mo | enabled | OK | YES | 19 | 0 | 6134 | False |  |
-| epg_tw | enabled | OK | YES | 32 | 0 | 12458 | False |  |
+| epg_tw | enabled | OK | YES | 33 | 0 | 12769 | False |  |
 | iptv_org_tw | enabled | OK | YES | 33 | 0 | 6268 | False |  |
 | epg_sg | enabled | OK | YES | 1 | 0 | 357 | False |  |
-| epg_my | enabled | OK | YES | 13 | 0 | 4307 | False |  |
+| epg_my | enabled | OK | YES | 16 | 0 | 5247 | False |  |
 | free_tv_world | enabled | OK | YES | 2176 | 20 | 585406 | False |  |
 | mursor_yy | enabled | FAIL | NO | 0 | 0 | 0 | False | PublicURLPolicyError('DNS resolution failed for gongdian.top: [Errno -5] No address associated with hostname') |
 | mursor_bililive | enabled | FAIL | NO | 0 | 0 | 0 | False | PublicURLPolicyError('DNS resolution failed for gongdian.top: [Errno -5] No address associated with hostname') |
@@ -71,9 +71,9 @@ The legacy contributed CSV flag means parsed rows, not permission approval or fi
 
 | Source | Lines |
 |---|---:|
-| zbds_iptv4_txt | 308 |
+| zbds_iptv4_txt | 344 |
 | oktv_comprehensive_php | 21 |
-| iptv_org_cn | 10 |
+| iptv_org_cn | 11 |
 | free_tv_world | 7 |
 
 ## First 80 pre-curation playable channel candidates
@@ -106,11 +106,17 @@ The legacy contributed CSV flag means parsed rows, not permission approval or fi
 - 央视频道 / CCTV-8 / iptv_org_cn
 - 央视频道 / CCTV-8 / oktv_comprehensive_php
 - 央视频道 / CCTV-9 / free_tv_world
+- 央视频道 / CCTV-9 / iptv_org_cn
 - 卫视频道 / 东南卫视 / zbds_iptv4_txt
+- 卫视频道 / 东方卫视 / zbds_iptv4_txt
+- 卫视频道 / 东方卫视 / zbds_iptv4_txt
 - 卫视频道 / 东方卫视 / oktv_comprehensive_php
+- 卫视频道 / 东方卫视4K / zbds_iptv4_txt
+- 卫视频道 / 人间卫视 / zbds_iptv4_txt
+- 卫视频道 / 人间卫视 / zbds_iptv4_txt
+- 卫视频道 / 内蒙古卫视 / zbds_iptv4_txt
 - 卫视频道 / 北京卫视 / oktv_comprehensive_php
 - 卫视频道 / 吉林卫视 / zbds_iptv4_txt
-- 卫视频道 / 天津卫视 / zbds_iptv4_txt
 - 卫视频道 / 天津卫视 / oktv_comprehensive_php
 - 卫视频道 / 安多卫视 / zbds_iptv4_txt
 - 卫视频道 / 安徽卫视 / oktv_comprehensive_php
@@ -118,6 +124,7 @@ The legacy contributed CSV flag means parsed rows, not permission approval or fi
 - 卫视频道 / 山西卫视 / zbds_iptv4_txt
 - 卫视频道 / 广东卫视 / zbds_iptv4_txt
 - 卫视频道 / 广东卫视 / oktv_comprehensive_php
+- 卫视频道 / 延边卫视 / zbds_iptv4_txt
 - 卫视频道 / 延边卫视 / zbds_iptv4_txt
 - 卫视频道 / 延边卫视 / zbds_iptv4_txt
 - 卫视频道 / 新疆卫视 / zbds_iptv4_txt
@@ -133,28 +140,21 @@ The legacy contributed CSV flag means parsed rows, not permission approval or fi
 - 卫视频道 / 湖南卫视 / zbds_iptv4_txt
 - 卫视频道 / 湖南卫视 / oktv_comprehensive_php
 - 地方频道 / FZTV-1News新闻综合频道 / free_tv_world
+- 地方频道 / 七台河新闻综合 / zbds_iptv4_txt
 - 地方频道 / 万荣综合 / zbds_iptv4_txt
 - 地方频道 / 上虞文化影院 / zbds_iptv4_txt
 - 地方频道 / 上虞新商都 / zbds_iptv4_txt
 - 地方频道 / 上虞新闻综合 / zbds_iptv4_txt
+- 地方频道 / 东莞新闻综合 / zbds_iptv4_txt
 - 地方频道 / 中国蓝新闻 / zbds_iptv4_txt
 - 地方频道 / 乐至综合 / zbds_iptv4_txt
 - 地方频道 / 九台综合 / zbds_iptv4_txt
 - 地方频道 / 云和新闻综合 / zbds_iptv4_txt
-- 地方频道 / 云和新闻综合 / zbds_iptv4_txt
 - 地方频道 / 云霄综合 / zbds_iptv4_txt
 - 地方频道 / 云霄综合 / zbds_iptv4_txt
+- 地方频道 / 云霄综合 / zbds_iptv4_txt
+- 地方频道 / 井研综合 / zbds_iptv4_txt
 - 地方频道 / 亳州农村 / zbds_iptv4_txt
 - 地方频道 / 亳州农村 / zbds_iptv4_txt
 - 地方频道 / 任丘综合 / zbds_iptv4_txt
 - 地方频道 / 余姚姚江文化 / zbds_iptv4_txt
-- 地方频道 / 余姚姚江文化 / zbds_iptv4_txt
-- 地方频道 / 余姚新闻综合 / zbds_iptv4_txt
-- 地方频道 / 余姚新闻综合 / zbds_iptv4_txt
-- 地方频道 / 余姚综合 / zbds_iptv4_txt
-- 地方频道 / 余姚综合 / zbds_iptv4_txt
-- 地方频道 / 余姚综合 / zbds_iptv4_txt
-- 地方频道 / 余杭未来E / zbds_iptv4_txt
-- 地方频道 / 余杭未来E / zbds_iptv4_txt
-- 地方频道 / 余杭综合 / zbds_iptv4_txt
-- 地方频道 / 余杭综合 / zbds_iptv4_txt

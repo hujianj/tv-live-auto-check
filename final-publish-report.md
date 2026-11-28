@@ -2,61 +2,63 @@
 
 This report describes the final playlist after curation and after the second full published-URL recheck.
 
-Rows: 277
-Unique channel names: 235
-Unique URLs: 277
-Failed unique URLs after slow retry: 92
+Rows: 268
+Unique channel names: 229
+Unique URLs: 268
+Failed unique URLs after slow retry: 96
 Slow retry attempted unique URLs: 115
-Slow retry recovered unique URLs: 23
-Refilled rows from checked candidate pool: 46
-Unresolved refill rows: 102
+Slow retry recovered unique URLs: 19
+Refilled rows from checked candidate pool: 9
+Unresolved refill rows: 103
 Core live-progress check required: True
 Broadcast live-progress check required: True
 Live-progress groups: 卫视频道, 地方频道, 央视频道
-Final recheck elapsed: 685.8s
+Final recheck elapsed: 634.9s
 Source map available: True
 Stability tracked URLs after pending observation: 488
-Pending stability OK/fail updates: 277/102
+Pending stability OK/fail updates: 268/103
 Strict quality filter dropped rows before recheck: 0
 Channel limit trimmed rows before recheck: 0
 Group limit trimmed rows before recheck: 0
-Family compact playlist: 271 rows / 235 names / 271 URLs
+Family compact playlist: 263 rows / 229 names / 263 URLs
 
 ## Groups
 
 | Group | Rows |
 |---|---:|
 | 央视频道 | 28 |
-| 卫视频道 | 28 |
-| 地方频道 | 128 |
+| 卫视频道 | 26 |
+| 地方频道 | 119 |
 | 影视剧场 | 65 |
-| 少儿动漫 | 1 |
+| 少儿动漫 | 2 |
 | 体育纪实 | 18 |
+| 音乐综艺 | 1 |
 | 综合娱乐 | 9 |
 
 ## Family compact playlist
 
 - TXT files: ku9-family.txt, live-family.txt
 - M3U file: family.m3u
-- Rows: 271
-- Unique names: 235
-- Unique URLs: 271
+- Rows: 263
+- Unique names: 229
+- Unique URLs: 263
 
 | Group | Rows |
 |---|---:|
 | 央视频道 | 28 |
-| 卫视频道 | 28 |
-| 地方频道 | 125 |
+| 卫视频道 | 26 |
+| 地方频道 | 117 |
 | 影视剧场 | 64 |
-| 少儿动漫 | 1 |
+| 少儿动漫 | 2 |
 | 体育纪实 | 16 |
+| 音乐综艺 | 1 |
 | 综合娱乐 | 9 |
 
 ## Final published lines by source
 
 | Source | Rows |
 |---|---:|
-| zbds_iptv4_txt | 240 |
+| zbds_iptv4_txt | 231 |
 | oktv_comprehensive_php | 19 |
 | iptv_org_cn | 11 |
 | free_tv_world | 7 |
@@ -70,21 +72,24 @@ Family compact playlist: 271 rows / 235 names / 271 URLs
 - zbds_iptv4_txt: 2
 
 ### 卫视频道
-- zbds_iptv4_txt: 18
+- zbds_iptv4_txt: 16
 - oktv_comprehensive_php: 10
 
 ### 地方频道
-- zbds_iptv4_txt: 127
+- zbds_iptv4_txt: 118
 - free_tv_world: 1
 
 ### 影视剧场
 - zbds_iptv4_txt: 65
 
 ### 少儿动漫
-- zbds_iptv4_txt: 1
+- zbds_iptv4_txt: 2
 
 ### 体育纪实
 - zbds_iptv4_txt: 18
+
+### 音乐综艺
+- zbds_iptv4_txt: 1
 
 ### 综合娱乐
 - zbds_iptv4_txt: 9
@@ -135,10 +140,8 @@ Family compact playlist: 271 rows / 235 names / 271 URLs
 - 卫视频道 / 人间卫视 / zbds_iptv4_txt / https://5ddce30eb4b55.streamlock.net/bltvhd/bltv1/chunklist_w511254805.m3u8
 - 卫视频道 / 内蒙古卫视 / zbds_iptv4_txt / http://play1-qk.nmtv.cn/live/1769652018126032.m3u8
 - 卫视频道 / 吉林卫视 / zbds_iptv4_txt / http://221.7.175.154:8445/tsfile/live/1014_1.m3u8?key=txiptv&playlive=1&authid=0
-- 卫视频道 / 天津卫视 / zbds_iptv4_txt / http://222.169.85.8:9901/tsfile/live/0135_1.m3u8?key=txiptv&playlive=1&authid=0
 - 卫视频道 / 天津卫视 / oktv_comprehensive_php / http://173.208.212.130:8181/720p/tjws.m3u8
 - 卫视频道 / 安多卫视 / zbds_iptv4_txt / https://liveout.xntv.tv/a65jur/96iln2.m3u8
-- 卫视频道 / 安徽卫视 / zbds_iptv4_txt / http://gmxw.7766.org:808/hls/40/index.m3u8
 - 卫视频道 / 安徽卫视 / oktv_comprehensive_php / http://173.208.212.130:8181/720p/ahws.m3u8
 - 卫视频道 / 山东卫视 / oktv_comprehensive_php / http://173.208.212.130:8181/720p/sdws.m3u8
 - 卫视频道 / 山西卫视 / zbds_iptv4_txt / http://119.39.9.8:9901/tsfile/live/0118_1.m3u8
@@ -148,6 +151,7 @@ Family compact playlist: 271 rows / 235 names / 271 URLs
 - 卫视频道 / 新疆卫视 / zbds_iptv4_txt / http://218.84.12.186:8001/hls/main/playlist.m3u8?zxinjd
 - 卫视频道 / 江西卫视 / zbds_iptv4_txt / http://112.27.5.218:9901/tsfile/live/faacts/0138_1.m3u8?key=txiptv&playlive=1&authid=0
 - 地方频道 / FZTV-1News新闻综合频道 / free_tv_world / http://live.zohi.tv/video/s10001-fztv-1/index.m3u8
+- 地方频道 / 七台河新闻综合 / zbds_iptv4_txt / http://live.qthnews.org.cn:1935/live/live1/800k/tzwj_video.m3u8
 - 地方频道 / 万荣综合 / zbds_iptv4_txt / http://60.222.246.220:19433/hls1.m3u8
 - 地方频道 / 上虞文化影院 / zbds_iptv4_txt / http://l.cztvcloud.com/channels/lantian/SXshangyu2/720p.m3u8
 - 地方频道 / 上虞新商都 / zbds_iptv4_txt / http://l.cztvcloud.com/channels/lantian/SXshangyu3/720p.m3u8
@@ -159,6 +163,7 @@ Family compact playlist: 271 rows / 235 names / 271 URLs
 - 地方频道 / 云和新闻综合 / zbds_iptv4_txt / http://l.cztvcloud.com/channels/lantian/SXyunhe1/720p.m3u8?zzhed
 - 地方频道 / 云霄综合 / zbds_iptv4_txt / http://live.zzyxxw.com:85/live/xwzh.m3u8
 - 地方频道 / 云霄综合 / zbds_iptv4_txt / http://live.zzyxxw.com:85/live/xwzh.m3u8?fujian
+- 地方频道 / 云霄综合 / zbds_iptv4_txt / https://live.zzyxxw.com:2443/live/xwzh.m3u8
 - 地方频道 / 井研综合 / zbds_iptv4_txt / http://tvfile.jyrmt.cn/nmip-media/channellive/channel104452/playlist.m3u8
 - 地方频道 / 亳州农村 / zbds_iptv4_txt / http://zbbf2.ahbztv.com/live/418.m3u8
 - 地方频道 / 亳州农村 / zbds_iptv4_txt / http://zbbf2.ahbztv.com/live/418.m3u8?zanhd
@@ -174,10 +179,10 @@ Family compact playlist: 271 rows / 235 names / 271 URLs
 
 ## Playback and backup evidence
 
-- Single-line channels: 200
-- Channels with distinct-host backups: 16
-- Line-count distribution: {'1': 200, '2': 29, '3': 5, '4': 1}
-- Media measurement types: {'partial_segment_estimate': 126, 'complete_segment': 70, 'unmeasured': 81}
+- Single-line channels: 196
+- Channels with distinct-host backups: 14
+- Line-count distribution: {'1': 196, '2': 27, '3': 6}
+- Media measurement types: {'partial_segment_estimate': 143, 'complete_segment': 37, 'unmeasured': 88}
 - Selection mode: availability. Availability mode keeps all verified URLs and ignores runner/local speed; configured source/history preference and independent hosts determine order.
 - Temporary local priority: {'active': False, 'observed_urls': 0, 'published_urls_covered': 0, 'generated_at_utc': '2026-10-29T08:16:23.521454+00:00', 'expires_at_utc': '2026-10-31T08:16:23.521454Z', 'scope': 'current local computer; not television', 'stale_reason': 'expires_at_utc reached'}
 - Partial-segment estimates are not full-segment or prolonged TV playback tests. Failed lines are never retained as backups.
